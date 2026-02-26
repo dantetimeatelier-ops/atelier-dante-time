@@ -1,4 +1,5 @@
 
+
 <!doctype html>
 <html lang="cs">
 <head>
@@ -346,44 +347,66 @@
         nav_services: "Služby",
         nav_contact: "Kontakt",
         subtitle: "Czech Watch Atelier",
+
         about_title: "O nás",
-        about_text: "Každé hodinky mají svůj příběh. Některé ale skončí odložené, zastavené, zapomenuté. Právě takové mě zajímají. Dante Time vzniklo z úcty k hodinářskému řemeslu a z přesvědčení, že i zdánlivě odepsané věci si zaslouží péči. Každý kus prochází trpělivou renovací, kde se spojuje technická přesnost s citem pro detail. Výsledkem nejsou jen opravené hodinky. Jsou to hodinky, které znovu žijí. Značka nese jméno Dante – zachráněného kocoura, který dostal druhou šanci. Stejně jako on dostávají i hodinky v tomto ateliéru nový začátek.",
+        about_text:
+          "Každé hodinky mají svůj příběh. Některé ale skončí odložené, zastavené, zapomenuté. Právě takové mě zajímají. Dante Time vzniklo z úcty k hodinářskému řemeslu a z přesvědčení, že i zdánlivě odepsané věci si zaslouží péči. Každý kus prochází trpělivou renovací, kde se spojuje technická přesnost s citem pro detail. Výsledkem nejsou jen opravené hodinky. Jsou to hodinky, které znovu žijí. Značka nese jméno Dante – zachráněného kocoura, který dostal druhou šanci. Stejně jako on dostávají i hodinky v tomto ateliéru nový začátek.",
+
+        quick_title: "Rychlé info",
+        q1: "Mechanické hodinky & vintage renovace",
         q2: "Čištění, mazání, regulace",
         q3: "Zakázkové sestavy (limitované kusy)",
         q4: "Dokončovací práce & prezentace",
+
         services_title: "Služby",
-        services_text: "Servis a renovace mechanických hodinek, citlivá práce s vintage díly a zakázkové sestavy. (Galerii doplníme, až budeš mít fotky.)",
+        services_text:
+          "Servis a renovace mechanických hodinek, citlivá práce s vintage díly a zakázkové sestavy. (Galerii doplníme, až budeš mít fotky.)",
+
         contact_title: "Kontakt",
         contact_text: "Napiš mi e-mail nebo zprávu na Instagram/TikTok.",
         email_label: "E-mail",
         email_btn: "Napsat e-mail",
         open_btn: "Otevřít",
+
         note_title: "Poznámka",
-        note_text: "Pokud chceš, pošli do e-mailu fotky hodinek a krátký popis (stav, model, co potřebuješ). Odpovím s návrhem postupu a orientační cenou.",
+        note_text:
+          "Pokud chceš, pošli do e-mailu fotky hodinek a krátký popis (stav, model, co potřebuješ). Odpovím s návrhem postupu a orientační cenou.",
+
         footer_terms: "Podmínky",
         footer_claims: "Reklamace",
         footer_privacy: "Soukromí",
       },
+
       en: {
         nav_about: "About",
         nav_services: "Services",
         nav_contact: "Contact",
         subtitle: "Czech Watch Atelier",
+
         about_title: "About",
-        about_text: "Atelier Dante Time is an independent Czech watch atelier dedicated to restoring mechanical timepieces and giving them a second life. Each watch carries history, character, and soul — and we believe time deserves craftsmanship, patience, and respect."
+        about_text:
+          "Every watch carries a story. Some end up forgotten — stopped, set aside, waiting for a second chance. Those are the ones I care about. Dante Time was created out of respect for watchmaking craft and the belief that even seemingly lost pieces deserve proper care. Each watch goes through a patient restoration where technical precision meets attention to detail. The result is not just a repaired watch — it is a watch that lives again. The brand is named after Dante, a rescued cat who was given a second chance. Just like him, every timepiece in this atelier gets a new beginning.",
+
+        quick_title: "Quick info",
         q1: "Mechanical watches & vintage restorations",
         q2: "Cleaning, lubrication, regulation",
         q3: "Custom builds (limited pieces)",
         q4: "Finishing & presentation details",
+
         services_title: "Services",
-        services_text: "Servicing and restoration of mechanical watches, careful work with vintage parts, and custom builds. (Gallery will be added once photos are available.)",
+        services_text:
+          "Servicing and restoration of mechanical watches, careful work with vintage parts, and custom builds. (Gallery will be added once photos are available.)",
+
         contact_title: "Contact",
-        contact_text: "Send an email or message on Instagram/TikTok.",
+        contact_text: "Send an email or a message on Instagram/TikTok.",
         email_label: "Email",
         email_btn: "Send email",
         open_btn: "Open",
+
         note_title: "Note",
-        note_text: "If you want, email photos of the watch and a short description (condition, model, what you need). I will reply with a proposed approach and an estimated price.",
+        note_text:
+          "If you want, email photos of the watch and a short description (condition, model, what you need). I will reply with a proposed approach and an estimated price.",
+
         footer_terms: "Terms",
         footer_claims: "Claims",
         footer_privacy: "Privacy",
@@ -413,10 +436,12 @@
     document.getElementById("y").textContent = new Date().getFullYear();
 
     const langBtn = document.getElementById("langBtn");
-    langBtn.addEventListener("click", ()=>{
-      const current = getLang();
-      setLang(current === "cs" ? "en" : "cs");
-    });
+    if (langBtn) {
+      langBtn.addEventListener("click", ()=>{
+        const current = getLang();
+        setLang(current === "cs" ? "en" : "cs");
+      });
+    }
 
     applyLang(getLang());
   </script>
