@@ -1,6 +1,5 @@
-
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,42 +7,62 @@
 
 <style>
 body {
-    margin: 0;
-    background: radial-gradient(circle at center, #111 0%, #000 70%);
-    color: #fff;
-    font-family: Georgia, serif;
-    text-align: center;
-}}
-.hero{
+    margin:0;
+    font-family: "Georgia", serif;
+    background: radial-gradient(circle at center, #0f0f0f 0%, #000 85%);
+    color:#fff;
+    text-align:center;
+}
+
+.hero {
     height:100vh;
     display:flex;
     flex-direction:column;
     justify-content:center;
     align-items:center;
-    
 }
+
 .hero img {
-    width: 170px;
-    margin-bottom: 50px;
+    width:140px;
+    margin-bottom:60px;
     filter: drop-shadow(0 0 35px rgba(212,175,55,0.35));
-}}
-h1{
-    font-size:40px;
-    letter-spacing:3px;
+    transition: transform 1.5s ease;
+}
+
+.hero img:hover {
+    transform: scale(1.05);
+}
+
+h1 {
+    font-size:84px;
+    letter-spacing:6px;
+    font-weight:500;
     margin:0;
 }
-.subtitle{
-    color:#c6a95e;
-    margin-top:10px;
-    font-size:18px;
+
+.subtitle {
+    color:#d4af37;
+    font-size:22px;
+    margin-top:20px;
+    letter-spacing:2px;
 }
-.section{
-    padding:80px 20px;
+
+section {
+    padding:120px 20px;
+}
+
+h2 {
+    font-size:42px;
+    letter-spacing:3px;
+    margin-bottom:40px;
+}
+
+p {
     max-width:900px;
-    margin:auto;
-}
-h2{
-    margin-bottom:20px;
+    margin:0 auto;
+    font-size:20px;
+    line-height:1.8;
+    color:#ddd;
 }
 </style>
 </head>
@@ -54,15 +73,17 @@ h2{
     <img src="logo.png" alt="Atelier Dante Time Logo">
     <h1>ATELIER DANTE TIME</h1>
     <div class="subtitle">Czech Watch Atelier</div>
-</div>    
-<div class="section">
-<h2>About</h2>
-<p>
-Atelier Dante Time is an independent watch atelier focused on restoration 
-and custom assembly of mechanical timepieces.
-</p>
 </div>
+
+<section>
+    <h2>About</h2>
+    <p>
+        Atelier Dante Time is an independent watch atelier focused on the
+        restoration and custom assembly of mechanical timepieces.
+        Each piece reflects precision craftsmanship, heritage,
+        and timeless elegance.
+    </p>
+</section>
 
 </body>
 </html>
-Improve luxury styling
