@@ -1,14 +1,15 @@
 
-
 <!doctype html>
 <html lang="cs">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Atelier Dante Time</title>
-<link rel="icon" href="logo.png">
+<meta name="description" content="Atelier Dante Time — Czech watch atelier focused on restoration and custom assembly of mechanical timepieces." />
+<link rel="icon" href="logo.png" />
 
 <style>
+/* --- původní styl zůstává --- */
 :root{
 --bg:#070707;
 --panel:#0d0d0d;
@@ -20,91 +21,49 @@
 --max:1100px;
 }
 *{box-sizing:border-box}
-body{
-margin:0;
-font-family:system-ui,-apple-system,Segoe UI,Roboto;
-background:var(--bg);
-color:var(--text);
-}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto;background:var(--bg);color:var(--text)}
 .wrap{max-width:var(--max);margin:auto;padding:0 20px}
-header{
-border-bottom:1px solid var(--line);
-padding:14px 0;
-display:flex;
-justify-content:space-between;
-align-items:center;
-}
-.lang-switch{
-display:flex;
-gap:8px;
-}
-.lang-btn{
-padding:6px 10px;
-border:1px solid var(--line);
-border-radius:8px;
-cursor:pointer;
-font-size:13px;
-color:var(--muted);
-}
-.lang-btn.active{
-border-color:var(--gold);
-color:white;
-}
-.hero{
-text-align:center;
-padding:80px 0 40px;
-}
-.hero img{
-width:80px;
-margin-bottom:20px;
-}
-h1{
-font-family:Georgia,serif;
-letter-spacing:.15em;
-font-size:clamp(32px,5vw,70px);
-margin:0;
-}
-.subtitle{
-color:var(--gold);
-margin-top:14px;
-letter-spacing:.1em;
-}
-.section{
-padding:40px 0;
-border-top:1px solid var(--line);
-}
-.card{
-background:var(--panel);
-padding:24px;
-border-radius:var(--radius);
-}
-footer{
-border-top:1px solid var(--line);
-padding:20px 0;
-text-align:center;
-color:var(--muted);
-font-size:13px;
-margin-top:40px;
-}
-a{color:var(--gold);text-decoration:none}
+header{border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+.links{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.chip{padding:8px 12px;border:1px solid var(--line);border-radius:999px;font-size:13px;color:var(--muted);cursor:pointer}
+.chip:hover{border-color:var(--gold);color:white}
+.lang-btn{border:1px solid var(--line);padding:6px 10px;border-radius:8px;font-size:12px;cursor:pointer}
+.lang-btn.active{border-color:var(--gold);color:white}
+.hero{text-align:center;padding:70px 0 40px}
+.hero-logo{width:78px;margin-bottom:18px}
+h1{font-family:Georgia,serif;letter-spacing:.14em;text-transform:uppercase;font-size:clamp(32px,5vw,68px);margin:0}
+.subtitle{margin-top:14px;color:var(--gold)}
+.section{padding:40px 0}
+.card{background:var(--panel);padding:22px;border-radius:var(--radius)}
+footer{border-top:1px solid var(--line);padding:20px 0;margin-top:40px;text-align:center;color:var(--muted)}
+a{color:inherit;text-decoration:none}
 </style>
 </head>
 
 <body>
 
-<header class="wrap">
+<header>
+<div class="wrap nav">
 <div><strong>Atelier Dante Time</strong></div>
 
-<div class="lang-switch">
+<div class="links">
+<span class="chip" data-cs="O mně" data-en="About">O mně</span>
+<span class="chip" data-cs="Služby" data-en="Services">Služby</span>
+<span class="chip" data-cs="Kontakt" data-en="Contact">Kontakt</span>
+
 <div class="lang-btn active" onclick="setLang('cs')" id="btn-cs">CZ</div>
 <div class="lang-btn" onclick="setLang('en')" id="btn-en">EN</div>
+</div>
 </div>
 </header>
 
 <section class="hero wrap">
-<img src="logo.png" alt="logo">
+<img class="hero-logo" src="logo.png">
 <h1>ATELIER DANTE TIME</h1>
-<div class="subtitle" data-cs="Český hodinářský ateliér" data-en="Czech Watch Atelier">
+<div class="subtitle"
+data-cs="Český hodinářský ateliér"
+data-en="Czech Watch Atelier">
 Český hodinářský ateliér
 </div>
 </section>
@@ -112,7 +71,8 @@ a{color:var(--gold);text-decoration:none}
 <section class="section wrap">
 <div class="card">
 <h2 data-cs="O mně" data-en="About">O mně</h2>
-<p data-cs="Atelier Dante Time je nezávislý hodinářský ateliér zaměřený na servis, renovace a zakázkové sestavy mechanických hodinek."
+<p
+data-cs="Atelier Dante Time je nezávislý hodinářský ateliér zaměřený na servis, renovace a zakázkové sestavy mechanických hodinek."
 data-en="Atelier Dante Time is an independent watch atelier focused on restoration, servicing and custom mechanical builds.">
 Atelier Dante Time je nezávislý hodinářský ateliér zaměřený na servis, renovace a zakázkové sestavy mechanických hodinek.
 </p>
@@ -140,31 +100,32 @@ Zakázková výroba limitovaných kusů
 <div class="card">
 <h2 data-cs="Kontakt" data-en="Contact">Kontakt</h2>
 <p>Email: <a href="mailto:dante.time.atelier@gmail.com">dante.time.atelier@gmail.com</a></p>
-<p>
-<a href="https://www.instagram.com/dantetimeatelier" target="_blank">Instagram</a> |
-<a href="https://www.tiktok.com/@patrickhug58" target="_blank">TikTok</a>
-</p>
 </div>
 </section>
 
 <footer>
-© <span id="year"></span> Atelier Dante Time
+© <span id="y"></span> Atelier Dante Time
 </footer>
 
 <script>
-document.getElementById("year").textContent = new Date().getFullYear();
+document.getElementById("y").textContent=new Date().getFullYear();
 
 function setLang(lang){
-document.documentElement.lang = lang;
+document.documentElement.lang=lang;
+localStorage.setItem("lang",lang);
 
 document.querySelectorAll("[data-cs]").forEach(el=>{
-el.textContent = el.getAttribute("data-" + lang);
+el.textContent=el.getAttribute("data-"+lang);
 });
 
 document.getElementById("btn-cs").classList.remove("active");
 document.getElementById("btn-en").classList.remove("active");
+document.getElementById("btn-"+lang).classList.add("active");
+}
 
-document.getElementById("btn-" + lang).classList.add("active");
+window.onload=function(){
+const saved=localStorage.getItem("lang");
+if(saved){setLang(saved);}
 }
 </script>
 
