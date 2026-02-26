@@ -1,82 +1,92 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Atelier Dante Time</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atelier Dante Time</title>
 
-  <style>
-    body{
-      margin:0;
-      font-family: Georgia, serif;
-      background:#000;
-      color:#fff;
-      text-align:center;
-    }
+<style>
+body{
+    margin:0;
+    font-family: Georgia, serif;
+    background:#000;
+    color:#fff;
+    text-align:center;
+}
 
-    .hero{
-      min-height:100vh;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      padding:40px 20px;
-    }
+/* HERO SECTION */
 
-    .hero img{
-      width:140px;
-      height:auto;
-      margin-bottom:50px;
-      filter: drop-shadow(0 0 40px rgba(212,175,55,0.22));
-    }
+.hero{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    padding:40px 20px;
+}
 
-    h1{
-      font-size: clamp(42px, 6.5vw, 88px);
-      letter-spacing: 8px;
-      font-weight: 500;
-      margin:0;
-    }
+.hero img{
+    width:140px;
+    height:auto;
+    margin-bottom:50px;
+    filter: drop-shadow(0 0 40px rgba(212,175,55,0.25));
+}
 
-    .subtitle{
-      color:#d4af37;
-      font-size: clamp(14px, 2vw, 22px);
-      margin-top:22px;
-      letter-spacing: 3px;
-    }
+h1{
+    font-size: clamp(42px, 6.5vw, 88px);
+    letter-spacing:8px;
+    font-weight:500;
+    margin:0;
+    color:#f2f2f2;
+    text-shadow: 0 0 18px rgba(255,255,255,0.15);
+}
 
-    section{
-      padding:120px 20px;
-      background:#050505;
-    }
+.subtitle{
+    color:#d4af37;
+    font-size: clamp(14px, 2vw, 22px);
+    margin-top:22px;
+    letter-spacing:3px;
+}
 
-    h2{
-      font-size: clamp(28px, 4vw, 42px);
-      letter-spacing:4px;
-      margin:0 0 30px;
-    }
+/* ABOUT SECTION */
 
-    p{
-      max-width:900px;
-      margin:0 auto;
-      font-size: clamp(16px, 2.2vw, 20px);
-      line-height:1.8;
-      color:#cfcfcf;
-    }
-  </style>
+section{
+    padding:120px 20px;
+    background:#050505;
+}
+
+h2{
+    font-size: clamp(28px, 4vw, 42px);
+    letter-spacing:4px;
+    margin-bottom:30px;
+}
+
+p{
+    max-width:900px;
+    margin:0 auto;
+    font-size: clamp(16px, 2.2vw, 20px);
+    line-height:1.8;
+    color:#cfcfcf;
+}
+</style>
 </head>
 
 <body>
-  <div class="hero">
-    <img src="logo.png" alt="Atelier Dante Time Logo" />
+
+<div class="hero">
+    <img src="logo.png" alt="Atelier Dante Time Logo">
     <h1>ATELIER DANTE TIME</h1>
     <div class="subtitle">Czech Watch Atelier</div>
-  </div>
+</div>
 
-  <section id="about">
+<section id="about">
     <h2>About</h2>
     <p>
-      Atelier Dante Time is an independent watch atelier focused on restoration and custom assembly of mechanical timepieces.
+        Atelier Dante Time is an independent watch atelier focused on the restoration 
+        and custom assembly of mechanical timepieces.  
+        Each creation reflects precision craftsmanship, heritage, and timeless elegance.
     </p>
-  </section>
+</section>
+
 </body>
 </html>
