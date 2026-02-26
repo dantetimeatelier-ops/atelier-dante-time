@@ -1,384 +1,1067 @@
 
-
-<!doctype html>
-<html lang="cs">
+<!DOCTYPE html>
+<html lang="cs" data-lang="cs">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Atelier Dante Time</title>
-  <meta name="description" content="Atelier Dante Time — Czech watch atelier focused on restoration and custom assembly of mechanical timepieces." />
-
-  <!-- Optional: pokud máš favicon (třeba logo.png), můžeš ponechat -->
-  <link rel="icon" href="logo.png" />
+  <meta name="description" content="Atelier Dante Time – Czech watch atelier focused on restoration and custom assembly of mechanical timepieces." />
 
   <style>
     :root{
-      --bg:#070707;
-      --panel:#0d0d0d;
+      --bg:#000;
+      --panel:#0b0b0b;
+      --panel2:#101010;
+      --gold:#c7a24b;
+      --gold2:#e3c06b;
       --text:#f2f2f2;
-      --muted:#b9b9b9;
-      --gold:#c8a24a;
-      --gold2:#a8842d;
-      --line:rgba(255,255,255,.10);
-      --shadow:0 18px 50px rgba(0,0,0,.55);
+      --muted:rgba(255,255,255,0.68);
+      --muted2:rgba(255,255,255,0.45);
+      --line:rgba(255,255,255,0.10);
+      --shadow: 0 18px 60px rgba(0,0,0,0.7);
       --radius:18px;
       --max:1100px;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      color:var(--text);
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 55%),
-        radial-gradient(1200px 700px at 50% -120px, rgba(200,162,74,.12), rgba(0,0,0,0) 60%),
-        var(--bg);
-      overflow-x:hidden;
-    }
-    a{color:inherit; text-decoration:none}
-    a:hover{opacity:.9}
 
-    /* Layout */
-    .wrap{max-width:var(--max); margin:0 auto; padding:0 20px}
-    header{
-      position:sticky; top:0; z-index:20;
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; padding:0; height:100%; background:var(--bg); color:var(--text); }
+    body{
+      font-family: Georgia, "Times New Roman", serif;
+      overflow-x:hidden;
+      background:
+        radial-gradient(1200px 600px at 50% -220px, rgba(255,255,255,0.08), transparent 70%),
+        radial-gradient(900px 500px at 80% 20%, rgba(199,162,75,0.06), transparent 70%),
+        linear-gradient(#000,#000);
+    }
+
+    /* lux vignette + jemné "grain" */
+    body::after{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at center, transparent 35%, rgba(0,0,0,0.72) 100%);
+      mix-blend-mode:multiply;
+      z-index:0;
+    }
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:0.06;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+      z-index:0;
+    }
+
+    a{ color:inherit; text-decoration:none; }
+    button{ font-family:inherit; }
+
+    .wrap{ position:relative; z-index:1; }
+
+    /* NAV */
+    .nav{
+      position:sticky;
+      top:0;
+      z-index:10;
       backdrop-filter: blur(10px);
-      background:rgba(7,7,7,.65);
+      background: rgba(0,0,0,0.45);
       border-bottom:1px solid var(--line);
     }
-    .nav{
-      display:flex; align-items:center; justify-content:space-between;
-      padding:14px 0;
-      gap:12px;
+    .nav-inner{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:12px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
     }
     .brand{
-      display:flex; align-items:center; gap:10px;
-      min-width: 180px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:210px;
     }
     .brand img{
-      width:28px; height:28px; object-fit:contain;
-      filter: drop-shadow(0 10px 30px rgba(0,0,0,.6));
+      width:34px; height:34px;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,0.7));
     }
-    .brand strong{letter-spacing:.08em; font-weight:700; font-size:12px; text-transform:uppercase; color:var(--muted)}
-    .links{display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
-    .chip{
-      padding:8px 12px;
-      border:1px solid var(--line);
-      border-radius:999px;
-      color:var(--muted);
+    .brand .name{
+      font-weight:700;
+      letter-spacing:1px;
+      text-transform:uppercase;
       font-size:13px;
-      transition:.2s ease;
-      background:rgba(255,255,255,.02);
+      color:rgba(255,255,255,0.92);
+      line-height:1.1;
     }
-    .chip:hover{border-color:rgba(200,162,74,.45); color:var(--text)}
-    .chip.gold{border-color:rgba(200,162,74,.45); color:var(--text)}
+    .brand .tag{
+      font-size:12px;
+      color:var(--muted2);
+      line-height:1.1;
+    }
 
-    /* Hero */
+    .nav-links{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+    .nav-links a{
+      font-size:13px;
+      color:rgba(255,255,255,0.78);
+      letter-spacing:0.6px;
+      padding:8px 10px;
+      border-radius:12px;
+      transition:0.25s ease;
+    }
+    .nav-links a:hover{
+      background:rgba(255,255,255,0.06);
+      color:#fff;
+    }
+
+    .nav-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:210px;
+      justify-content:flex-end;
+    }
+
+    .btn{
+      border:1px solid rgba(199,162,75,0.45);
+      background: linear-gradient(180deg, rgba(199,162,75,0.20), rgba(199,162,75,0.08));
+      color:#fff;
+      padding:9px 12px;
+      border-radius:14px;
+      font-size:13px;
+      letter-spacing:0.6px;
+      cursor:pointer;
+      transition:0.25s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      white-space:nowrap;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(227,192,107,0.75);
+      background: linear-gradient(180deg, rgba(227,192,107,0.22), rgba(199,162,75,0.10));
+    }
+    .btn-ghost{
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.04);
+    }
+    .btn-ghost:hover{
+      border-color: rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .hamburger{
+      display:none;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.04);
+      padding:9px 10px;
+      border-radius:14px;
+      cursor:pointer;
+    }
+
+    /* HERO */
     .hero{
-      padding:70px 0 40px;
+      max-width:var(--max);
+      margin:0 auto;
+      padding:70px 18px 40px;
       text-align:center;
     }
     .hero-logo{
-      width:78px; height:78px;
-      margin:0 auto 18px;
+      width:92px;
+      margin: 0 auto 18px;
       display:block;
-      object-fit:contain;
-      filter: drop-shadow(0 18px 40px rgba(0,0,0,.75));
+      filter: drop-shadow(0 18px 40px rgba(0,0,0,0.75));
+      transition:0.35s ease;
     }
+    .hero-logo:hover{ transform: scale(1.05); }
+
     h1{
       margin:0;
-      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
-      letter-spacing:.14em;
+      font-size:clamp(34px,4.2vw,72px);
+      letter-spacing:clamp(2px,0.85vw,11px);
       text-transform:uppercase;
-
-      /* celé přes šířku, ale responzivně */
-      font-size:clamp(32px, 5vw, 68px);
       line-height:1.05;
-      text-shadow: 0 14px 35px rgba(0,0,0,.65);
+      text-shadow:0 18px 55px rgba(0,0,0,0.7);
     }
+
     .subtitle{
-      margin:14px auto 0;
+      margin-top:16px;
+      font-size:clamp(14px,1.6vw,18px);
       color:var(--gold);
-      font-weight:600;
-      letter-spacing:.08em;
-      font-size:clamp(12px, 1.4vw, 16px);
-      text-transform:uppercase;
+      letter-spacing:1px;
     }
-    .subline{
-      width:min(220px, 60vw);
+    .gold-line{
+      width:min(320px,70%);
       height:1px;
       margin:18px auto 0;
-      background:linear-gradient(90deg, rgba(200,162,74,0), rgba(200,162,74,.9), rgba(200,162,74,0));
-      opacity:.75;
+      background:linear-gradient(90deg,transparent,var(--gold),transparent);
+      opacity:0.9;
     }
 
-    /* Sections */
-    .section{
-      padding:34px 0;
+    .hero-cta{
+      margin-top:26px;
+      display:flex;
+      justify-content:center;
+      gap:12px;
+      flex-wrap:wrap;
     }
+
+    /* SECTIONS */
+    section{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:42px 18px;
+    }
+    .section-title{
+      text-align:center;
+      margin-bottom:22px;
+    }
+    .section-title h2{
+      margin:0;
+      font-size:clamp(24px,2.6vw,36px);
+      letter-spacing:1px;
+    }
+    .section-title p{
+      margin:10px auto 0;
+      max-width:760px;
+      color:var(--muted);
+      line-height:1.7;
+      font-size:clamp(14px,1.5vw,17px);
+    }
+
     .grid{
       display:grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap:18px;
-      align-items:stretch;
-    }
-    @media (max-width: 880px){
-      .grid{grid-template-columns:1fr}
-      .brand strong{display:none}
-      .hero{padding:52px 0 28px}
+      grid-template-columns: repeat(12, 1fr);
+      gap:14px;
     }
     .card{
-      background:rgba(255,255,255,.02);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:22px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius: var(--radius);
+      padding:18px;
+      box-shadow: var(--shadow);
     }
-    .card h2{
-      margin:0 0 10px 0;
-      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
-      font-size:26px;
-      letter-spacing:.05em;
+    .card h3{
+      margin:0 0 10px;
+      font-size:18px;
+      letter-spacing:0.5px;
     }
     .card p{
       margin:0;
       color:var(--muted);
-      font-size:16px;
       line-height:1.7;
-    }
-    .list{
-      margin:14px 0 0;
-      padding:0;
-      list-style:none;
-      display:grid;
-      gap:10px;
-      color:var(--muted);
       font-size:15px;
     }
-    .list li{
-      padding-left:14px;
-      position:relative;
-    }
-    .list li:before{
-      content:"";
-      width:6px; height:6px; border-radius:999px;
-      background:rgba(200,162,74,.85);
-      position:absolute; left:0; top:.6em;
-      box-shadow:0 0 0 4px rgba(200,162,74,.12);
+    .badge{
+      display:inline-block;
+      font-size:12px;
+      letter-spacing:0.6px;
+      color:rgba(255,255,255,0.78);
+      border:1px solid rgba(199,162,75,0.35);
+      background: rgba(199,162,75,0.10);
+      padding:6px 10px;
+      border-radius:999px;
+      margin-bottom:12px;
     }
 
-    /* Contact */
-    .contact{
-      display:grid; gap:10px;
+    /* ABOUT layout */
+    .about-left{ grid-column: span 7; }
+    .about-right{ grid-column: span 5; }
+
+    .list{
+      margin:10px 0 0;
+      padding:0 0 0 18px;
+      color:var(--muted);
+      line-height:1.8;
+    }
+    .list li{ margin:6px 0; }
+
+    /* SERVICES */
+    .service{ grid-column: span 4; }
+    .service .price{
       margin-top:12px;
-    }
-    .row{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:12px;
-      padding:12px 14px;
-      border:1px solid var(--line);
-      border-radius:14px;
-      background:rgba(0,0,0,.22);
-    }
-    .row b{color:var(--text)}
-    .row small{color:var(--muted)}
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid rgba(200,162,74,.45);
-      background:linear-gradient(180deg, rgba(200,162,74,.18), rgba(200,162,74,.04));
-      color:var(--text);
+      color:var(--gold);
       font-size:13px;
-      gap:8px;
-      white-space:nowrap;
-    }
-    .btn:hover{border-color:rgba(200,162,74,.75)}
-    .btn.ghost{
-      border-color:var(--line);
-      background:rgba(255,255,255,.02);
-      color:var(--muted);
+      letter-spacing:0.6px;
     }
 
-    /* Gallery (zatím skryto) */
-    .gallery{display:none;}
-    .gallery-grid{
-      display:grid;
-      grid-template-columns:repeat(3, 1fr);
-      gap:12px;
-      margin-top:14px;
-    }
+    /* GALLERY */
+    .gallery-item{ grid-column: span 4; padding:0; overflow:hidden; }
     .ph{
-      aspect-ratio: 4/3;
-      border-radius:16px;
-      border:1px solid var(--line);
-      background:linear-gradient(135deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color:rgba(255,255,255,.25);
-      font-size:13px;
+      height:210px;
+      background:
+        radial-gradient(900px 300px at 30% 10%, rgba(199,162,75,0.14), transparent 65%),
+        linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border-bottom:1px solid rgba(255,255,255,0.10);
     }
-    @media (max-width: 820px){
-      .gallery-grid{grid-template-columns:1fr}
+    .gallery-item .caption{
+      padding:14px 16px 16px;
+    }
+    .caption .t{ font-weight:700; letter-spacing:0.5px; }
+    .caption .d{ margin-top:6px; color:var(--muted); font-size:14px; line-height:1.6; }
+
+    /* PROCESS */
+    .step{ grid-column: span 3; }
+    .step .num{
+      width:36px;height:36px;border-radius:12px;
+      display:flex;align-items:center;justify-content:center;
+      border:1px solid rgba(199,162,75,0.45);
+      background: rgba(199,162,75,0.10);
+      color:var(--gold2);
+      font-weight:700;
+      margin-bottom:10px;
     }
 
-    footer{
-      padding:28px 0 34px;
-      border-top:1px solid var(--line);
-      margin-top:32px;
+    /* FAQ */
+    details{
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.03);
+      border-radius:16px;
+      padding:12px 14px;
+    }
+    details + details{ margin-top:10px; }
+    summary{
+      cursor:pointer;
+      list-style:none;
+      font-weight:700;
+      letter-spacing:0.4px;
+    }
+    summary::-webkit-details-marker{ display:none; }
+    details p{
+      margin:10px 0 0;
       color:var(--muted);
+      line-height:1.7;
+      font-size:15px;
+    }
+
+    /* CONTACT */
+    .contact-left{ grid-column: span 7; }
+    .contact-right{ grid-column: span 5; }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin-bottom:12px;
+    }
+    .field label{
+      font-size:13px;
+      color:rgba(255,255,255,0.75);
+      letter-spacing:0.5px;
+    }
+    .field input, .field textarea{
+      background: rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.12);
+      color:#fff;
+      padding:12px 12px;
+      border-radius:14px;
+      outline:none;
+      font-size:15px;
+    }
+    .field input:focus, .field textarea:focus{
+      border-color: rgba(199,162,75,0.55);
+      box-shadow: 0 0 0 4px rgba(199,162,75,0.10);
+    }
+    textarea{ min-height:130px; resize:vertical; }
+
+    .contact-box{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      color:var(--muted);
+      line-height:1.7;
+      font-size:15px;
+    }
+    .contact-box b{ color:#fff; }
+
+    /* FOOTER */
+    footer{
+      border-top:1px solid var(--line);
+      padding:28px 18px 36px;
+      color:var(--muted2);
+      text-align:center;
       font-size:13px;
     }
-    .footer-inner{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:14px; flex-wrap:wrap;
+
+    /* MOBILE */
+    @media (max-width: 980px){
+      .about-left, .about-right,
+      .contact-left, .contact-right{ grid-column: span 12; }
+
+      .service{ grid-column: span 6; }
+      .gallery-item{ grid-column: span 6; }
+      .step{ grid-column: span 6; }
+
+      .nav-links{ display:none; }
+      .hamburger{ display:inline-flex; }
+      .nav-actions{ min-width:auto; }
+      .brand{ min-width:auto; }
     }
-    .footer-links{display:flex; gap:12px; flex-wrap:wrap}
-    .footer-links a{color:var(--muted); border-bottom:1px solid transparent}
-    .footer-links a:hover{color:var(--text); border-bottom-color:rgba(200,162,74,.5)}
+    @media (max-width: 560px){
+      .service{ grid-column: span 12; }
+      .gallery-item{ grid-column: span 12; }
+      .step{ grid-column: span 12; }
+      .hero{ padding-top:58px; }
+    }
+
+    /* SIMPLE fade in */
+    .fade{
+      opacity:0;
+      transform: translateY(10px);
+      animation: fadeIn 0.9s ease forwards;
+    }
+    .fade.d2{ animation-delay:0.10s;}
+    .fade.d3{ animation-delay:0.18s;}
+    .fade.d4{ animation-delay:0.26s;}
+    @keyframes fadeIn{ to{ opacity:1; transform: translateY(0);} }
+
+    /* Mobile menu */
+    .mobile-menu{
+      display:none;
+      border-top:1px solid var(--line);
+      padding:10px 18px 14px;
+      background: rgba(0,0,0,0.55);
+    }
+    .mobile-menu a{
+      display:block;
+      padding:10px 10px;
+      border-radius:12px;
+      color:rgba(255,255,255,0.82);
+      letter-spacing:0.5px;
+    }
+    .mobile-menu a:hover{ background: rgba(255,255,255,0.06); }
+    .mobile-menu.show{ display:block; }
+
+    /* small helper */
+    .tiny{
+      font-size:12px;
+      color:var(--muted2);
+      margin-top:10px;
+      line-height:1.6;
+    }
   </style>
 </head>
 
 <body>
-  <header>
-    <div class="wrap">
-      <div class="nav">
-        <div class="brand">
-          <img src="logo.png" alt="Atelier Dante Time logo" />
-          <strong>Atelier Dante Time</strong>
+  <div class="wrap">
+
+    <!-- NAV -->
+    <div class="nav">
+      <div class="nav-inner">
+        <a class="brand" href="#top">
+          <img src="logo.png" alt="DT logo">
+          <div>
+            <div class="name" data-i18n="brandName">Atelier Dante Time</div>
+            <div class="tag" data-i18n="brandTag">Czech Watch Atelier</div>
+          </div>
+        </a>
+
+        <div class="nav-links">
+          <a href="#about" data-i18n="navAbout">About</a>
+          <a href="#services" data-i18n="navServices">Services</a>
+          <a href="#gallery" data-i18n="navGallery">Gallery</a>
+          <a href="#process" data-i18n="navProcess">Process</a>
+          <a href="#faq" data-i18n="navFaq">FAQ</a>
+          <a href="#contact" data-i18n="navContact">Contact</a>
         </div>
-        <div class="links">
-          <a class="chip" href="#about">About</a>
-          <a class="chip" href="#services">Services</a>
-          <a class="chip" href="#contact">Contact</a>
-          <a class="chip gold" href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr" target="_blank" rel="noopener">Instagram</a>
-          <a class="chip gold" href="https://www.tiktok.com/@patrickhug58?_r=1&_t=ZN-94EPWxDtCNS" target="_blank" rel="noopener">TikTok</a>
+
+        <div class="nav-actions">
+          <button class="btn btn-ghost" id="langBtn">CZ / EN</button>
+          <button class="hamburger" id="menuBtn">☰</button>
+          <a class="btn" href="#contact" data-i18n="navCta">Request service</a>
         </div>
+      </div>
+
+      <div class="mobile-menu" id="mobileMenu">
+        <a href="#about" data-i18n="navAbout">About</a>
+        <a href="#services" data-i18n="navServices">Services</a>
+        <a href="#gallery" data-i18n="navGallery">Gallery</a>
+        <a href="#process" data-i18n="navProcess">Process</a>
+        <a href="#faq" data-i18n="navFaq">FAQ</a>
+        <a href="#contact" data-i18n="navContact">Contact</a>
       </div>
     </div>
-  </header>
 
-  <main>
-    <section class="hero">
-      <div class="wrap">
-        <img class="hero-logo" src="logo.png" alt="DT logo" />
-        <h1>ATELIER DANTE TIME</h1>
-        <div class="subtitle">Czech Watch Atelier</div>
-        <div class="subline"></div>
+    <!-- HERO -->
+    <div class="hero" id="top">
+      <img class="hero-logo fade" src="logo.png" alt="Atelier Dante Time logo">
+      <h1 class="fade d2" data-i18n="heroTitle">ATELIER DANTE TIME</h1>
+      <div class="subtitle fade d3" data-i18n="heroSubtitle">Czech Watch Atelier</div>
+      <div class="gold-line fade d4"></div>
+
+      <div class="hero-cta">
+        <a class="btn" href="#services" data-i18n="heroBtn1">View services</a>
+        <a class="btn btn-ghost" href="#contact" data-i18n="heroBtn2">Contact</a>
       </div>
-    </section>
+    </div>
 
-    <section id="about" class="section">
-      <div class="wrap">
-        <div class="grid">
-          <div class="card">
-            <h2>About</h2>
-            <p>
-              Atelier Dante Time is an independent watch atelier focused on restoration, servicing,
-              and custom assembly of mechanical timepieces — with respect for craftsmanship and detail.
-            </p>
-          </div>
-
-          <div class="card">
-            <h2>Quick info</h2>
-            <ul class="list">
-              <li>Mechanical watches & vintage restorations</li>
-              <li>Cleaning, lubrication, regulation</li>
-              <li>Custom builds (limited pieces)</li>
-              <li>Finishing & presentation details</li>
-            </ul>
-          </div>
-        </div>
+    <!-- ABOUT -->
+    <section id="about">
+      <div class="section-title">
+        <h2 data-i18n="aboutTitle">About</h2>
+        <p data-i18n="aboutText">
+          Atelier Dante Time is an independent watch atelier focused on restoration and custom assembly of mechanical timepieces.
+          We respect heritage, craftsmanship and detail — creating timeless luxury pieces.
+        </p>
       </div>
-    </section>
 
-    <section id="services" class="section">
-      <div class="wrap">
-        <div class="card">
-          <h2>Services</h2>
-          <p>
-            Servis a renovace mechanických hodinek, citlivá práce s vintage díly a zakázkové sestavy.
-            (Galerii doplníme, až budeš mít fotky.)
+      <div class="grid">
+        <div class="card about-left">
+          <div class="badge" data-i18n="aboutBadge">Craft • Heritage • Precision</div>
+          <h3 data-i18n="aboutH3">What we do</h3>
+          <p data-i18n="aboutP1">
+            We restore vintage mechanical watches, service movements and create custom builds with a focus on long-term reliability
+            and premium presentation.
           </p>
-
-          <!-- Galerie je připravená. Až budeš mít fotky, smaž "display:none" u .gallery
-               a místo placeholderů dej <img src="..." /> -->
-          <!--
-          <div class="gallery">
-            <div class="gallery-grid">
-              <div class="ph">Photo 1</div>
-              <div class="ph">Photo 2</div>
-              <div class="ph">Photo 3</div>
-            </div>
+          <ul class="list">
+            <li data-i18n="aboutLi1">Complete disassembly, cleaning, lubrication, regulation</li>
+            <li data-i18n="aboutLi2">Dial / hands preservation and careful refurbishment</li>
+            <li data-i18n="aboutLi3">Crystal upgrades (including sapphire where applicable)</li>
+            <li data-i18n="aboutLi4">Custom builds and boutique presentation</li>
+          </ul>
+          <div class="tiny" data-i18n="aboutTiny">
+            Typical turnaround: 2–3 weeks (depending on parts availability and condition).
           </div>
-          -->
+        </div>
+
+        <div class="card about-right">
+          <div class="badge" data-i18n="valuesBadge">Values</div>
+          <h3 data-i18n="valuesH3">Our standards</h3>
+          <p data-i18n="valuesP1">
+            Every piece is treated as a collector’s object. The goal is not only beauty, but also stable performance and honest workmanship.
+          </p>
+          <ul class="list">
+            <li data-i18n="valuesLi1">Transparent approach</li>
+            <li data-i18n="valuesLi2">Respect for originality</li>
+            <li data-i18n="valuesLi3">Quality control & testing</li>
+            <li data-i18n="valuesLi4">Premium packaging & documentation</li>
+          </ul>
         </div>
       </div>
     </section>
 
-    <section id="contact" class="section">
-      <div class="wrap">
-        <div class="grid">
-          <div class="card">
-            <h2>Contact</h2>
-            <p>Napiš mi e-mail nebo zprávu na Instagram/TikTok.</p>
+    <!-- SERVICES -->
+    <section id="services">
+      <div class="section-title">
+        <h2 data-i18n="servicesTitle">Services</h2>
+        <p data-i18n="servicesText">
+          Choose a service category. Final price depends on the model, condition and parts availability.
+        </p>
+      </div>
 
-            <div class="contact">
-              <div class="row">
-                <div>
-                  <b>Email</b><br />
-                  <small>dante.time.atelier@gmail.com</small>
-                </div>
-                <a class="btn" href="mailto:dante.time.atelier@gmail.com">Napsat e-mail</a>
-              </div>
+      <div class="grid">
+        <div class="card service">
+          <div class="badge" data-i18n="srvBadge1">Service</div>
+          <h3 data-i18n="srvH31">Complete mechanical service</h3>
+          <p data-i18n="srvP1">Disassembly, ultrasonic cleaning, lubrication, regulation and functional testing.</p>
+          <div class="price" data-i18n="srvPrice1">From 2 800 CZK</div>
+        </div>
 
-              <div class="row">
-                <div>
-                  <b>Instagram</b><br />
-                  <small>@dantetimeatelier</small>
-                </div>
-                <a class="btn ghost" href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr" target="_blank" rel="noopener">Otevřít</a>
-              </div>
+        <div class="card service">
+          <div class="badge" data-i18n="srvBadge2">Restoration</div>
+          <h3 data-i18n="srvH32">Vintage restoration</h3>
+          <p data-i18n="srvP2">Careful refurbishment with respect to original dial, hands and case.</p>
+          <div class="price" data-i18n="srvPrice2">Typically 7 000 – 14 000 CZK</div>
+        </div>
 
-              <div class="row">
-                <div>
-                  <b>TikTok</b><br />
-                  <small>@patrickhug58</small>
-                </div>
-                <a class="btn ghost" href="https://www.tiktok.com/@patrickhug58?_r=1&_t=ZN-94EPWxDtCNS" target="_blank" rel="noopener">Otevřít</a>
-              </div>
-            </div>
+        <div class="card service">
+          <div class="badge" data-i18n="srvBadge3">Custom</div>
+          <h3 data-i18n="srvH33">Custom build / boutique piece</h3>
+          <p data-i18n="srvP3">Unique build, premium presentation, optional crystal upgrades, tailored details.</p>
+          <div class="price" data-i18n="srvPrice3">Price on request</div>
+        </div>
+
+        <div class="card service">
+          <div class="badge" data-i18n="srvBadge4">Parts</div>
+          <h3 data-i18n="srvH34">Parts sourcing</h3>
+          <p data-i18n="srvP4">Help with sourcing original parts, bracelets/straps and accessories.</p>
+          <div class="price" data-i18n="srvPrice4">Depends on part</div>
+        </div>
+
+        <div class="card service">
+          <div class="badge" data-i18n="srvBadge5">Crystal</div>
+          <h3 data-i18n="srvH35">Crystal replacement / upgrades</h3>
+          <p data-i18n="srvP5">Mineral/acrylic replacement, optional sapphire upgrade when possible.</p>
+          <div class="price" data-i18n="srvPrice5">From 900 CZK</div>
+        </div>
+
+        <div class="card service">
+          <div class="badge" data-i18n="srvBadge6">Inspection</div>
+          <h3 data-i18n="srvH36">Condition check</h3>
+          <p data-i18n="srvP6">Basic diagnostics: timing, amplitude, beat error, visual inspection.</p>
+          <div class="price" data-i18n="srvPrice6">From 400 CZK</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GALLERY -->
+    <section id="gallery">
+      <div class="section-title">
+        <h2 data-i18n="galleryTitle">Gallery</h2>
+        <p data-i18n="galleryText">
+          Placeholders for now — you can later replace these with your real photos.
+        </p>
+      </div>
+
+      <div class="grid">
+        <div class="card gallery-item">
+          <div class="ph"></div>
+          <div class="caption">
+            <div class="t" data-i18n="g1t">Restoration detail</div>
+            <div class="d" data-i18n="g1d">Dial & hands preserved, movement serviced and regulated.</div>
           </div>
+        </div>
 
-          <div class="card">
-            <h2>Note</h2>
-            <p>
-              Pokud chceš, pošli do e-mailu fotky hodinek a krátký popis (stav, model, co potřebuješ).
-              Odpovím s návrhem postupu a orientační cenou.
-            </p>
+        <div class="card gallery-item">
+          <div class="ph"></div>
+          <div class="caption">
+            <div class="t" data-i18n="g2t">Workshop</div>
+            <div class="d" data-i18n="g2d">Precision tools and clean workflow for consistent results.</div>
+          </div>
+        </div>
+
+        <div class="card gallery-item">
+          <div class="ph"></div>
+          <div class="caption">
+            <div class="t" data-i18n="g3t">Boutique presentation</div>
+            <div class="d" data-i18n="g3d">Premium packaging & documentation for collectors.</div>
           </div>
         </div>
       </div>
     </section>
-  </main>
 
-  <footer>
-    <div class="wrap">
-      <div class="footer-inner">
-        <div>© <span id="y"></span> Atelier Dante Time</div>
-        <div class="footer-links">
-          <a href="terms.html">Podmínky</a>
-          <a href="reklamace.html">Reklamace</a>
-          <a href="privacy.html">Soukromí</a>
+    <!-- PROCESS -->
+    <section id="process">
+      <div class="section-title">
+        <h2 data-i18n="processTitle">Process</h2>
+        <p data-i18n="processText">
+          Clear steps, transparent communication and careful workmanship.
+        </p>
+      </div>
+
+      <div class="grid">
+        <div class="card step">
+          <div class="num">1</div>
+          <h3 data-i18n="p1t">Consultation</h3>
+          <p data-i18n="p1d">You send photos + model info. We propose options and estimate the scope.</p>
+        </div>
+        <div class="card step">
+          <div class="num">2</div>
+          <h3 data-i18n="p2t">Inspection</h3>
+          <p data-i18n="p2d">Diagnostics: timing, amplitude, key wear points, and parts availability.</p>
+        </div>
+        <div class="card step">
+          <div class="num">3</div>
+          <h3 data-i18n="p3t">Service / restoration</h3>
+          <p data-i18n="p3d">Disassembly, cleaning, lubrication, repair, regulation and testing.</p>
+        </div>
+        <div class="card step">
+          <div class="num">4</div>
+          <h3 data-i18n="p4t">Delivery</h3>
+          <p data-i18n="p4d">Final QC, photos, documentation and premium presentation.</p>
         </div>
       </div>
-    </div>
-  </footer>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+      <div class="section-title">
+        <h2 data-i18n="faqTitle">FAQ</h2>
+        <p data-i18n="faqText">Most common questions.</p>
+      </div>
+
+      <div class="card">
+        <details open>
+          <summary data-i18n="f1q">How long does service take?</summary>
+          <p data-i18n="f1a">Usually 2–3 weeks depending on parts availability and the watch condition.</p>
+        </details>
+
+        <details>
+          <summary data-i18n="f2q">Do you keep original dial and hands?</summary>
+          <p data-i18n="f2a">Yes. We prioritize originality and only recommend changes if it improves reliability or safety.</p>
+        </details>
+
+        <details>
+          <summary data-i18n="f3q">Can you upgrade to sapphire crystal?</summary>
+          <p data-i18n="f3a">In many cases yes, depending on the case construction and compatibility.</p>
+        </details>
+
+        <details>
+          <summary data-i18n="f4q">Do you source parts?</summary>
+          <p data-i18n="f4a">Yes. We can help source original parts when possible. Availability varies by brand/model.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact">
+      <div class="section-title">
+        <h2 data-i18n="contactTitle">Contact</h2>
+        <p data-i18n="contactText">
+          Send a request — include brand, model, photos and what you need (service / restoration / custom).
+        </p>
+      </div>
+
+      <div class="grid">
+        <div class="card contact-left">
+          <div class="badge" data-i18n="contactBadge">Request</div>
+
+          <!-- mailto (funguje bez backendu) -->
+          <form id="contactForm">
+            <div class="field">
+              <label for="name" data-i18n="cName">Name</label>
+              <input id="name" name="name" placeholder="Your name" required>
+            </div>
+
+            <div class="field">
+              <label for="email" data-i18n="cEmail">Email</label>
+              <input id="email" name="email" type="email" placeholder="your@email.com" required>
+            </div>
+
+            <div class="field">
+              <label for="message" data-i18n="cMsg">Message</label>
+              <textarea id="message" name="message" placeholder="Brand, model, condition, request..." required></textarea>
+            </div>
+
+            <button class="btn" type="submit" data-i18n="cSend">Send request</button>
+            <div class="tiny" data-i18n="cTiny">
+              Tip: attach photos via email after clicking send.
+            </div>
+          </form>
+        </div>
+
+        <div class="card contact-right">
+          <div class="badge" data-i18n="contactInfoBadge">Info</div>
+          <div class="contact-box">
+            <div><b data-i18n="ci1b">Atelier:</b> <span data-i18n="ci1">Atelier Dante Time</span></div>
+            <div><b data-i18n="ci2b">Country:</b> <span data-i18n="ci2">Czech Republic</span></div>
+            <div><b data-i18n="ci3b">Turnaround:</b> <span data-i18n="ci3">~2–3 weeks</span></div>
+            <div><b data-i18n="ci4b">Focus:</b> <span data-i18n="ci4">Restoration & boutique custom builds</span></div>
+            <div class="tiny" data-i18n="ciTiny">
+              You can also add Instagram/WhatsApp/Phone here later.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      © <span id="y"></span> Atelier Dante Time — <span data-i18n="foot">Independent watch atelier.</span>
+    </footer>
+
+  </div>
 
   <script>
+    // year
     document.getElementById("y").textContent = new Date().getFullYear();
+
+    // mobile menu
+    const menuBtn = document.getElementById("menuBtn");
+    const mobileMenu = document.getElementById("mobileMenu");
+    menuBtn?.addEventListener("click", () => {
+      mobileMenu.classList.toggle("show");
+    });
+    // close menu on click
+    mobileMenu?.querySelectorAll("a").forEach(a => a.addEventListener("click", () => mobileMenu.classList.remove("show")));
+
+    // smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(a=>{
+      a.addEventListener("click",(e)=>{
+        const id = a.getAttribute("href");
+        if(!id || id.length<2) return;
+        const el = document.querySelector(id);
+        if(!el) return;
+        e.preventDefault();
+        el.scrollIntoView({behavior:"smooth"});
+      });
+    });
+
+    // Contact form -> mailto (no backend)
+    const contactForm = document.getElementById("contactForm");
+    contactForm?.addEventListener("submit",(e)=>{
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const msg = document.getElementById("message").value.trim();
+
+      // TODO: sem si můžeš dát svůj email
+      const to = "your@email.com";
+      const subject = encodeURIComponent("Atelier Dante Time – Service request");
+      const body = encodeURIComponent(
+        `Name: ${name}\nEmail: ${email}\n\nMessage:\n${msg}\n`
+      );
+
+      window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+    });
+
+    // i18n basic (CZ/EN)
+    const dict = {
+      cs:{
+        brandName:"Atelier Dante Time",
+        brandTag:"Český hodinářský ateliér",
+        navAbout:"O nás",
+        navServices:"Služby",
+        navGallery:"Galerie",
+        navProcess:"Postup",
+        navFaq:"FAQ",
+        navContact:"Kontakt",
+        navCta:"Nezávazná poptávka",
+
+        heroTitle:"ATELIER DANTE TIME",
+        heroSubtitle:"Český hodinářský ateliér",
+        heroBtn1:"Zobrazit služby",
+        heroBtn2:"Kontakt",
+
+        aboutTitle:"O nás",
+        aboutText:"Atelier Dante Time je nezávislý hodinářský ateliér zaměřený na renovace a zakázkové sestavy mechanických hodinek. Respektujeme historii, řemeslo a detail — vytváříme nadčasové luxusní kusy.",
+        aboutBadge:"Řemeslo • Tradice • Preciznost",
+        aboutH3:"Co děláme",
+        aboutP1:"Renovujeme vintage mechanické hodinky, servisujeme strojky a tvoříme zakázkové kusy s důrazem na dlouhodobou spolehlivost a prémiovou prezentaci.",
+        aboutLi1:"Kompletní rozborka, čištění, mazání, seřízení",
+        aboutLi2:"Zachování ciferníku a ruček, citlivá renovace",
+        aboutLi3:"Výměna skla / upgrade (safír dle možnosti)",
+        aboutLi4:"Zakázkové kusy a boutique prezentace",
+        aboutTiny:"Obvyklá doba: 2–3 týdny (dle dostupnosti dílů a stavu).",
+
+        valuesBadge:"Hodnoty",
+        valuesH3:"Naše standardy",
+        valuesP1:"Každý kus bereme jako sběratelský objekt. Cílem není jen krása, ale i stabilní chod a poctivé provedení.",
+        valuesLi1:"Transparentní přístup",
+        valuesLi2:"Respekt k originalitě",
+        valuesLi3:"Kontrola kvality & testování",
+        valuesLi4:"Prémiová krabička & dokumentace",
+
+        servicesTitle:"Služby",
+        servicesText:"Vyberte kategorii. Finální cena závisí na modelu, stavu a dostupnosti dílů.",
+        srvBadge1:"Servis",
+        srvH31:"Kompletní mechanický servis",
+        srvP1:"Rozborka, ultrazvukové čištění, mazání, seřízení a testy.",
+        srvPrice1:"Od 2 800 Kč",
+
+        srvBadge2:"Renovace",
+        srvH32:"Renovace vintage hodinek",
+        srvP2:"Citlivá renovace se zachováním ciferníku, ruček a pouzdra.",
+        srvPrice2:"Typicky 7 000 – 14 000 Kč",
+
+        srvBadge3:"Zakázka",
+        srvH33:"Zakázkový kus / boutique build",
+        srvP3:"Unikátní sestava, prémiová prezentace, volitelné upgrady.",
+        srvPrice3:"Cena dle domluvy",
+
+        srvBadge4:"Díly",
+        srvH34:"Shánění dílů",
+        srvP4:"Pomoc se sháněním originálních dílů a příslušenství.",
+        srvPrice4:"Dle dílu",
+
+        srvBadge5:"Sklo",
+        srvH35:"Výměna skla / upgrade",
+        srvP5:"Výměna minerálu/akrylu, safír dle kompatibility.",
+        srvPrice5:"Od 900 Kč",
+
+        srvBadge6:"Kontrola",
+        srvH36:"Kontrola stavu",
+        srvP6:"Diagnostika: timegrapher, amplitude, beat error, vizuální kontrola.",
+        srvPrice6:"Od 400 Kč",
+
+        galleryTitle:"Galerie",
+        galleryText:"Zatím placeholdery — později je snadno nahradíme reálnými fotkami.",
+        g1t:"Detail renovace",
+        g1d:"Zachovaný ciferník a ručky, strojek po servisu a seřízení.",
+        g2t:"Dílna",
+        g2d:"Precizní nástroje a čistý proces pro stabilní výsledky.",
+        g3t:"Prémiová prezentace",
+        g3d:"Krabička a dokumentace pro sběratele.",
+
+        processTitle:"Postup",
+        processText:"Jasné kroky, transparentní komunikace a citlivá práce.",
+        p1t:"Konzultace",
+        p1d:"Pošlete fotky + info o modelu. Navrhneme možnosti a rozsah.",
+        p2t:"Diagnostika",
+        p2d:"Kontrola chodu, opotřebení a dostupnosti dílů.",
+        p3t:"Servis / renovace",
+        p3d:"Čištění, mazání, opravy, seřízení a testování.",
+        p4t:"Předání",
+        p4d:"Finální kontrola, fotky, dokumentace a prezentace.",
+
+        faqTitle:"FAQ",
+        faqText:"Nejčastější otázky.",
+        f1q:"Jak dlouho trvá servis?",
+        f1a:"Obvykle 2–3 týdny podle stavu a dostupnosti dílů.",
+        f2q:"Zachováváte původní ciferník a ručky?",
+        f2a:"Ano. Originalita je priorita, zásahy doporučíme jen když je to nutné.",
+        f3q:"Umíte dát safírové sklo?",
+        f3a:"Často ano – záleží na pouzdru a kompatibilitě.",
+        f4q:"Sháníte díly?",
+        f4a:"Ano. U některých modelů je dostupnost omezená.",
+
+        contactTitle:"Kontakt",
+        contactText:"Pošlete poptávku — uveďte značku, model, fotky a co potřebujete (servis / renovace / zakázka).",
+        contactBadge:"Poptávka",
+        cName:"Jméno",
+        cEmail:"Email",
+        cMsg:"Zpráva",
+        cSend:"Odeslat poptávku",
+        cTiny:"Tip: Po kliknutí na odeslat můžete přiložit fotky přímo v emailu.",
+
+        contactInfoBadge:"Informace",
+        ci1b:"Ateliér:",
+        ci1:"Atelier Dante Time",
+        ci2b:"Země:",
+        ci2:"Česká republika",
+        ci3b:"Doba:",
+        ci3:"~2–3 týdny",
+        ci4b:"Zaměření:",
+        ci4:"Renovace & boutique zakázky",
+        ciTiny:"Později sem doplníme Instagram / WhatsApp / telefon.",
+
+        foot:"Nezávislý hodinářský ateliér."
+      },
+      en:{
+        brandName:"Atelier Dante Time",
+        brandTag:"Czech Watch Atelier",
+        navAbout:"About",
+        navServices:"Services",
+        navGallery:"Gallery",
+        navProcess:"Process",
+        navFaq:"FAQ",
+        navContact:"Contact",
+        navCta:"Request service",
+
+        heroTitle:"ATELIER DANTE TIME",
+        heroSubtitle:"Czech Watch Atelier",
+        heroBtn1:"View services",
+        heroBtn2:"Contact",
+
+        aboutTitle:"About",
+        aboutText:"Atelier Dante Time is an independent watch atelier focused on restoration and custom assembly of mechanical timepieces. We respect heritage, craftsmanship and detail — creating timeless luxury pieces.",
+        aboutBadge:"Craft • Heritage • Precision",
+        aboutH3:"What we do",
+        aboutP1:"We restore vintage mechanical watches, service movements and create custom builds with a focus on long-term reliability and premium presentation.",
+        aboutLi1:"Complete disassembly, cleaning, lubrication, regulation",
+        aboutLi2:"Dial / hands preservation and careful refurbishment",
+        aboutLi3:"Crystal upgrades (including sapphire where applicable)",
+        aboutLi4:"Custom builds and boutique presentation",
+        aboutTiny:"Typical turnaround: 2–3 weeks (depending on parts availability and condition).",
+
+        valuesBadge:"Values",
+        valuesH3:"Our standards",
+        valuesP1:"Every piece is treated as a collector’s object. The goal is not only beauty, but also stable performance and honest workmanship.",
+        valuesLi1:"Transparent approach",
+        valuesLi2:"Respect for originality",
+        valuesLi3:"Quality control & testing",
+        valuesLi4:"Premium packaging & documentation",
+
+        servicesTitle:"Services",
+        servicesText:"Choose a service category. Final price depends on the model, condition and parts availability.",
+        srvBadge1:"Service",
+        srvH31:"Complete mechanical service",
+        srvP1:"Disassembly, ultrasonic cleaning, lubrication, regulation and testing.",
+        srvPrice1:"From 2 800 CZK",
+
+        srvBadge2:"Restoration",
+        srvH32:"Vintage restoration",
+        srvP2:"Careful refurbishment with respect to original dial, hands and case.",
+        srvPrice2:"Typically 7 000 – 14 000 CZK",
+
+        srvBadge3:"Custom",
+        srvH33:"Custom build / boutique piece",
+        srvP3:"Unique build, premium presentation, optional upgrades.",
+        srvPrice3:"Price on request",
+
+        srvBadge4:"Parts",
+        srvH34:"Parts sourcing",
+        srvP4:"Help sourcing original parts and accessories.",
+        srvPrice4:"Depends on part",
+
+        srvBadge5:"Crystal",
+        srvH35:"Crystal replacement / upgrades",
+        srvP5:"Mineral/acrylic replacement, sapphire upgrade when possible.",
+        srvPrice5:"From 900 CZK",
+
+        srvBadge6:"Inspection",
+        srvH36:"Condition check",
+        srvP6:"Diagnostics: timing, amplitude, beat error, inspection.",
+        srvPrice6:"From 400 CZK",
+
+        galleryTitle:"Gallery",
+        galleryText:"Placeholders for now — later replace with real photos.",
+        g1t:"Restoration detail",
+        g1d:"Dial & hands preserved, movement serviced and regulated.",
+        g2t:"Workshop",
+        g2d:"Precision tools and clean workflow for consistent results.",
+        g3t:"Boutique presentation",
+        g3d:"Premium packaging & documentation for collectors.",
+
+        processTitle:"Process",
+        processText:"Clear steps, transparent communication and careful workmanship.",
+        p1t:"Consultation",
+        p1d:"You send photos + model info. We propose options and scope.",
+        p2t:"Inspection",
+        p2d:"Diagnostics and parts availability check.",
+        p3t:"Service / restoration",
+        p3d:"Cleaning, lubrication, repair, regulation and testing.",
+        p4t:"Delivery",
+        p4d:"Final QC, photos, documentation and premium presentation.",
+
+        faqTitle:"FAQ",
+        faqText:"Most common questions.",
+        f1q:"How long does service take?",
+        f1a:"Usually 2–3 weeks depending on parts availability and condition.",
+        f2q:"Do you keep original dial and hands?",
+        f2a:"Yes. We prioritize originality and only recommend changes if necessary.",
+        f3q:"Can you upgrade to sapphire crystal?",
+        f3a:"In many cases yes, depending on the case construction.",
+        f4q:"Do you source parts?",
+        f4a:"Yes. Availability varies by brand/model.",
+
+        contactTitle:"Contact",
+        contactText:"Send a request — include brand, model, photos and what you need (service / restoration / custom).",
+        contactBadge:"Request",
+        cName:"Name",
+        cEmail:"Email",
+        cMsg:"Message",
+        cSend:"Send request",
+        cTiny:"Tip: attach photos via email after clicking send.",
+
+        contactInfoBadge:"Info",
+        ci1b:"Atelier:",
+        ci1:"Atelier Dante Time",
+        ci2b:"Country:",
+        ci2:"Czech Republic",
+        ci3b:"Turnaround:",
+        ci3:"~2–3 weeks",
+        ci4b:"Focus:",
+        ci4:"Restoration & boutique custom builds",
+        ciTiny:"Add Instagram/WhatsApp/Phone here later.",
+
+        foot:"Independent watch atelier."
+      }
+    };
+
+    function applyLang(lang){
+      document.documentElement.setAttribute("data-lang", lang);
+      document.querySelectorAll("[data-i18n]").forEach(el=>{
+        const key = el.getAttribute("data-i18n");
+        if(dict[lang] && dict[lang][key]) el.textContent = dict[lang][key];
+      });
+    }
+
+    // language toggle
+    const langBtn = document.getElementById("langBtn");
+    let current = "cs";
+    applyLang(current);
+
+    langBtn?.addEventListener("click",()=>{
+      current = (current==="cs") ? "en" : "cs";
+      applyLang(current);
+    });
   </script>
 </body>
 </html>
