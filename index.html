@@ -1,3 +1,9 @@
+
+
+
+<!-- =========================
+     FILE: index.html
+========================= -->
 <!doctype html>
 <html lang="cs">
 <head>
@@ -14,82 +20,41 @@
       --muted:#b9b9b9;
       --gold:#c8a24a;
       --line:rgba(255,255,255,.10);
+      --shadow:0 18px 50px rgba(0,0,0,.45);
       --radius:18px;
       --max:1100px;
-
-      --shadow: 0 14px 40px rgba(0,0,0,.55);
-      --card-border: rgba(255,255,255,.06);
-      --card-bg: rgba(255,255,255,.03);
+      --card:#0b0b0b; /* FIX: jednotné pozadí karet (bez šedého límce) */
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
-
     body{
       margin:0;
-      position:relative;
-      isolation:isolate; /* ✅ důležité: zabrání Safari artefaktům (šedé pásy) */
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
       color:var(--text);
-
-      /* plynulejší přechody */
       background:
-        linear-gradient(
-          180deg,
-          rgba(255,255,255,.06) 0%,
-          rgba(255,255,255,.03) 32%,
-          rgba(255,255,255,.015) 55%,
-          rgba(255,255,255,0) 82%
-        ),
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 55%),
         radial-gradient(1200px 700px at 50% -120px, rgba(200,162,74,.12), rgba(0,0,0,0) 60%),
         var(--bg);
-
       overflow-x:hidden;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
-
-    /* ✅ FIX bandingu bez šedých pruhů: jemný grain, ale stabilně pro Safari */
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      z-index:0;
-
-      opacity:.035;                 /* jemně (0.03–0.05) */
-      mix-blend-mode: soft-light;   /* místo overlay => žádné pásy */
-      filter: contrast(120%);       /* aby to jen “rozbilo” banding */
-      transform: translateZ(0);
-
-      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='260' height='260' filter='url(%23n)' opacity='.35'/></svg>");
-    }
-
-    /* obsah nad overlayem */
-    header, main, footer{position:relative; z-index:1;}
-
     a{color:inherit; text-decoration:none}
-    a:hover{opacity:.9}
+    a:hover{opacity:.95}
 
     .wrap{max-width:var(--max); margin:0 auto; padding:0 20px}
-
     header{
       position:sticky; top:0; z-index:20;
       backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
       background:rgba(7,7,7,.65);
       border-bottom:1px solid var(--line);
     }
-
     .nav{
       display:flex; align-items:center; justify-content:space-between;
       padding:14px 0;
       gap:12px;
     }
-
     .brand{
       display:flex; align-items:center; gap:10px;
-      min-width:180px;
+      min-width: 180px;
     }
     .brand img{
       width:28px; height:28px; object-fit:contain;
@@ -99,11 +64,7 @@
       letter-spacing:.08em; font-weight:700; font-size:12px;
       text-transform:uppercase; color:var(--muted)
     }
-
-    .links{
-      display:flex; gap:10px; align-items:center;
-      flex-wrap:wrap; justify-content:flex-end
-    }
+    .links{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
 
     .chip, .langbtn{
       padding:8px 12px;
@@ -115,12 +76,9 @@
       background:rgba(255,255,255,.02);
       cursor:pointer;
       user-select:none;
-      -webkit-tap-highlight-color: transparent;
+      white-space:nowrap;
     }
-    .chip:hover, .langbtn:hover{
-      border-color:rgba(200,162,74,.45);
-      color:var(--text)
-    }
+    .chip:hover, .langbtn:hover{border-color:rgba(200,162,74,.45); color:var(--text)}
     .chip.gold{border-color:rgba(200,162,74,.45); color:var(--text)}
     .langbtn{display:inline-flex; gap:8px; align-items:center}
     .langdot{
@@ -129,10 +87,7 @@
       box-shadow:0 0 0 4px rgba(200,162,74,.12);
     }
 
-    .hero{
-      padding:70px 0 40px;
-      text-align:center;
-    }
+    .hero{padding:70px 0 40px; text-align:center}
     .hero-logo{
       width:78px; height:78px;
       margin:0 auto 18px;
@@ -166,14 +121,12 @@
     }
 
     .section{padding:34px 0}
-
     .grid{
       display:grid;
       grid-template-columns: 1.2fr .8fr;
       gap:18px;
-      align-items:start; /* ✅ aby dlouhý “O nás” nevytvářel divné vertikální zarovnání */
+      align-items:stretch;
     }
-
     @media (max-width: 880px){
       .grid{grid-template-columns:1fr}
       .brand strong{display:none}
@@ -181,19 +134,13 @@
     }
 
     .card{
-      background: var(--card-bg);
-      border:1px solid var(--card-border);
+      background: var(--card);
+      border:1px solid var(--line);
       border-radius:var(--radius);
-      box-shadow:
-        var(--shadow),
-        inset 0 1px 0 rgba(255,255,255,.04);
+      box-shadow:var(--shadow);
       padding:22px;
-
-      background-clip: padding-box;
-      transform: translateZ(0);
-      will-change: transform;
+      overflow:hidden; /* FIX: žádné vyčuhování / límec */
     }
-
     .card h2{
       margin:0 0 10px 0;
       font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
@@ -226,19 +173,16 @@
     }
 
     .contact{display:grid; gap:10px; margin-top:12px}
-
     .row{
       display:flex; align-items:center; justify-content:space-between;
       gap:12px;
       padding:12px 14px;
-      border:1px solid rgba(255,255,255,.08);
+      border:1px solid var(--line);
       border-radius:14px;
       background:rgba(0,0,0,.22);
-      background-clip: padding-box;
     }
     .row b{color:var(--text)}
     .row small{color:var(--muted)}
-
     .btn{
       display:inline-flex; align-items:center; justify-content:center;
       padding:10px 12px;
@@ -252,7 +196,7 @@
     }
     .btn:hover{border-color:rgba(200,162,74,.75)}
     .btn.ghost{
-      border-color:rgba(255,255,255,.10);
+      border-color:var(--line);
       background:rgba(255,255,255,.02);
       color:var(--muted);
     }
@@ -284,7 +228,8 @@
         </div>
 
         <div class="links">
-          <a class="chip" href="#about" data-i18n="nav_about">O nás</a>
+          <!-- O nás vede na about.html -->
+          <a class="chip" href="about.html" data-i18n="nav_about">O nás</a>
           <a class="chip" href="#services" data-i18n="nav_services">Služby</a>
           <a class="chip" href="#contact" data-i18n="nav_contact">Kontakt</a>
 
@@ -310,14 +255,20 @@
       </div>
     </section>
 
+    <!-- HOME "O nás" = motto + tlačítko -->
     <section id="about" class="section">
       <div class="wrap">
         <div class="grid">
           <div class="card">
             <h2 data-i18n="about_title">O nás</h2>
-            <p data-i18n="about_text">
-              Atelier Dante Time je nezávislý hodinářský ateliér zaměřený na renovace, servis a zakázkové sestavy mechanických hodinek — s důrazem na řemeslo a detail.
+
+            <p data-i18n="about_motto">
+              Druhý život pro čas. Renovace a zakázkové sestavy mechanických hodinek s důrazem na řemeslo a detail.
             </p>
+
+            <div style="margin-top:14px;">
+              <a class="btn" href="about.html" data-i18n="about_btn">Přečíst příběh</a>
+            </div>
           </div>
 
           <div class="card">
@@ -413,8 +364,8 @@
         subtitle: "Czech Watch Atelier",
 
         about_title: "O nás",
-        about_text:
-          "Každé hodinky mají svůj příběh. Některé ale skončí odložené, zastavené, zapomenuté. Právě takové mě zajímají. Dante Time vzniklo z úcty k hodinářskému řemeslu a z přesvědčení, že i zdánlivě odepsané věci si zaslouží péči. Každý kus prochází trpělivou renovací, kde se spojuje technická přesnost s citem pro detail. Výsledkem nejsou jen opravené hodinky. Jsou to hodinky, které znovu žijí. Značka nese jméno Dante – zachráněného kocoura, který dostal druhou šanci. Stejně jako on dostávají i hodinky v tomto ateliéru nový začátek.",
+        about_motto: "Druhý život pro čas. Renovace a zakázkové sestavy mechanických hodinek s důrazem na řemeslo a detail.",
+        about_btn: "Přečíst příběh",
 
         quick_title: "Rychlé info",
         q1: "Mechanické hodinky & vintage renovace",
@@ -423,8 +374,7 @@
         q4: "Dokončovací práce & prezentace",
 
         services_title: "Služby",
-        services_text:
-          "Servis a renovace mechanických hodinek, citlivá práce s vintage díly a zakázkové sestavy. (Galerii doplníme, až budeš mít fotky.)",
+        services_text: "Servis a renovace mechanických hodinek, citlivá práce s vintage díly a zakázkové sestavy. (Galerii doplníme, až budeš mít fotky.)",
 
         contact_title: "Kontakt",
         contact_text: "Napiš mi e-mail nebo zprávu na Instagram/TikTok.",
@@ -433,14 +383,12 @@
         open_btn: "Otevřít",
 
         note_title: "Poznámka",
-        note_text:
-          "Pokud chceš, pošli do e-mailu fotky hodinek a krátký popis (stav, model, co potřebuješ). Odpovím s návrhem postupu a orientační cenou.",
+        note_text: "Pokud chceš, pošli do e-mailu fotky hodinek a krátký popis (stav, model, co potřebuješ). Odpovím s návrhem postupu a orientační cenou.",
 
         footer_terms: "Podmínky",
         footer_claims: "Reklamace",
         footer_privacy: "Soukromí",
       },
-
       en: {
         nav_about: "About",
         nav_services: "Services",
@@ -448,8 +396,8 @@
         subtitle: "Czech Watch Atelier",
 
         about_title: "About",
-        about_text:
-          "Every watch carries a story. Some end up forgotten — stopped, set aside, waiting for a second chance. Those are the ones I care about. Dante Time was created out of respect for watchmaking craft and the belief that even seemingly lost pieces deserve proper care. Each watch goes through a patient restoration where technical precision meets attention to detail. The result is not just a repaired watch — it is a watch that lives again. The brand is named after Dante, a rescued cat who was given a second chance. Just like him, every timepiece in this atelier gets a new beginning.",
+        about_motto: "A second life for time. Restoration and custom builds of mechanical watches with craftsmanship and attention to detail.",
+        about_btn: "Read the story",
 
         quick_title: "Quick info",
         q1: "Mechanical watches & vintage restorations",
@@ -458,18 +406,16 @@
         q4: "Finishing & presentation details",
 
         services_title: "Services",
-        services_text:
-          "Servicing and restoration of mechanical watches, careful work with vintage parts, and custom builds. (Gallery will be added once photos are available.)",
+        services_text: "Servicing and restoration of mechanical watches, careful work with vintage parts, and custom builds. (Gallery will be added once photos are available.)",
 
         contact_title: "Contact",
-        contact_text: "Send an email or a message on Instagram/TikTok.",
+        contact_text: "Send an email or message on Instagram/TikTok.",
         email_label: "Email",
         email_btn: "Send email",
         open_btn: "Open",
 
         note_title: "Note",
-        note_text:
-          "If you want, email photos of the watch and a short description (condition, model, what you need). I will reply with a proposed approach and an estimated price.",
+        note_text: "If you want, email photos of the watch and a short description (condition, model, what you need). I will reply with a proposed approach and an estimated price.",
 
         footer_terms: "Terms",
         footer_claims: "Claims",
@@ -478,30 +424,29 @@
     };
 
     function getLang(){ return localStorage.getItem("lang") || "cs"; }
-    function setLang(lang){ localStorage.setItem("lang", lang); applyLang(lang); }
-
     function applyLang(lang){
       document.documentElement.lang = lang;
       const dict = I18N[lang] || I18N.cs;
 
       document.querySelectorAll("[data-i18n]").forEach(el=>{
         const key = el.getAttribute("data-i18n");
-        if(dict[key]) el.textContent = dict[key];
+        if (dict[key]) el.textContent = dict[key];
       });
 
       const label = document.getElementById("langLabel");
-      if(label) label.textContent = (lang === "cs") ? "CZ" : "EN";
+      if (label) label.textContent = (lang === "cs") ? "CZ" : "EN";
+    }
+    function setLang(lang){
+      localStorage.setItem("lang", lang);
+      applyLang(lang);
     }
 
     document.getElementById("y").textContent = new Date().getFullYear();
 
-    const langBtn = document.getElementById("langBtn");
-    if (langBtn) {
-      langBtn.addEventListener("click", ()=>{
-        const current = getLang();
-        setLang(current === "cs" ? "en" : "cs");
-      });
-    }
+    document.getElementById("langBtn").addEventListener("click", ()=>{
+      const current = getLang();
+      setLang(current === "cs" ? "en" : "cs");
+    });
 
     applyLang(getLang());
   </script>
