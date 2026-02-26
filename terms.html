@@ -4,76 +4,150 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Podmínky — Atelier Dante Time</title>
+  <title data-i18n="title">Podmínky — Atelier Dante Time</title>
   <link rel="icon" href="logo.png" />
   <style>
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#f2f2f2;background:#070707}
     a{color:#c8a24a;text-decoration:none}
     .wrap{max-width:900px;margin:0 auto;padding:34px 20px}
-    .top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
-    .top img{width:28px;height:28px;object-fit:contain}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+    .left{display:flex;align-items:center;gap:12px}
+    .left img{width:28px;height:28px;object-fit:contain}
     h1{font-family:ui-serif,Georgia,Times New Roman,Times;margin:8px 0 18px;letter-spacing:.03em}
     p,li{color:#cfcfcf;line-height:1.75}
     .card{border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:18px;background:rgba(255,255,255,.02)}
     .muted{color:#a9a9a9}
     footer{margin-top:22px;padding-top:16px;border-top:1px solid rgba(255,255,255,.10);color:#a9a9a9;font-size:13px}
+    .langbtn{padding:8px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:rgba(255,255,255,.02);color:#cfcfcf;cursor:pointer}
+    .langbtn:hover{border-color:rgba(200,162,74,.45);color:#fff}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="top">
-      <img src="logo.png" alt="Logo">
-      <a href="index.html">← Zpět na web</a>
+      <div class="left">
+        <img src="logo.png" alt="Logo">
+        <a href="index.html" data-i18n="back">← Zpět na web</a>
+      </div>
+      <button class="langbtn" id="langBtn" type="button"><span id="langLabel">CZ</span></button>
     </div>
 
-    <h1>Podmínky</h1>
+    <h1 data-i18n="h1">Podmínky</h1>
 
     <div class="card">
-      <p class="muted">Poslední aktualizace: <strong>26. 2. 2026</strong></p>
+      <p class="muted"><span data-i18n="updated_label">Poslední aktualizace:</span> <strong>26. 2. 2026</strong></p>
 
-      <p>
-        Tyto podmínky popisují základní pravidla spolupráce při poskytování služeb (servis, renovace,
-        zakázková sestava) pod značkou <strong>Atelier Dante Time</strong>.
+      <p data-i18n="intro">
+        Tyto podmínky popisují základní pravidla spolupráce při poskytování služeb (servis, renovace, zakázková sestava) pod značkou Atelier Dante Time.
       </p>
 
-      <h3>1) Zakázková práce</h3>
+      <h3 data-i18n="s1">1) Zakázková práce</h3>
       <ul>
-        <li>Zakázková práce může zahrnovat servis/renovaci, regulaci, čištění, montáž a úpravy dle dohody.</li>
-        <li>U vintage hodinek se pracuje s ohledem na stav dílů a dostupnost náhrad.</li>
+        <li data-i18n="s1a">Zakázková práce může zahrnovat servis/renovaci, regulaci, čištění, montáž a úpravy dle dohody.</li>
+        <li data-i18n="s1b">U vintage hodinek se pracuje s ohledem na stav dílů a dostupnost náhrad.</li>
       </ul>
 
-      <h3>2) Termíny</h3>
+      <h3 data-i18n="s2">2) Termíny</h3>
       <ul>
-        <li>Orientační doba realizace je individuální. Typicky se může pohybovat kolem 2–3 týdnů (dle dostupnosti dílů a rozsahu).</li>
+        <li data-i18n="s2a">Orientační doba realizace je individuální. Typicky se může pohybovat kolem 2–3 týdnů (dle dostupnosti dílů a rozsahu).</li>
       </ul>
 
-      <h3>3) Cena</h3>
+      <h3 data-i18n="s3">3) Cena</h3>
       <ul>
-        <li>Cena se stanovuje podle rozsahu prací a stavu hodinek. Orientační nabídka se řeší předem.</li>
-        <li>U zakázkových sestav může být požadována záloha na materiál/díly.</li>
+        <li data-i18n="s3a">Cena se stanovuje podle rozsahu prací a stavu hodinek. Orientační nabídka se řeší předem.</li>
+        <li data-i18n="s3b">U zakázkových sestav může být požadována záloha na materiál/díly.</li>
       </ul>
 
-      <h3>4) Předání / doprava</h3>
+      <h3 data-i18n="s4">4) Předání / doprava</h3>
       <ul>
-        <li>Hodinky je možné předat osobně nebo zaslat po domluvě.</li>
-        <li>Doporučuje se pojistné doručení a pečlivé zabalení.</li>
+        <li data-i18n="s4a">Hodinky je možné předat osobně nebo zaslat po domluvě.</li>
+        <li data-i18n="s4b">Doporučuje se pojistné doručení a pečlivé zabalení.</li>
       </ul>
 
-      <h3>5) Odpovědnost</h3>
+      <h3 data-i18n="s5">5) Odpovědnost</h3>
       <ul>
-        <li>U vintage hodinek mohou být některé závady skryté a projevit se až po rozebrání/testování.</li>
-        <li>Vždy se snažíme postupovat maximálně šetrně a profesionálně.</li>
+        <li data-i18n="s5a">U vintage hodinek mohou být některé závady skryté a projevit se až po rozebrání/testování.</li>
+        <li data-i18n="s5b">Vždy se snažíme postupovat maximálně šetrně a profesionálně.</li>
       </ul>
 
-      <p class="muted">
-        Poznámka: Text je obecný a nenahrazuje právní poradenství. Pokud budeš chtít, upravíme podmínky
-        přesně podle toho, jestli prodáváš kusy jako OSVČ/firmou, nebo jde jen o prezentaci.
+      <p class="muted" data-i18n="note">
+        Poznámka: Text je obecný a nenahrazuje právní poradenství. Pokud budeš chtít, upravíme podmínky podle toho, zda jde o prezentaci, službu nebo prodej.
       </p>
     </div>
 
     <footer>
-      Kontakt: <a href="mailto:dante.time.atelier@gmail.com">dante.time.atelier@gmail.com</a>
+      <span data-i18n="contact">Kontakt:</span> <a href="mailto:dante.time.atelier@gmail.com">dante.time.atelier@gmail.com</a>
     </footer>
   </div>
+
+  <script>
+    const I18N = {
+      cs:{
+        title:"Podmínky — Atelier Dante Time",
+        back:"← Zpět na web",
+        h1:"Podmínky",
+        updated_label:"Poslední aktualizace:",
+        intro:"Tyto podmínky popisují základní pravidla spolupráce při poskytování služeb (servis, renovace, zakázková sestava) pod značkou Atelier Dante Time.",
+        s1:"1) Zakázková práce",
+        s1a:"Zakázková práce může zahrnovat servis/renovaci, regulaci, čištění, montáž a úpravy dle dohody.",
+        s1b:"U vintage hodinek se pracuje s ohledem na stav dílů a dostupnost náhrad.",
+        s2:"2) Termíny",
+        s2a:"Orientační doba realizace je individuální. Typicky se může pohybovat kolem 2–3 týdnů (dle dostupnosti dílů a rozsahu).",
+        s3:"3) Cena",
+        s3a:"Cena se stanovuje podle rozsahu prací a stavu hodinek. Orientační nabídka se řeší předem.",
+        s3b:"U zakázkových sestav může být požadována záloha na materiál/díly.",
+        s4:"4) Předání / doprava",
+        s4a:"Hodinky je možné předat osobně nebo zaslat po domluvě.",
+        s4b:"Doporučuje se pojistné doručení a pečlivé zabalení.",
+        s5:"5) Odpovědnost",
+        s5a:"U vintage hodinek mohou být některé závady skryté a projevit se až po rozebrání/testování.",
+        s5b:"Vždy se snažíme postupovat maximálně šetrně a profesionálně.",
+        note:"Poznámka: Text je obecný a nenahrazuje právní poradenství. Pokud budeš chtít, upravíme podmínky podle toho, zda jde o prezentaci, službu nebo prodej.",
+        contact:"Kontakt:"
+      },
+      en:{
+        title:"Terms — Atelier Dante Time",
+        back:"← Back to site",
+        h1:"Terms",
+        updated_label:"Last update:",
+        intro:"These terms describe the basic rules for cooperation when providing services (service, restoration, custom build) under the Atelier Dante Time brand.",
+        s1:"1) Custom work",
+        s1a:"Custom work may include service/restoration, regulation, cleaning, assembly and modifications by agreement.",
+        s1b:"For vintage watches, work depends on parts condition and availability.",
+        s2:"2) Timeframe",
+        s2a:"The estimated timeframe is individual. Typically around 2–3 weeks (depending on parts availability and scope).",
+        s3:"3) Price",
+        s3a:"Price is determined by the scope of work and the watch condition. An estimate is agreed in advance.",
+        s3b:"For custom builds, a deposit for materials/parts may be required.",
+        s4:"4) Handover / shipping",
+        s4a:"The watch can be handed over in person or shipped by agreement.",
+        s4b:"Insured shipping and careful packaging are recommended.",
+        s5:"5) Liability",
+        s5a:"Vintage watches can have hidden faults that may appear only after disassembly/testing.",
+        s5b:"We always aim to proceed as carefully and professionally as possible.",
+        note:"Note: This text is general and does not replace legal advice. If needed, we will tailor the terms depending on whether this is presentation, service, or sales.",
+        contact:"Contact:"
+      }
+    };
+
+    function getLang(){ return localStorage.getItem("lang") || "cs"; }
+    function applyLang(lang){
+      document.documentElement.lang = lang;
+      const dict = I18N[lang] || I18N.cs;
+      document.querySelectorAll("[data-i18n]").forEach(el=>{
+        const key = el.getAttribute("data-i18n");
+        if(dict[key]) el.textContent = dict[key];
+      });
+      document.getElementById("langLabel").textContent = (lang==="cs") ? "CZ" : "EN";
+      document.title = dict.title;
+    }
+    function toggleLang(){
+      const next = (getLang()==="cs") ? "en" : "cs";
+      localStorage.setItem("lang", next);
+      applyLang(next);
+    }
+    document.getElementById("langBtn").addEventListener("click", toggleLang);
+    applyLang(getLang());
+  </script>
 </body>
 </html>
