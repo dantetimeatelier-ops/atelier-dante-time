@@ -9,53 +9,61 @@
     :root{
       --bg:#000;
       --text:#f2f2f2;
-      --muted: rgba(255,255,255,0.70);
+      --muted: rgba(255,255,255,0.72);
       --gold:#c7a24b;
-      --gold2:#9a7b2f;
     }
 
     *{ box-sizing:border-box; }
     html,body{ height:100%; }
+
     body{
       margin:0;
       color:var(--text);
       font-family: Georgia, "Times New Roman", serif;
+
+      /* BEZ KRUHŮ: jen jemný glow shora */
       background:
-        radial-gradient(circle at center, rgba(255,255,255,0.10) 0%, rgba(0,0,0,0.92) 55%, #000 100%),
-        var(--bg);
+        radial-gradient(1200px 600px at 50% 0%, rgba(255,255,255,0.10), transparent 60%),
+        linear-gradient(#000, #000);
       overflow-x:hidden;
     }
 
     /* HERO */
     .hero{
-      min-height: 100vh;
+      min-height: 72vh;              /* už ne celá obrazovka */
       display:flex;
       flex-direction:column;
-      justify-content:center;
+      justify-content:flex-start;    /* už NE do středu */
       align-items:center;
       text-align:center;
-      padding: 56px 18px 34px;
-      gap: 16px;
+
+      padding: 70px 18px 30px;       /* posun nahoru */
+      gap: 14px;
     }
 
     .logo{
-      width: 90px;
-      height: auto;
+      width: 92px;
+      height:auto;
       display:block;
+      margin-bottom: 10px;
       filter: drop-shadow(0 10px 18px rgba(0,0,0,0.65));
       opacity: 0.98;
-      margin-bottom: 8px;
     }
 
     h1{
       margin: 0;
       font-weight: 700;
       text-transform: uppercase;
-      /* menší a responsivní, aby to nebylo přes celou stránku */
-      font-size: clamp(34px, 4vw, 70px);
-      letter-spacing: clamp(2px, 1vw, 10px);
-      line-height: 1.05;
-      text-shadow: 0 10px 30px rgba(0,0,0,0.6);
+
+      /* menší a kontrolovaná šířka */
+      font-size: clamp(32px, 4.2vw, 64px);
+      letter-spacing: clamp(2px, 0.9vw, 9px);
+      line-height: 1.06;
+
+      max-width: 1100px;
+      padding: 0 10px;
+
+      text-shadow: 0 12px 28px rgba(0,0,0,0.65);
     }
 
     .subtitle{
@@ -77,16 +85,16 @@
     .section{
       width: min(900px, 92vw);
       margin: 0 auto;
-      padding: 40px 0 80px;
+      padding: 34px 0 90px;
       text-align:center;
     }
 
     .section h2{
       margin: 0 0 12px 0;
-      font-size: clamp(26px, 2.6vw, 36px);
+      font-size: clamp(24px, 2.6vw, 34px);
       font-weight: 700;
       letter-spacing: 1px;
-      text-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      text-shadow: 0 10px 26px rgba(0,0,0,0.65);
     }
 
     .section p{
@@ -110,19 +118,12 @@
       background: rgba(0,0,0,0.35);
       backdrop-filter: blur(4px);
     }
-
-    /* FOOTER small spacing */
-    .spacer{
-      height: 20px;
-    }
   </style>
 </head>
 
 <body>
   <div class="hero">
-    <!-- DŮLEŽITÉ: soubor se jmenuje logo.png -->
     <img class="logo" src="logo.png" alt="Atelier Dante Time Logo" />
-
     <h1>ATELIER DANTE TIME</h1>
     <p class="subtitle">Czech Watch Atelier</p>
     <div class="gold-line"></div>
@@ -135,7 +136,6 @@
       We work with respect for heritage, craftsmanship, and detail — creating unique pieces with a luxury aesthetic.
     </p>
     <div class="pill">Restoration • Custom builds • Vintage</div>
-    <div class="spacer"></div>
   </div>
 </body>
 </html>
