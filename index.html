@@ -2,132 +2,426 @@
 <!doctype html>
 <html lang="cs">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Atelier Dante Time</title>
-<meta name="description" content="Atelier Dante Time — Czech watch atelier focused on restoration and custom assembly of mechanical timepieces." />
-<link rel="icon" href="logo.png" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Atelier Dante Time</title>
+  <meta name="description" content="Atelier Dante Time — Czech watch atelier focused on restoration and custom assembly of mechanical timepieces." />
+  <link rel="icon" href="logo.png" />
 
-<style>
-/* --- původní styl zůstává --- */
-:root{
---bg:#070707;
---panel:#0d0d0d;
---text:#f2f2f2;
---muted:#b9b9b9;
---gold:#c8a24a;
---line:rgba(255,255,255,.10);
---radius:18px;
---max:1100px;
-}
-*{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto;background:var(--bg);color:var(--text)}
-.wrap{max-width:var(--max);margin:auto;padding:0 20px}
-header{border-bottom:1px solid var(--line)}
-.nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
-.links{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-.chip{padding:8px 12px;border:1px solid var(--line);border-radius:999px;font-size:13px;color:var(--muted);cursor:pointer}
-.chip:hover{border-color:var(--gold);color:white}
-.lang-btn{border:1px solid var(--line);padding:6px 10px;border-radius:8px;font-size:12px;cursor:pointer}
-.lang-btn.active{border-color:var(--gold);color:white}
-.hero{text-align:center;padding:70px 0 40px}
-.hero-logo{width:78px;margin-bottom:18px}
-h1{font-family:Georgia,serif;letter-spacing:.14em;text-transform:uppercase;font-size:clamp(32px,5vw,68px);margin:0}
-.subtitle{margin-top:14px;color:var(--gold)}
-.section{padding:40px 0}
-.card{background:var(--panel);padding:22px;border-radius:var(--radius)}
-footer{border-top:1px solid var(--line);padding:20px 0;margin-top:40px;text-align:center;color:var(--muted)}
-a{color:inherit;text-decoration:none}
-</style>
+  <style>
+    :root{
+      --bg:#070707;
+      --text:#f2f2f2;
+      --muted:#b9b9b9;
+      --gold:#c8a24a;
+      --line:rgba(255,255,255,.10);
+      --shadow:0 18px 50px rgba(0,0,0,.55);
+      --radius:18px;
+      --max:1100px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 55%),
+        radial-gradient(1200px 700px at 50% -120px, rgba(200,162,74,.12), rgba(0,0,0,0) 60%),
+        var(--bg);
+      overflow-x:hidden;
+    }
+    a{color:inherit; text-decoration:none}
+    a:hover{opacity:.9}
+
+    .wrap{max-width:var(--max); margin:0 auto; padding:0 20px}
+    header{
+      position:sticky; top:0; z-index:20;
+      backdrop-filter: blur(10px);
+      background:rgba(7,7,7,.65);
+      border-bottom:1px solid var(--line);
+    }
+    .nav{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 0;
+      gap:12px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      min-width: 180px;
+    }
+    .brand img{
+      width:28px; height:28px; object-fit:contain;
+      filter: drop-shadow(0 10px 30px rgba(0,0,0,.6));
+    }
+    .brand strong{letter-spacing:.08em; font-weight:700; font-size:12px; text-transform:uppercase; color:var(--muted)}
+    .links{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
+
+    .chip, .langbtn{
+      padding:8px 12px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      color:var(--muted);
+      font-size:13px;
+      transition:.2s ease;
+      background:rgba(255,255,255,.02);
+      cursor:pointer;
+      user-select:none;
+    }
+    .chip:hover, .langbtn:hover{border-color:rgba(200,162,74,.45); color:var(--text)}
+    .chip.gold{border-color:rgba(200,162,74,.45); color:var(--text)}
+    .langbtn{display:inline-flex; gap:8px; align-items:center}
+    .langdot{
+      width:8px;height:8px;border-radius:99px;
+      background:rgba(200,162,74,.75);
+      box-shadow:0 0 0 4px rgba(200,162,74,.12);
+    }
+
+    .hero{
+      padding:70px 0 40px;
+      text-align:center;
+    }
+    .hero-logo{
+      width:78px; height:78px;
+      margin:0 auto 18px;
+      display:block;
+      object-fit:contain;
+      filter: drop-shadow(0 18px 40px rgba(0,0,0,.75));
+    }
+    h1{
+      margin:0;
+      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      font-size:clamp(32px, 5vw, 68px);
+      line-height:1.05;
+      text-shadow: 0 14px 35px rgba(0,0,0,.65);
+    }
+    .subtitle{
+      margin:14px auto 0;
+      color:var(--gold);
+      font-weight:600;
+      letter-spacing:.08em;
+      font-size:clamp(12px, 1.4vw, 16px);
+      text-transform:uppercase;
+    }
+    .subline{
+      width:min(220px, 60vw);
+      height:1px;
+      margin:18px auto 0;
+      background:linear-gradient(90deg, rgba(200,162,74,0), rgba(200,162,74,.9), rgba(200,162,74,0));
+      opacity:.75;
+    }
+
+    .section{padding:34px 0}
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:18px;
+      align-items:stretch;
+    }
+    @media (max-width: 880px){
+      .grid{grid-template-columns:1fr}
+      .brand strong{display:none}
+      .hero{padding:52px 0 28px}
+    }
+    .card{
+      background:rgba(255,255,255,.02);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:22px;
+    }
+    .card h2{
+      margin:0 0 10px 0;
+      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+      font-size:26px;
+      letter-spacing:.05em;
+    }
+    .card p{
+      margin:0;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.7;
+    }
+    .list{
+      margin:14px 0 0;
+      padding:0;
+      list-style:none;
+      display:grid;
+      gap:10px;
+      color:var(--muted);
+      font-size:15px;
+    }
+    .list li{padding-left:14px; position:relative}
+    .list li:before{
+      content:"";
+      width:6px; height:6px; border-radius:999px;
+      background:rgba(200,162,74,.85);
+      position:absolute; left:0; top:.6em;
+      box-shadow:0 0 0 4px rgba(200,162,74,.12);
+    }
+
+    .contact{display:grid; gap:10px; margin-top:12px}
+    .row{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+      padding:12px 14px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:rgba(0,0,0,.22);
+    }
+    .row b{color:var(--text)}
+    .row small{color:var(--muted)}
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(200,162,74,.45);
+      background:linear-gradient(180deg, rgba(200,162,74,.18), rgba(200,162,74,.04));
+      color:var(--text);
+      font-size:13px;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .btn:hover{border-color:rgba(200,162,74,.75)}
+    .btn.ghost{
+      border-color:var(--line);
+      background:rgba(255,255,255,.02);
+      color:var(--muted);
+    }
+
+    footer{
+      padding:28px 0 34px;
+      border-top:1px solid var(--line);
+      margin-top:32px;
+      color:var(--muted);
+      font-size:13px;
+    }
+    .footer-inner{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:14px; flex-wrap:wrap;
+    }
+    .footer-links{display:flex; gap:12px; flex-wrap:wrap}
+    .footer-links a{color:var(--muted); border-bottom:1px solid transparent}
+    .footer-links a:hover{color:var(--text); border-bottom-color:rgba(200,162,74,.5)}
+  </style>
 </head>
 
 <body>
+  <header>
+    <div class="wrap">
+      <div class="nav">
+        <div class="brand">
+          <img src="logo.png" alt="Atelier Dante Time logo" />
+          <strong>Atelier Dante Time</strong>
+        </div>
 
-<header>
-<div class="wrap nav">
-<div><strong>Atelier Dante Time</strong></div>
+        <div class="links">
+          <a class="chip" href="#about" data-i18n="nav_about">O nás</a>
+          <a class="chip" href="#services" data-i18n="nav_services">Služby</a>
+          <a class="chip" href="#contact" data-i18n="nav_contact">Kontakt</a>
 
-<div class="links">
-<span class="chip" data-cs="O mně" data-en="About">O mně</span>
-<span class="chip" data-cs="Služby" data-en="Services">Služby</span>
-<span class="chip" data-cs="Kontakt" data-en="Contact">Kontakt</span>
+          <a class="chip gold" href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr" target="_blank" rel="noopener">Instagram</a>
+          <a class="chip gold" href="https://www.tiktok.com/@patrickhug58?_r=1&_t=ZN-94EPWxDtCNS" target="_blank" rel="noopener">TikTok</a>
 
-<div class="lang-btn active" onclick="setLang('cs')" id="btn-cs">CZ</div>
-<div class="lang-btn" onclick="setLang('en')" id="btn-en">EN</div>
-</div>
-</div>
-</header>
+          <button class="langbtn" id="langBtn" type="button" aria-label="Switch language">
+            <span class="langdot"></span>
+            <span id="langLabel">CZ</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
 
-<section class="hero wrap">
-<img class="hero-logo" src="logo.png">
-<h1>ATELIER DANTE TIME</h1>
-<div class="subtitle"
-data-cs="Český hodinářský ateliér"
-data-en="Czech Watch Atelier">
-Český hodinářský ateliér
-</div>
-</section>
+  <main>
+    <section class="hero">
+      <div class="wrap">
+        <img class="hero-logo" src="logo.png" alt="DT logo" />
+        <h1>ATELIER DANTE TIME</h1>
+        <div class="subtitle" data-i18n="subtitle">Czech Watch Atelier</div>
+        <div class="subline"></div>
+      </div>
+    </section>
 
-<section class="section wrap">
-<div class="card">
-<h2 data-cs="O mně" data-en="About">O mně</h2>
-<p
-data-cs="Atelier Dante Time je nezávislý hodinářský ateliér zaměřený na servis, renovace a zakázkové sestavy mechanických hodinek."
-data-en="Atelier Dante Time is an independent watch atelier focused on restoration, servicing and custom mechanical builds.">
-Atelier Dante Time je nezávislý hodinářský ateliér zaměřený na servis, renovace a zakázkové sestavy mechanických hodinek.
-</p>
-</div>
-</section>
+    <section id="about" class="section">
+      <div class="wrap">
+        <div class="grid">
+          <div class="card">
+            <h2 data-i18n="about_title">O nás</h2>
+            <p data-i18n="about_text">
+              Atelier Dante Time je nezávislý hodinářský ateliér zaměřený na renovace, servis a zakázkové sestavy mechanických hodinek — s důrazem na řemeslo a detail.
+            </p>
+          </div>
 
-<section class="section wrap">
-<div class="card">
-<h2 data-cs="Služby" data-en="Services">Služby</h2>
-<ul>
-<li data-cs="Kompletní servis mechanických hodinek" data-en="Full mechanical watch service">
-Kompletní servis mechanických hodinek
-</li>
-<li data-cs="Renovace vintage kusů" data-en="Vintage restoration">
-Renovace vintage kusů
-</li>
-<li data-cs="Zakázková výroba limitovaných kusů" data-en="Custom limited builds">
-Zakázková výroba limitovaných kusů
-</li>
-</ul>
-</div>
-</section>
+          <div class="card">
+            <h2 data-i18n="quick_title">Rychlé info</h2>
+            <ul class="list">
+              <li data-i18n="q1">Mechanické hodinky & vintage renovace</li>
+              <li data-i18n="q2">Čištění, mazání, regulace</li>
+              <li data-i18n="q3">Zakázkové sestavy (limitované kusy)</li>
+              <li data-i18n="q4">Dokončovací práce & prezentace</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
 
-<section class="section wrap">
-<div class="card">
-<h2 data-cs="Kontakt" data-en="Contact">Kontakt</h2>
-<p>Email: <a href="mailto:dante.time.atelier@gmail.com">dante.time.atelier@gmail.com</a></p>
-</div>
-</section>
+    <section id="services" class="section">
+      <div class="wrap">
+        <div class="card">
+          <h2 data-i18n="services_title">Služby</h2>
+          <p data-i18n="services_text">
+            Servis a renovace mechanických hodinek, citlivá práce s vintage díly a zakázkové sestavy.
+            (Galerii doplníme, až budeš mít fotky.)
+          </p>
+        </div>
+      </div>
+    </section>
 
-<footer>
-© <span id="y"></span> Atelier Dante Time
-</footer>
+    <section id="contact" class="section">
+      <div class="wrap">
+        <div class="grid">
+          <div class="card">
+            <h2 data-i18n="contact_title">Kontakt</h2>
+            <p data-i18n="contact_text">Napiš mi e-mail nebo zprávu na Instagram/TikTok.</p>
 
-<script>
-document.getElementById("y").textContent=new Date().getFullYear();
+            <div class="contact">
+              <div class="row">
+                <div>
+                  <b data-i18n="email_label">E-mail</b><br />
+                  <small>dante.time.atelier@gmail.com</small>
+                </div>
+                <a class="btn" href="mailto:dante.time.atelier@gmail.com" data-i18n="email_btn">Napsat e-mail</a>
+              </div>
 
-function setLang(lang){
-document.documentElement.lang=lang;
-localStorage.setItem("lang",lang);
+              <div class="row">
+                <div>
+                  <b>Instagram</b><br />
+                  <small>@dantetimeatelier</small>
+                </div>
+                <a class="btn ghost" href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr" target="_blank" rel="noopener" data-i18n="open_btn">Otevřít</a>
+              </div>
 
-document.querySelectorAll("[data-cs]").forEach(el=>{
-el.textContent=el.getAttribute("data-"+lang);
-});
+              <div class="row">
+                <div>
+                  <b>TikTok</b><br />
+                  <small>@patrickhug58</small>
+                </div>
+                <a class="btn ghost" href="https://www.tiktok.com/@patrickhug58?_r=1&_t=ZN-94EPWxDtCNS" target="_blank" rel="noopener" data-i18n="open_btn">Otevřít</a>
+              </div>
+            </div>
+          </div>
 
-document.getElementById("btn-cs").classList.remove("active");
-document.getElementById("btn-en").classList.remove("active");
-document.getElementById("btn-"+lang).classList.add("active");
-}
+          <div class="card">
+            <h2 data-i18n="note_title">Poznámka</h2>
+            <p data-i18n="note_text">
+              Pokud chceš, pošli do e-mailu fotky hodinek a krátký popis (stav, model, co potřebuješ).
+              Odpovím s návrhem postupu a orientační cenou.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
 
-window.onload=function(){
-const saved=localStorage.getItem("lang");
-if(saved){setLang(saved);}
-}
-</script>
+  <footer>
+    <div class="wrap">
+      <div class="footer-inner">
+        <div>© <span id="y"></span> Atelier Dante Time</div>
+        <div class="footer-links">
+          <a href="terms.html" data-i18n="footer_terms">Podmínky</a>
+          <a href="reklamace.html" data-i18n="footer_claims">Reklamace</a>
+          <a href="privacy.html" data-i18n="footer_privacy">Soukromí</a>
+        </div>
+      </div>
+    </div>
+  </footer>
 
+  <script>
+    // --- i18n (CZ/EN) ---
+    const I18N = {
+      cs: {
+        nav_about: "O nás",
+        nav_services: "Služby",
+        nav_contact: "Kontakt",
+        subtitle: "Czech Watch Atelier",
+        about_title: "O nás",
+        about_text: "Atelier Dante Time je nezávislý hodinářský ateliér zaměřený na renovace, servis a zakázkové sestavy mechanických hodinek — s důrazem na řemeslo a detail.",
+        quick_title: "Rychlé info",
+        q1: "Mechanické hodinky & vintage renovace",
+        q2: "Čištění, mazání, regulace",
+        q3: "Zakázkové sestavy (limitované kusy)",
+        q4: "Dokončovací práce & prezentace",
+        services_title: "Služby",
+        services_text: "Servis a renovace mechanických hodinek, citlivá práce s vintage díly a zakázkové sestavy. (Galerii doplníme, až budeš mít fotky.)",
+        contact_title: "Kontakt",
+        contact_text: "Napiš mi e-mail nebo zprávu na Instagram/TikTok.",
+        email_label: "E-mail",
+        email_btn: "Napsat e-mail",
+        open_btn: "Otevřít",
+        note_title: "Poznámka",
+        note_text: "Pokud chceš, pošli do e-mailu fotky hodinek a krátký popis (stav, model, co potřebuješ). Odpovím s návrhem postupu a orientační cenou.",
+        footer_terms: "Podmínky",
+        footer_claims: "Reklamace",
+        footer_privacy: "Soukromí",
+      },
+      en: {
+        nav_about: "About",
+        nav_services: "Services",
+        nav_contact: "Contact",
+        subtitle: "Czech Watch Atelier",
+        about_title: "About",
+        about_text: "Atelier Dante Time is an independent watch atelier focused on restoration, servicing, and custom assembly of mechanical timepieces — with respect for craftsmanship and detail.",
+        quick_title: "Quick info",
+        q1: "Mechanical watches & vintage restorations",
+        q2: "Cleaning, lubrication, regulation",
+        q3: "Custom builds (limited pieces)",
+        q4: "Finishing & presentation details",
+        services_title: "Services",
+        services_text: "Servicing and restoration of mechanical watches, careful work with vintage parts, and custom builds. (Gallery will be added once photos are available.)",
+        contact_title: "Contact",
+        contact_text: "Send an email or message on Instagram/TikTok.",
+        email_label: "Email",
+        email_btn: "Send email",
+        open_btn: "Open",
+        note_title: "Note",
+        note_text: "If you want, email photos of the watch and a short description (condition, model, what you need). I will reply with a proposed approach and an estimated price.",
+        footer_terms: "Terms",
+        footer_claims: "Claims",
+        footer_privacy: "Privacy",
+      }
+    };
+
+    function getLang(){
+      return localStorage.getItem("lang") || "cs";
+    }
+    function setLang(lang){
+      localStorage.setItem("lang", lang);
+      applyLang(lang);
+    }
+    function applyLang(lang){
+      document.documentElement.lang = lang;
+      const dict = I18N[lang] || I18N.cs;
+
+      document.querySelectorAll("[data-i18n]").forEach(el=>{
+        const key = el.getAttribute("data-i18n");
+        if(dict[key]) el.textContent = dict[key];
+      });
+
+      const label = document.getElementById("langLabel");
+      if(label) label.textContent = (lang === "cs") ? "CZ" : "EN";
+    }
+
+    document.getElementById("y").textContent = new Date().getFullYear();
+
+    const langBtn = document.getElementById("langBtn");
+    langBtn.addEventListener("click", ()=>{
+      const current = getLang();
+      setLang(current === "cs" ? "en" : "cs");
+    });
+
+    applyLang(getLang());
+  </script>
 </body>
 </html>
