@@ -1,6 +1,5 @@
 
 
-
 <!-- =========================
      FILE: index.html
 ========================= -->
@@ -23,7 +22,7 @@
       --shadow:0 18px 50px rgba(0,0,0,.45);
       --radius:18px;
       --max:1100px;
-      --card:#0b0b0b; /* FIX: jednotné pozadí karet (bez šedého límce) */
+      --card:#0b0b0b;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -139,7 +138,8 @@
       border-radius:var(--radius);
       box-shadow:var(--shadow);
       padding:22px;
-      overflow:hidden; /* FIX: žádné vyčuhování / límec */
+      overflow:hidden;
+      position:relative;
     }
     .card h2{
       margin:0 0 10px 0;
@@ -193,12 +193,23 @@
       font-size:13px;
       gap:8px;
       white-space:nowrap;
+      position:relative;
+      z-index:2;
     }
     .btn:hover{border-color:rgba(200,162,74,.75)}
     .btn.ghost{
       border-color:var(--line);
       background:rgba(255,255,255,.02);
       color:var(--muted);
+    }
+
+    /* Klikací karta (celá plocha), ale tlačítka zůstávají klikací */
+    .card-link{
+      position:absolute;
+      inset:0;
+      z-index:1;
+      display:block;
+      border-radius:var(--radius);
     }
 
     footer{
@@ -228,7 +239,6 @@
         </div>
 
         <div class="links">
-          <!-- O nás vede na about.html -->
           <a class="chip" href="about.html" data-i18n="nav_about">O nás</a>
           <a class="chip" href="#services" data-i18n="nav_services">Služby</a>
           <a class="chip" href="#contact" data-i18n="nav_contact">Kontakt</a>
@@ -284,14 +294,27 @@
       </div>
     </section>
 
+    <!-- Služby: krátce + klik na services.html -->
     <section id="services" class="section">
       <div class="wrap">
         <div class="card">
+          <a class="card-link" href="services.html" aria-label="Services"></a>
+
           <h2 data-i18n="services_title">Služby</h2>
+
           <p data-i18n="services_text">
-            Servis a renovace mechanických hodinek, citlivá práce s vintage díly a zakázkové sestavy.
-            (Galerii doplníme, až budeš mít fotky.)
+            Naše práce je vidět na Instagramu a TikToku. Klikni sem pro přehled služeb a postup spolupráce.
           </p>
+
+          <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+            <a class="btn ghost" href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr" target="_blank" rel="noopener">
+              Instagram
+            </a>
+            <a class="btn ghost" href="https://www.tiktok.com/@patrickhug58?_r=1&_t=ZN-94EPWxDtCNS" target="_blank" rel="noopener">
+              TikTok
+            </a>
+            <a class="btn" href="services.html" data-i18n="services_btn">Zobrazit služby</a>
+          </div>
         </div>
       </div>
     </section>
@@ -374,7 +397,8 @@
         q4: "Dokončovací práce & prezentace",
 
         services_title: "Služby",
-        services_text: "Servis a renovace mechanických hodinek, citlivá práce s vintage díly a zakázkové sestavy. (Galerii doplníme, až budeš mít fotky.)",
+        services_text: "Naše práce je vidět na Instagramu a TikToku. Klikni sem pro přehled služeb a postup spolupráce.",
+        services_btn: "Zobrazit služby",
 
         contact_title: "Kontakt",
         contact_text: "Napiš mi e-mail nebo zprávu na Instagram/TikTok.",
@@ -389,6 +413,7 @@
         footer_claims: "Reklamace",
         footer_privacy: "Soukromí",
       },
+
       en: {
         nav_about: "About",
         nav_services: "Services",
@@ -406,7 +431,8 @@
         q4: "Finishing & presentation details",
 
         services_title: "Services",
-        services_text: "Servicing and restoration of mechanical watches, careful work with vintage parts, and custom builds. (Gallery will be added once photos are available.)",
+        services_text: "Our work is shown on Instagram and TikTok. Click here for a list of services and how it works.",
+        services_btn: "View services",
 
         contact_title: "Contact",
         contact_text: "Send an email or message on Instagram/TikTok.",
@@ -423,7 +449,9 @@
       }
     };
 
-    function getLang(){ return localStorage.getItem("lang") || "cs"; }
+    function getLang(){
+      return localStorage.getItem("lang") || "cs";
+    }
     function applyLang(lang){
       document.documentElement.lang = lang;
       const dict = I18N[lang] || I18N.cs;
@@ -443,7 +471,8 @@
 
     document.getElementById("y").textContent = new Date().getFullYear();
 
-    document.getElementById("langBtn").addEventListener("click", ()=>{
+    const langBtn = document.getElementById("langBtn");
+    langBtn.addEventListener("click", ()=>{
       const current = getLang();
       setLang(current === "cs" ? "en" : "cs");
     });
