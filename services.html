@@ -1,4 +1,5 @@
 
+
 <!doctype html>
 <html lang="cs">
 <head>
@@ -9,157 +10,168 @@
 
   <style>
     :root{
-      --bg:#070707; --text:#f2f2f2; --muted:#b9b9b9; --gold:#c8a24a;
-      --line:rgba(255,255,255,.10); --shadow:0 18px 50px rgba(0,0,0,.45);
-      --radius:18px; --max:900px; --card:#0b0b0b;
+      --bg:#070707;
+      --text:#f2f2f2;
+      --muted:#b9b9b9;
+      --gold:#c8a24a;
+      --line:rgba(255,255,255,.10);
+      --shadow:0 18px 50px rgba(0,0,0,.45);
+      --radius:18px;
+      --max:900px;
+      --card:#0b0b0b;
     }
+
     *{box-sizing:border-box}
+
     body{
-      margin:0; color:var(--text);
+      margin:0;
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      color:var(--text);
       background:
         linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 55%),
         radial-gradient(1200px 700px at 50% -120px, rgba(200,162,74,.12), rgba(0,0,0,0) 60%),
         var(--bg);
     }
+
     a{color:inherit;text-decoration:none}
-    .wrap{max-width:var(--max); margin:0 auto; padding:34px 20px}
-    .top{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; flex-wrap:wrap}
-    .back{color:var(--gold)}
-    .langbtn{
-      padding:8px 12px; border:1px solid var(--line); border-radius:999px;
-      background:rgba(255,255,255,.02); color:var(--muted); cursor:pointer;
+
+    .wrap{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:34px 20px;
     }
-    .langbtn:hover{border-color:rgba(200,162,74,.45); color:var(--text)}
+
+    .back{
+      color:var(--gold);
+      display:inline-block;
+      margin-bottom:16px;
+    }
+
     h1{
-      margin:8px 0 18px;
+      margin:0 0 22px;
       font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
-      letter-spacing:.03em;
       font-size:42px;
+      letter-spacing:.04em;
     }
+
     .card{
-      background: var(--card);
+      background:var(--card);
       border:1px solid var(--line);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
-      padding:22px;
-      overflow:hidden;
+      padding:26px;
     }
-    p,li{color:#cfcfcf; line-height:1.75; font-size:16px}
-    h2{margin:18px 0 8px; font-size:20px; letter-spacing:.02em}
-    ul{margin:8px 0 0; padding-left:18px}
-    .cta{margin-top:16px; display:flex; gap:10px; flex-wrap:wrap}
+
+    h2{
+      margin:24px 0 10px;
+      font-size:20px;
+      letter-spacing:.02em;
+    }
+
+    p{
+      color:#cfcfcf;
+      line-height:1.75;
+      font-size:16px;
+      margin:0 0 18px;
+    }
+
+    ul{
+      margin:0;
+      padding-left:18px;
+      color:#cfcfcf;
+      line-height:1.75;
+    }
+
+    .brands{
+      margin-top:18px;
+      padding-top:18px;
+      border-top:1px solid var(--line);
+      color:var(--muted);
+      font-size:15px;
+    }
+
+    .cta{
+      margin-top:26px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
     .btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      padding:10px 12px; border-radius:12px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px 14px;
+      border-radius:12px;
       border:1px solid rgba(200,162,74,.45);
       background:linear-gradient(180deg, rgba(200,162,74,.18), rgba(200,162,74,.04));
-      color:var(--text); font-size:13px; white-space:nowrap;
+      color:var(--text);
+      font-size:14px;
     }
-    .btn.ghost{border-color:var(--line); background:rgba(255,255,255,.02); color:var(--muted)}
+
+    .btn.ghost{
+      border-color:var(--line);
+      background:rgba(255,255,255,.02);
+      color:var(--muted);
+    }
+
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="top">
-      <a class="back" href="index.html" data-i18n="back">← Zpět na hlavní stránku</a>
-      <button class="langbtn" id="langBtn" type="button">CZ</button>
-    </div>
 
-    <h1 data-i18n="title">Služby</h1>
+    <a class="back" href="index.html">← Zpět na hlavní stránku</a>
+
+    <h1>Služby</h1>
 
     <div class="card">
-      <p data-i18n="intro">
-        Níže je přehled toho, co v ateliéru nejčastěji dělám. Každá zakázka je individuální – napiš mi fotky a popis a navrhnu postup.
+
+      <p>
+        Servis a citlivá renovace mechanických hodinek s respektem k původnímu řemeslu
+        a charakteru každého kusu. Každou zakázku řeším individuálně.
       </p>
 
-      <h2 data-i18n="s1_title">Servis mechanických hodinek</h2>
+      <h2>Servis mechanických hodinek</h2>
       <ul>
-        <li data-i18n="s1_1">Kompletní rozebrání, čištění, mazání, sestavení</li>
-        <li data-i18n="s1_2">Kontrola opotřebení a doporučení výměn dílů</li>
-        <li data-i18n="s1_3">Regulace chodu a závěrečné testování</li>
+        <li>Kompletní rozebrání, čištění, mazání a opětovné sestavení</li>
+        <li>Kontrola opotřebení a doporučení případných výměn dílů</li>
+        <li>Regulace chodu a závěrečné testování</li>
       </ul>
 
-      <h2 data-i18n="s2_title">Renovace / opravy (vintage)</h2>
+      <h2>Renovace / opravy (vintage)</h2>
       <ul>
-        <li data-i18n="s2_1">Záchrana a citlivé opravy vintage hodinek</li>
-        <li data-i18n="s2_2">Řešení závad po pádu, poškození, neodborném zásahu</li>
-        <li data-i18n="s2_3">Možnost doplnění dílů dle dostupnosti</li>
+        <li>Citlivé opravy a záchrana starších modelů</li>
+        <li>Řešení závad po pádu či neodborném zásahu</li>
+        <li>Možnost doplnění dílů dle dostupnosti</li>
       </ul>
 
-      <h2 data-i18n="s3_title">Zakázkové sestavy (limitované kusy)</h2>
+      <h2>Zakázkové sestavy</h2>
       <ul>
-        <li data-i18n="s3_1">Sestavení hodinek na míru (dle dohody)</li>
-        <li data-i18n="s3_2">Důraz na detail a finální prezentaci</li>
+        <li>Sestavení hodinek na míru dle dohody</li>
+        <li>Důraz na detail a finální prezentaci</li>
       </ul>
+
+      <div class="brands">
+        Zaměření především na značky:
+        <strong>PRIM, Omega, Bulova, Zaria, Doxa</strong>
+        a další vintage modely.
+      </div>
 
       <div class="cta">
-        <a class="btn" href="mailto:dante.time.atelier@gmail.com" data-i18n="email">Napsat e-mail</a>
-        <a class="btn ghost" target="_blank" rel="noopener"
-           href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr">Instagram</a>
-        <a class="btn ghost" target="_blank" rel="noopener"
-           href="https://www.tiktok.com/@patrickhug58?_r=1&_t=ZN-94EPWxDtCNS">TikTok</a>
+        <a class="btn" href="mailto:dante.time.atelier@gmail.com">Napsat e-mail</a>
+        <a class="btn ghost" target="_blank"
+           href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr">
+           Instagram
+        </a>
+        <a class="btn ghost" target="_blank"
+           href="https://www.tiktok.com/@patrickhug58?_r=1&_t=ZN-94EPWxDtCNS">
+           TikTok
+        </a>
       </div>
+
     </div>
+
   </div>
-
-  <script>
-    const I18N = {
-      cs: {
-        back:"← Zpět na hlavní stránku",
-        title:"Služby",
-        intro:"Níže je přehled toho, co v ateliéru nejčastěji dělám. Každá zakázka je individuální – napiš mi fotky a popis a navrhnu postup.",
-        s1_title:"Servis mechanických hodinek",
-        s1_1:"Kompletní rozebrání, čištění, mazání, sestavení",
-        s1_2:"Kontrola opotřebení a doporučení výměn dílů",
-        s1_3:"Regulace chodu a závěrečné testování",
-        s2_title:"Renovace / opravy (vintage)",
-        s2_1:"Záchrana a citlivé opravy vintage hodinek",
-        s2_2:"Řešení závad po pádu, poškození, neodborném zásahu",
-        s2_3:"Možnost doplnění dílů dle dostupnosti",
-        s3_title:"Zakázkové sestavy (limitované kusy)",
-        s3_1:"Sestavení hodinek na míru (dle dohody)",
-        s3_2:"Důraz na detail a finální prezentaci",
-        email:"Napsat e-mail",
-      },
-      en: {
-        back:"← Back to home",
-        title:"Services",
-        intro:"Below is an overview of what I most often do in the atelier. Every request is individual — email photos and a short description and I’ll propose the best approach.",
-        s1_title:"Mechanical watch service",
-        s1_1:"Complete disassembly, cleaning, lubrication, reassembly",
-        s1_2:"Wear inspection and parts recommendations",
-        s1_3:"Timing regulation and final testing",
-        s2_title:"Restoration / repairs (vintage)",
-        s2_1:"Careful restoration of vintage watches",
-        s2_2:"Issues after drops, damage, or previous improper work",
-        s2_3:"Parts replacement depending on availability",
-        s3_title:"Custom builds (limited pieces)",
-        s3_1:"Custom assembly (by agreement)",
-        s3_2:"Focus on details and final presentation",
-        email:"Send email",
-      }
-    };
-
-    function getLang(){ return localStorage.getItem("lang") || "cs"; }
-    function applyLang(lang){
-      document.documentElement.lang = lang;
-      const dict = I18N[lang] || I18N.cs;
-      document.querySelectorAll("[data-i18n]").forEach(el=>{
-        const key = el.getAttribute("data-i18n");
-        if(dict[key]) el.textContent = dict[key];
-      });
-      document.getElementById("langBtn").textContent = (lang === "cs") ? "CZ" : "EN";
-    }
-    function setLang(lang){ localStorage.setItem("lang", lang); applyLang(lang); }
-
-    document.getElementById("langBtn").addEventListener("click", ()=>{
-      const current = getLang();
-      setLang(current === "cs" ? "en" : "cs");
-    });
-
-    applyLang(getLang());
-  </script>
 </body>
 </html>
