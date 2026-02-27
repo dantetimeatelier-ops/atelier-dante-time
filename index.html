@@ -40,17 +40,21 @@
     a:hover{opacity:.95}
 
     .wrap{max-width:var(--max); margin:0 auto; padding:0 20px}
+
     header{
       position:sticky; top:0; z-index:20;
       backdrop-filter: blur(10px);
       background:rgba(7,7,7,.65);
       border-bottom:1px solid var(--line);
     }
+
+    /* desktop header */
     .nav{
       display:flex; align-items:center; justify-content:space-between;
       padding:14px 0;
       gap:12px;
     }
+
     .brand{
       display:flex; align-items:center; gap:10px;
       min-width: 180px;
@@ -58,12 +62,17 @@
     .brand img{
       width:28px; height:28px; object-fit:contain;
       filter: drop-shadow(0 10px 30px rgba(0,0,0,.6));
+      transition: width .22s ease, height .22s ease, transform .22s ease;
     }
     .brand strong{
       letter-spacing:.08em; font-weight:700; font-size:12px;
       text-transform:uppercase; color:var(--muted)
     }
-    .links{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
+
+    .links{
+      display:flex; gap:10px; align-items:center;
+      flex-wrap:wrap; justify-content:flex-end;
+    }
 
     .chip, .langbtn{
       padding:8px 12px;
@@ -86,6 +95,44 @@
       box-shadow:0 0 0 4px rgba(200,162,74,.12);
     }
 
+    /* ---- MOBILE HEADER ---- */
+    .nav-mobile{display:none}
+    .nav-mobile .mobile-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 0 10px;
+      transition:padding .22s ease;
+    }
+    .nav-mobile .brand{min-width:auto}
+    .nav-mobile .brand strong{display:none}
+
+    .nav-mobile .mobile-scroll{
+      display:flex;
+      gap:10px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      padding:10px 0 10px;
+      margin:0 -20px;
+      padding-left:20px;
+      padding-right:20px;
+      scrollbar-width:none;
+      transition:padding .22s ease;
+    }
+    .nav-mobile .mobile-scroll::-webkit-scrollbar{display:none}
+
+    .mobile-fade{position:relative}
+    .mobile-fade:after{
+      content:"";
+      position:absolute;
+      right:0; top:0; bottom:0;
+      width:46px;
+      background:linear-gradient(90deg, rgba(7,7,7,0), rgba(7,7,7,.88));
+      pointer-events:none;
+    }
+
+    /* hero */
     .hero{padding:70px 0 40px; text-align:center}
     .hero-logo{
       width:78px; height:78px;
@@ -126,10 +173,28 @@
       gap:18px;
       align-items:stretch;
     }
+
     @media (max-width: 880px){
       .grid{grid-template-columns:1fr}
-      .brand strong{display:none}
       .hero{padding:52px 0 28px}
+
+      /* vypnout desktop header, zapnout mobilní */
+      .nav{display:none}
+      .links{display:none}
+      .nav-mobile{display:block}
+
+      /* compact mode po scrollu */
+      header.is-compact .nav-mobile .mobile-row{padding:8px 0 6px}
+      header.is-compact .nav-mobile .mobile-scroll{padding:6px 0 8px}
+      header.is-compact .nav-mobile .brand img{
+        width:22px; height:22px;
+        transform:translateY(-1px);
+      }
+      header.is-compact .chip,
+      header.is-compact .langbtn{
+        padding:7px 11px;
+        font-size:12px;
+      }
     }
 
     .card{
@@ -183,6 +248,7 @@
     }
     .row b{color:var(--text)}
     .row small{color:var(--muted)}
+
     .btn{
       display:inline-flex; align-items:center; justify-content:center;
       padding:10px 12px;
@@ -229,8 +295,10 @@
 </head>
 
 <body>
-  <header>
+  <header id="siteHeader">
     <div class="wrap">
+
+      <!-- DESKTOP HEADER -->
       <div class="nav">
         <div class="brand">
           <img src="logo.png" alt="Atelier Dante Time logo" />
@@ -251,6 +319,32 @@
           </button>
         </div>
       </div>
+
+      <!-- MOBILE HEADER -->
+      <div class="nav-mobile">
+        <div class="mobile-row">
+          <div class="brand">
+            <img src="logo.png" alt="Atelier Dante Time logo" />
+            <strong>Atelier Dante Time</strong>
+          </div>
+
+          <button class="langbtn" id="langBtnMobile" type="button" aria-label="Switch language">
+            <span class="langdot"></span>
+            <span id="langLabelMobile">CZ</span>
+          </button>
+        </div>
+
+        <div class="mobile-fade">
+          <div class="mobile-scroll">
+            <a class="chip" href="about.html" data-i18n="nav_about">O nás</a>
+            <a class="chip" href="#services" data-i18n="nav_services">Služby</a>
+            <a class="chip" href="#contact" data-i18n="nav_contact">Kontakt</a>
+            <a class="chip gold" href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr" target="_blank" rel="noopener">Instagram</a>
+            <a class="chip gold" href="https://www.tiktok.com/@patrickhug58?_r=1&_t=ZN-94EPWxDtCNS" target="_blank" rel="noopener">TikTok</a>
+          </div>
+        </div>
+      </div>
+
     </div>
   </header>
 
@@ -300,12 +394,8 @@
           </p>
 
           <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
-            <a class="btn ghost" href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr" target="_blank" rel="noopener">
-              Instagram
-            </a>
-            <a class="btn ghost" href="https://www.tiktok.com/@patrickhug58?_r=1&_t=ZN-94EPWxDtCNS" target="_blank" rel="noopener">
-              TikTok
-            </a>
+            <a class="btn ghost" href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr" target="_blank" rel="noopener">Instagram</a>
+            <a class="btn ghost" href="https://www.tiktok.com/@patrickhug58?_r=1&_t=ZN-94EPWxDtCNS" target="_blank" rel="noopener">TikTok</a>
             <a class="btn" href="services.html" data-i18n="services_btn">Zobrazit služby</a>
           </div>
         </div>
@@ -349,8 +439,7 @@
           <div class="card">
             <h2 data-i18n="note_title">Poznámka</h2>
             <p data-i18n="note_text">
-              Pro nezávaznou konzultaci mi zašli e-mailem fotografie hodinek
-              a stručný popis jejich stavu.
+              Pro nezávaznou konzultaci mi zašli e-mailem fotografie hodinek a stručný popis jejich stavu.
               Na základě toho připravím návrh postupu a orientační cenový odhad.
             </p>
           </div>
@@ -455,8 +544,11 @@
         if (dict[key]) el.textContent = dict[key];
       });
 
+      const txt = (lang === "cs") ? "CZ" : "EN";
       const label = document.getElementById("langLabel");
-      if (label) label.textContent = (lang === "cs") ? "CZ" : "EN";
+      const labelM = document.getElementById("langLabelMobile");
+      if (label) label.textContent = txt;
+      if (labelM) labelM.textContent = txt;
     }
     function setLang(lang){
       localStorage.setItem("lang", lang);
@@ -466,12 +558,36 @@
     document.getElementById("y").textContent = new Date().getFullYear();
 
     const langBtn = document.getElementById("langBtn");
-    langBtn.addEventListener("click", ()=>{
+    if (langBtn) langBtn.addEventListener("click", ()=>{
+      const current = getLang();
+      setLang(current === "cs" ? "en" : "cs");
+    });
+
+    const langBtnMobile = document.getElementById("langBtnMobile");
+    if (langBtnMobile) langBtnMobile.addEventListener("click", ()=>{
       const current = getLang();
       setLang(current === "cs" ? "en" : "cs");
     });
 
     applyLang(getLang());
+
+    // mobile header shrink on scroll
+    const header = document.getElementById("siteHeader");
+    let ticking = false;
+
+    function onScroll(){
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(()=>{
+        const y = window.scrollY || document.documentElement.scrollTop || 0;
+        if (y > 10) header.classList.add("is-compact");
+        else header.classList.remove("is-compact");
+        ticking = false;
+      });
+    }
+
+    window.addEventListener("scroll", onScroll, { passive:true });
+    onScroll();
   </script>
 </body>
 </html>
