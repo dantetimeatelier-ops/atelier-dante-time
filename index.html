@@ -300,7 +300,6 @@
 
       <!-- DESKTOP HEADER -->
       <div class="nav">
-        <!-- Logo + název = klikací domů -->
         <a class="brand" href="index.html" aria-label="Domů">
           <img src="logo.png" alt="Atelier Dante Time logo" />
           <strong>Atelier Dante Time</strong>
@@ -308,16 +307,11 @@
 
         <div class="links">
           <a class="chip" href="about.html" data-i18n="nav_about">O nás</a>
-
-          <!-- Služby otevřou services.html (ne posun na stránce) -->
           <a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
-
           <a class="chip" href="#contact" data-i18n="nav_contact">Kontakt</a>
 
           <a class="chip gold" href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr" target="_blank" rel="noopener">Instagram</a>
-
-          <!-- TikTok opravený -->
-          <a class="chip gold" href="https://www.tiktok.com/@atelierdt" target="_blank" rel="noopener">TikTok</a>
+          <a class="chip gold" href="https://www.tiktok.com/@atelierdt?_r=1&_t=ZN-94KrQVJd7OJ" target="_blank" rel="noopener">TikTok</a>
 
           <button class="langbtn" id="langBtn" type="button" aria-label="Switch language">
             <span class="langdot"></span>
@@ -329,7 +323,6 @@
       <!-- MOBILE HEADER -->
       <div class="nav-mobile">
         <div class="mobile-row">
-          <!-- Logo klikací domů i na mobilu -->
           <a class="brand" href="index.html" aria-label="Domů">
             <img src="logo.png" alt="Atelier Dante Time logo" />
             <strong>Atelier Dante Time</strong>
@@ -344,15 +337,10 @@
         <div class="mobile-fade">
           <div class="mobile-scroll">
             <a class="chip" href="about.html" data-i18n="nav_about">O nás</a>
-
-            <!-- Služby otevřou services.html -->
             <a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
-
             <a class="chip" href="#contact" data-i18n="nav_contact">Kontakt</a>
             <a class="chip gold" href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr" target="_blank" rel="noopener">Instagram</a>
-
-            <!-- TikTok opravený -->
-            <a class="chip gold" href="https://www.tiktok.com/@atelierdt" target="_blank" rel="noopener">TikTok</a>
+            <a class="chip gold" href="https://www.tiktok.com/@atelierdt?_r=1&_t=ZN-94KrQVJd7OJ" target="_blank" rel="noopener">TikTok</a>
           </div>
         </div>
       </div>
@@ -396,7 +384,6 @@
       </div>
     </section>
 
-    <!-- Karta Služby zůstává na homepage jako promo, ale klik vede do services.html -->
     <section id="services" class="section">
       <div class="wrap">
         <div class="card">
@@ -408,7 +395,7 @@
 
           <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
             <a class="btn ghost" href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr" target="_blank" rel="noopener">Instagram</a>
-            <a class="btn ghost" href="https://www.tiktok.com/@atelierdt" target="_blank" rel="noopener">TikTok</a>
+            <a class="btn ghost" href="https://www.tiktok.com/@atelierdt?_r=1&_t=ZN-94KrQVJd7OJ" target="_blank" rel="noopener">TikTok</a>
             <a class="btn" href="services.html" data-i18n="services_btn">Zobrazit služby</a>
           </div>
         </div>
@@ -444,7 +431,7 @@
                   <b>TikTok</b><br />
                   <small>@atelierdt</small>
                 </div>
-                <a class="btn ghost" href="https://www.tiktok.com/@atelierdt" target="_blank" rel="noopener" data-i18n="open_btn">Otevřít</a>
+                <a class="btn ghost" href="https://www.tiktok.com/@atelierdt?_r=1&_t=ZN-94KrQVJd7OJ" target="_blank" rel="noopener" data-i18n="open_btn">Otevřít</a>
               </div>
             </div>
           </div>
@@ -465,10 +452,13 @@
     <div class="wrap">
       <div class="footer-inner">
         <div>© <span id="y"></span> Atelier Dante Time</div>
+
+        <!-- TADY jsou ty 4 položky (jak na tvé 1. fotce) -->
         <div class="footer-links">
-          <a href="terms.html" data-i18n="footer_terms">Podmínky</a>
-          <a href="reklamace.html" data-i18n="footer_claims">Reklamace</a>
-          <a href="privacy.html" data-i18n="footer_privacy">Soukromí</a>
+          <a href="terms.html#vraceni" data-i18n="footer_returns">Vrácení a výměna zboží</a>
+          <a href="terms.html#zaruka" data-i18n="footer_warranty">Záruka a servis</a>
+          <a href="terms.html#pece" data-i18n="footer_care">Péče o hodinky</a>
+          <a href="terms.html#obchodni" data-i18n="footer_terms_general">Obchodní podmínky</a>
         </div>
       </div>
     </div>
@@ -505,9 +495,10 @@
         note_title: "Poznámka",
         note_text: "Pro nezávaznou konzultaci mi zašli e-mailem fotografie hodinek a stručný popis jejich stavu. Na základě toho připravím návrh postupu a orientační cenový odhad.",
 
-        footer_terms: "Podmínky",
-        footer_claims: "Reklamace",
-        footer_privacy: "Soukromí",
+        footer_returns: "Vrácení a výměna zboží",
+        footer_warranty: "Záruka a servis",
+        footer_care: "Péče o hodinky",
+        footer_terms_general: "Obchodní podmínky",
       },
 
       en: {
@@ -539,9 +530,10 @@
         note_title: "Note",
         note_text: "For a non-binding consultation, email photos of the watch and a short description of its condition. Based on that, I will suggest the next steps and provide an estimated price.",
 
-        footer_terms: "Terms",
-        footer_claims: "Claims",
-        footer_privacy: "Privacy",
+        footer_returns: "Returns & exchanges",
+        footer_warranty: "Warranty & service",
+        footer_care: "Watch care",
+        footer_terms_general: "Terms & conditions",
       }
     };
 
