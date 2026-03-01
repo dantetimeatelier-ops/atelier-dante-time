@@ -1,1 +1,409 @@
 
+
+<!-- =========================
+     FILE: returns.html
+========================= -->
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vrácení a výměna zboží | Atelier Dante Time</title>
+  <meta name="description" content="Vrácení a výměna zboží — Atelier Dante Time" />
+  <link rel="icon" href="logo.png" />
+
+  <style>
+    :root{
+      --bg:#070707;
+      --text:#f2f2f2;
+      --muted:#b9b9b9;
+      --gold:#c8a24a;
+      --line:rgba(255,255,255,.10);
+      --shadow:0 18px 50px rgba(0,0,0,.45);
+      --radius:18px;
+      --max:900px;
+      --card:#0b0b0b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 55%),
+        radial-gradient(1200px 700px at 50% -120px, rgba(200,162,74,.12), rgba(0,0,0,0) 60%),
+        var(--bg);
+      overflow-x:hidden;
+    }
+    a{color:inherit; text-decoration:none}
+    a:hover{opacity:.95}
+
+    .wrap{max-width:var(--max); margin:0 auto; padding:0 20px}
+
+    header{
+      position:sticky; top:0; z-index:20;
+      backdrop-filter: blur(10px);
+      background:rgba(7,7,7,.65);
+      border-bottom:1px solid var(--line);
+    }
+    .nav{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 0; gap:12px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      min-width: 180px;
+    }
+    .brand img{
+      width:28px; height:28px; object-fit:contain;
+      filter: drop-shadow(0 10px 30px rgba(0,0,0,.6));
+    }
+    .brand strong{
+      letter-spacing:.08em; font-weight:700; font-size:12px;
+      text-transform:uppercase; color:var(--muted)
+    }
+    .links{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
+
+    .chip, .langbtn{
+      padding:8px 12px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      color:var(--muted);
+      font-size:13px;
+      transition:.2s ease;
+      background:rgba(255,255,255,.02);
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .chip:hover, .langbtn:hover{border-color:rgba(200,162,74,.45); color:var(--text)}
+    .chip.gold{border-color:rgba(200,162,74,.45); color:var(--text)}
+    .langbtn{display:inline-flex; gap:8px; align-items:center}
+    .langdot{
+      width:8px;height:8px;border-radius:99px;
+      background:rgba(200,162,74,.75);
+      box-shadow:0 0 0 4px rgba(200,162,74,.12);
+    }
+
+    .page{padding:34px 0 44px}
+    .back{
+      display:inline-flex; align-items:center; gap:10px;
+      color:var(--gold);
+      opacity:.95;
+      margin:6px 0 18px;
+      font-weight:600;
+      letter-spacing:.02em;
+    }
+    .back:hover{opacity:1}
+
+    .card{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:22px;
+      overflow:hidden;
+      position:relative;
+    }
+    h1{
+      margin:0 0 8px 0;
+      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+      letter-spacing:.06em;
+      font-size:clamp(26px, 3.6vw, 44px);
+    }
+    .lead{
+      margin:0 0 18px 0;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.75;
+    }
+
+    .note{
+      margin:14px 0 0;
+      padding:14px 14px;
+      border:1px solid rgba(200,162,74,.25);
+      background:linear-gradient(180deg, rgba(200,162,74,.08), rgba(200,162,74,.02));
+      border-radius:14px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.7;
+    }
+
+    /* Accordion */
+    details{
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:rgba(0,0,0,.22);
+      overflow:hidden;
+      margin-top:12px;
+    }
+    summary{
+      list-style:none;
+      cursor:pointer;
+      padding:14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      user-select:none;
+    }
+    summary::-webkit-details-marker{display:none}
+    .sum-title{
+      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+      letter-spacing:.04em;
+      font-size:20px;
+    }
+    .chev{
+      width:26px; height:26px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      display:flex; align-items:center; justify-content:center;
+      color:var(--muted);
+      transition:.2s ease;
+      flex:0 0 auto;
+    }
+    details[open] .chev{
+      border-color:rgba(200,162,74,.45);
+      color:var(--text);
+      transform:rotate(180deg);
+    }
+    .content{
+      padding:0 16px 16px;
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.8;
+    }
+    .content h3{
+      margin:12px 0 6px;
+      color:var(--text);
+      font-size:14px;
+      letter-spacing:.05em;
+      text-transform:uppercase;
+    }
+    .content ul{
+      margin:8px 0 0;
+      padding-left:18px;
+    }
+    .content li{margin:6px 0}
+
+    footer{
+      padding:22px 0 28px;
+      border-top:1px solid var(--line);
+      margin-top:26px;
+      color:var(--muted);
+      font-size:13px;
+    }
+    .footer-inner{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:14px; flex-wrap:wrap;
+    }
+    .footer-links{display:flex; gap:12px; flex-wrap:wrap}
+    .footer-links a{color:var(--muted); border-bottom:1px solid transparent}
+    .footer-links a:hover{color:var(--text); border-bottom-color:rgba(200,162,74,.5)}
+
+    @media (max-width: 720px){
+      .brand strong{display:none}
+      .links{gap:8px}
+      .chip, .langbtn{padding:7px 11px; font-size:12px}
+      .sum-title{font-size:18px}
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="wrap">
+      <div class="nav">
+        <div class="brand">
+          <img src="logo.png" alt="Atelier Dante Time logo" />
+          <strong>Atelier Dante Time</strong>
+        </div>
+
+        <div class="links">
+          <a class="chip" href="index.html" data-i18n="nav_home">Domů</a>
+          <a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
+          <a class="chip" href="about.html" data-i18n="nav_about">O nás</a>
+
+          <button class="langbtn" id="langBtn" type="button" aria-label="Switch language">
+            <span class="langdot"></span>
+            <span id="langLabel">CZ</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="wrap">
+      <a class="back" href="index.html">← <span data-i18n="back">Zpět na hlavní stránku</span></a>
+
+      <div class="card">
+        <h1 data-i18n="title">Vrácení a výměna zboží</h1>
+        <p class="lead" data-i18n="lead">
+          Níže najdeš jednoduchý přehled pravidel pro vrácení a výměnu. Pokud si nejsi jistý/á,
+          napiš mi – vyřešíme to rychle a férově.
+        </p>
+
+        <div class="note" data-i18n="note">
+          Pozn.: U zakázkových projektů (individuálních sestav) se postup může lišit – vždy záleží na dohodě a stavu zakázky.
+        </div>
+
+        <!-- 1 -->
+        <details open>
+          <summary>
+            <span class="sum-title" data-i18n="s1">Kdy je možné zboží vrátit</span>
+            <span class="chev">⌄</span>
+          </summary>
+          <div class="content" data-i18n-block="c1">
+            <p>
+              Vrácení je možné pouze v případě, že hodinky jsou nefunkční a nelze je opravit nebo nahradit hodinkami stejné
+              nebo vyšší kvality. V takovém případě vrátíme plnou částku, kterou jste za hodinky zaplatili.
+            </p>
+            <p>
+              Vrácení zboží musí být provedeno do 30 dnů od doručení a hodinky musí být v původním stavu, bez známek používání
+              a v původním obalu.
+            </p>
+          </div>
+        </details>
+
+        <!-- 2 -->
+        <details>
+          <summary>
+            <span class="sum-title" data-i18n="s2">Výměna zboží</span>
+            <span class="chev">⌄</span>
+          </summary>
+          <div class="content" data-i18n-block="c2">
+            <p>
+              Pokud hodinky, které jste obdrželi, odpovídají fotografii na produktové stránce, ale přesto se vám nelíbí
+              (toto pravidlo platí pro hodinky SKLADEM, nikoliv pro INDIVIDUÁLNÍ PROJEKTY), máte možnost je vyměnit za jiné hodinky.
+            </p>
+            <p>
+              V tomto případě je třeba pokrýt náklady na poštovní služby a případné celní poplatky. Hodinky, které obdržíte při výměně,
+              musí mít stejnou nebo vyšší hodnotu než původní hodinky.
+            </p>
+          </div>
+        </details>
+
+        <!-- 3 -->
+        <details>
+          <summary>
+            <span class="sum-title" data-i18n="s3">Postup vrácení a výměny</span>
+            <span class="chev">⌄</span>
+          </summary>
+          <div class="content" data-i18n-block="c3">
+            <ol style="margin:8px 0 0; padding-left:18px;">
+              <li>Kontaktujte naši zákaznickou podporu na e-mailové adrese nebo telefonním čísle uvedeném na našich stránkách a uveďte důvod vrácení nebo výměny.</li>
+              <li>Naše zákaznická podpora vám poskytne další pokyny, včetně adresy pro zaslání hodinek zpět k nám.</li>
+              <li>Zabalte hodinky do původního obalu a připojte všechny dokumenty a příslušenství, které byly součástí balení. Ujistěte se, že jsou hodinky dobře chráněny pro přepravu.</li>
+              <li>Po obdržení hodinek zkontrolujeme jejich stav a funkčnost.</li>
+              <li>Pokud budou splněny všechny podmínky, provedeme vrácení peněz nebo zašleme náhradní hodinky dle dohody.</li>
+            </ol>
+
+            <h3 data-i18n="more">Další informace</h3>
+            <p data-i18n="more_text">
+              Výměny a vrácení u hodinek na objednávku (INDIVIDUÁLNÍ PROJEKTY): výměna nebo vrácení není možné,
+              pokud není zboží nefunkční nebo poškozené.
+              Zodpovědnost za dopravu a clo: zákazník je odpovědný za náklady na dopravu a případné celní poplatky
+              spojené s vrácením nebo výměnou hodinek.
+            </p>
+          </div>
+        </details>
+
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div class="footer-inner">
+        <div>© <span id="y"></span> Atelier Dante Time</div>
+        <div class="footer-links">
+          <a href="returns.html" data-i18n="footer_returns">Vrácení a výměna zboží</a>
+          <a href="warranty.html" data-i18n="footer_warranty">Záruka a servis</a>
+          <a href="care.html" data-i18n="footer_care">Péče o hodinky</a>
+          <a href="terms.html" data-i18n="footer_terms">Obchodní podmínky</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const I18N = {
+      cs: {
+        nav_home: "Domů",
+        nav_services: "Služby",
+        nav_about: "O nás",
+        back: "Zpět na hlavní stránku",
+
+        title: "Vrácení a výměna zboží",
+        lead: "Níže najdeš jednoduchý přehled pravidel pro vrácení a výměnu. Pokud si nejsi jistý/á, napiš mi – vyřešíme to rychle a férově.",
+        note: "Pozn.: U zakázkových projektů (individuálních sestav) se postup může lišit – vždy záleží na dohodě a stavu zakázky.",
+
+        s1: "Kdy je možné zboží vrátit",
+        s2: "Výměna zboží",
+        s3: "Postup vrácení a výměny",
+        more: "Další informace",
+        more_text: "Výměny a vrácení u hodinek na objednávku (INDIVIDUÁLNÍ PROJEKTY): výměna nebo vrácení není možné, pokud není zboží nefunkční nebo poškozené. Zodpovědnost za dopravu a clo: zákazník je odpovědný za náklady na dopravu a případné celní poplatky spojené s vrácením nebo výměnou hodinek.",
+
+        footer_returns: "Vrácení a výměna zboží",
+        footer_warranty: "Záruka a servis",
+        footer_care: "Péče o hodinky",
+        footer_terms: "Obchodní podmínky",
+      },
+
+      en: {
+        nav_home: "Home",
+        nav_services: "Services",
+        nav_about: "About",
+        back: "Back to home",
+
+        title: "Returns & exchange",
+        lead: "Below is a simple overview of our return and exchange rules. If you’re unsure, message me — we’ll handle it quickly and fairly.",
+        note: "Note: For custom projects (individual builds), the process may differ — it always depends on the agreement and the project status.",
+
+        s1: "When a return is possible",
+        s2: "Exchange",
+        s3: "Return & exchange process",
+        more: "Additional information",
+        more_text: "Custom order watches (INDIVIDUAL PROJECTS): exchange/return is not possible unless the item is defective or damaged. Shipping & customs: the customer is responsible for shipping costs and any customs fees related to the return/exchange.",
+
+        footer_returns: "Returns & exchange",
+        footer_warranty: "Warranty & service",
+        footer_care: "Watch care",
+        footer_terms: "Terms & conditions",
+      }
+    };
+
+    function getLang(){ return localStorage.getItem("lang") || "cs"; }
+
+    function applyLang(lang){
+      document.documentElement.lang = lang;
+      const dict = I18N[lang] || I18N.cs;
+
+      document.querySelectorAll("[data-i18n]").forEach(el=>{
+        const key = el.getAttribute("data-i18n");
+        if (dict[key]) el.textContent = dict[key];
+      });
+
+      const label = document.getElementById("langLabel");
+      if (label) label.textContent = (lang === "cs") ? "CZ" : "EN";
+    }
+
+    function setLang(lang){
+      localStorage.setItem("lang", lang);
+      applyLang(lang);
+    }
+
+    document.getElementById("y").textContent = new Date().getFullYear();
+
+    const langBtn = document.getElementById("langBtn");
+    if (langBtn) langBtn.addEventListener("click", ()=>{
+      const current = getLang();
+      setLang(current === "cs" ? "en" : "cs");
+    });
+
+    applyLang(getLang());
+  </script>
+</body>
+</html>
