@@ -8,7 +8,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Vrácení a výměna zboží | Atelier Dante Time</title>
+  <title>Vrácení a výměna — Atelier Dante Time</title>
   <meta name="description" content="Vrácení a výměna zboží — Atelier Dante Time" />
   <link rel="icon" href="logo.png" />
 
@@ -21,7 +21,7 @@
       --line:rgba(255,255,255,.10);
       --shadow:0 18px 50px rgba(0,0,0,.45);
       --radius:18px;
-      --max:900px;
+      --max:1100px;
       --card:#0b0b0b;
     }
     *{box-sizing:border-box}
@@ -38,7 +38,6 @@
     }
     a{color:inherit; text-decoration:none}
     a:hover{opacity:.95}
-
     .wrap{max-width:var(--max); margin:0 auto; padding:0 20px}
 
     header{
@@ -49,7 +48,8 @@
     }
     .nav{
       display:flex; align-items:center; justify-content:space-between;
-      padding:14px 0; gap:12px;
+      padding:14px 0;
+      gap:12px;
     }
     .brand{
       display:flex; align-items:center; gap:10px;
@@ -63,8 +63,8 @@
       letter-spacing:.08em; font-weight:700; font-size:12px;
       text-transform:uppercase; color:var(--muted)
     }
-    .links{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
 
+    .links{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
     .chip, .langbtn{
       padding:8px 12px;
       border:1px solid var(--line);
@@ -86,17 +86,34 @@
       box-shadow:0 0 0 4px rgba(200,162,74,.12);
     }
 
-    .page{padding:34px 0 44px}
-    .back{
-      display:inline-flex; align-items:center; gap:10px;
-      color:var(--gold);
-      opacity:.95;
-      margin:6px 0 18px;
-      font-weight:600;
-      letter-spacing:.02em;
+    /* content */
+    .hero{
+      padding:46px 0 20px;
+      text-align:left;
     }
-    .back:hover{opacity:1}
+    h1{
+      margin:0;
+      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      font-size:clamp(26px, 3.6vw, 44px);
+      line-height:1.1;
+    }
+    .subtitle{
+      margin:10px 0 0;
+      color:var(--muted);
+      line-height:1.7;
+      max-width: 900px;
+    }
+    .subline{
+      width:min(220px, 60vw);
+      height:1px;
+      margin:18px 0 0;
+      background:linear-gradient(90deg, rgba(200,162,74,0), rgba(200,162,74,.9), rgba(200,162,74,0));
+      opacity:.75;
+    }
 
+    .section{padding:18px 0 34px}
     .card{
       background: var(--card);
       border:1px solid var(--line);
@@ -106,91 +123,62 @@
       overflow:hidden;
       position:relative;
     }
-    h1{
-      margin:0 0 8px 0;
+    .card h2{
+      margin:0 0 10px 0;
       font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
-      letter-spacing:.06em;
-      font-size:clamp(26px, 3.6vw, 44px);
+      font-size:22px;
+      letter-spacing:.03em;
     }
-    .lead{
-      margin:0 0 18px 0;
+    .card h3{
+      margin:18px 0 8px;
+      font-size:16px;
+      letter-spacing:.02em;
+      color:var(--text);
+    }
+    .card p{
+      margin:0;
       color:var(--muted);
       font-size:16px;
-      line-height:1.75;
-    }
-
-    .note{
-      margin:14px 0 0;
-      padding:14px 14px;
-      border:1px solid rgba(200,162,74,.25);
-      background:linear-gradient(180deg, rgba(200,162,74,.08), rgba(200,162,74,.02));
-      border-radius:14px;
-      color:var(--muted);
-      font-size:14px;
       line-height:1.7;
     }
-
-    /* Accordion */
-    details{
-      border:1px solid var(--line);
-      border-radius:16px;
-      background:rgba(0,0,0,.22);
-      overflow:hidden;
-      margin-top:12px;
-    }
-    summary{
-      list-style:none;
-      cursor:pointer;
-      padding:14px 16px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      user-select:none;
-    }
-    summary::-webkit-details-marker{display:none}
-    .sum-title{
-      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
-      letter-spacing:.04em;
-      font-size:20px;
-    }
-    .chev{
-      width:26px; height:26px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      display:flex; align-items:center; justify-content:center;
-      color:var(--muted);
-      transition:.2s ease;
-      flex:0 0 auto;
-    }
-    details[open] .chev{
-      border-color:rgba(200,162,74,.45);
-      color:var(--text);
-      transform:rotate(180deg);
-    }
-    .content{
-      padding:0 16px 16px;
-      color:var(--muted);
-      font-size:15px;
-      line-height:1.8;
-    }
-    .content h3{
-      margin:12px 0 6px;
-      color:var(--text);
-      font-size:14px;
-      letter-spacing:.05em;
-      text-transform:uppercase;
-    }
-    .content ul{
-      margin:8px 0 0;
+    .card ul{
+      margin:10px 0 0;
       padding-left:18px;
+      color:var(--muted);
+      line-height:1.7;
     }
-    .content li{margin:6px 0}
+    .card li{margin:6px 0}
+    .hint{
+      margin-top:14px;
+      padding:12px 14px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:rgba(0,0,0,.22);
+      color:var(--muted);
+      line-height:1.7;
+      font-size:14px;
+    }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(200,162,74,.45);
+      background:linear-gradient(180deg, rgba(200,162,74,.18), rgba(200,162,74,.04));
+      color:var(--text);
+      font-size:13px;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .btn.ghost{
+      border-color:var(--line);
+      background:rgba(255,255,255,.02);
+      color:var(--muted);
+    }
 
     footer{
-      padding:22px 0 28px;
+      padding:28px 0 34px;
       border-top:1px solid var(--line);
-      margin-top:26px;
+      margin-top:32px;
       color:var(--muted);
       font-size:13px;
     }
@@ -202,11 +190,9 @@
     .footer-links a{color:var(--muted); border-bottom:1px solid transparent}
     .footer-links a:hover{color:var(--text); border-bottom-color:rgba(200,162,74,.5)}
 
-    @media (max-width: 720px){
+    @media (max-width: 880px){
       .brand strong{display:none}
-      .links{gap:8px}
-      .chip, .langbtn{padding:7px 11px; font-size:12px}
-      .sum-title{font-size:18px}
+      .hero{padding:36px 0 16px}
     }
   </style>
 </head>
@@ -222,8 +208,9 @@
 
         <div class="links">
           <a class="chip" href="index.html" data-i18n="nav_home">Domů</a>
-          <a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
           <a class="chip" href="about.html" data-i18n="nav_about">O nás</a>
+          <a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
+          <a class="chip" href="index.html#contact" data-i18n="nav_contact">Kontakt</a>
 
           <button class="langbtn" id="langBtn" type="button" aria-label="Switch language">
             <span class="langdot"></span>
@@ -234,84 +221,93 @@
     </div>
   </header>
 
-  <main class="page">
-    <div class="wrap">
-      <a class="back" href="index.html">← <span data-i18n="back">Zpět na hlavní stránku</span></a>
-
-      <div class="card">
+  <main>
+    <section class="hero">
+      <div class="wrap">
         <h1 data-i18n="title">Vrácení a výměna zboží</h1>
-        <p class="lead" data-i18n="lead">
-          Níže najdeš jednoduchý přehled pravidel pro vrácení a výměnu. Pokud si nejsi jistý/á,
-          napiš mi – vyřešíme to rychle a férově.
+        <p class="subtitle" data-i18n="lead">
+          Obecné informace k odstoupení od smlouvy, výjimkám pro zakázkovou výrobu, výměně a postupům při poškození zásilky.
         </p>
-
-        <div class="note" data-i18n="note">
-          Pozn.: U zakázkových projektů (individuálních sestav) se postup může lišit – vždy záleží na dohodě a stavu zakázky.
-        </div>
-
-        <!-- 1 -->
-        <details open>
-          <summary>
-            <span class="sum-title" data-i18n="s1">Kdy je možné zboží vrátit</span>
-            <span class="chev">⌄</span>
-          </summary>
-          <div class="content" data-i18n-block="c1">
-            <p>
-              Vrácení je možné pouze v případě, že hodinky jsou nefunkční a nelze je opravit nebo nahradit hodinkami stejné
-              nebo vyšší kvality. V takovém případě vrátíme plnou částku, kterou jste za hodinky zaplatili.
-            </p>
-            <p>
-              Vrácení zboží musí být provedeno do 30 dnů od doručení a hodinky musí být v původním stavu, bez známek používání
-              a v původním obalu.
-            </p>
-          </div>
-        </details>
-
-        <!-- 2 -->
-        <details>
-          <summary>
-            <span class="sum-title" data-i18n="s2">Výměna zboží</span>
-            <span class="chev">⌄</span>
-          </summary>
-          <div class="content" data-i18n-block="c2">
-            <p>
-              Pokud hodinky, které jste obdrželi, odpovídají fotografii na produktové stránce, ale přesto se vám nelíbí
-              (toto pravidlo platí pro hodinky SKLADEM, nikoliv pro INDIVIDUÁLNÍ PROJEKTY), máte možnost je vyměnit za jiné hodinky.
-            </p>
-            <p>
-              V tomto případě je třeba pokrýt náklady na poštovní služby a případné celní poplatky. Hodinky, které obdržíte při výměně,
-              musí mít stejnou nebo vyšší hodnotu než původní hodinky.
-            </p>
-          </div>
-        </details>
-
-        <!-- 3 -->
-        <details>
-          <summary>
-            <span class="sum-title" data-i18n="s3">Postup vrácení a výměny</span>
-            <span class="chev">⌄</span>
-          </summary>
-          <div class="content" data-i18n-block="c3">
-            <ol style="margin:8px 0 0; padding-left:18px;">
-              <li>Kontaktujte naši zákaznickou podporu na e-mailové adrese nebo telefonním čísle uvedeném na našich stránkách a uveďte důvod vrácení nebo výměny.</li>
-              <li>Naše zákaznická podpora vám poskytne další pokyny, včetně adresy pro zaslání hodinek zpět k nám.</li>
-              <li>Zabalte hodinky do původního obalu a připojte všechny dokumenty a příslušenství, které byly součástí balení. Ujistěte se, že jsou hodinky dobře chráněny pro přepravu.</li>
-              <li>Po obdržení hodinek zkontrolujeme jejich stav a funkčnost.</li>
-              <li>Pokud budou splněny všechny podmínky, provedeme vrácení peněz nebo zašleme náhradní hodinky dle dohody.</li>
-            </ol>
-
-            <h3 data-i18n="more">Další informace</h3>
-            <p data-i18n="more_text">
-              Výměny a vrácení u hodinek na objednávku (INDIVIDUÁLNÍ PROJEKTY): výměna nebo vrácení není možné,
-              pokud není zboží nefunkční nebo poškozené.
-              Zodpovědnost za dopravu a clo: zákazník je odpovědný za náklady na dopravu a případné celní poplatky
-              spojené s vrácením nebo výměnou hodinek.
-            </p>
-          </div>
-        </details>
-
+        <div class="subline"></div>
       </div>
-    </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="card">
+
+          <h2 data-i18n="s1_title">1. Odstoupení od smlouvy (spotřebitel)</h2>
+          <p data-i18n="s1_p1">
+            Kupující – spotřebitel má právo odstoupit od smlouvy uzavřené na dálku do 14 dnů od převzetí zboží dle § 1829 občanského zákoníku.
+          </p>
+          <h3 data-i18n="s1_h3">Pro odstoupení je nutné:</h3>
+          <ul>
+            <li data-i18n="s1_b1">oznámit odstoupení písemně (e-mailem),</li>
+            <li data-i18n="s1_b2">vrátit zboží nejpozději do 14 dnů od odstoupení,</li>
+            <li data-i18n="s1_b3">zaslat zboží kompletní, nepoškozené a bez známek nadměrného opotřebení.</li>
+          </ul>
+          <p style="margin-top:12px" data-i18n="s1_p2">
+            Prodávající je oprávněn snížit vracenou částku o náhradu za snížení hodnoty zboží, pokud bylo používáno jinak, než je nutné k jeho vyzkoušení.
+          </p>
+          <p style="margin-top:12px" data-i18n="s1_p3">
+            Náklady na vrácení zboží nese kupující.
+          </p>
+          <p style="margin-top:12px" data-i18n="s1_p4">
+            Peněžní prostředky budou vráceny do 14 dnů od doručení vráceného zboží stejným způsobem, jakým byly přijaty, pokud se strany nedohodnou jinak.
+          </p>
+
+          <div class="hint" data-i18n="contact_hint">
+            Pro odstoupení / výměnu napiš na: <b>dante.time.atelier@gmail.com</b>
+          </div>
+
+          <h2 style="margin-top:22px" data-i18n="s2_title">2. Výjimka – zakázková výroba</h2>
+          <p data-i18n="s2_p1">Právo na odstoupení od smlouvy se nevztahuje na:</p>
+          <ul>
+            <li data-i18n="s2_b1">hodinky vyrobené nebo upravené na zakázku,</li>
+            <li data-i18n="s2_b2">individuální projekty sestavené dle požadavků zákazníka,</li>
+            <li data-i18n="s2_b3">personalizované úpravy (např. gravírování, specifická kombinace dílů).</li>
+          </ul>
+          <p style="margin-top:12px" data-i18n="s2_p2">
+            V těchto případech se jedná o smlouvu o dílo a objednávka je závazná.
+          </p>
+
+          <h2 style="margin-top:22px" data-i18n="s3_title">3. Výměna zboží</h2>
+          <p data-i18n="s3_p1">
+            Výměna je možná pouze u hotových kusů skladem a výhradně po předchozí dohodě.
+          </p>
+          <h3 data-i18n="s3_h3">Podmínky výměny:</h3>
+          <ul>
+            <li data-i18n="s3_b1">zboží musí být vráceno v původním stavu,</li>
+            <li data-i18n="s3_b2">nesmí nést známky používání,</li>
+            <li data-i18n="s3_b3">musí být kompletní včetně příslušenství,</li>
+            <li data-i18n="s3_b4">kupující hradí veškeré náklady spojené s dopravou.</li>
+          </ul>
+          <p style="margin-top:12px" data-i18n="s3_p2">
+            Prodávající si vyhrazuje právo výměnu odmítnout, pokud nejsou splněny uvedené podmínky.
+          </p>
+
+          <h2 style="margin-top:22px" data-i18n="s4_title">4. Poškození při přepravě</h2>
+          <p data-i18n="s4_p1">
+            Kupující je povinen při převzetí zásilky zkontrolovat její stav.
+          </p>
+          <h3 data-i18n="s4_h3">V případě zjevného poškození je nutné:</h3>
+          <ul>
+            <li data-i18n="s4_b1">sepsat s dopravcem škodní protokol,</li>
+            <li data-i18n="s4_b2">bezodkladně informovat prodávajícího,</li>
+            <li data-i18n="s4_b3">doložit fotodokumentaci.</li>
+          </ul>
+          <p style="margin-top:12px" data-i18n="s4_p2">
+            Pozdější reklamace mechanického poškození způsobeného přepravou nemusí být uznány.
+          </p>
+
+          <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
+            <a class="btn ghost" href="index.html" data-i18n="btn_back">Zpět na web</a>
+            <a class="btn" href="mailto:dante.time.atelier@gmail.com" data-i18n="btn_email">Napsat e-mail</a>
+          </div>
+
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer>
@@ -319,10 +315,9 @@
       <div class="footer-inner">
         <div>© <span id="y"></span> Atelier Dante Time</div>
         <div class="footer-links">
-          <a href="returns.html" data-i18n="footer_returns">Vrácení a výměna zboží</a>
-          <a href="warranty.html" data-i18n="footer_warranty">Záruka a servis</a>
-          <a href="care.html" data-i18n="footer_care">Péče o hodinky</a>
-          <a href="terms.html" data-i18n="footer_terms">Obchodní podmínky</a>
+          <a href="terms.html" data-i18n="footer_terms">Podmínky</a>
+          <a href="reklamace.html" data-i18n="footer_claims">Reklamace</a>
+          <a href="privacy.html" data-i18n="footer_privacy">Soukromí</a>
         </div>
       </div>
     </div>
@@ -332,51 +327,114 @@
     const I18N = {
       cs: {
         nav_home: "Domů",
-        nav_services: "Služby",
         nav_about: "O nás",
-        back: "Zpět na hlavní stránku",
+        nav_services: "Služby",
+        nav_contact: "Kontakt",
 
         title: "Vrácení a výměna zboží",
-        lead: "Níže najdeš jednoduchý přehled pravidel pro vrácení a výměnu. Pokud si nejsi jistý/á, napiš mi – vyřešíme to rychle a férově.",
-        note: "Pozn.: U zakázkových projektů (individuálních sestav) se postup může lišit – vždy záleží na dohodě a stavu zakázky.",
+        lead: "Obecné informace k odstoupení od smlouvy, výjimkám pro zakázkovou výrobu, výměně a postupům při poškození zásilky.",
 
-        s1: "Kdy je možné zboží vrátit",
-        s2: "Výměna zboží",
-        s3: "Postup vrácení a výměny",
-        more: "Další informace",
-        more_text: "Výměny a vrácení u hodinek na objednávku (INDIVIDUÁLNÍ PROJEKTY): výměna nebo vrácení není možné, pokud není zboží nefunkční nebo poškozené. Zodpovědnost za dopravu a clo: zákazník je odpovědný za náklady na dopravu a případné celní poplatky spojené s vrácením nebo výměnou hodinek.",
+        s1_title: "1. Odstoupení od smlouvy (spotřebitel)",
+        s1_p1: "Kupující – spotřebitel má právo odstoupit od smlouvy uzavřené na dálku do 14 dnů od převzetí zboží dle § 1829 občanského zákoníku.",
+        s1_h3: "Pro odstoupení je nutné:",
+        s1_b1: "oznámit odstoupení písemně (e-mailem),",
+        s1_b2: "vrátit zboží nejpozději do 14 dnů od odstoupení,",
+        s1_b3: "zaslat zboží kompletní, nepoškozené a bez známek nadměrného opotřebení.",
+        s1_p2: "Prodávající je oprávněn snížit vracenou částku o náhradu za snížení hodnoty zboží, pokud bylo používáno jinak, než je nutné k jeho vyzkoušení.",
+        s1_p3: "Náklady na vrácení zboží nese kupující.",
+        s1_p4: "Peněžní prostředky budou vráceny do 14 dnů od doručení vráceného zboží stejným způsobem, jakým byly přijaty, pokud se strany nedohodnou jinak.",
 
-        footer_returns: "Vrácení a výměna zboží",
-        footer_warranty: "Záruka a servis",
-        footer_care: "Péče o hodinky",
-        footer_terms: "Obchodní podmínky",
+        contact_hint: "Pro odstoupení / výměnu napiš na: dante.time.atelier@gmail.com",
+
+        s2_title: "2. Výjimka – zakázková výroba",
+        s2_p1: "Právo na odstoupení od smlouvy se nevztahuje na:",
+        s2_b1: "hodinky vyrobené nebo upravené na zakázku,",
+        s2_b2: "individuální projekty sestavené dle požadavků zákazníka,",
+        s2_b3: "personalizované úpravy (např. gravírování, specifická kombinace dílů).",
+        s2_p2: "V těchto případech se jedná o smlouvu o dílo a objednávka je závazná.",
+
+        s3_title: "3. Výměna zboží",
+        s3_p1: "Výměna je možná pouze u hotových kusů skladem a výhradně po předchozí dohodě.",
+        s3_h3: "Podmínky výměny:",
+        s3_b1: "zboží musí být vráceno v původním stavu,",
+        s3_b2: "nesmí nést známky používání,",
+        s3_b3: "musí být kompletní včetně příslušenství,",
+        s3_b4: "kupující hradí veškeré náklady spojené s dopravou.",
+        s3_p2: "Prodávající si vyhrazuje právo výměnu odmítnout, pokud nejsou splněny uvedené podmínky.",
+
+        s4_title: "4. Poškození při přepravě",
+        s4_p1: "Kupující je povinen při převzetí zásilky zkontrolovat její stav.",
+        s4_h3: "V případě zjevného poškození je nutné:",
+        s4_b1: "sepsat s dopravcem škodní protokol,",
+        s4_b2: "bezodkladně informovat prodávajícího,",
+        s4_b3: "doložit fotodokumentaci.",
+        s4_p2: "Pozdější reklamace mechanického poškození způsobeného přepravou nemusí být uznány.",
+
+        btn_back: "Zpět na web",
+        btn_email: "Napsat e-mail",
+
+        footer_terms: "Podmínky",
+        footer_claims: "Reklamace",
+        footer_privacy: "Soukromí",
       },
 
       en: {
         nav_home: "Home",
-        nav_services: "Services",
         nav_about: "About",
-        back: "Back to home",
+        nav_services: "Services",
+        nav_contact: "Contact",
 
-        title: "Returns & exchange",
-        lead: "Below is a simple overview of our return and exchange rules. If you’re unsure, message me — we’ll handle it quickly and fairly.",
-        note: "Note: For custom projects (individual builds), the process may differ — it always depends on the agreement and the project status.",
+        title: "Returns & Exchanges",
+        lead: "General information about withdrawal from a distance contract, custom-made exceptions, exchanges, and shipping damage procedures.",
 
-        s1: "When a return is possible",
-        s2: "Exchange",
-        s3: "Return & exchange process",
-        more: "Additional information",
-        more_text: "Custom order watches (INDIVIDUAL PROJECTS): exchange/return is not possible unless the item is defective or damaged. Shipping & customs: the customer is responsible for shipping costs and any customs fees related to the return/exchange.",
+        s1_title: "1. Withdrawal from contract (consumer)",
+        s1_p1: "A consumer has the right to withdraw from a distance contract within 14 days from receiving the goods (Czech Civil Code § 1829).",
+        s1_h3: "To withdraw, you must:",
+        s1_b1: "notify us in writing (by email),",
+        s1_b2: "return the goods no later than 14 days after withdrawal,",
+        s1_b3: "send the goods complete, undamaged, and without signs of excessive wear.",
+        s1_p2: "The seller may reduce the refunded amount to compensate for any decrease in value if the goods were used beyond what is necessary to try them out.",
+        s1_p3: "The buyer bears the cost of returning the goods.",
+        s1_p4: "Funds will be refunded within 14 days after the returned goods are received, using the same payment method unless agreed otherwise.",
 
-        footer_returns: "Returns & exchange",
-        footer_warranty: "Warranty & service",
-        footer_care: "Watch care",
-        footer_terms: "Terms & conditions",
+        contact_hint: "For withdrawal / exchange, email: dante.time.atelier@gmail.com",
+
+        s2_title: "2. Exception — custom-made work",
+        s2_p1: "The right of withdrawal does not apply to:",
+        s2_b1: "watches made or modified to order,",
+        s2_b2: "individual projects assembled to the customer’s requirements,",
+        s2_b3: "personalized modifications (e.g., engraving, specific parts combination).",
+        s2_p2: "In these cases, the order is considered custom work and is binding.",
+
+        s3_title: "3. Exchange",
+        s3_p1: "Exchange is possible only for ready-made in-stock pieces and only after prior agreement.",
+        s3_h3: "Exchange conditions:",
+        s3_b1: "the goods must be returned in their original condition,",
+        s3_b2: "must show no signs of use,",
+        s3_b3: "must be complete including accessories,",
+        s3_b4: "the buyer covers all shipping costs.",
+        s3_p2: "The seller reserves the right to refuse an exchange if the conditions above are not met.",
+
+        s4_title: "4. Shipping damage",
+        s4_p1: "The buyer must check the parcel condition upon delivery.",
+        s4_h3: "In case of visible damage, you must:",
+        s4_b1: "prepare a damage report with the carrier,",
+        s4_b2: "inform the seller without delay,",
+        s4_b3: "provide photo documentation.",
+        s4_p2: "Later claims for mechanical damage caused by shipping may not be accepted.",
+
+        btn_back: "Back to site",
+        btn_email: "Email us",
+
+        footer_terms: "Terms",
+        footer_claims: "Claims",
+        footer_privacy: "Privacy",
       }
     };
 
-    function getLang(){ return localStorage.getItem("lang") || "cs"; }
-
+    function getLang(){
+      return localStorage.getItem("lang") || "cs";
+    }
     function applyLang(lang){
       document.documentElement.lang = lang;
       const dict = I18N[lang] || I18N.cs;
@@ -386,10 +444,10 @@
         if (dict[key]) el.textContent = dict[key];
       });
 
+      const txt = (lang === "cs") ? "CZ" : "EN";
       const label = document.getElementById("langLabel");
-      if (label) label.textContent = (lang === "cs") ? "CZ" : "EN";
+      if (label) label.textContent = txt;
     }
-
     function setLang(lang){
       localStorage.setItem("lang", lang);
       applyLang(lang);
