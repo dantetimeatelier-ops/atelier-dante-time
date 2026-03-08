@@ -3,13 +3,14 @@
 <!doctype html>
 <html lang="cs">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>Záruka a servis — Atelier Dante Time</title>
-<meta name="description" content="Záruka a servis mechanických hodinek — Atelier Dante Time" />
+<meta name="description" content="Záruka a servis mechanických hodinek — Atelier Dante Time">
 
-<link rel="icon" href="logo.png" />
+<link rel="icon" href="logo.png">
 
 <style>
 
@@ -36,8 +37,6 @@ linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 55%),
 radial-gradient(1200px 700px at 50% -120px, rgba(200,162,74,.12), rgba(0,0,0,0) 60%),
 var(--bg);
 }
-
-a{color:inherit;text-decoration:none}
 
 .wrap{
 max-width:var(--max);
@@ -91,6 +90,7 @@ border:1px solid var(--line);
 border-radius:999px;
 font-size:13px;
 color:var(--muted);
+text-decoration:none;
 }
 
 .chip:hover{
@@ -137,7 +137,7 @@ padding:22px;
 }
 
 .card h2{
-margin-top:0;
+margin-top:20px;
 font-family:Georgia,Times,serif;
 }
 
@@ -150,10 +150,6 @@ line-height:1.7;
 color:var(--muted);
 line-height:1.7;
 padding-left:18px;
-}
-
-.card li{
-margin:6px 0;
 }
 
 footer{
@@ -174,6 +170,16 @@ gap:12px;
 .footer-links{
 display:flex;
 gap:12px;
+flex-wrap:wrap;
+}
+
+.footer-links a{
+color:var(--muted);
+text-decoration:none;
+}
+
+.footer-links a:hover{
+color:var(--text);
 }
 
 </style>
@@ -210,8 +216,9 @@ gap:12px;
 <h1>Záruka a servis</h1>
 
 <p class="subtitle">
-Atelier Dante Time poskytuje servis a renovace mechanických hodinek.  
-Tento dokument upravuje podmínky záruky, reklamací a servisních oprav.
+Atelier Dante Time poskytuje servis a renovace mechanických hodinek.
+Tento dokument popisuje podmínky záruky, servisních oprav
+a postup při řešení případných závad.
 </p>
 
 <div class="subline"></div>
@@ -227,9 +234,9 @@ Tento dokument upravuje podmínky záruky, reklamací a servisních oprav.
 <h2>Záruční doba</h2>
 
 <p>
-Na servisované nebo renovované hodinky poskytujeme záruku v délce
-12 měsíců od převzetí hodinek zákazníkem, pokud není výslovně
-dohodnuto jinak.
+Na servisované nebo renovované hodinky poskytujeme
+záruku 12 měsíců od převzetí hodinek zákazníkem,
+pokud není výslovně dohodnuto jinak.
 </p>
 
 <p>
@@ -237,26 +244,19 @@ Záruka se vztahuje pouze na provedenou servisní práci
 a funkčnost strojku po opravě.
 </p>
 
-<p>
-U zakázkové výroby, individuálních projektů nebo historických hodinek
-může být rozsah záruky upraven podle povahy zakázky
-a předchozí dohody se zákazníkem.
-</p>
-
 <h2>Co je kryto zárukou</h2>
 
 <ul>
 <li>závady vzniklé v důsledku chybně provedené servisní práce</li>
-<li>nesprávnou funkci strojku po provedeném servisu</li>
-<li>výrobní vady nově použitých náhradních dílů</li>
+<li>nesprávná funkce strojku po provedeném servisu</li>
+<li>výrobní vady nových použitých náhradních dílů</li>
 </ul>
 
 <h2>Co není kryto zárukou</h2>
 
 <ul>
 <li>běžné opotřebení vzniklé používáním</li>
-<li>kosmetické změny, škrábance nebo patinu</li>
-<li>opotřebení řemínku, spony nebo jiných spotřebních částí</li>
+<li>kosmetické změny, škrábance nebo patina</li>
 <li>poškození způsobené pádem nebo nárazem</li>
 <li>poškození vodou, vlhkostí nebo chemikáliemi</li>
 <li>zásah neautorizované osoby</li>
@@ -265,7 +265,7 @@ a předchozí dohody se zákazníkem.
 <h2>Servis hodinek</h2>
 
 <p>
-Standardní servisní práce mohou zahrnovat:
+Standardní servis může zahrnovat:
 </p>
 
 <ul>
@@ -278,8 +278,8 @@ Standardní servisní práce mohou zahrnovat:
 
 <p>
 Délka servisu se obvykle pohybuje mezi
-2–3 týdny podle dostupnosti náhradních dílů
-a rozsahu práce.
+2–3 týdny podle rozsahu práce
+a dostupnosti náhradních dílů.
 </p>
 
 </div>
@@ -290,6 +290,7 @@ a rozsahu práce.
 </main>
 
 <footer>
+
 <div class="wrap">
 
 <div class="footer-inner">
@@ -297,14 +298,16 @@ a rozsahu práce.
 <div>© <span id="year"></span> Atelier Dante Time</div>
 
 <div class="footer-links">
-<a href="terms.html">Podmínky</a>
-<a href="reklamace.html">Reklamace</a>
-<a href="privacy.html">Soukromí</a>
+<a href="returns.html">Vrácení a výměna zboží</a>
+<a href="warranty.html">Záruka a servis</a>
+<a href="care.html">Péče o hodinky</a>
+<a href="terms.html">Obchodní podmínky</a>
 </div>
 
 </div>
 
 </div>
+
 </footer>
 
 <script>
