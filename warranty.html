@@ -1,4 +1,6 @@
 
+
+
 <!doctype html>
 <html lang="cs">
 <head>
@@ -194,7 +196,7 @@ color:var(--muted);
 <div class="nav">
 
 <a href="index.html" class="brand">
-<img src="logo.png">
+<img src="logo.png" alt="Atelier Dante Time logo">
 <strong>Atelier Dante Time</strong>
 </a>
 
@@ -204,7 +206,7 @@ color:var(--muted);
 <a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
 <a class="chip" href="index.html#contact" data-i18n="nav_contact">Kontakt</a>
 
-<button class="langbtn" id="langBtn">
+<button class="langbtn" id="langBtn" type="button" aria-label="Switch language">
 <span class="langdot"></span>
 <span id="langLabel">CZ</span>
 </button>
@@ -292,10 +294,10 @@ Délka servisu se obvykle pohybuje mezi 2–3 týdny podle rozsahu práce a dost
 <div>© <span id="y"></span> Atelier Dante Time</div>
 
 <div class="footer-links">
-<a href="returns.html">Vrácení a výměna zboží</a>
-<a href="warranty.html">Záruka a servis</a>
-<a href="care.html">Péče o hodinky</a>
-<a href="terms.html">Obchodní podmínky</a>
+<a href="returns.html" data-i18n="footer_returns">Vrácení a výměna zboží</a>
+<a href="warranty.html" data-i18n="footer_warranty">Záruka a servis</a>
+<a href="care.html" data-i18n="footer_care">Péče o hodinky</a>
+<a href="terms.html" data-i18n="footer_terms">Obchodní podmínky</a>
 </div>
 
 </div>
@@ -309,48 +311,109 @@ nav_home:"Domů",
 nav_about:"O nás",
 nav_services:"Služby",
 nav_contact:"Kontakt",
+
 title:"Záruka a servis",
-lead:"Podmínky záruky a servisních oprav mechanických hodinek Atelier Dante Time."
+lead:"Podmínky záruky a servisních oprav mechanických hodinek Atelier Dante Time.",
+
+s1_title:"Záruční doba",
+s1_p1:"Na servisované nebo renovované hodinky poskytujeme záruku 12 měsíců od převzetí hodinek zákazníkem, pokud není výslovně dohodnuto jinak.",
+s1_p2:"Záruka se vztahuje pouze na provedenou servisní práci a funkčnost strojku po opravě.",
+
+s2_title:"Co je kryto zárukou",
+s2_b1:"závady vzniklé v důsledku chybně provedené servisní práce",
+s2_b2:"nesprávná funkce strojku po provedeném servisu",
+s2_b3:"výrobní vady nových použitých náhradních dílů",
+
+s3_title:"Co není kryto zárukou",
+s3_b1:"běžné opotřebení vzniklé používáním",
+s3_b2:"kosmetické změny, škrábance nebo patina",
+s3_b3:"poškození způsobené pádem nebo nárazem",
+s3_b4:"poškození vodou nebo vlhkostí",
+s3_b5:"zásah neautorizované osoby",
+
+s4_title:"Servis hodinek",
+s4_b1:"kompletní rozebrání strojku",
+s4_b2:"čištění a mazání",
+s4_b3:"kontrolu a výměnu opotřebených dílů",
+s4_b4:"regulaci chodu",
+s4_b5:"závěrečnou kontrolu funkčnosti",
+s4_p1:"Délka servisu se obvykle pohybuje mezi 2–3 týdny podle rozsahu práce a dostupnosti náhradních dílů.",
+
+footer_returns:"Vrácení a výměna zboží",
+footer_warranty:"Záruka a servis",
+footer_care:"Péče o hodinky",
+footer_terms:"Obchodní podmínky"
 },
+
 en:{
 nav_home:"Home",
 nav_about:"About",
 nav_services:"Services",
 nav_contact:"Contact",
+
 title:"Warranty & Service",
-lead:"Warranty conditions and servicing information for mechanical watches."
+lead:"Warranty conditions and servicing information for mechanical watches.",
+
+s1_title:"Warranty period",
+s1_p1:"We provide a 12-month warranty on serviced or restored watches from the date the customer takes over the watch, unless expressly agreed otherwise.",
+s1_p2:"The warranty applies only to the service work performed and the functioning of the movement after repair.",
+
+s2_title:"What is covered by warranty",
+s2_b1:"defects caused by incorrectly performed service work",
+s2_b2:"improper movement function after service",
+s2_b3:"manufacturing defects of newly used spare parts",
+
+s3_title:"What is not covered by warranty",
+s3_b1:"normal wear caused by use",
+s3_b2:"cosmetic changes, scratches or patina",
+s3_b3:"damage caused by drops or impacts",
+s3_b4:"damage caused by water or humidity",
+s3_b5:"unauthorized intervention",
+
+s4_title:"Watch service",
+s4_b1:"complete disassembly of the movement",
+s4_b2:"cleaning and lubrication",
+s4_b3:"inspection and replacement of worn parts",
+s4_b4:"rate adjustment",
+s4_b5:"final function check",
+s4_p1:"Service time usually ranges between 2–3 weeks depending on the scope of work and the availability of spare parts.",
+
+footer_returns:"Returns & exchanges",
+footer_warranty:"Warranty & service",
+footer_care:"Watch care",
+footer_terms:"Terms & conditions"
 }
-}
+};
 
 function getLang(){
-return localStorage.getItem("lang")||"cs"
+return localStorage.getItem("lang")||"cs";
 }
 
 function applyLang(lang){
-document.documentElement.lang=lang
-const dict=I18N[lang]||I18N.cs
+document.documentElement.lang=lang;
+const dict=I18N[lang]||I18N.cs;
 
 document.querySelectorAll("[data-i18n]").forEach(el=>{
-const key=el.getAttribute("data-i18n")
-if(dict[key])el.textContent=dict[key]
-})
+const key=el.getAttribute("data-i18n");
+if(dict[key]) el.textContent=dict[key];
+});
 
-document.getElementById("langLabel").textContent=lang==="cs"?"CZ":"EN"
+document.getElementById("langLabel").textContent=lang==="cs"?"CZ":"EN";
 }
 
 function setLang(lang){
-localStorage.setItem("lang",lang)
-applyLang(lang)
+localStorage.setItem("lang",lang);
+applyLang(lang);
 }
 
-document.getElementById("y").textContent=new Date().getFullYear()
+document.getElementById("y").textContent=new Date().getFullYear();
 
 document.getElementById("langBtn").onclick=()=>{
-const current=getLang()
-setLang(current==="cs"?"en":"cs")
-}
+const current=getLang();
+setLang(current==="cs"?"en":"cs");
+};
 
-applyLang(getLang())
+applyLang(getLang());
 </script>
 
 </body>
