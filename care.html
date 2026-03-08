@@ -3,602 +3,329 @@
 <!doctype html>
 <html lang="cs">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Péče o hodinky — Atelier Dante Time</title>
-  <meta name="description" content="Péče o mechanické hodinky — Atelier Dante Time" />
-  <link rel="icon" href="logo.png" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Péče o hodinky — Atelier Dante Time</title>
+<link rel="icon" href="logo.png">
 
-  <style>
-    :root{
-      --bg:#070707;
-      --text:#f2f2f2;
-      --muted:#b9b9b9;
-      --gold:#c8a24a;
-      --line:rgba(255,255,255,.10);
-      --shadow:0 18px 50px rgba(0,0,0,.45);
-      --radius:18px;
-      --max:1100px;
-      --card:#0b0b0b;
-    }
+<style>
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
+:root{
+--bg:#070707;
+--text:#f2f2f2;
+--muted:#b9b9b9;
+--gold:#c8a24a;
+--line:rgba(255,255,255,.10);
+--card:#0b0b0b;
+--max:1100px;
+}
 
-    body{
-      margin:0;
-      font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      color:var(--text);
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 55%),
-        radial-gradient(1200px 700px at 50% -120px, rgba(200,162,74,.12), rgba(0,0,0,0) 60%),
-        var(--bg);
-      overflow-x:hidden;
-    }
+*{box-sizing:border-box}
 
-    a{color:inherit; text-decoration:none}
-    a:hover{opacity:.95}
+body{
+margin:0;
+font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+background:var(--bg);
+color:var(--text);
+}
 
-    .wrap{
-      max-width:var(--max);
-      margin:0 auto;
-      padding:0 20px;
-    }
+.wrap{
+max-width:var(--max);
+margin:auto;
+padding:0 20px;
+}
 
-    header{
-      position:sticky;
-      top:0;
-      z-index:20;
-      backdrop-filter:blur(10px);
-      background:rgba(7,7,7,.65);
-      border-bottom:1px solid var(--line);
-    }
+header{
+position:sticky;
+top:0;
+background:#070707e6;
+backdrop-filter:blur(10px);
+border-bottom:1px solid var(--line);
+}
 
-    .nav{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:14px 0;
-      gap:12px;
-    }
+.nav{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:14px 0;
+}
 
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      min-width:180px;
-    }
+.brand{
+display:flex;
+align-items:center;
+gap:10px;
+}
 
-    .brand img{
-      width:28px;
-      height:28px;
-      object-fit:contain;
-      filter:drop-shadow(0 10px 30px rgba(0,0,0,.6));
-    }
+.brand img{
+width:28px;
+height:28px;
+}
 
-    .brand strong{
-      letter-spacing:.08em;
-      font-weight:700;
-      font-size:12px;
-      text-transform:uppercase;
-      color:var(--muted);
-    }
+.links{
+display:flex;
+gap:10px;
+align-items:center;
+}
 
-    .links{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-    }
+.chip{
+padding:8px 12px;
+border:1px solid var(--line);
+border-radius:999px;
+font-size:13px;
+color:var(--muted);
+}
 
-    .chip, .langbtn{
-      padding:8px 12px;
-      border:1px solid var(--line);
-      border-radius:999px;
-      color:var(--muted);
-      font-size:13px;
-      transition:.2s ease;
-      background:rgba(255,255,255,.02);
-      cursor:pointer;
-      user-select:none;
-      white-space:nowrap;
-    }
+.chip:hover{
+border-color:var(--gold);
+color:var(--text);
+}
 
-    .chip:hover, .langbtn:hover{
-      border-color:rgba(200,162,74,.45);
-      color:var(--text);
-    }
+.hero{
+padding:40px 0 20px;
+}
 
-    .langbtn{
-      display:inline-flex;
-      gap:8px;
-      align-items:center;
-    }
+h1{
+margin:0;
+font-family:Georgia,serif;
+letter-spacing:.06em;
+text-transform:uppercase;
+font-size:40px;
+}
 
-    .langdot{
-      width:8px;
-      height:8px;
-      border-radius:99px;
-      background:rgba(200,162,74,.75);
-      box-shadow:0 0 0 4px rgba(200,162,74,.12);
-    }
+.subtitle{
+margin-top:10px;
+color:var(--muted);
+max-width:700px;
+}
 
-    .hero{
-      padding:46px 0 20px;
-      text-align:left;
-    }
+.section{
+padding:20px 0 40px;
+}
 
-    h1{
-      margin:0;
-      font-family:ui-serif, Georgia, "Times New Roman", Times, serif;
-      letter-spacing:.06em;
-      text-transform:uppercase;
-      font-size:clamp(26px, 3.6vw, 44px);
-      line-height:1.1;
-    }
+.card{
+background:var(--card);
+border:1px solid var(--line);
+border-radius:16px;
+padding:24px;
+}
 
-    .subtitle{
-      margin:10px 0 0;
-      color:var(--muted);
-      line-height:1.7;
-      max-width:900px;
-    }
+.card h3{
+margin-top:28px;
+font-size:20px;
+}
 
-    .subline{
-      width:min(220px, 60vw);
-      height:1px;
-      margin:18px 0 0;
-      background:linear-gradient(90deg, rgba(200,162,74,0), rgba(200,162,74,.9), rgba(200,162,74,0));
-      opacity:.75;
-    }
+.card h4{
+margin-top:18px;
+font-size:16px;
+}
 
-    .section{
-      padding:18px 0 34px;
-    }
+.card p{
+color:var(--muted);
+line-height:1.7;
+}
 
-    .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:22px;
-      overflow:hidden;
-      position:relative;
-    }
+.card ul{
+color:var(--muted);
+line-height:1.7;
+}
 
-    .card h2{
-      margin:0 0 10px 0;
-      font-family:ui-serif, Georgia, "Times New Roman", Times, serif;
-      font-size:22px;
-      letter-spacing:.03em;
-    }
+footer{
+border-top:1px solid var(--line);
+padding:30px 0;
+color:var(--muted);
+font-size:13px;
+}
 
-    .card h3{
-      margin:22px 0 8px;
-      font-size:18px;
-      letter-spacing:.02em;
-      color:var(--text);
-    }
+.footer-inner{
+display:flex;
+justify-content:space-between;
+flex-wrap:wrap;
+}
 
-    .card h4{
-      margin:18px 0 8px;
-      font-size:16px;
-      letter-spacing:.02em;
-      color:var(--text);
-    }
+.footer-links{
+display:flex;
+gap:14px;
+}
 
-    .card p{
-      margin:0 0 12px 0;
-      color:var(--muted);
-      font-size:16px;
-      line-height:1.7;
-    }
+.footer-links a{
+color:var(--muted);
+}
 
-    .card ul{
-      margin:10px 0 14px;
-      padding-left:18px;
-      color:var(--muted);
-      line-height:1.7;
-    }
+.footer-links a:hover{
+color:var(--text);
+}
 
-    .card li{margin:6px 0}
-
-    .hint{
-      margin-top:16px;
-      padding:12px 14px;
-      border:1px solid var(--line);
-      border-radius:14px;
-      background:rgba(0,0,0,.22);
-      color:var(--muted);
-      line-height:1.7;
-      font-size:14px;
-    }
-
-    .btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid rgba(200,162,74,.45);
-      background:linear-gradient(180deg, rgba(200,162,74,.18), rgba(200,162,74,.04));
-      color:var(--text);
-      font-size:13px;
-      gap:8px;
-      white-space:nowrap;
-    }
-
-    .btn.ghost{
-      border-color:var(--line);
-      background:rgba(255,255,255,.02);
-      color:var(--muted);
-    }
-
-    footer{
-      padding:28px 0 34px;
-      border-top:1px solid var(--line);
-      margin-top:32px;
-      color:var(--muted);
-      font-size:13px;
-    }
-
-    .footer-inner{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:14px;
-      flex-wrap:wrap;
-    }
-
-    .footer-links{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-    }
-
-    .footer-links a{
-      color:var(--muted);
-      border-bottom:1px solid transparent;
-    }
-
-    .footer-links a:hover{
-      color:var(--text);
-      border-bottom-color:rgba(200,162,74,.5);
-    }
-
-    @media (max-width:880px){
-      .brand strong{display:none}
-      .hero{padding:36px 0 16px}
-    }
-  </style>
+</style>
 </head>
 
 <body>
-  <header>
-    <div class="wrap">
-      <div class="nav">
-        <a href="index.html" class="brand">
-          <img src="logo.png" alt="Atelier Dante Time logo" />
-          <strong>Atelier Dante Time</strong>
-        </a>
 
-        <div class="links">
-          <a class="chip" href="index.html" data-i18n="nav_home">Domů</a>
-          <a class="chip" href="about.html" data-i18n="nav_about">O nás</a>
-          <a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
-          <a class="chip" href="index.html#contact" data-i18n="nav_contact">Kontakt</a>
+<header>
+<div class="wrap">
+<div class="nav">
 
-          <button class="langbtn" id="langBtn" type="button" aria-label="Switch language">
-            <span class="langdot"></span>
-            <span id="langLabel">CZ</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </header>
+<a href="index.html" class="brand">
+<img src="logo.png">
+<strong>Atelier Dante Time</strong>
+</a>
 
-  <main>
-    <section class="hero">
-      <div class="wrap">
-        <h1 data-i18n="title">Péče o hodinky</h1>
-        <p class="subtitle" data-i18n="lead">
-          Doporučení pro správné používání, natahování, nastavování a dlouhodobou péči o mechanické hodinky.
-        </p>
-        <div class="subline"></div>
-      </div>
-    </section>
+<div class="links">
+<a class="chip" href="index.html">Domů</a>
+<a class="chip" href="about.html">O nás</a>
+<a class="chip" href="services.html">Služby</a>
+<a class="chip" href="index.html#contact">Kontakt</a>
+</div>
 
-    <section class="section">
-      <div class="wrap">
-        <div class="card">
+</div>
+</div>
+</header>
 
-          <h2 data-i18n="intro_title">Péče o hodinky</h2>
-          <p data-i18n="intro_p1">
-            Mechanické hodinky vyžadují šetrné zacházení a pravidelnou péči.
-          </p>
-          <p data-i18n="intro_p2">
-            Dodržováním níže uvedených doporučení pomůžete zachovat správnou funkci strojku i dlouhou životnost hodinek.
-          </p>
 
-          <h3 data-i18n="s1_title">První uvedení do provozu</h3>
-          <p data-i18n="s1_p1">
-            Po převzetí hodinek doporučujeme nechat hodinky několik hodin v klidu při běžné pokojové teplotě, aby se stabilizovaly po přepravě.
-          </p>
+<main>
 
-          <h3 data-i18n="s2_title">Denní natahování hodinek</h3>
-          <p data-i18n="s2_p1">
-            Mechanické hodinky je vhodné natahovat přibližně jednou denně, ideálně každý den ve stejnou dobu.
-          </p>
-          <p data-i18n="s2_p2">
-            Korunku otáčejte pomalu a plynule. Natahování ukončete ve chvíli, kdy ucítíte přirozený odpor.
-          </p>
-          <p data-i18n="s2_p3">
-            Hodinky nepřetahujte, mohlo by dojít k poškození natahovacího pera.
-          </p>
-          <p data-i18n="s2_p4">
-            Pokud hodinky během noci nenosíte, doporučujeme je uložit v horizontální poloze ciferníkem nahoru.
-          </p>
+<section class="hero">
+<div class="wrap">
+<h1>Péče o hodinky</h1>
+<p class="subtitle">
+Doporučení pro správné používání, natahování a dlouhodobou péči o mechanické hodinky.
+</p>
+</div>
+</section>
 
-          <h3 data-i18n="s3_title">Nastavení času</h3>
-          <p data-i18n="s3_p1">
-            Při nastavování času otáčejte ručičky vždy pouze ve směru hodinových ručiček.
-          </p>
-          <p data-i18n="s3_p2">
-            Otáčení ruček proti směru hodinových ručiček může u některých historických strojků způsobit jejich poškození.
-          </p>
 
-          <h3 data-i18n="s4_title">Šroubovací korunka (vybrané modely)</h3>
-          <p data-i18n="s4_p1">
-            Některé modely Atelier Dante Time používají šroubovací korunku pro lepší ochranu proti prachu a vlhkosti.
-          </p>
-          <p data-i18n="s4_p2">
-            Při manipulaci se šroubovací korunkou doporučujeme postupovat opatrně a bez použití síly.
-          </p>
+<section class="section">
+<div class="wrap">
+<div class="card">
 
-          <h4 data-i18n="s4_h1">Vyšroubování korunky</h4>
-          <ul>
-            <li data-i18n="s4_b1">otočte korunku proti směru hodinových ručiček, dokud se neuvolní,</li>
-            <li data-i18n="s4_b2">po uvolnění je korunka připravena k natahování nebo nastavení času.</li>
-          </ul>
+<h3>Péče o hodinky</h3>
 
-          <h4 data-i18n="s4_h2">Natahování</h4>
-          <ul>
-            <li data-i18n="s4_b3">korunku otáčejte přibližně 10–15× ve směru hodinových ručiček,</li>
-            <li data-i18n="s4_b4">otáčejte pomalu a plynule,</li>
-            <li data-i18n="s4_b5">jakmile ucítíte zvýšený odpor, v natahování nepokračujte.</li>
-          </ul>
+<p>
+Mechanické hodinky vyžadují šetrné zacházení a pravidelnou péči.
+Dodržováním níže uvedených doporučení pomůžete zachovat správnou funkci strojku
+a dlouhou životnost hodinek.
+</p>
 
-          <h4 data-i18n="s4_h3">Zašroubování korunky</h4>
-          <ul>
-            <li data-i18n="s4_b6">jemně zatlačte korunku směrem k pouzdru,</li>
-            <li data-i18n="s4_b7">následně ji zašroubujte ve směru hodinových ručiček,</li>
-            <li data-i18n="s4_b8">korunku utahujte pouze lehce, bez zbytečné síly.</li>
-          </ul>
 
-          <p data-i18n="s4_p3">
-            Správně zajištěná korunka pomáhá chránit hodinky před nečistotami a vlhkostí, ale sama o sobě automaticky neznamená vodotěsnost všech modelů.
-          </p>
+<h3>První uvedení do provozu</h3>
 
-          <h3 data-i18n="s5_title">Ochrana hodinek</h3>
-          <p data-i18n="s5_p1">Pro dlouhou životnost hodinek doporučujeme:</p>
-          <ul>
-            <li data-i18n="s5_b1">chránit hodinky před nárazy a pády,</li>
-            <li data-i18n="s5_b2">vyhnout se silným vibracím a otřesům,</li>
-            <li data-i18n="s5_b3">chránit hodinky před magnetickým polem,</li>
-            <li data-i18n="s5_b4">nevystavovat hodinky vlhkosti nebo vodě, pokud nejsou výslovně označeny jako vodotěsné,</li>
-            <li data-i18n="s5_b5">vyhnout se kontaktu s chemickými látkami,</li>
-            <li data-i18n="s5_b6">nevystavovat hodinky náhlým změnám teplot.</li>
-          </ul>
+<p>
+Po převzetí hodinek doporučujeme nechat hodinky několik hodin v klidu
+při běžné pokojové teplotě, aby se stabilizovaly po přepravě.
+</p>
 
-          <h3 data-i18n="s6_title">Servis hodinek</h3>
-          <p data-i18n="s6_p1">
-            Stejně jako každý mechanický přístroj vyžadují i mechanické hodinky pravidelnou údržbu.
-          </p>
-          <p data-i18n="s6_p2">
-            Doporučujeme provést odborný servis přibližně každých 3–5 let, aby byla zachována správná funkčnost strojku.
-          </p>
-          <p data-i18n="s6_p3">
-            V případě jakýchkoliv dotazů nebo potřeby servisu nás neváhejte kontaktovat.
-          </p>
+<p>
+Pokud hodinky během noci nenosíte, doporučujeme je uložit vodorovně,
+ciferníkem nahoru.
+</p>
 
-          <div class="hint" data-i18n="contact_hint">
-            Pro servis nebo dotazy napište na: dante.time.atelier@gmail.com
-          </div>
 
-          <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
-            <a class="btn ghost" href="index.html" data-i18n="btn_back">Zpět na web</a>
-            <a class="btn" href="mailto:dante.time.atelier@gmail.com" data-i18n="btn_email">Napsat e-mail</a>
-          </div>
+<h3>Nastavení času</h3>
 
-        </div>
-      </div>
-    </section>
-  </main>
+<p>
+Při nastavování času otáčejte ručičky vždy pouze ve směru hodinových ručiček.
+</p>
 
-  <footer>
-    <div class="wrap">
-      <div class="footer-inner">
-        <div>© <span id="y"></span> Atelier Dante Time</div>
-        <div class="footer-links">
-          <a href="returns.html" data-i18n="footer_returns">Vrácení a výměna zboží</a>
-          <a href="warranty.html" data-i18n="footer_warranty">Záruka a servis</a>
-          <a href="care.html" data-i18n="footer_care">Péče o hodinky</a>
-          <a href="terms.html" data-i18n="footer_terms">Obchodní podmínky</a>
-        </div>
-      </div>
-    </div>
-  </footer>
+<p>
+Otáčení ručiček proti směru hodinových ručiček může u některých historických
+strojků způsobit jejich poškození.
+</p>
 
-  <script>
-    const I18N = {
-      cs: {
-        nav_home: "Domů",
-        nav_about: "O nás",
-        nav_services: "Služby",
-        nav_contact: "Kontakt",
 
-        title: "Péče o hodinky",
-        lead: "Doporučení pro správné používání, natahování, nastavování a dlouhodobou péči o mechanické hodinky.",
+<h3>Použití hodinek se šroubovací korunkou</h3>
 
-        intro_title: "Péče o hodinky",
-        intro_p1: "Mechanické hodinky vyžadují šetrné zacházení a pravidelnou péči.",
-        intro_p2: "Dodržováním níže uvedených doporučení pomůžete zachovat správnou funkci strojku i dlouhou životnost hodinek.",
+<p>
+Některé modely hodinek používají šroubovací korunku. Při manipulaci
+postupujte pomalu a bez použití síly.
+</p>
 
-        s1_title: "První uvedení do provozu",
-        s1_p1: "Po převzetí hodinek doporučujeme nechat hodinky několik hodin v klidu při běžné pokojové teplotě, aby se stabilizovaly po přepravě.",
 
-        s2_title: "Denní natahování hodinek",
-        s2_p1: "Mechanické hodinky je vhodné natahovat přibližně jednou denně, ideálně každý den ve stejnou dobu.",
-        s2_p2: "Korunku otáčejte pomalu a plynule. Natahování ukončete ve chvíli, kdy ucítíte přirozený odpor.",
-        s2_p3: "Hodinky nepřetahujte, mohlo by dojít k poškození natahovacího pera.",
-        s2_p4: "Pokud hodinky během noci nenosíte, doporučujeme je uložit v horizontální poloze ciferníkem nahoru.",
+<h4>Vyšroubování korunky</h4>
 
-        s3_title: "Nastavení času",
-        s3_p1: "Při nastavování času otáčejte ručičky vždy pouze ve směru hodinových ručiček.",
-        s3_p2: "Otáčení ruček proti směru hodinových ručiček může u některých historických strojků způsobit jejich poškození.",
+<ul>
+<li>otočte korunku proti směru hodinových ručiček, dokud se zcela neuvolní</li>
+<li>po uvolnění je korunka připravena k natahování nebo nastavení času</li>
+</ul>
 
-        s4_title: "Šroubovací korunka (vybrané modely)",
-        s4_p1: "Některé modely Atelier Dante Time používají šroubovací korunku pro lepší ochranu proti prachu a vlhkosti.",
-        s4_p2: "Při manipulaci se šroubovací korunkou doporučujeme postupovat opatrně a bez použití síly.",
-        s4_h1: "Vyšroubování korunky",
-        s4_b1: "otočte korunku proti směru hodinových ručiček, dokud se neuvolní,",
-        s4_b2: "po uvolnění je korunka připravena k natahování nebo nastavení času.",
-        s4_h2: "Natahování",
-        s4_b3: "korunku otáčejte přibližně 10–15× ve směru hodinových ručiček,",
-        s4_b4: "otáčejte pomalu a plynule,",
-        s4_b5: "jakmile ucítíte zvýšený odpor, v natahování nepokračujte.",
-        s4_h3: "Zašroubování korunky",
-        s4_b6: "jemně zatlačte korunku směrem k pouzdru,",
-        s4_b7: "následně ji zašroubujte ve směru hodinových ručiček,",
-        s4_b8: "korunku utahujte pouze lehce, bez zbytečné síly.",
-        s4_p3: "Správně zajištěná korunka pomáhá chránit hodinky před nečistotami a vlhkostí, ale sama o sobě automaticky neznamená vodotěsnost všech modelů.",
 
-        s5_title: "Ochrana hodinek",
-        s5_p1: "Pro dlouhou životnost hodinek doporučujeme:",
-        s5_b1: "chránit hodinky před nárazy a pády,",
-        s5_b2: "vyhnout se silným vibracím a otřesům,",
-        s5_b3: "chránit hodinky před magnetickým polem,",
-        s5_b4: "nevystavovat hodinky vlhkosti nebo vodě, pokud nejsou výslovně označeny jako vodotěsné,",
-        s5_b5: "vyhnout se kontaktu s chemickými látkami,",
-        s5_b6: "nevystavovat hodinky náhlým změnám teplot.",
+<h4>Natahování</h4>
 
-        s6_title: "Servis hodinek",
-        s6_p1: "Stejně jako každý mechanický přístroj vyžadují i mechanické hodinky pravidelnou údržbu.",
-        s6_p2: "Doporučujeme provést odborný servis přibližně každých 3–5 let, aby byla zachována správná funkčnost strojku.",
-        s6_p3: "V případě jakýchkoliv dotazů nebo potřeby servisu nás neváhejte kontaktovat.",
+<ul>
+<li>korunku otáčejte přibližně 10–15× ve směru hodinových ručiček</li>
+<li>jedna otočka znamená pouze půl otáčky (180°), nikoli celých 360°</li>
+<li>otáčejte pomalu a plynule</li>
+<li>je nutné ponechat prostor pro následné zašroubování korunky</li>
+</ul>
 
-        contact_hint: "Pro servis nebo dotazy napište na: dante.time.atelier@gmail.com",
-        btn_back: "Zpět na web",
-        btn_email: "Napsat e-mail",
 
-        footer_returns: "Vrácení a výměna zboží",
-        footer_warranty: "Záruka a servis",
-        footer_care: "Péče o hodinky",
-        footer_terms: "Obchodní podmínky"
-      },
+<h4>Upozornění</h4>
 
-      en: {
-        nav_home: "Home",
-        nav_about: "About",
-        nav_services: "Services",
-        nav_contact: "Contact",
+<p>
+Korunku při natahování nedotahujte zbytečně silou.
+Při jejím následném zašroubování dochází ještě k dalšímu částečnému
+dotažení strojku.
+</p>
 
-        title: "Watch Care",
-        lead: "Recommendations for proper use, winding, setting and long-term care of mechanical watches.",
 
-        intro_title: "Watch Care",
-        intro_p1: "Mechanical watches require careful handling and regular care.",
-        intro_p2: "Following the recommendations below will help preserve correct movement function and long service life.",
+<h4>Zašroubování korunky</h4>
 
-        s1_title: "First use",
-        s1_p1: "After receiving the watch, we recommend leaving it at rest for several hours at normal room temperature so it can stabilize after transport.",
+<ul>
+<li>jemně zatlačte korunku směrem k pouzdru</li>
+<li>následně ji zašroubujte ve směru hodinových ručiček</li>
+<li>zašroubování obvykle odpovídá přibližně 5–6 půlotáčkám</li>
+<li>během nich dochází k dalšímu částečnému nátahu strojku</li>
+</ul>
 
-        s2_title: "Daily winding",
-        s2_p1: "Mechanical watches should be wound approximately once a day, ideally every day at the same time.",
-        s2_p2: "Turn the crown slowly and smoothly. Stop winding when you feel natural resistance.",
-        s2_p3: "Do not overwind the watch, as this may damage the mainspring.",
-        s2_p4: "If you do not wear the watch overnight, we recommend storing it horizontally with the dial facing upward.",
 
-        s3_title: "Setting the time",
-        s3_p1: "When setting the time, always move the hands only in the clockwise direction.",
-        s3_p2: "Turning the hands counterclockwise may damage some historical movements.",
+<h3>Ochrana hodinek</h3>
 
-        s4_title: "Screw-down crown (selected models)",
-        s4_p1: "Some Atelier Dante Time models use a screw-down crown for better protection against dust and moisture.",
-        s4_p2: "When handling a screw-down crown, proceed carefully and without excessive force.",
-        s4_h1: "Unscrewing the crown",
-        s4_b1: "turn the crown counterclockwise until it is released,",
-        s4_b2: "once released, the crown is ready for winding or time setting.",
-        s4_h2: "Winding",
-        s4_b3: "turn the crown approximately 10–15 times clockwise,",
-        s4_b4: "turn slowly and smoothly,",
-        s4_b5: "stop winding as soon as you feel increased resistance.",
-        s4_h3: "Screwing the crown back",
-        s4_b6: "gently press the crown toward the case,",
-        s4_b7: "then screw it in clockwise,",
-        s4_b8: "tighten only lightly, without unnecessary force.",
-        s4_p3: "A properly secured crown helps protect the watch from dirt and moisture, but it does not by itself automatically mean full water resistance for every model.",
+<ul>
+<li>chraňte hodinky před nárazy a pády</li>
+<li>vyhněte se silným vibracím</li>
+<li>nevystavujte hodinky magnetickému poli</li>
+<li>vyhněte se kontaktu s chemikáliemi</li>
+<li>nevystavujte hodinky náhlým změnám teplot</li>
+</ul>
 
-        s5_title: "Watch protection",
-        s5_p1: "For long watch life, we recommend:",
-        s5_b1: "protecting the watch from impacts and drops,",
-        s5_b2: "avoiding strong vibrations and shocks,",
-        s5_b3: "protecting the watch from magnetic fields,",
-        s5_b4: "not exposing the watch to moisture or water unless it is explicitly marked as water-resistant,",
-        s5_b5: "avoiding contact with chemicals,",
-        s5_b6: "not exposing the watch to sudden temperature changes.",
 
-        s6_title: "Watch servicing",
-        s6_p1: "Like any mechanical instrument, mechanical watches require regular maintenance.",
-        s6_p2: "We recommend professional servicing approximately every 3–5 years to preserve proper movement function.",
-        s6_p3: "If you have any questions or need service, please do not hesitate to contact us.",
+<h3>Servis hodinek</h3>
 
-        contact_hint: "For service or questions, email: dante.time.atelier@gmail.com",
-        btn_back: "Back to site",
-        btn_email: "Email us",
+<p>
+Mechanické hodinky vyžadují pravidelnou údržbu.
+</p>
 
-        footer_returns: "Returns & exchanges",
-        footer_warranty: "Warranty & service",
-        footer_care: "Watch care",
-        footer_terms: "Terms & conditions"
-      }
-    };
+<p>
+Doporučujeme provést odborný servis přibližně každých 3–5 let,
+aby byla zachována správná funkčnost strojku.
+</p>
 
-    function getLang(){
-      return localStorage.getItem("lang") || "cs";
-    }
+</div>
+</div>
+</section>
 
-    function applyLang(lang){
-      document.documentElement.lang = lang;
-      const dict = I18N[lang] || I18N.cs;
+</main>
 
-      document.querySelectorAll("[data-i18n]").forEach(el=>{
-        const key = el.getAttribute("data-i18n");
-        if (dict[key]) el.textContent = dict[key];
-      });
 
-      const txt = (lang === "cs") ? "CZ" : "EN";
-      const label = document.getElementById("langLabel");
-      if (label) label.textContent = txt;
-    }
+<footer>
+<div class="wrap">
+<div class="footer-inner">
 
-    function setLang(lang){
-      localStorage.setItem("lang", lang);
-      applyLang(lang);
-    }
+<div>
+© <span id="y"></span> Atelier Dante Time
+</div>
 
-    document.getElementById("y").textContent = new Date().getFullYear();
+<div class="footer-links">
+<a href="returns.html">Vrácení a výměna zboží</a>
+<a href="warranty.html">Záruka a servis</a>
+<a href="terms.html">Podmínky</a>
+</div>
 
-    const langBtn = document.getElementById("langBtn");
-    if (langBtn){
-      langBtn.addEventListener("click", ()=>{
-        const current = getLang();
-        setLang(current === "cs" ? "en" : "cs");
-      });
-    }
+</div>
+</div>
+</footer>
 
-    applyLang(getLang());
-  </script>
+<script>
+document.getElementById("y").textContent = new Date().getFullYear();
+</script>
+
 </body>
 </html>
