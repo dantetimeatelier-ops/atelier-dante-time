@@ -1,153 +1,536 @@
 
-
 <!doctype html>
 <html lang="cs">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title data-i18n="title">Podmínky — Atelier Dante Time</title>
+  <title>Obchodní podmínky — Atelier Dante Time</title>
+  <meta name="description" content="Obchodní podmínky — Atelier Dante Time" />
   <link rel="icon" href="logo.png" />
+
   <style>
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#f2f2f2;background:#070707}
-    a{color:#c8a24a;text-decoration:none}
-    .wrap{max-width:900px;margin:0 auto;padding:34px 20px}
-    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-    .left{display:flex;align-items:center;gap:12px}
-    .left img{width:28px;height:28px;object-fit:contain}
-    h1{font-family:ui-serif,Georgia,Times New Roman,Times;margin:8px 0 18px;letter-spacing:.03em}
-    p,li{color:#cfcfcf;line-height:1.75}
-    .card{border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:18px;background:rgba(255,255,255,.02)}
-    .muted{color:#a9a9a9}
-    footer{margin-top:22px;padding-top:16px;border-top:1px solid rgba(255,255,255,.10);color:#a9a9a9;font-size:13px}
-    .langbtn{padding:8px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:rgba(255,255,255,.02);color:#cfcfcf;cursor:pointer}
-    .langbtn:hover{border-color:rgba(200,162,74,.45);color:#fff}
+    :root{
+      --bg:#070707;
+      --text:#f2f2f2;
+      --muted:#b9b9b9;
+      --gold:#c8a24a;
+      --line:rgba(255,255,255,.10);
+      --shadow:0 18px 50px rgba(0,0,0,.45);
+      --radius:18px;
+      --max:1100px;
+      --card:#0b0b0b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 55%),
+        radial-gradient(1200px 700px at 50% -120px, rgba(200,162,74,.12), rgba(0,0,0,0) 60%),
+        var(--bg);
+      overflow-x:hidden;
+    }
+    a{color:inherit; text-decoration:none}
+    a:hover{opacity:.95}
+    .wrap{max-width:var(--max); margin:0 auto; padding:0 20px}
+
+    header{
+      position:sticky; top:0; z-index:20;
+      backdrop-filter: blur(10px);
+      background:rgba(7,7,7,.65);
+      border-bottom:1px solid var(--line);
+    }
+    .nav{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 0;
+      gap:12px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      min-width: 180px;
+    }
+    .brand img{
+      width:28px; height:28px; object-fit:contain;
+      filter: drop-shadow(0 10px 30px rgba(0,0,0,.6));
+    }
+    .brand strong{
+      letter-spacing:.08em; font-weight:700; font-size:12px;
+      text-transform:uppercase; color:var(--muted)
+    }
+
+    .links{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
+    .chip, .langbtn{
+      padding:8px 12px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      color:var(--muted);
+      font-size:13px;
+      transition:.2s ease;
+      background:rgba(255,255,255,.02);
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .chip:hover, .langbtn:hover{border-color:rgba(200,162,74,.45); color:var(--text)}
+    .chip.gold{border-color:rgba(200,162,74,.45); color:var(--text)}
+    .langbtn{display:inline-flex; gap:8px; align-items:center}
+    .langdot{
+      width:8px;height:8px;border-radius:99px;
+      background:rgba(200,162,74,.75);
+      box-shadow:0 0 0 4px rgba(200,162,74,.12);
+    }
+
+    .hero{
+      padding:46px 0 20px;
+      text-align:left;
+    }
+    h1{
+      margin:0;
+      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      font-size:clamp(26px, 3.6vw, 44px);
+      line-height:1.1;
+    }
+    .subtitle{
+      margin:10px 0 0;
+      color:var(--muted);
+      line-height:1.7;
+      max-width: 900px;
+    }
+    .subline{
+      width:min(220px, 60vw);
+      height:1px;
+      margin:18px 0 0;
+      background:linear-gradient(90deg, rgba(200,162,74,0), rgba(200,162,74,.9), rgba(200,162,74,0));
+      opacity:.75;
+    }
+
+    .section{padding:18px 0 34px}
+    .card{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:22px;
+      overflow:hidden;
+      position:relative;
+    }
+    .card h2{
+      margin:0 0 10px 0;
+      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+      font-size:22px;
+      letter-spacing:.03em;
+    }
+    .card h3{
+      margin:18px 0 8px;
+      font-size:16px;
+      letter-spacing:.02em;
+      color:var(--text);
+    }
+    .card p{
+      margin:0;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.7;
+    }
+    .card ul{
+      margin:10px 0 0;
+      padding-left:18px;
+      color:var(--muted);
+      line-height:1.7;
+    }
+    .card li{margin:6px 0}
+    .hint{
+      margin-top:14px;
+      padding:12px 14px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:rgba(0,0,0,.22);
+      color:var(--muted);
+      line-height:1.7;
+      font-size:14px;
+    }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(200,162,74,.45);
+      background:linear-gradient(180deg, rgba(200,162,74,.18), rgba(200,162,74,.04));
+      color:var(--text);
+      font-size:13px;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .btn.ghost{
+      border-color:var(--line);
+      background:rgba(255,255,255,.02);
+      color:var(--muted);
+    }
+
+    footer{
+      padding:28px 0 34px;
+      border-top:1px solid var(--line);
+      margin-top:32px;
+      color:var(--muted);
+      font-size:13px;
+    }
+    .footer-inner{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:14px; flex-wrap:wrap;
+    }
+    .footer-links{display:flex; gap:12px; flex-wrap:wrap}
+    .footer-links a{color:var(--muted); border-bottom:1px solid transparent}
+    .footer-links a:hover{color:var(--text); border-bottom-color:rgba(200,162,74,.5)}
+
+    @media (max-width: 880px){
+      .brand strong{display:none}
+      .hero{padding:36px 0 16px}
+    }
   </style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div class="left">
-        <img src="logo.png" alt="Logo">
-        <a href="index.html" data-i18n="back">← Zpět na web</a>
+  <header>
+    <div class="wrap">
+      <div class="nav">
+        <a href="index.html" class="brand">
+          <img src="logo.png" alt="Atelier Dante Time logo" />
+          <strong>Atelier Dante Time</strong>
+        </a>
+
+        <div class="links">
+          <a class="chip" href="index.html" data-i18n="nav_home">Domů</a>
+          <a class="chip" href="about.html" data-i18n="nav_about">O nás</a>
+          <a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
+          <a class="chip" href="index.html#contact" data-i18n="nav_contact">Kontakt</a>
+
+          <button class="langbtn" id="langBtn" type="button" aria-label="Switch language">
+            <span class="langdot"></span>
+            <span id="langLabel">CZ</span>
+          </button>
+        </div>
       </div>
-      <button class="langbtn" id="langBtn" type="button"><span id="langLabel">CZ</span></button>
     </div>
+  </header>
 
-    <h1 data-i18n="h1">Podmínky</h1>
+  <main>
+    <section class="hero">
+      <div class="wrap">
+        <h1 data-i18n="title">Obchodní podmínky</h1>
+        <p class="subtitle" data-i18n="lead">
+          Základní rámec spolupráce při prodeji hotových hodinek, zakázkové výrobě, renovacích a souvisejících hodinářských službách Atelier Dante Time.
+        </p>
+        <div class="subline"></div>
+      </div>
+    </section>
 
-    <div class="card">
-      <p class="muted"><span data-i18n="updated_label">Poslední aktualizace:</span> <strong>26. 2. 2026</strong></p>
+    <section class="section">
+      <div class="wrap">
+        <div class="card">
 
-      <p data-i18n="intro">
-        Tyto podmínky popisují základní pravidla spolupráce při poskytování služeb (servis, renovace, zakázková sestava) pod značkou Atelier Dante Time.
-      </p>
+          <h2 data-i18n="s1_title">1. Úvod</h2>
+          <p data-i18n="s1_p1">
+            Tyto obchodní podmínky upravují vztah mezi značkou Atelier Dante Time a zákazníkem při prodeji hotových hodinek, zakázkové výrobě, renovacích a souvisejících hodinářských službách.
+          </p>
+          <p style="margin-top:12px" data-i18n="s1_p2">
+            Každý kus vzniká s důrazem na detail, řemeslo a individuální přístup. Některé projekty mají charakter jedinečné zakázkové práce, nikoli běžného sériového prodeje.
+          </p>
 
-      <h3 data-i18n="s1">1) Zakázková práce</h3>
-      <ul>
-        <li data-i18n="s1a">Zakázková práce může zahrnovat servis/renovaci, regulaci, čištění, montáž a úpravy dle dohody.</li>
-        <li data-i18n="s1b">U vintage hodinek se pracuje s ohledem na stav dílů a dostupnost náhrad.</li>
-      </ul>
+          <h2 style="margin-top:22px" data-i18n="s2_title">2. Objednávka a uzavření dohody</h2>
+          <p data-i18n="s2_p1">
+            Objednávka zákazníka je návrhem na uzavření smluvního vztahu.
+          </p>
+          <p style="margin-top:12px" data-i18n="s2_p2">
+            K potvrzení dochází zpravidla e-mailem, zprávou nebo jinou dohodnutou formou komunikace. U individuálních projektů je součástí dohody také upřesnění rozsahu práce, ceny, termínu a případné zálohy.
+          </p>
 
-      <h3 data-i18n="s2">2) Termíny</h3>
-      <ul>
-        <li data-i18n="s2a">Orientační doba realizace je individuální. Typicky se může pohybovat kolem 2–3 týdnů (dle dostupnosti dílů a rozsahu).</li>
-      </ul>
+          <h2 style="margin-top:22px" data-i18n="s3_title">3. Typy zakázek</h2>
+          <p data-i18n="s3_p1">
+            Atelier Dante Time nabízí zejména:
+          </p>
+          <ul>
+            <li data-i18n="s3_b1">hotové hodinky,</li>
+            <li data-i18n="s3_b2">zakázkovou výrobu hodinek,</li>
+            <li data-i18n="s3_b3">renovace a servis mechanických hodinek,</li>
+            <li data-i18n="s3_b4">individuální úpravy dle dohody.</li>
+          </ul>
 
-      <h3 data-i18n="s3">3) Cena</h3>
-      <ul>
-        <li data-i18n="s3a">Cena se stanovuje podle rozsahu prací a stavu hodinek. Orientační nabídka se řeší předem.</li>
-        <li data-i18n="s3b">U zakázkových sestav může být požadována záloha na materiál/díly.</li>
-      </ul>
+          <h2 style="margin-top:22px" data-i18n="s4_title">4. Cena a platba</h2>
+          <p data-i18n="s4_p1">
+            Cena je vždy sdělena předem, případně potvrzena individuálně podle konkrétní zakázky.
+          </p>
+          <p style="margin-top:12px" data-i18n="s4_p2">
+            U zakázkové výroby, renovací nebo rozsáhlejších projektů může být požadována záloha. Doplatek je hrazen před předáním nebo odesláním hotové zakázky, pokud není dohodnuto jinak.
+          </p>
 
-      <h3 data-i18n="s4">4) Předání / doprava</h3>
-      <ul>
-        <li data-i18n="s4a">Hodinky je možné předat osobně nebo zaslat po domluvě.</li>
-        <li data-i18n="s4b">Doporučuje se pojistné doručení a pečlivé zabalení.</li>
-      </ul>
+          <h2 style="margin-top:22px" data-i18n="s5_title">5. Termín realizace</h2>
+          <p data-i18n="s5_p1">
+            Termín dokončení je vždy orientační, pokud není výslovně potvrzen jako pevný.
+          </p>
+          <p style="margin-top:12px" data-i18n="s5_p2">
+            Doba realizace může být ovlivněna zejména rozsahem ruční práce, stavem dodaných hodinek, dostupností dílů a náročností restaurátorského nebo individuálního projektu.
+          </p>
 
-      <h3 data-i18n="s5">5) Odpovědnost</h3>
-      <ul>
-        <li data-i18n="s5a">U vintage hodinek mohou být některé závady skryté a projevit se až po rozebrání/testování.</li>
-        <li data-i18n="s5b">Vždy se snažíme postupovat maximálně šetrně a profesionálně.</li>
-      </ul>
+          <h2 style="margin-top:22px" data-i18n="s6_title">6. Zakázková výroba</h2>
+          <p data-i18n="s6_p1">
+            Zakázkově vyráběné nebo individuálně upravené hodinky jsou vytvářeny podle konkrétní dohody se zákazníkem.
+          </p>
+          <p style="margin-top:12px" data-i18n="s6_p2">
+            Z tohoto důvodu se na ně nevztahuje režim běžného vrácení zboží jako u standardního hotového produktu. Po zahájení výroby nebo úpravy je zakázka závazná v rozsahu odsouhlasené práce.
+          </p>
 
-      <p class="muted" data-i18n="note">
-        Poznámka: Text je obecný a nenahrazuje právní poradenství. Pokud budeš chtít, upravíme podmínky podle toho, zda jde o prezentaci, službu nebo prodej.
-      </p>
+          <h2 style="margin-top:22px" data-i18n="s7_title">7. Historické a renovované hodinky</h2>
+          <p data-i18n="s7_p1">
+            Zákazník bere na vědomí, že historické a renovované hodinky mohou mít specifický charakter, který odpovídá jejich stáří, původu a konstrukci.
+          </p>
+          <ul>
+            <li data-i18n="s7_b1">mohou se lišit přesností od moderních hodinek,</li>
+            <li data-i18n="s7_b2">mohou nést stopy stáří nebo původního charakteru,</li>
+            <li data-i18n="s7_b3">ne vždy lze garantovat vlastnosti běžné u moderní sériové produkce.</li>
+          </ul>
+
+          <h2 style="margin-top:22px" data-i18n="s8_title">8. Záruka a reklamace</h2>
+          <p data-i18n="s8_p1">
+            Na provedené servisní práce a dohodnuté úpravy je poskytována záruka v rozsahu předem sděleném zákazníkovi.
+          </p>
+          <p style="margin-top:12px" data-i18n="s8_p2">
+            Záruka se nevztahuje zejména na běžné opotřebení, poškození vzniklé pádem, nárazem, vodou, vlhkostí, magnetismem, chemikáliemi nebo zásahem třetí osoby.
+          </p>
+
+          <h2 style="margin-top:22px" data-i18n="s9_title">9. Doprava a převzetí</h2>
+          <p data-i18n="s9_p1">
+            Zakázka může být předána osobně nebo zaslána přepravní službou dle dohody.
+          </p>
+          <p style="margin-top:12px" data-i18n="s9_p2">
+            Zákazník je při převzetí zásilky povinen zkontrolovat její stav. V případě zjevného poškození je třeba tuto skutečnost ihned řešit s dopravcem a bezodkladně informovat Atelier Dante Time.
+          </p>
+
+          <h2 style="margin-top:22px" data-i18n="s10_title">10. Komunikace a individuální přístup</h2>
+          <p data-i18n="s10_p1">
+            Každý projekt je řešen individuálně. Atelier Dante Time si vyhrazuje právo odmítnout zakázku, která je technicky nevhodná, neproveditelná nebo v rozporu s charakterem poskytované práce.
+          </p>
+          <p style="margin-top:12px" data-i18n="s10_p2">
+            Stejně tak si vyhrazuje právo upravit návrh postupu, pokud se během práce ukáže jiný technický stav hodinek, než bylo původně předpokládáno.
+          </p>
+
+          <h2 style="margin-top:22px" data-i18n="s11_title">11. Ochrana osobních údajů</h2>
+          <p data-i18n="s11_p1">
+            Osobní údaje zákazníků jsou zpracovávány pouze v rozsahu nutném pro komunikaci, realizaci zakázky a splnění souvisejících povinností.
+          </p>
+
+          <h2 style="margin-top:22px" data-i18n="s12_title">12. Závěrečné ustanovení</h2>
+          <p data-i18n="s12_p1">
+            Tyto obchodní podmínky tvoří základní rámec spolupráce mezi zákazníkem a Atelier Dante Time.
+          </p>
+          <p style="margin-top:12px" data-i18n="s12_p2">
+            Odesláním objednávky, potvrzením zakázky nebo předáním hodinek k práci zákazník stvrzuje, že se s těmito podmínkami seznámil a souhlasí s nimi.
+          </p>
+
+          <div class="hint" data-i18n="contact_hint">
+            Pro dotazy k objednávce nebo zakázce napište na: dante.time.atelier@gmail.com
+          </div>
+
+          <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
+            <a class="btn ghost" href="index.html" data-i18n="btn_back">Zpět na web</a>
+            <a class="btn" href="mailto:dante.time.atelier@gmail.com" data-i18n="btn_email">Napsat e-mail</a>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div class="footer-inner">
+        <div>© <span id="y"></span> Atelier Dante Time</div>
+        <div class="footer-links">
+          <a href="returns.html" data-i18n="footer_returns">Vrácení a výměna zboží</a>
+          <a href="warranty.html" data-i18n="footer_warranty">Záruka a servis</a>
+          <a href="care.html" data-i18n="footer_care">Péče o hodinky</a>
+          <a href="terms.html" data-i18n="footer_terms">Obchodní podmínky</a>
+        </div>
+      </div>
     </div>
-
-    <footer>
-      <span data-i18n="contact">Kontakt:</span> <a href="mailto:dante.time.atelier@gmail.com">dante.time.atelier@gmail.com</a>
-    </footer>
-  </div>
+  </footer>
 
   <script>
     const I18N = {
-      cs:{
-        title:"Podmínky — Atelier Dante Time",
-        back:"← Zpět na web",
-        h1:"Podmínky",
-        updated_label:"Poslední aktualizace:",
-        intro:"Tyto podmínky popisují základní pravidla spolupráce při poskytování služeb (servis, renovace, zakázková sestava) pod značkou Atelier Dante Time.",
-        s1:"1) Zakázková práce",
-        s1a:"Zakázková práce může zahrnovat servis/renovaci, regulaci, čištění, montáž a úpravy dle dohody.",
-        s1b:"U vintage hodinek se pracuje s ohledem na stav dílů a dostupnost náhrad.",
-        s2:"2) Termíny",
-        s2a:"Orientační doba realizace je individuální. Typicky se může pohybovat kolem 2–3 týdnů (dle dostupnosti dílů a rozsahu).",
-        s3:"3) Cena",
-        s3a:"Cena se stanovuje podle rozsahu prací a stavu hodinek. Orientační nabídka se řeší předem.",
-        s3b:"U zakázkových sestav může být požadována záloha na materiál/díly.",
-        s4:"4) Předání / doprava",
-        s4a:"Hodinky je možné předat osobně nebo zaslat po domluvě.",
-        s4b:"Doporučuje se pojistné doručení a pečlivé zabalení.",
-        s5:"5) Odpovědnost",
-        s5a:"U vintage hodinek mohou být některé závady skryté a projevit se až po rozebrání/testování.",
-        s5b:"Vždy se snažíme postupovat maximálně šetrně a profesionálně.",
-        note:"Poznámka: Text je obecný a nenahrazuje právní poradenství. Pokud budeš chtít, upravíme podmínky podle toho, zda jde o prezentaci, službu nebo prodej.",
-        contact:"Kontakt:"
+      cs: {
+        nav_home: "Domů",
+        nav_about: "O nás",
+        nav_services: "Služby",
+        nav_contact: "Kontakt",
+
+        title: "Obchodní podmínky",
+        lead: "Základní rámec spolupráce při prodeji hotových hodinek, zakázkové výrobě, renovacích a souvisejících hodinářských službách Atelier Dante Time.",
+
+        s1_title: "1. Úvod",
+        s1_p1: "Tyto obchodní podmínky upravují vztah mezi značkou Atelier Dante Time a zákazníkem při prodeji hotových hodinek, zakázkové výrobě, renovacích a souvisejících hodinářských službách.",
+        s1_p2: "Každý kus vzniká s důrazem na detail, řemeslo a individuální přístup. Některé projekty mají charakter jedinečné zakázkové práce, nikoli běžného sériového prodeje.",
+
+        s2_title: "2. Objednávka a uzavření dohody",
+        s2_p1: "Objednávka zákazníka je návrhem na uzavření smluvního vztahu.",
+        s2_p2: "K potvrzení dochází zpravidla e-mailem, zprávou nebo jinou dohodnutou formou komunikace. U individuálních projektů je součástí dohody také upřesnění rozsahu práce, ceny, termínu a případné zálohy.",
+
+        s3_title: "3. Typy zakázek",
+        s3_p1: "Atelier Dante Time nabízí zejména:",
+        s3_b1: "hotové hodinky,",
+        s3_b2: "zakázkovou výrobu hodinek,",
+        s3_b3: "renovace a servis mechanických hodinek,",
+        s3_b4: "individuální úpravy dle dohody.",
+
+        s4_title: "4. Cena a platba",
+        s4_p1: "Cena je vždy sdělena předem, případně potvrzena individuálně podle konkrétní zakázky.",
+        s4_p2: "U zakázkové výroby, renovací nebo rozsáhlejších projektů může být požadována záloha. Doplatek je hrazen před předáním nebo odesláním hotové zakázky, pokud není dohodnuto jinak.",
+
+        s5_title: "5. Termín realizace",
+        s5_p1: "Termín dokončení je vždy orientační, pokud není výslovně potvrzen jako pevný.",
+        s5_p2: "Doba realizace může být ovlivněna zejména rozsahem ruční práce, stavem dodaných hodinek, dostupností dílů a náročností restaurátorského nebo individuálního projektu.",
+
+        s6_title: "6. Zakázková výroba",
+        s6_p1: "Zakázkově vyráběné nebo individuálně upravené hodinky jsou vytvářeny podle konkrétní dohody se zákazníkem.",
+        s6_p2: "Z tohoto důvodu se na ně nevztahuje režim běžného vrácení zboží jako u standardního hotového produktu. Po zahájení výroby nebo úpravy je zakázka závazná v rozsahu odsouhlasené práce.",
+
+        s7_title: "7. Historické a renovované hodinky",
+        s7_p1: "Zákazník bere na vědomí, že historické a renovované hodinky mohou mít specifický charakter, který odpovídá jejich stáří, původu a konstrukci.",
+        s7_b1: "mohou se lišit přesností od moderních hodinek,",
+        s7_b2: "mohou nést stopy stáří nebo původního charakteru,",
+        s7_b3: "ne vždy lze garantovat vlastnosti běžné u moderní sériové produkce.",
+
+        s8_title: "8. Záruka a reklamace",
+        s8_p1: "Na provedené servisní práce a dohodnuté úpravy je poskytována záruka v rozsahu předem sděleném zákazníkovi.",
+        s8_p2: "Záruka se nevztahuje zejména na běžné opotřebení, poškození vzniklé pádem, nárazem, vodou, vlhkostí, magnetismem, chemikáliemi nebo zásahem třetí osoby.",
+
+        s9_title: "9. Doprava a převzetí",
+        s9_p1: "Zakázka může být předána osobně nebo zaslána přepravní službou dle dohody.",
+        s9_p2: "Zákazník je při převzetí zásilky povinen zkontrolovat její stav. V případě zjevného poškození je třeba tuto skutečnost ihned řešit s dopravcem a bezodkladně informovat Atelier Dante Time.",
+
+        s10_title: "10. Komunikace a individuální přístup",
+        s10_p1: "Každý projekt je řešen individuálně. Atelier Dante Time si vyhrazuje právo odmítnout zakázku, která je technicky nevhodná, neproveditelná nebo v rozporu s charakterem poskytované práce.",
+        s10_p2: "Stejně tak si vyhrazuje právo upravit návrh postupu, pokud se během práce ukáže jiný technický stav hodinek, než bylo původně předpokládáno.",
+
+        s11_title: "11. Ochrana osobních údajů",
+        s11_p1: "Osobní údaje zákazníků jsou zpracovávány pouze v rozsahu nutném pro komunikaci, realizaci zakázky a splnění souvisejících povinností.",
+
+        s12_title: "12. Závěrečné ustanovení",
+        s12_p1: "Tyto obchodní podmínky tvoří základní rámec spolupráce mezi zákazníkem a Atelier Dante Time.",
+        s12_p2: "Odesláním objednávky, potvrzením zakázky nebo předáním hodinek k práci zákazník stvrzuje, že se s těmito podmínkami seznámil a souhlasí s nimi.",
+
+        contact_hint: "Pro dotazy k objednávce nebo zakázce napište na: dante.time.atelier@gmail.com",
+        btn_back: "Zpět na web",
+        btn_email: "Napsat e-mail",
+
+        footer_returns: "Vrácení a výměna zboží",
+        footer_warranty: "Záruka a servis",
+        footer_care: "Péče o hodinky",
+        footer_terms: "Obchodní podmínky"
       },
-      en:{
-        title:"Terms — Atelier Dante Time",
-        back:"← Back to site",
-        h1:"Terms",
-        updated_label:"Last update:",
-        intro:"These terms describe the basic rules for cooperation when providing services (service, restoration, custom build) under the Atelier Dante Time brand.",
-        s1:"1) Custom work",
-        s1a:"Custom work may include service/restoration, regulation, cleaning, assembly and modifications by agreement.",
-        s1b:"For vintage watches, work depends on parts condition and availability.",
-        s2:"2) Timeframe",
-        s2a:"The estimated timeframe is individual. Typically around 2–3 weeks (depending on parts availability and scope).",
-        s3:"3) Price",
-        s3a:"Price is determined by the scope of work and the watch condition. An estimate is agreed in advance.",
-        s3b:"For custom builds, a deposit for materials/parts may be required.",
-        s4:"4) Handover / shipping",
-        s4a:"The watch can be handed over in person or shipped by agreement.",
-        s4b:"Insured shipping and careful packaging are recommended.",
-        s5:"5) Liability",
-        s5a:"Vintage watches can have hidden faults that may appear only after disassembly/testing.",
-        s5b:"We always aim to proceed as carefully and professionally as possible.",
-        note:"Note: This text is general and does not replace legal advice. If needed, we will tailor the terms depending on whether this is presentation, service, or sales.",
-        contact:"Contact:"
+
+      en: {
+        nav_home: "Home",
+        nav_about: "About",
+        nav_services: "Services",
+        nav_contact: "Contact",
+
+        title: "Terms & Conditions",
+        lead: "The basic framework of cooperation for ready-made watches, custom watchmaking, restorations and related watchmaking services of Atelier Dante Time.",
+
+        s1_title: "1. Introduction",
+        s1_p1: "These terms and conditions govern the relationship between the Atelier Dante Time brand and the customer in the sale of ready-made watches, custom production, restorations and related watchmaking services.",
+        s1_p2: "Each piece is created with an emphasis on detail, craftsmanship and an individual approach. Some projects are unique custom work rather than standard serial production.",
+
+        s2_title: "2. Order and agreement",
+        s2_p1: "A customer’s order is a proposal to enter into a contractual relationship.",
+        s2_p2: "Confirmation usually takes place by email, message or another agreed form of communication. For individual projects, the agreement also includes clarification of the scope of work, price, deadline and any deposit.",
+
+        s3_title: "3. Types of orders",
+        s3_p1: "Atelier Dante Time offers in particular:",
+        s3_b1: "ready-made watches,",
+        s3_b2: "custom-made watches,",
+        s3_b3: "restoration and servicing of mechanical watches,",
+        s3_b4: "individual modifications by agreement.",
+
+        s4_title: "4. Price and payment",
+        s4_p1: "The price is always communicated in advance, or confirmed individually for the specific order.",
+        s4_p2: "For custom production, restorations or more extensive projects, a deposit may be required. The remaining amount is paid before handover or shipment of the completed order, unless agreed otherwise.",
+
+        s5_title: "5. Completion time",
+        s5_p1: "The completion date is always indicative unless expressly confirmed as fixed.",
+        s5_p2: "The completion time may be affected in particular by the scope of handwork, the condition of the supplied watches, the availability of parts and the complexity of the restoration or individual project.",
+
+        s6_title: "6. Custom production",
+        s6_p1: "Custom-made or individually modified watches are created according to a specific agreement with the customer.",
+        s6_p2: "For this reason, the standard return regime does not apply as it does for a regular ready-made product. Once production or modification has begun, the order becomes binding within the agreed scope of work.",
+
+        s7_title: "7. Historical and restored watches",
+        s7_p1: "The customer acknowledges that historical and restored watches may have a specific character corresponding to their age, origin and construction.",
+        s7_b1: "they may differ in accuracy from modern watches,",
+        s7_b2: "they may carry traces of age or original character,",
+        s7_b3: "it is not always possible to guarantee properties common to modern serial production.",
+
+        s8_title: "8. Warranty and claims",
+        s8_p1: "Warranty is provided for completed service work and agreed modifications within the scope communicated to the customer in advance.",
+        s8_p2: "The warranty does not apply in particular to normal wear, damage caused by falling, impact, water, humidity, magnetism, chemicals or intervention by a third party.",
+
+        s9_title: "9. Delivery and handover",
+        s9_p1: "The order may be handed over personally or sent by a transport service by agreement.",
+        s9_p2: "Upon receiving the shipment, the customer is obliged to check its condition. In the event of visible damage, this must be addressed immediately with the carrier and Atelier Dante Time must be informed without delay.",
+
+        s10_title: "10. Communication and individual approach",
+        s10_p1: "Each project is handled individually. Atelier Dante Time reserves the right to reject an order that is technically unsuitable, impossible to carry out or contrary to the nature of the work provided.",
+        s10_p2: "It also reserves the right to modify the proposed procedure if, during the work, the technical condition of the watch proves different from what was originally assumed.",
+
+        s11_title: "11. Personal data protection",
+        s11_p1: "Customer personal data is processed only to the extent necessary for communication, execution of the order and fulfilment of related obligations.",
+
+        s12_title: "12. Final provisions",
+        s12_p1: "These terms and conditions form the basic framework of cooperation between the customer and Atelier Dante Time.",
+        s12_p2: "By sending an order, confirming a commission or handing over a watch for work, the customer confirms that they have read and agree to these terms.",
+
+        contact_hint: "For questions about an order or commission, email: dante.time.atelier@gmail.com",
+        btn_back: "Back to site",
+        btn_email: "Email us",
+
+        footer_returns: "Returns & exchanges",
+        footer_warranty: "Warranty & service",
+        footer_care: "Watch care",
+        footer_terms: "Terms & conditions"
       }
     };
 
-    function getLang(){ return localStorage.getItem("lang") || "cs"; }
+    function getLang(){
+      return localStorage.getItem("lang") || "cs";
+    }
     function applyLang(lang){
       document.documentElement.lang = lang;
       const dict = I18N[lang] || I18N.cs;
+
       document.querySelectorAll("[data-i18n]").forEach(el=>{
         const key = el.getAttribute("data-i18n");
-        if(dict[key]) el.textContent = dict[key];
+        if (dict[key]) el.textContent = dict[key];
       });
-      document.getElementById("langLabel").textContent = (lang==="cs") ? "CZ" : "EN";
-      document.title = dict.title;
+
+      const txt = (lang === "cs") ? "CZ" : "EN";
+      const label = document.getElementById("langLabel");
+      if (label) label.textContent = txt;
     }
-    function toggleLang(){
-      const next = (getLang()==="cs") ? "en" : "cs";
-      localStorage.setItem("lang", next);
-      applyLang(next);
+    function setLang(lang){
+      localStorage.setItem("lang", lang);
+      applyLang(lang);
     }
-    document.getElementById("langBtn").addEventListener("click", toggleLang);
+
+    document.getElementById("y").textContent = new Date().getFullYear();
+
+    const langBtn = document.getElementById("langBtn");
+    if (langBtn) langBtn.addEventListener("click", ()=>{
+      const current = getLang();
+      setLang(current === "cs" ? "en" : "cs");
+    });
+
     applyLang(getLang());
   </script>
 </body>
