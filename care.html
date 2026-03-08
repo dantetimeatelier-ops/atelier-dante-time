@@ -5,9 +5,10 @@
 <head>
 
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>Péče o hodinky — Atelier Dante Time</title>
+<meta name="description" content="Péče o mechanické hodinky — Atelier Dante Time">
 
 <link rel="icon" href="logo.png">
 
@@ -19,22 +20,31 @@
 --muted:#b9b9b9;
 --gold:#c8a24a;
 --line:rgba(255,255,255,.10);
---card:#0b0b0b;
+--shadow:0 18px 50px rgba(0,0,0,.45);
+--radius:18px;
 --max:1100px;
+--card:#0b0b0b;
 }
 
 *{box-sizing:border-box}
 
-body{
-margin:0;
-font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-background:var(--bg);
-color:var(--text);
-}
-
 a{
 color:inherit;
 text-decoration:none;
+}
+
+a:hover{
+opacity:.95;
+}
+
+body{
+margin:0;
+font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+color:var(--text);
+background:
+linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 55%),
+radial-gradient(1200px 700px at 50% -120px, rgba(200,162,74,.12), rgba(0,0,0,0) 60%),
+var(--bg);
 }
 
 .wrap{
@@ -46,15 +56,16 @@ padding:0 20px;
 header{
 position:sticky;
 top:0;
-background:#070707e6;
 backdrop-filter:blur(10px);
+background:rgba(7,7,7,.65);
 border-bottom:1px solid var(--line);
+z-index:10;
 }
 
 .nav{
 display:flex;
-justify-content:space-between;
 align-items:center;
+justify-content:space-between;
 padding:14px 0;
 }
 
@@ -62,20 +73,24 @@ padding:14px 0;
 display:flex;
 align-items:center;
 gap:10px;
-font-weight:600;
-letter-spacing:.08em;
-color:#ffffff;
 }
 
 .brand img{
-width:26px;
-height:26px;
+width:28px;
+height:28px;
+}
+
+.brand strong{
+font-size:12px;
+letter-spacing:.08em;
+text-transform:uppercase;
+color:var(--muted);
 }
 
 .links{
 display:flex;
 gap:10px;
-align-items:center;
+flex-wrap:wrap;
 }
 
 .chip{
@@ -84,51 +99,55 @@ border:1px solid var(--line);
 border-radius:999px;
 font-size:13px;
 color:var(--muted);
+text-decoration:none;
 }
 
 .chip:hover{
-border-color:var(--gold);
+border-color:rgba(200,162,74,.45);
 color:var(--text);
 }
 
 .hero{
-padding:40px 0 20px;
+padding:46px 0 20px;
 }
 
 h1{
 margin:0;
-font-family:Georgia,serif;
+font-family:Georgia,Times,serif;
 letter-spacing:.06em;
 text-transform:uppercase;
-font-size:40px;
+font-size:clamp(26px,3.6vw,44px);
 }
 
 .subtitle{
 margin-top:10px;
 color:var(--muted);
-max-width:700px;
-line-height:1.7;
+max-width:900px;
+line-height:1.6;
+}
+
+.subline{
+width:220px;
+height:1px;
+margin-top:18px;
+background:linear-gradient(90deg,rgba(200,162,74,0),rgba(200,162,74,.9),rgba(200,162,74,0));
 }
 
 .section{
-padding:20px 0 40px;
+padding:18px 0 34px;
 }
 
 .card{
 background:var(--card);
 border:1px solid var(--line);
-border-radius:16px;
-padding:24px;
+border-radius:var(--radius);
+box-shadow:var(--shadow);
+padding:22px;
 }
 
-.card h3{
-margin-top:28px;
-font-size:20px;
-}
-
-.card h4{
-margin-top:18px;
-font-size:16px;
+.card h2{
+margin-top:20px;
+font-family:Georgia,Times,serif;
 }
 
 .card p{
@@ -139,40 +158,41 @@ line-height:1.7;
 .card ul{
 color:var(--muted);
 line-height:1.7;
+padding-left:18px;
 }
 
 footer{
 border-top:1px solid var(--line);
-padding:30px 0;
+margin-top:40px;
+padding:28px 0;
 color:var(--muted);
 font-size:13px;
-margin-top:40px;
 }
 
 .footer-inner{
 display:flex;
 justify-content:space-between;
 flex-wrap:wrap;
-align-items:center;
+gap:12px;
 }
 
 .footer-links{
 display:flex;
-gap:14px;
+gap:12px;
+flex-wrap:wrap;
 }
 
 .footer-links a{
-color:#b9b9b9;
-font-size:13px;
+color:var(--muted);
+text-decoration:none;
 }
 
 .footer-links a:hover{
-color:#ffffff;
+color:var(--text);
 }
 
 </style>
 </head>
-
 
 <body>
 
@@ -183,7 +203,7 @@ color:#ffffff;
 
 <a href="index.html" class="brand">
 <img src="logo.png">
-<span>ATELIER DANTE TIME</span>
+<strong>Atelier Dante Time</strong>
 </a>
 
 <div class="links">
@@ -197,7 +217,6 @@ color:#ffffff;
 </div>
 </header>
 
-
 <main>
 
 <section class="hero">
@@ -206,19 +225,20 @@ color:#ffffff;
 <h1>Péče o hodinky</h1>
 
 <p class="subtitle">
-Doporučení pro správné používání, natahování a dlouhodobou péči o mechanické hodinky.
+Doporučení pro správné používání, natahování, nastavování a dlouhodobou péči o mechanické hodinky.
 </p>
+
+<div class="subline"></div>
 
 </div>
 </section>
-
 
 <section class="section">
 <div class="wrap">
 
 <div class="card">
 
-<h3>Péče o hodinky</h3>
+<h2>Péče o hodinky</h2>
 
 <p>
 Mechanické hodinky vyžadují šetrné zacházení a pravidelnou péči.
@@ -226,12 +246,11 @@ Dodržováním těchto doporučení pomůžete zachovat správnou funkci strojku
 a dlouhou životnost hodinek.
 </p>
 
-
-<h3>První uvedení do provozu</h3>
+<h2>První uvedení do provozu</h2>
 
 <p>
-Po převzetí hodinek doporučujeme nechat hodinky několik hodin v klidu při běžné pokojové teplotě,
-aby se stabilizovaly po přepravě.
+Po převzetí hodinek doporučujeme nechat hodinky několik hodin v klidu
+při běžné pokojové teplotě, aby se stabilizovaly po přepravě.
 </p>
 
 <p>
@@ -239,8 +258,7 @@ Pokud hodinky během noci nenosíte, doporučujeme je uložit vodorovně,
 ciferníkem nahoru.
 </p>
 
-
-<h3>Nastavení času</h3>
+<h2>Nastavení času</h2>
 
 <p>
 Při nastavování času otáčejte ručičky vždy pouze ve směru hodinových ručiček.
@@ -251,64 +269,49 @@ Otáčení ručiček proti směru hodinových ručiček může u některých his
 strojků způsobit jejich poškození.
 </p>
 
-
-<h3>Použití hodinek se šroubovací korunkou</h3>
+<h2>Použití hodinek se šroubovací korunkou</h2>
 
 <p>
 Některé modely hodinek používají šroubovací korunku.
 Při manipulaci postupujte pomalu a bez použití síly.
 </p>
 
-
-<h4>Vyšroubování korunky</h4>
-
-<ul>
-<li>otočte korunku proti směru hodinových ručiček, dokud se zcela neuvolní</li>
-<li>po uvolnění je korunka připravena k natahování nebo nastavení času</li>
-</ul>
-
-
-<h4>Natahování</h4>
-
-<ul>
-<li>korunku otáčejte přibližně 10–15× ve směru hodinových ručiček</li>
-<li>jedna otočka znamená pouze půl otáčky (180°), nikoli celých 360°</li>
-<li>otáčejte pomalu a plynule</li>
-<li>ponechte prostor pro následné zašroubování korunky</li>
-</ul>
-
-
-<h4>Upozornění</h4>
-
 <p>
-Korunku při natahování nedotahujte zbytečně silou.
-Při jejím následném zašroubování dochází ještě
-k dalšímu částečnému dotažení strojku.
+Korunku nejprve vyšroubujte otáčením proti směru hodinových ručiček,
+dokud se zcela neuvolní.
+Po uvolnění je korunka připravena k natahování nebo nastavení času.
 </p>
 
+<p>
+Při natahování korunku otáčejte přibližně 10–15× ve směru hodinových ručiček.
+Jedna otočka znamená pouze půl otáčky (180°), nikoli celých 360°.
+Otáčejte pomalu a plynule.
+</p>
 
-<h4>Zašroubování korunky</h4>
+<p>
+Tento způsob natahování je zvolen záměrně, protože hodinky mají šroubovací korunku
+a je nutné ponechat prostor pro její následné zašroubování.
+Při jejím zašroubování dochází ještě k dalšímu částečnému dotažení strojku.
+</p>
 
-<ul>
-<li>jemně zatlačte korunku směrem k pouzdru</li>
-<li>následně ji zašroubujte ve směru hodinových ručiček</li>
-<li>zašroubování obvykle odpovídá přibližně 5–6 půlotáčkám</li>
-<li>během nich dochází k dalšímu částečnému nátahu strojku</li>
-</ul>
+<p>
+Po natažení korunku jemně zatlačte směrem k pouzdru
+a následně ji zašroubujte ve směru hodinových ručiček.
+Zašroubování obvykle odpovídá přibližně 5–6 půlotáčkám.
+</p>
 
-
-<h3>Ochrana hodinek</h3>
+<h2>Ochrana hodinek</h2>
 
 <ul>
 <li>chraňte hodinky před nárazy a pády</li>
-<li>vyhněte se silným vibracím</li>
-<li>chraňte hodinky před magnetickým polem</li>
-<li>nevystavujte hodinky vlhkosti nebo vodě pokud nejsou vodotěsné</li>
+<li>vyhněte se silným vibracím a otřesům</li>
+<li>nevystavujte hodinky magnetickému poli</li>
+<li>nevystavujte hodinky vlhkosti nebo vodě, pokud nejsou výslovně označeny jako vodotěsné</li>
+<li>vyhněte se kontaktu s chemikáliemi</li>
 <li>nevystavujte hodinky náhlým změnám teplot</li>
 </ul>
 
-
-<h3>Servis hodinek</h3>
+<h2>Servis hodinek</h2>
 
 <p>
 Stejně jako každý mechanický přístroj vyžadují i mechanické hodinky
@@ -316,8 +319,8 @@ pravidelnou údržbu.
 </p>
 
 <p>
-Doporučujeme provést odborný servis přibližně každých
-3–5 let, aby byla zachována správná funkčnost strojku.
+Doporučujeme provést odborný servis přibližně každých 3–5 let,
+aby byla zachována správná funkčnost strojku.
 </p>
 
 </div>
@@ -327,16 +330,13 @@ Doporučujeme provést odborný servis přibližně každých
 
 </main>
 
-
 <footer>
 
 <div class="wrap">
 
 <div class="footer-inner">
 
-<div>
-© <span id="y"></span> Atelier Dante Time
-</div>
+<div>© <span id="year"></span> Atelier Dante Time</div>
 
 <div class="footer-links">
 <a href="returns.html">Vrácení a výměna zboží</a>
@@ -352,7 +352,7 @@ Doporučujeme provést odborný servis přibližně každých
 </footer>
 
 <script>
-document.getElementById("y").textContent=new Date().getFullYear();
+document.getElementById("year").textContent = new Date().getFullYear();
 </script>
 
 </body>
