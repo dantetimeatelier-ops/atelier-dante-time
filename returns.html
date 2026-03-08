@@ -1,8 +1,4 @@
 
-
-<!-- =========================
-     FILE: returns.html
-========================= -->
 <!doctype html>
 <html lang="cs">
 <head>
@@ -53,7 +49,7 @@
     }
     .brand{
       display:flex; align-items:center; gap:10px;
-      min-width: 180px;
+      min-width:180px;
     }
     .brand img{
       width:28px; height:28px; object-fit:contain;
@@ -61,10 +57,12 @@
     }
     .brand strong{
       letter-spacing:.08em; font-weight:700; font-size:12px;
-      text-transform:uppercase; color:var(--muted)
+      text-transform:uppercase; color:var(--muted);
     }
 
-    .links{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
+    .links{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;
+    }
     .chip, .langbtn{
       padding:8px 12px;
       border:1px solid var(--line);
@@ -77,9 +75,12 @@
       user-select:none;
       white-space:nowrap;
     }
-    .chip:hover, .langbtn:hover{border-color:rgba(200,162,74,.45); color:var(--text)}
-    .chip.gold{border-color:rgba(200,162,74,.45); color:var(--text)}
-    .langbtn{display:inline-flex; gap:8px; align-items:center}
+    .chip:hover, .langbtn:hover{
+      border-color:rgba(200,162,74,.45); color:var(--text);
+    }
+    .langbtn{
+      display:inline-flex; gap:8px; align-items:center;
+    }
     .langdot{
       width:8px;height:8px;border-radius:99px;
       background:rgba(200,162,74,.75);
@@ -102,25 +103,23 @@
       margin:10px 0 0;
       color:var(--muted);
       line-height:1.7;
-      max-width: 900px;
+      max-width:900px;
     }
     .subline{
-      width:min(220px, 60vw);
+      width:220px;
       height:1px;
       margin:18px 0 0;
-      background:linear-gradient(90deg, rgba(200,162,74,0), rgba(200,162,74,.9), rgba(200,162,74,0));
+      background:linear-gradient(90deg,rgba(200,162,74,0),rgba(200,162,74,.9),rgba(200,162,74,0));
       opacity:.75;
     }
 
     .section{padding:18px 0 34px}
     .card{
-      background: var(--card);
+      background:var(--card);
       border:1px solid var(--line);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
       padding:22px;
-      overflow:hidden;
-      position:relative;
     }
     .card h2{
       margin:0 0 10px 0;
@@ -189,7 +188,7 @@
     .footer-links a{color:var(--muted); border-bottom:1px solid transparent}
     .footer-links a:hover{color:var(--text); border-bottom-color:rgba(200,162,74,.5)}
 
-    @media (max-width: 880px){
+    @media (max-width:880px){
       .brand strong{display:none}
       .hero{padding:36px 0 16px}
     }
@@ -225,7 +224,7 @@
       <div class="wrap">
         <h1 data-i18n="title">Vrácení a výměna zboží</h1>
         <p class="subtitle" data-i18n="lead">
-          Obecné informace k odstoupení od smlouvy, výjimkám pro zakázkovou výrobu, výměně a postupům při poškození zásilky.
+          Obecné informace k odstoupení od smlouvy, výjimkám pro zakázkovou výrobu, výměně a postupu při poškození zásilky.
         </p>
         <div class="subline"></div>
       </div>
@@ -256,7 +255,7 @@
           </p>
 
           <div class="hint" data-i18n="contact_hint">
-            Pro odstoupení / výměnu napiš na: dante.time.atelier@gmail.com
+            Pro odstoupení / výměnu napište na: dante.time.atelier@gmail.com
           </div>
 
           <h2 style="margin-top:22px" data-i18n="s2_title">2. Výjimka – zakázková výroba</h2>
@@ -332,7 +331,7 @@
         nav_contact: "Kontakt",
 
         title: "Vrácení a výměna zboží",
-        lead: "Obecné informace k odstoupení od smlouvy, výjimkám pro zakázkovou výrobu, výměně a postupům při poškození zásilky.",
+        lead: "Obecné informace k odstoupení od smlouvy, výjimkám pro zakázkovou výrobu, výměně a postupu při poškození zásilky.",
 
         s1_title: "1. Odstoupení od smlouvy (spotřebitel)",
         s1_p1: "Kupující – spotřebitel má právo odstoupit od smlouvy uzavřené na dálku do 14 dnů od převzetí zboží dle § 1829 občanského zákoníku.",
@@ -344,7 +343,7 @@
         s1_p3: "Náklady na vrácení zboží nese kupující.",
         s1_p4: "Peněžní prostředky budou vráceny do 14 dnů od doručení vráceného zboží stejným způsobem, jakým byly přijaty, pokud se strany nedohodnou jinak.",
 
-        contact_hint: "Pro odstoupení / výměnu napiš na: dante.time.atelier@gmail.com",
+        contact_hint: "Pro odstoupení / výměnu napište na: dante.time.atelier@gmail.com",
 
         s2_title: "2. Výjimka – zakázková výroba",
         s2_p1: "Právo na odstoupení od smlouvy se nevztahuje na:",
@@ -381,7 +380,7 @@
         nav_contact: "Contact",
 
         title: "Returns & Exchanges",
-        lead: "General information about withdrawal from a distance contract, custom-made exceptions, exchanges, and shipping damage procedures.",
+        lead: "General information about withdrawal from a distance contract, custom-made exceptions, exchanges, and procedure in the event of shipping damage.",
 
         s1_title: "1. Withdrawal from contract (consumer)",
         s1_p1: "A consumer has the right to withdraw from a distance contract within 14 days from receiving the goods (Czech Civil Code § 1829).",
@@ -399,7 +398,7 @@
         s2_p1: "The right of withdrawal does not apply to:",
         s2_b1: "watches made or modified to order,",
         s2_b2: "individual projects assembled to the customer’s requirements,",
-        s2_b3: "personalized modifications (e.g., engraving, specific parts combination).",
+        s2_b3: "personalized modifications (e.g. engraving, specific parts combination).",
         s2_p2: "In these cases, the order is considered custom work and is binding.",
 
         s3_title: "3. Exchange",
