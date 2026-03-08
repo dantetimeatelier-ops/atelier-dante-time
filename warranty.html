@@ -1,9 +1,7 @@
 
-
 <!doctype html>
 <html lang="cs">
 <head>
-
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -13,7 +11,6 @@
 <link rel="icon" href="logo.png">
 
 <style>
-
 :root{
 --bg:#070707;
 --text:#f2f2f2;
@@ -25,32 +22,31 @@
 --max:1100px;
 --card:#0b0b0b;
 }
-
 *{box-sizing:border-box}
+html,body{height:100%}
 
 body{
 margin:0;
-font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
 color:var(--text);
 background:
 linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 55%),
 radial-gradient(1200px 700px at 50% -120px, rgba(200,162,74,.12), rgba(0,0,0,0) 60%),
 var(--bg);
+overflow-x:hidden;
 }
 
-.wrap{
-max-width:var(--max);
-margin:auto;
-padding:0 20px;
-}
+a{color:inherit;text-decoration:none}
+
+.wrap{max-width:var(--max);margin:0 auto;padding:0 20px}
 
 header{
 position:sticky;
 top:0;
+z-index:20;
 backdrop-filter:blur(10px);
 background:rgba(7,7,7,.65);
 border-bottom:1px solid var(--line);
-z-index:10;
 }
 
 .nav{
@@ -58,12 +54,14 @@ display:flex;
 align-items:center;
 justify-content:space-between;
 padding:14px 0;
+gap:12px;
 }
 
 .brand{
 display:flex;
 align-items:center;
 gap:10px;
+min-width:180px;
 }
 
 .brand img{
@@ -72,8 +70,8 @@ height:28px;
 }
 
 .brand strong{
-font-size:12px;
 letter-spacing:.08em;
+font-size:12px;
 text-transform:uppercase;
 color:var(--muted);
 }
@@ -81,21 +79,32 @@ color:var(--muted);
 .links{
 display:flex;
 gap:10px;
+align-items:center;
 flex-wrap:wrap;
 }
 
-.chip{
+.chip,.langbtn{
 padding:8px 12px;
 border:1px solid var(--line);
 border-radius:999px;
 font-size:13px;
 color:var(--muted);
-text-decoration:none;
+background:rgba(255,255,255,.02);
+cursor:pointer;
 }
 
-.chip:hover{
+.chip:hover,.langbtn:hover{
 border-color:rgba(200,162,74,.45);
 color:var(--text);
+}
+
+.langbtn{display:flex;gap:8px;align-items:center}
+
+.langdot{
+width:8px;
+height:8px;
+border-radius:99px;
+background:rgba(200,162,74,.75);
 }
 
 .hero{
@@ -113,8 +122,8 @@ font-size:clamp(26px,3.6vw,44px);
 .subtitle{
 margin-top:10px;
 color:var(--muted);
+line-height:1.7;
 max-width:900px;
-line-height:1.6;
 }
 
 .subline{
@@ -124,9 +133,7 @@ margin-top:18px;
 background:linear-gradient(90deg,rgba(200,162,74,0),rgba(200,162,74,.9),rgba(200,162,74,0));
 }
 
-.section{
-padding:18px 0 34px;
-}
+.section{padding:18px 0 34px}
 
 .card{
 background:var(--card);
@@ -153,9 +160,9 @@ padding-left:18px;
 }
 
 footer{
-border-top:1px solid var(--line);
-margin-top:40px;
 padding:28px 0;
+border-top:1px solid var(--line);
+margin-top:32px;
 color:var(--muted);
 font-size:13px;
 }
@@ -175,13 +182,7 @@ flex-wrap:wrap;
 
 .footer-links a{
 color:var(--muted);
-text-decoration:none;
 }
-
-.footer-links a:hover{
-color:var(--text);
-}
-
 </style>
 </head>
 
@@ -198,12 +199,17 @@ color:var(--text);
 </a>
 
 <div class="links">
-<a class="chip" href="index.html">Domů</a>
-<a class="chip" href="about.html">O nás</a>
-<a class="chip" href="services.html">Služby</a>
-<a class="chip" href="index.html#contact">Kontakt</a>
-</div>
+<a class="chip" href="index.html" data-i18n="nav_home">Domů</a>
+<a class="chip" href="about.html" data-i18n="nav_about">O nás</a>
+<a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
+<a class="chip" href="index.html#contact" data-i18n="nav_contact">Kontakt</a>
 
+<button class="langbtn" id="langBtn">
+<span class="langdot"></span>
+<span id="langLabel">CZ</span>
+</button>
+
+</div>
 </div>
 </div>
 </header>
@@ -213,12 +219,10 @@ color:var(--text);
 <section class="hero">
 <div class="wrap">
 
-<h1>Záruka a servis</h1>
+<h1 data-i18n="title">Záruka a servis</h1>
 
-<p class="subtitle">
-Atelier Dante Time poskytuje servis a renovace mechanických hodinek.
-Tento dokument popisuje podmínky záruky, servisních oprav
-a postup při řešení případných závad.
+<p class="subtitle" data-i18n="lead">
+Podmínky záruky a servisních oprav mechanických hodinek Atelier Dante Time.
 </p>
 
 <div class="subline"></div>
@@ -231,55 +235,46 @@ a postup při řešení případných závad.
 
 <div class="card">
 
-<h2>Záruční doba</h2>
+<h2 data-i18n="s1_title">Záruční doba</h2>
 
-<p>
-Na servisované nebo renovované hodinky poskytujeme
-záruku 12 měsíců od převzetí hodinek zákazníkem,
-pokud není výslovně dohodnuto jinak.
+<p data-i18n="s1_p1">
+Na servisované nebo renovované hodinky poskytujeme záruku 12 měsíců od převzetí hodinek zákazníkem, pokud není výslovně dohodnuto jinak.
 </p>
 
-<p>
-Záruka se vztahuje pouze na provedenou servisní práci
-a funkčnost strojku po opravě.
+<p data-i18n="s1_p2">
+Záruka se vztahuje pouze na provedenou servisní práci a funkčnost strojku po opravě.
 </p>
 
-<h2>Co je kryto zárukou</h2>
+<h2 data-i18n="s2_title">Co je kryto zárukou</h2>
 
 <ul>
-<li>závady vzniklé v důsledku chybně provedené servisní práce</li>
-<li>nesprávná funkce strojku po provedeném servisu</li>
-<li>výrobní vady nových použitých náhradních dílů</li>
+<li data-i18n="s2_b1">závady vzniklé v důsledku chybně provedené servisní práce</li>
+<li data-i18n="s2_b2">nesprávná funkce strojku po provedeném servisu</li>
+<li data-i18n="s2_b3">výrobní vady nových použitých náhradních dílů</li>
 </ul>
 
-<h2>Co není kryto zárukou</h2>
+<h2 data-i18n="s3_title">Co není kryto zárukou</h2>
 
 <ul>
-<li>běžné opotřebení vzniklé používáním</li>
-<li>kosmetické změny, škrábance nebo patina</li>
-<li>poškození způsobené pádem nebo nárazem</li>
-<li>poškození vodou, vlhkostí nebo chemikáliemi</li>
-<li>zásah neautorizované osoby</li>
+<li data-i18n="s3_b1">běžné opotřebení vzniklé používáním</li>
+<li data-i18n="s3_b2">kosmetické změny, škrábance nebo patina</li>
+<li data-i18n="s3_b3">poškození způsobené pádem nebo nárazem</li>
+<li data-i18n="s3_b4">poškození vodou nebo vlhkostí</li>
+<li data-i18n="s3_b5">zásah neautorizované osoby</li>
 </ul>
 
-<h2>Servis hodinek</h2>
-
-<p>
-Standardní servis může zahrnovat:
-</p>
+<h2 data-i18n="s4_title">Servis hodinek</h2>
 
 <ul>
-<li>kompletní rozebrání strojku</li>
-<li>čištění a mazání</li>
-<li>kontrolu a výměnu opotřebených dílů</li>
-<li>regulaci chodu</li>
-<li>závěrečnou kontrolu funkčnosti</li>
+<li data-i18n="s4_b1">kompletní rozebrání strojku</li>
+<li data-i18n="s4_b2">čištění a mazání</li>
+<li data-i18n="s4_b3">kontrolu a výměnu opotřebených dílů</li>
+<li data-i18n="s4_b4">regulaci chodu</li>
+<li data-i18n="s4_b5">závěrečnou kontrolu funkčnosti</li>
 </ul>
 
-<p>
-Délka servisu se obvykle pohybuje mezi
-2–3 týdny podle rozsahu práce
-a dostupnosti náhradních dílů.
+<p data-i18n="s4_p1">
+Délka servisu se obvykle pohybuje mezi 2–3 týdny podle rozsahu práce a dostupnosti náhradních dílů.
 </p>
 
 </div>
@@ -290,12 +285,11 @@ a dostupnosti náhradních dílů.
 </main>
 
 <footer>
-
 <div class="wrap">
 
 <div class="footer-inner">
 
-<div>© <span id="year"></span> Atelier Dante Time</div>
+<div>© <span id="y"></span> Atelier Dante Time</div>
 
 <div class="footer-links">
 <a href="returns.html">Vrácení a výměna zboží</a>
@@ -305,13 +299,58 @@ a dostupnosti náhradních dílů.
 </div>
 
 </div>
-
 </div>
-
 </footer>
 
 <script>
-document.getElementById("year").textContent = new Date().getFullYear();
+const I18N={
+cs:{
+nav_home:"Domů",
+nav_about:"O nás",
+nav_services:"Služby",
+nav_contact:"Kontakt",
+title:"Záruka a servis",
+lead:"Podmínky záruky a servisních oprav mechanických hodinek Atelier Dante Time."
+},
+en:{
+nav_home:"Home",
+nav_about:"About",
+nav_services:"Services",
+nav_contact:"Contact",
+title:"Warranty & Service",
+lead:"Warranty conditions and servicing information for mechanical watches."
+}
+}
+
+function getLang(){
+return localStorage.getItem("lang")||"cs"
+}
+
+function applyLang(lang){
+document.documentElement.lang=lang
+const dict=I18N[lang]||I18N.cs
+
+document.querySelectorAll("[data-i18n]").forEach(el=>{
+const key=el.getAttribute("data-i18n")
+if(dict[key])el.textContent=dict[key]
+})
+
+document.getElementById("langLabel").textContent=lang==="cs"?"CZ":"EN"
+}
+
+function setLang(lang){
+localStorage.setItem("lang",lang)
+applyLang(lang)
+}
+
+document.getElementById("y").textContent=new Date().getFullYear()
+
+document.getElementById("langBtn").onclick=()=>{
+const current=getLang()
+setLang(current==="cs"?"en":"cs")
+}
+
+applyLang(getLang())
 </script>
 
 </body>
