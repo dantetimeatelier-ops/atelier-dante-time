@@ -175,6 +175,13 @@
     }
 
     .card h3{
+      margin:22px 0 8px;
+      font-size:18px;
+      letter-spacing:.02em;
+      color:var(--text);
+    }
+
+    .card h4{
       margin:18px 0 8px;
       font-size:16px;
       letter-spacing:.02em;
@@ -198,7 +205,7 @@
     .card li{margin:6px 0}
 
     .hint{
-      margin-top:14px;
+      margin-top:16px;
       padding:12px 14px;
       border:1px solid var(--line);
       border-radius:14px;
@@ -206,6 +213,26 @@
       color:var(--muted);
       line-height:1.7;
       font-size:14px;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(200,162,74,.45);
+      background:linear-gradient(180deg, rgba(200,162,74,.18), rgba(200,162,74,.04));
+      color:var(--text);
+      font-size:13px;
+      gap:8px;
+      white-space:nowrap;
+    }
+
+    .btn.ghost{
+      border-color:var(--line);
+      background:rgba(255,255,255,.02);
+      color:var(--muted);
     }
 
     footer{
@@ -288,10 +315,10 @@
 
           <h2 data-i18n="intro_title">Péče o hodinky</h2>
           <p data-i18n="intro_p1">
-            Gratulujeme. Nyní jste majitelem jedinečných mechanických hodinek vytvořených v Atelier Dante Time.
+            Mechanické hodinky vyžadují šetrné zacházení a pravidelnou péči.
           </p>
           <p data-i18n="intro_p2">
-            Aby vám hodinky spolehlivě sloužily po mnoho let, doporučujeme dodržovat následující pokyny.
+            Dodržováním níže uvedených doporučení pomůžete zachovat správnou funkci strojku i dlouhou životnost hodinek.
           </p>
 
           <h3 data-i18n="s1_title">První uvedení do provozu</h3>
@@ -321,18 +348,36 @@
             Otáčení ruček proti směru hodinových ručiček může u některých historických strojků způsobit jejich poškození.
           </p>
 
-          <h3 data-i18n="s4_title">Systém „Nail-Set“</h3>
+          <h3 data-i18n="s4_title">Šroubovací korunka (vybrané modely)</h3>
           <p data-i18n="s4_p1">
-            U některých historických modelů se čas nastavuje pomocí malého tlačítka na pouzdře.
+            Některé modely Atelier Dante Time používají šroubovací korunku pro lepší ochranu proti prachu a vlhkosti.
           </p>
-          <p data-i18n="s4_p2">V takovém případě:</p>
+          <p data-i18n="s4_p2">
+            Při manipulaci se šroubovací korunkou doporučujeme postupovat opatrně a bez použití síly.
+          </p>
+
+          <h4 data-i18n="s4_h1">Vyšroubování korunky</h4>
           <ul>
-            <li data-i18n="s4_b1">nestahujte korunku,</li>
-            <li data-i18n="s4_b2">stiskněte malé tlačítko na pouzdře,</li>
-            <li data-i18n="s4_b3">otáčením korunky nastavte čas.</li>
+            <li data-i18n="s4_b1">otočte korunku proti směru hodinových ručiček, dokud se neuvolní,</li>
+            <li data-i18n="s4_b2">po uvolnění je korunka připravena k natahování nebo nastavení času.</li>
           </ul>
+
+          <h4 data-i18n="s4_h2">Natahování</h4>
+          <ul>
+            <li data-i18n="s4_b3">korunku otáčejte přibližně 10–15× ve směru hodinových ručiček,</li>
+            <li data-i18n="s4_b4">otáčejte pomalu a plynule,</li>
+            <li data-i18n="s4_b5">jakmile ucítíte zvýšený odpor, v natahování nepokračujte.</li>
+          </ul>
+
+          <h4 data-i18n="s4_h3">Zašroubování korunky</h4>
+          <ul>
+            <li data-i18n="s4_b6">jemně zatlačte korunku směrem k pouzdru,</li>
+            <li data-i18n="s4_b7">následně ji zašroubujte ve směru hodinových ručiček,</li>
+            <li data-i18n="s4_b8">korunku utahujte pouze lehce, bez zbytečné síly.</li>
+          </ul>
+
           <p data-i18n="s4_p3">
-            Ručičky nastavujte vždy ve směru hodinových ručiček.
+            Správně zajištěná korunka pomáhá chránit hodinky před nečistotami a vlhkostí, ale sama o sobě automaticky neznamená vodotěsnost všech modelů.
           </p>
 
           <h3 data-i18n="s5_title">Ochrana hodinek</h3>
@@ -361,6 +406,11 @@
             Pro servis nebo dotazy napište na: dante.time.atelier@gmail.com
           </div>
 
+          <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
+            <a class="btn ghost" href="index.html" data-i18n="btn_back">Zpět na web</a>
+            <a class="btn" href="mailto:dante.time.atelier@gmail.com" data-i18n="btn_email">Napsat e-mail</a>
+          </div>
+
         </div>
       </div>
     </section>
@@ -371,10 +421,10 @@
       <div class="footer-inner">
         <div>© <span id="y"></span> Atelier Dante Time</div>
         <div class="footer-links">
-          <a href="returns.html">Vrácení a výměna zboží</a>
-          <a href="warranty.html">Záruka a servis</a>
-          <a href="care.html">Péče o hodinky</a>
-          <a href="terms.html">Obchodní podmínky</a>
+          <a href="returns.html" data-i18n="footer_returns">Vrácení a výměna zboží</a>
+          <a href="warranty.html" data-i18n="footer_warranty">Záruka a servis</a>
+          <a href="care.html" data-i18n="footer_care">Péče o hodinky</a>
+          <a href="terms.html" data-i18n="footer_terms">Obchodní podmínky</a>
         </div>
       </div>
     </div>
@@ -392,8 +442,8 @@
         lead: "Doporučení pro správné používání, natahování, nastavování a dlouhodobou péči o mechanické hodinky.",
 
         intro_title: "Péče o hodinky",
-        intro_p1: "Gratulujeme. Nyní jste majitelem jedinečných mechanických hodinek vytvořených v Atelier Dante Time.",
-        intro_p2: "Aby vám hodinky spolehlivě sloužily po mnoho let, doporučujeme dodržovat následující pokyny.",
+        intro_p1: "Mechanické hodinky vyžadují šetrné zacházení a pravidelnou péči.",
+        intro_p2: "Dodržováním níže uvedených doporučení pomůžete zachovat správnou funkci strojku i dlouhou životnost hodinek.",
 
         s1_title: "První uvedení do provozu",
         s1_p1: "Po převzetí hodinek doporučujeme nechat hodinky několik hodin v klidu při běžné pokojové teplotě, aby se stabilizovaly po přepravě.",
@@ -408,13 +458,21 @@
         s3_p1: "Při nastavování času otáčejte ručičky vždy pouze ve směru hodinových ručiček.",
         s3_p2: "Otáčení ruček proti směru hodinových ručiček může u některých historických strojků způsobit jejich poškození.",
 
-        s4_title: "Systém „Nail-Set“",
-        s4_p1: "U některých historických modelů se čas nastavuje pomocí malého tlačítka na pouzdře.",
-        s4_p2: "V takovém případě:",
-        s4_b1: "nestahujte korunku,",
-        s4_b2: "stiskněte malé tlačítko na pouzdře,",
-        s4_b3: "otáčením korunky nastavte čas.",
-        s4_p3: "Ručičky nastavujte vždy ve směru hodinových ručiček.",
+        s4_title: "Šroubovací korunka (vybrané modely)",
+        s4_p1: "Některé modely Atelier Dante Time používají šroubovací korunku pro lepší ochranu proti prachu a vlhkosti.",
+        s4_p2: "Při manipulaci se šroubovací korunkou doporučujeme postupovat opatrně a bez použití síly.",
+        s4_h1: "Vyšroubování korunky",
+        s4_b1: "otočte korunku proti směru hodinových ručiček, dokud se neuvolní,",
+        s4_b2: "po uvolnění je korunka připravena k natahování nebo nastavení času.",
+        s4_h2: "Natahování",
+        s4_b3: "korunku otáčejte přibližně 10–15× ve směru hodinových ručiček,",
+        s4_b4: "otáčejte pomalu a plynule,",
+        s4_b5: "jakmile ucítíte zvýšený odpor, v natahování nepokračujte.",
+        s4_h3: "Zašroubování korunky",
+        s4_b6: "jemně zatlačte korunku směrem k pouzdru,",
+        s4_b7: "následně ji zašroubujte ve směru hodinových ručiček,",
+        s4_b8: "korunku utahujte pouze lehce, bez zbytečné síly.",
+        s4_p3: "Správně zajištěná korunka pomáhá chránit hodinky před nečistotami a vlhkostí, ale sama o sobě automaticky neznamená vodotěsnost všech modelů.",
 
         s5_title: "Ochrana hodinek",
         s5_p1: "Pro dlouhou životnost hodinek doporučujeme:",
@@ -430,7 +488,14 @@
         s6_p2: "Doporučujeme provést odborný servis přibližně každých 3–5 let, aby byla zachována správná funkčnost strojku.",
         s6_p3: "V případě jakýchkoliv dotazů nebo potřeby servisu nás neváhejte kontaktovat.",
 
-        contact_hint: "Pro servis nebo dotazy napište na: dante.time.atelier@gmail.com"
+        contact_hint: "Pro servis nebo dotazy napište na: dante.time.atelier@gmail.com",
+        btn_back: "Zpět na web",
+        btn_email: "Napsat e-mail",
+
+        footer_returns: "Vrácení a výměna zboží",
+        footer_warranty: "Záruka a servis",
+        footer_care: "Péče o hodinky",
+        footer_terms: "Obchodní podmínky"
       },
 
       en: {
@@ -443,8 +508,8 @@
         lead: "Recommendations for proper use, winding, setting and long-term care of mechanical watches.",
 
         intro_title: "Watch Care",
-        intro_p1: "Congratulations. You are now the owner of a unique mechanical watch created by Atelier Dante Time.",
-        intro_p2: "To ensure your watch serves you reliably for many years, we recommend following the instructions below.",
+        intro_p1: "Mechanical watches require careful handling and regular care.",
+        intro_p2: "Following the recommendations below will help preserve correct movement function and long service life.",
 
         s1_title: "First use",
         s1_p1: "After receiving the watch, we recommend leaving it at rest for several hours at normal room temperature so it can stabilize after transport.",
@@ -459,13 +524,21 @@
         s3_p1: "When setting the time, always move the hands only in the clockwise direction.",
         s3_p2: "Turning the hands counterclockwise may damage some historical movements.",
 
-        s4_title: "“Nail-Set” system",
-        s4_p1: "Some historical models set the time using a small button on the case.",
-        s4_p2: "In such a case:",
-        s4_b1: "do not pull out the crown,",
-        s4_b2: "press the small button on the case,",
-        s4_b3: "set the time by turning the crown.",
-        s4_p3: "Always set the hands clockwise.",
+        s4_title: "Screw-down crown (selected models)",
+        s4_p1: "Some Atelier Dante Time models use a screw-down crown for better protection against dust and moisture.",
+        s4_p2: "When handling a screw-down crown, proceed carefully and without excessive force.",
+        s4_h1: "Unscrewing the crown",
+        s4_b1: "turn the crown counterclockwise until it is released,",
+        s4_b2: "once released, the crown is ready for winding or time setting.",
+        s4_h2: "Winding",
+        s4_b3: "turn the crown approximately 10–15 times clockwise,",
+        s4_b4: "turn slowly and smoothly,",
+        s4_b5: "stop winding as soon as you feel increased resistance.",
+        s4_h3: "Screwing the crown back",
+        s4_b6: "gently press the crown toward the case,",
+        s4_b7: "then screw it in clockwise,",
+        s4_b8: "tighten only lightly, without unnecessary force.",
+        s4_p3: "A properly secured crown helps protect the watch from dirt and moisture, but it does not by itself automatically mean full water resistance for every model.",
 
         s5_title: "Watch protection",
         s5_p1: "For long watch life, we recommend:",
@@ -481,7 +554,14 @@
         s6_p2: "We recommend professional servicing approximately every 3–5 years to preserve proper movement function.",
         s6_p3: "If you have any questions or need service, please do not hesitate to contact us.",
 
-        contact_hint: "For service or questions, email: dante.time.atelier@gmail.com"
+        contact_hint: "For service or questions, email: dante.time.atelier@gmail.com",
+        btn_back: "Back to site",
+        btn_email: "Email us",
+
+        footer_returns: "Returns & exchanges",
+        footer_warranty: "Warranty & service",
+        footer_care: "Watch care",
+        footer_terms: "Terms & conditions"
       }
     };
 
