@@ -109,11 +109,6 @@
       color:var(--text);
     }
 
-    .chip.gold{
-      border-color:rgba(200,162,74,.45);
-      color:var(--text);
-    }
-
     .langbtn{
       display:inline-flex;
       gap:8px;
@@ -215,13 +210,6 @@
       position:relative;
     }
 
-    .card h2{
-      margin:0 0 10px 0;
-      font-family:ui-serif, Georgia, "Times New Roman", Times, serif;
-      font-size:22px;
-      letter-spacing:.03em;
-    }
-
     .card h3{
       margin:22px 0 8px;
       font-size:18px;
@@ -246,7 +234,7 @@
     .card li{margin:6px 0}
 
     .service-photo{
-      margin:22px 0 24px;
+      margin:24px 0;
       border-radius:16px;
       overflow:hidden;
       border:1px solid var(--line);
@@ -380,7 +368,6 @@
   <header>
     <div class="wrap">
 
-      <!-- desktop -->
       <div class="nav desktop-only">
         <a href="index.html" class="brand">
           <img src="logo.png" alt="Atelier Dante Time logo" />
@@ -400,7 +387,6 @@
         </div>
       </div>
 
-      <!-- mobile -->
       <div class="nav-mobile mobile-only">
         <div class="nav-mobile-row">
           <a href="index.html" class="brand">
@@ -446,19 +432,20 @@
             Servis a citlivá renovace mechanických hodinek s respektem k původnímu řemeslu a charakteru každého kusu. Každou zakázku řeším individuálně.
           </p>
 
-          <div class="service-photo">
-            <img src="dante.jpg" alt="Ukázka práce Atelier Dante Time" />
-            <div class="service-photo-note" data-i18n="photo_note">
-              Ukázka detailní práce a přístupu Atelier Dante Time.
-            </div>
-          </div>
-
           <h3 data-i18n="s1_title">Servis mechanických hodinek</h3>
           <ul>
             <li data-i18n="s1_b1">Kompletní rozebrání, čištění, mazání a opětovné sestavení</li>
             <li data-i18n="s1_b2">Kontrola opotřebení a doporučení případných výměn dílů</li>
             <li data-i18n="s1_b3">Regulace chodu a závěrečné testování</li>
           </ul>
+
+          <!-- FOTKA PŘESNĚ TAM KDE UKAZUJEŠ PRSTEM -->
+          <div class="service-photo">
+            <img src="service-watch-box.jpg" alt="Ukázka dokončeného kusu Atelier Dante Time" />
+            <div class="service-photo-note" data-i18n="photo_note">
+              Ukázka finální prezentace a zpracování hotového kusu.
+            </div>
+          </div>
 
           <h3 data-i18n="s2_title">Renovace / opravy (vintage)</h3>
           <ul>
@@ -484,7 +471,7 @@
             <a class="btn ghost" target="_blank" rel="noopener"
                href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr">Instagram</a>
             <a class="btn ghost" target="_blank" rel="noopener"
-               href="https://www.tiktok.com/@patrickhug58?_r=1&_t=ZN-94EPWxDtCNS">TikTok</a>
+               href="https://www.tiktok.com/@atelierdt?_r=1&_t=ZN-94KrQVJd7OJ">TikTok</a>
           </div>
 
         </div>
@@ -517,7 +504,7 @@
         title: "Služby",
         lead: "Servis, renovace a zakázkové sestavy mechanických hodinek s individuálním přístupem ke každému kusu.",
         intro: "Servis a citlivá renovace mechanických hodinek s respektem k původnímu řemeslu a charakteru každého kusu. Každou zakázku řeším individuálně.",
-        photo_note: "Ukázka detailní práce a přístupu Atelier Dante Time.",
+        photo_note: "Ukázka finální prezentace a zpracování hotového kusu.",
 
         s1_title: "Servis mechanických hodinek",
         s1_b1: "Kompletní rozebrání, čištění, mazání a opětovné sestavení",
@@ -552,7 +539,7 @@
         title: "Services",
         lead: "Service, restoration and custom builds of mechanical watches with an individual approach to each piece.",
         intro: "Service and sensitive restoration of mechanical watches with respect for original craftsmanship and the character of each piece. Every project is handled individually.",
-        photo_note: "Example of detailed work and the Atelier Dante Time approach.",
+        photo_note: "Example of final presentation and processing of a finished piece.",
 
         s1_title: "Mechanical watch service",
         s1_b1: "Complete disassembly, cleaning, lubrication and reassembly",
