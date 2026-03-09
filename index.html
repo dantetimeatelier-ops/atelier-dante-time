@@ -1,8 +1,4 @@
 
-
-<!-- =========================
-     FILE: index.html
-========================= -->
 <!doctype html>
 <html lang="cs">
 <head>
@@ -48,7 +44,6 @@
       border-bottom:1px solid var(--line);
     }
 
-    /* desktop header */
     .nav{
       display:flex; align-items:center; justify-content:space-between;
       padding:14px 0;
@@ -57,7 +52,7 @@
 
     .brand{
       display:flex; align-items:center; gap:10px;
-      min-width: 180px;
+      min-width:180px;
     }
     .brand img{
       width:28px; height:28px; object-fit:contain;
@@ -95,7 +90,6 @@
       box-shadow:0 0 0 4px rgba(200,162,74,.12);
     }
 
-    /* ---- MOBILE HEADER ---- */
     .nav-mobile{display:none}
     .nav-mobile .mobile-row{
       display:flex;
@@ -132,8 +126,46 @@
       pointer-events:none;
     }
 
-    /* hero */
-    .hero{padding:70px 0 40px; text-align:center}
+    /* HERO S FOTO POZADÍM */
+    .hero{
+      position:relative;
+      padding:90px 0 70px;
+      text-align:center;
+      overflow:hidden;
+      min-height:520px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .hero::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(180deg, rgba(7,7,7,.48) 0%, rgba(7,7,7,.68) 45%, rgba(7,7,7,.88) 100%),
+        radial-gradient(circle at center, rgba(200,162,74,.10) 0%, rgba(200,162,74,0) 55%),
+        url("hero-bg.jpg");
+      background-size:cover;
+      background-position:center;
+      background-repeat:no-repeat;
+      transform:scale(1.02);
+    }
+
+    .hero::after{
+      content:"";
+      position:absolute;
+      inset:auto 0 0 0;
+      height:140px;
+      background:linear-gradient(180deg, rgba(7,7,7,0), rgba(7,7,7,1));
+      pointer-events:none;
+    }
+
+    .hero .wrap{
+      position:relative;
+      z-index:2;
+    }
+
     .hero-logo{
       width:78px; height:78px;
       margin:0 auto 18px;
@@ -157,13 +189,14 @@
       letter-spacing:.08em;
       font-size:clamp(12px, 1.4vw, 16px);
       text-transform:uppercase;
+      text-shadow:0 8px 18px rgba(0,0,0,.45);
     }
     .subline{
       width:min(220px, 60vw);
       height:1px;
       margin:18px auto 0;
       background:linear-gradient(90deg, rgba(200,162,74,0), rgba(200,162,74,.9), rgba(200,162,74,0));
-      opacity:.75;
+      opacity:.9;
     }
 
     .section{padding:34px 0}
@@ -176,14 +209,15 @@
 
     @media (max-width: 880px){
       .grid{grid-template-columns:1fr}
-      .hero{padding:52px 0 28px}
+      .hero{
+        padding:64px 0 42px;
+        min-height:420px;
+      }
 
-      /* vypnout desktop header, zapnout mobilní */
       .nav{display:none}
       .links{display:none}
       .nav-mobile{display:block}
 
-      /* compact mode po scrollu */
       header.is-compact .nav-mobile .mobile-row{padding:8px 0 6px}
       header.is-compact .nav-mobile .mobile-scroll{padding:6px 0 8px}
       header.is-compact .nav-mobile .brand img{
@@ -298,7 +332,6 @@
   <header id="siteHeader">
     <div class="wrap">
 
-      <!-- DESKTOP HEADER -->
       <div class="nav">
         <a class="brand" href="index.html" aria-label="Domů">
           <img src="logo.png" alt="Atelier Dante Time logo" />
@@ -320,7 +353,6 @@
         </div>
       </div>
 
-      <!-- MOBILE HEADER -->
       <div class="nav-mobile">
         <div class="mobile-row">
           <a class="brand" href="index.html" aria-label="Domů">
@@ -453,7 +485,6 @@
       <div class="footer-inner">
         <div>© <span id="y"></span> Atelier Dante Time</div>
 
-        <!-- TADY jsou ty 4 položky (jak na tvé 1. fotce) -->
         <div class="footer-links">
           <a href="returns.html" data-i18n="footer_returns">Vrácení a výměna zboží</a>
           <a href="warranty.html" data-i18n="footer_warranty">Záruka a servis</a>
@@ -576,7 +607,6 @@
 
     applyLang(getLang());
 
-    // mobile header shrink on scroll
     const header = document.getElementById("siteHeader");
     let ticking = false;
 
