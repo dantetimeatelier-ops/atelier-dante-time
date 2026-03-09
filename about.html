@@ -1,10 +1,14 @@
- <!doctype html>
+
+<!doctype html>
 <html lang="cs">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>O nás — Atelier Dante Time</title>
-  <link rel="icon" href="logo.png" />
+
+  <title>O nás – Atelier Dante Time</title>
+  <meta name="description" content="Příběh Atelier Dante Time – českého hodinářského atelieru zaměřeného na renovaci a zakázkové sestavy mechanických hodinek." />
+  <meta name="theme-color" content="#070707" />
+  <link rel="icon" href="favicon.png" />
 
   <style>
     :root{
@@ -25,7 +29,7 @@
 
     body{
       margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
       color:var(--text);
       background:
         radial-gradient(1100px 650px at 50% -120px, rgba(200,162,74,.14), rgba(0,0,0,0) 60%),
@@ -34,10 +38,141 @@
       overflow-x:hidden;
     }
 
-    a{color:inherit; text-decoration:none}
-    .wrap{max-width:var(--max); margin:0 auto; padding:58px 20px}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:var(--max);margin:0 auto;padding:0 20px}
 
-    /* top link */
+    header{
+      position:sticky;
+      top:0;
+      z-index:20;
+      backdrop-filter:blur(10px);
+      background:rgba(7,7,7,.65);
+      border-bottom:1px solid var(--line);
+    }
+
+    .nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 0;
+      gap:12px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:180px;
+    }
+
+    .brand img{
+      width:28px;
+      height:28px;
+      object-fit:contain;
+      filter:drop-shadow(0 10px 30px rgba(0,0,0,.6));
+      transition: width .22s ease, height .22s ease, transform .22s ease;
+    }
+
+    .brand strong{
+      letter-spacing:.08em;
+      font-weight:700;
+      font-size:12px;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+
+    .links{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .chip,.langbtn{
+      padding:8px 12px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      color:var(--muted);
+      font-size:13px;
+      transition:.2s ease;
+      background:rgba(255,255,255,.02);
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+
+    .chip:hover,.langbtn:hover{
+      border-color:rgba(200,162,74,.45);
+      color:var(--text);
+    }
+
+    .chip.gold{
+      border-color:rgba(200,162,74,.45);
+      color:var(--text);
+    }
+
+    .langbtn{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .langdot{
+      width:8px;
+      height:8px;
+      border-radius:99px;
+      background:rgba(200,162,74,.75);
+      box-shadow:0 0 0 4px rgba(200,162,74,.12);
+    }
+
+    .nav-mobile{display:none}
+
+    .nav-mobile .mobile-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 0 10px;
+      transition:padding .22s ease;
+    }
+
+    .nav-mobile .brand{min-width:auto}
+    .nav-mobile .brand strong{display:none}
+
+    .nav-mobile .mobile-scroll{
+      display:flex;
+      gap:10px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      padding:10px 0 10px;
+      margin:0 -20px;
+      padding-left:20px;
+      padding-right:20px;
+      scrollbar-width:none;
+      transition:padding .22s ease;
+    }
+
+    .nav-mobile .mobile-scroll::-webkit-scrollbar{display:none}
+
+    .mobile-fade{position:relative}
+    .mobile-fade:after{
+      content:"";
+      position:absolute;
+      right:0;
+      top:0;
+      bottom:0;
+      width:46px;
+      background:linear-gradient(90deg, rgba(7,7,7,0), rgba(7,7,7,.88));
+      pointer-events:none;
+    }
+
+    .page-wrap{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:58px 20px;
+    }
+
     .back{
       display:inline-flex;
       align-items:center;
@@ -48,21 +183,27 @@
       opacity:.95;
       transition:.2s ease;
     }
-    .back:hover{opacity:1; transform:translateX(-2px)}
+
+    .back:hover{
+      opacity:1;
+      transform:translateX(-2px);
+    }
+
     .back .arrow{opacity:.9}
 
-    /* title */
     .title{
       margin:18px 0 34px;
     }
+
     h1{
       margin:0;
-      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
-      font-size:clamp(34px, 4.2vw, 54px);
+      font-family:ui-serif,Georgia,"Times New Roman",Times,serif;
+      font-size:clamp(34px,4.2vw,54px);
       letter-spacing:.06em;
       text-transform:uppercase;
       text-shadow:0 18px 40px rgba(0,0,0,.65);
     }
+
     .subtitle{
       margin-top:10px;
       color:var(--muted);
@@ -70,22 +211,23 @@
       text-transform:uppercase;
       font-size:12px;
     }
+
     .gold-line{
-      width:min(220px, 65vw);
+      width:min(220px,65vw);
       height:1px;
       margin-top:16px;
       background:linear-gradient(90deg, rgba(200,162,74,0), rgba(200,162,74,.9), rgba(200,162,74,0));
       opacity:.85;
     }
 
-    /* layout */
     .grid{
       display:grid;
-      grid-template-columns: 1.25fr .75fr;
+      grid-template-columns:1.25fr .75fr;
       gap:22px;
       align-items:start;
     }
-    @media(max-width: 980px){
+
+    @media(max-width:980px){
       .grid{grid-template-columns:1fr}
     }
 
@@ -99,35 +241,34 @@
       position:relative;
     }
 
-    /* soft glow */
     .card:before{
       content:"";
       position:absolute;
       inset:-2px;
-      background: radial-gradient(800px 240px at 30% 0%, rgba(200,162,74,.14), rgba(0,0,0,0) 60%);
+      background:radial-gradient(800px 240px at 30% 0%, rgba(200,162,74,.14), rgba(0,0,0,0) 60%);
       pointer-events:none;
       opacity:.7;
     }
-    .card > *{position:relative}
 
-    /* story typography */
+    .card>*{position:relative}
+
     .story{
       color:var(--muted);
       font-size:18px;
       line-height:1.95;
     }
-    .story p{
-      margin:0 0 16px 0;
-    }
+
+    .story p{margin:0 0 16px 0}
+
     .story strong{
       color:var(--gold);
       font-weight:650;
     }
 
-    /* image */
     .image-wrap{
       padding:18px;
     }
+
     .frame{
       border-radius:18px;
       overflow:hidden;
@@ -137,19 +278,22 @@
         0 0 0 6px rgba(200,162,74,.06);
       position:relative;
     }
+
     .frame:after{
       content:"";
       position:absolute;
       inset:0;
-      background: radial-gradient(500px 220px at 50% 0%, rgba(200,162,74,.22), rgba(0,0,0,0) 55%);
+      background:radial-gradient(500px 220px at 50% 0%, rgba(200,162,74,.22), rgba(0,0,0,0) 55%);
       pointer-events:none;
       opacity:.55;
     }
+
     .frame img{
       width:100%;
       display:block;
       transform:scale(1.02);
     }
+
     .caption{
       margin-top:14px;
       font-size:13px;
@@ -157,9 +301,9 @@
       letter-spacing:.06em;
       text-transform:uppercase;
     }
+
     .caption span{color:var(--gold)}
 
-    /* motto */
     .quote{
       margin:26px auto 0;
       text-align:center;
@@ -169,96 +313,269 @@
       font-size:14px;
     }
 
-    /* ===== Animace (jemné) ===== */
     .reveal{
       opacity:0;
       transform:translateY(10px);
       transition: opacity .7s ease, transform .7s ease;
     }
+
     .reveal.show{
       opacity:1;
       transform:translateY(0);
     }
+
     .delay-1{transition-delay:.06s}
     .delay-2{transition-delay:.12s}
     .delay-3{transition-delay:.18s}
 
-    /* prefers-reduced-motion */
+    @media (max-width: 880px){
+      .nav{display:none}
+      .links{display:none}
+      .nav-mobile{display:block}
+
+      header.is-compact .nav-mobile .mobile-row{padding:8px 0 6px}
+      header.is-compact .nav-mobile .mobile-scroll{padding:6px 0 8px}
+      header.is-compact .nav-mobile .brand img{
+        width:22px;
+        height:22px;
+        transform:translateY(-1px);
+      }
+      header.is-compact .chip,
+      header.is-compact .langbtn{
+        padding:7px 11px;
+        font-size:12px;
+      }
+
+      .page-wrap{padding:38px 20px}
+      .story{font-size:17px;line-height:1.85}
+    }
+
     @media (prefers-reduced-motion: reduce){
-      .reveal, .reveal.show{transition:none; transform:none; opacity:1}
+      .reveal,.reveal.show{transition:none;transform:none;opacity:1}
       .back:hover{transform:none}
     }
   </style>
 </head>
 
 <body>
-  <main class="wrap">
+  <header id="siteHeader">
+    <div class="wrap">
+
+      <div class="nav">
+        <a class="brand" href="index.html" aria-label="Domů">
+          <img src="logo.png" alt="Atelier Dante Time logo" />
+          <strong>Atelier Dante Time</strong>
+        </a>
+
+        <div class="links">
+          <a class="chip" href="index.html" data-i18n="nav_home">Domů</a>
+          <a class="chip gold" href="about.html" data-i18n="nav_about">O nás</a>
+          <a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
+          <a class="chip" href="index.html#contact" data-i18n="nav_contact">Kontakt</a>
+
+          <a class="chip gold" href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr" target="_blank" rel="noopener">Instagram</a>
+          <a class="chip gold" href="https://www.tiktok.com/@atelierdt?_r=1&_t=ZN-94KrQVJd7OJ" target="_blank" rel="noopener">TikTok</a>
+
+          <button class="langbtn" id="langBtn" type="button" aria-label="Switch language">
+            <span class="langdot"></span>
+            <span id="langLabel">CZ</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="nav-mobile">
+        <div class="mobile-row">
+          <a class="brand" href="index.html" aria-label="Domů">
+            <img src="logo.png" alt="Atelier Dante Time logo" />
+            <strong>Atelier Dante Time</strong>
+          </a>
+
+          <button class="langbtn" id="langBtnMobile" type="button" aria-label="Switch language">
+            <span class="langdot"></span>
+            <span id="langLabelMobile">CZ</span>
+          </button>
+        </div>
+
+        <div class="mobile-fade">
+          <div class="mobile-scroll">
+            <a class="chip" href="index.html" data-i18n="nav_home">Domů</a>
+            <a class="chip gold" href="about.html" data-i18n="nav_about">O nás</a>
+            <a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
+            <a class="chip" href="index.html#contact" data-i18n="nav_contact">Kontakt</a>
+            <a class="chip gold" href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr" target="_blank" rel="noopener">Instagram</a>
+            <a class="chip gold" href="https://www.tiktok.com/@atelierdt?_r=1&_t=ZN-94KrQVJd7OJ" target="_blank" rel="noopener">TikTok</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <main class="page-wrap">
 
     <a class="back reveal show" href="index.html">
       <span class="arrow">←</span>
-      <span>Zpět na hlavní stránku</span>
+      <span data-i18n="back_home">Zpět na hlavní stránku</span>
     </a>
 
     <div class="title reveal show">
-      <h1>O nás</h1>
-      <div class="subtitle">Atelier Dante Time • Czech Watch Atelier</div>
+      <h1 data-i18n="page_title">O nás</h1>
+      <div class="subtitle" data-i18n="page_subtitle">Atelier Dante Time • Czech Watch Atelier</div>
       <div class="gold-line"></div>
     </div>
 
     <div class="grid">
       <section class="card reveal delay-1" id="storyCard">
         <div class="story">
-          <p>
-            Každé hodinky mají svůj příběh. Některé ale skončí odložené, zastavené, zapomenuté.
-            Právě takové mě zajímají.
+          <p data-i18n="story_1">
+            Každé hodinky mají svůj příběh. Některé ale skončí odložené, zastavené, zapomenuté. Právě takové mě zajímají.
           </p>
 
-          <p>
-            <strong>Dante Time</strong> vzniklo z úcty k hodinářskému řemeslu a z přesvědčení,
-            že i zdánlivě odepsané věci si zaslouží péči.
+          <p data-i18n="story_2">
+            <strong>Dante Time</strong> vzniklo z úcty k hodinářskému řemeslu a z přesvědčení, že i zdánlivě odepsané věci si zaslouží péči.
           </p>
 
-          <p>
-            Každý kus prochází trpělivou renovací, kde se spojuje technická přesnost s citem pro detail.
-            Nejde jen o opravu. Jde o návrat života.
+          <p data-i18n="story_3">
+            Každý kus prochází trpělivou renovací, kde se spojuje technická přesnost s citem pro detail. Nejde jen o opravu. Jde o návrat života.
           </p>
 
-          <p>
+          <p data-i18n="story_4">
             Výsledkem nejsou jen opravené hodinky. Jsou to hodinky, které znovu žijí.
           </p>
 
-          <p>
-            Značka nese jméno <strong>Dante</strong> — zachráněného kocoura, který dostal druhou šanci.
-            Stejně jako on dostávají i hodinky v tomto ateliéru nový začátek.
+          <p data-i18n="story_5">
+            Značka nese jméno <strong>Dante</strong> — zachráněného kocoura, který dostal druhou šanci. Stejně jako on dostávají i hodinky v tomto ateliéru nový začátek.
           </p>
         </div>
 
-        <div class="quote">„Druhý život pro čas.“</div>
+        <div class="quote" data-i18n="quote">„Druhý život pro čas.“</div>
       </section>
 
       <aside class="card image-wrap reveal delay-2" id="imgCard">
         <div class="frame">
-          <!-- Nahraj fotku do repa jako dante.jpg (do rootu vedle index.html) -->
           <img src="dante1.jpg" alt="Dante — maskot Atelier Dante Time">
         </div>
-        <div class="caption"><span>Dante</span> • symbol druhé šance</div>
+        <div class="caption" data-i18n="caption"><span>Dante</span> • symbol druhé šance</div>
       </aside>
     </div>
 
   </main>
 
   <script>
-    // Jemný reveal při načtení + při scrollu (bez knihoven)
+    const I18N = {
+      cs: {
+        nav_home: "Domů",
+        nav_about: "O nás",
+        nav_services: "Služby",
+        nav_contact: "Kontakt",
+        back_home: "Zpět na hlavní stránku",
+        page_title: "O nás",
+        page_subtitle: "Atelier Dante Time • Czech Watch Atelier",
+
+        story_1: "Každé hodinky mají svůj příběh. Některé ale skončí odložené, zastavené, zapomenuté. Právě takové mě zajímají.",
+        story_2: "<strong>Dante Time</strong> vzniklo z úcty k hodinářskému řemeslu a z přesvědčení, že i zdánlivě odepsané věci si zaslouží péči.",
+        story_3: "Každý kus prochází trpělivou renovací, kde se spojuje technická přesnost s citem pro detail. Nejde jen o opravu. Jde o návrat života.",
+        story_4: "Výsledkem nejsou jen opravené hodinky. Jsou to hodinky, které znovu žijí.",
+        story_5: "Značka nese jméno <strong>Dante</strong> — zachráněného kocoura, který dostal druhou šanci. Stejně jako on dostávají i hodinky v tomto ateliéru nový začátek.",
+        quote: "„Druhý život pro čas.“",
+        caption: "<span>Dante</span> • symbol druhé šance",
+
+        title_tag: "O nás – Atelier Dante Time",
+        meta_desc: "Příběh Atelier Dante Time – českého hodinářského atelieru zaměřeného na renovaci a zakázkové sestavy mechanických hodinek."
+      },
+
+      en: {
+        nav_home: "Home",
+        nav_about: "About",
+        nav_services: "Services",
+        nav_contact: "Contact",
+        back_home: "Back to homepage",
+        page_title: "About",
+        page_subtitle: "Atelier Dante Time • Czech Watch Atelier",
+
+        story_1: "Every watch has its own story. Some, however, end up set aside, stopped, and forgotten. Those are exactly the ones that interest me.",
+        story_2: "<strong>Dante Time</strong> was created out of respect for the craft of watchmaking and the belief that even seemingly lost things deserve care.",
+        story_3: "Each piece undergoes patient restoration where technical precision is combined with a sense for detail. It is not just a repair. It is a return to life.",
+        story_4: "The result is not only repaired watches. They are watches that live again.",
+        story_5: "The brand bears the name <strong>Dante</strong> — a rescued cat who was given a second chance. Just like him, watches in this atelier receive a new beginning.",
+        quote: "“A second life for time.”",
+        caption: "<span>Dante</span> • symbol of a second chance",
+
+        title_tag: "About – Atelier Dante Time",
+        meta_desc: "The story of Atelier Dante Time – a Czech watch atelier focused on restoration and custom assembly of mechanical watches."
+      }
+    };
+
+    function getLang(){
+      return localStorage.getItem("lang") || "cs";
+    }
+
+    function applyLang(lang){
+      document.documentElement.lang = lang;
+      const dict = I18N[lang] || I18N.cs;
+
+      document.querySelectorAll("[data-i18n]").forEach(el=>{
+        const key = el.getAttribute("data-i18n");
+        if (dict[key]) el.innerHTML = dict[key];
+      });
+
+      document.title = dict.title_tag;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.setAttribute("content", dict.meta_desc);
+
+      const txt = (lang === "cs") ? "CZ" : "EN";
+      const label = document.getElementById("langLabel");
+      const labelM = document.getElementById("langLabelMobile");
+      if (label) label.textContent = txt;
+      if (labelM) labelM.textContent = txt;
+    }
+
+    function setLang(lang){
+      localStorage.setItem("lang", lang);
+      applyLang(lang);
+    }
+
+    const langBtn = document.getElementById("langBtn");
+    if (langBtn) {
+      langBtn.addEventListener("click", ()=>{
+        const current = getLang();
+        setLang(current === "cs" ? "en" : "cs");
+      });
+    }
+
+    const langBtnMobile = document.getElementById("langBtnMobile");
+    if (langBtnMobile) {
+      langBtnMobile.addEventListener("click", ()=>{
+        const current = getLang();
+        setLang(current === "cs" ? "en" : "cs");
+      });
+    }
+
+    applyLang(getLang());
+
+    const header = document.getElementById("siteHeader");
+    let ticking = false;
+
+    function onScroll(){
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(()=>{
+        const y = window.scrollY || document.documentElement.scrollTop || 0;
+        if (y > 10) header.classList.add("is-compact");
+        else header.classList.remove("is-compact");
+        ticking = false;
+      });
+    }
+
+    window.addEventListener("scroll", onScroll, { passive:true });
+    onScroll();
+
     const els = document.querySelectorAll(".reveal");
 
-    const showNow = () => els.forEach(el => el.classList.add("show"));
-
-    // Pokud je stránka krátká (mobil), ukáž hned
     requestAnimationFrame(() => {
       els.forEach(el => el.classList.add("show"));
     });
 
-    // IntersectionObserver pro pěkné načítání při scrollu (když by bylo delší)
     if ("IntersectionObserver" in window) {
       const io = new IntersectionObserver((entries) => {
         entries.forEach(e => {
