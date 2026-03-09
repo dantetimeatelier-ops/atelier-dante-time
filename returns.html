@@ -1,4 +1,5 @@
 
+
 <!doctype html>
 <html lang="cs">
 <head>
@@ -20,11 +21,13 @@
       --max:1100px;
       --card:#0b0b0b;
     }
+
     *{box-sizing:border-box}
     html,body{height:100%}
+
     body{
       margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
       color:var(--text);
       background:
         linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 55%),
@@ -32,38 +35,64 @@
         var(--bg);
       overflow-x:hidden;
     }
-    a{color:inherit; text-decoration:none}
+
+    a{color:inherit;text-decoration:none}
     a:hover{opacity:.95}
-    .wrap{max-width:var(--max); margin:0 auto; padding:0 20px}
+
+    .wrap{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:0 20px;
+    }
 
     header{
-      position:sticky; top:0; z-index:20;
-      backdrop-filter: blur(10px);
+      position:sticky;
+      top:0;
+      z-index:20;
+      backdrop-filter:blur(10px);
       background:rgba(7,7,7,.65);
       border-bottom:1px solid var(--line);
     }
+
     .nav{
-      display:flex; align-items:center; justify-content:space-between;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
       padding:14px 0;
       gap:12px;
     }
+
     .brand{
-      display:flex; align-items:center; gap:10px;
+      display:flex;
+      align-items:center;
+      gap:10px;
       min-width:180px;
     }
+
     .brand img{
-      width:28px; height:28px; object-fit:contain;
-      filter: drop-shadow(0 10px 30px rgba(0,0,0,.6));
+      width:28px;
+      height:28px;
+      object-fit:contain;
+      filter:drop-shadow(0 10px 30px rgba(0,0,0,.6));
     }
+
     .brand strong{
-      letter-spacing:.08em; font-weight:700; font-size:12px;
-      text-transform:uppercase; color:var(--muted);
+      letter-spacing:.08em;
+      font-weight:700;
+      font-size:12px;
+      text-transform:uppercase;
+      color:var(--muted);
     }
 
     .links{
-      display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
     }
-    .chip, .langbtn{
+
+    .chip,.langbtn{
       padding:8px 12px;
       border:1px solid var(--line);
       border-radius:999px;
@@ -75,77 +104,150 @@
       user-select:none;
       white-space:nowrap;
     }
-    .chip:hover, .langbtn:hover{
-      border-color:rgba(200,162,74,.45); color:var(--text);
+
+    .chip:hover,.langbtn:hover{
+      border-color:rgba(200,162,74,.45);
+      color:var(--text);
     }
+
+    .chip.gold{
+      border-color:rgba(200,162,74,.45);
+      color:var(--text);
+    }
+
     .langbtn{
-      display:inline-flex; gap:8px; align-items:center;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
     }
+
     .langdot{
-      width:8px;height:8px;border-radius:99px;
+      width:8px;
+      height:8px;
+      border-radius:99px;
       background:rgba(200,162,74,.75);
       box-shadow:0 0 0 4px rgba(200,162,74,.12);
+    }
+
+    /* desktop nav */
+    .desktop-only{display:flex}
+    .mobile-only{display:none}
+
+    /* mobile header like homepage */
+    .nav-mobile{
+      display:none;
+      padding:14px 0 12px;
+    }
+
+    .nav-mobile-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .mobile-scroll-wrap{
+      position:relative;
+      margin-top:14px;
+    }
+
+    .mobile-scroll{
+      display:flex;
+      gap:10px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      padding:2px 2px 8px;
+    }
+
+    .mobile-scroll::-webkit-scrollbar{
+      display:none;
+    }
+
+    .mobile-scroll-wrap::after{
+      content:"";
+      position:absolute;
+      right:0;
+      top:0;
+      bottom:8px;
+      width:36px;
+      pointer-events:none;
+      background:linear-gradient(90deg, rgba(7,7,7,0), rgba(7,7,7,.95));
     }
 
     .hero{
       padding:46px 0 20px;
       text-align:left;
     }
+
     h1{
       margin:0;
-      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+      font-family:ui-serif, Georgia, "Times New Roman", Times, serif;
       letter-spacing:.06em;
       text-transform:uppercase;
       font-size:clamp(26px, 3.6vw, 44px);
       line-height:1.1;
     }
+
     .subtitle{
       margin:10px 0 0;
       color:var(--muted);
       line-height:1.7;
       max-width:900px;
     }
+
     .subline{
-      width:220px;
+      width:min(220px, 60vw);
       height:1px;
       margin:18px 0 0;
-      background:linear-gradient(90deg,rgba(200,162,74,0),rgba(200,162,74,.9),rgba(200,162,74,0));
+      background:linear-gradient(90deg, rgba(200,162,74,0), rgba(200,162,74,.9), rgba(200,162,74,0));
       opacity:.75;
     }
 
-    .section{padding:18px 0 34px}
+    .section{
+      padding:18px 0 34px;
+    }
+
     .card{
       background:var(--card);
       border:1px solid var(--line);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
       padding:22px;
+      overflow:hidden;
+      position:relative;
     }
+
     .card h2{
       margin:0 0 10px 0;
-      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+      font-family:ui-serif, Georgia, "Times New Roman", Times, serif;
       font-size:22px;
       letter-spacing:.03em;
     }
+
     .card h3{
       margin:18px 0 8px;
       font-size:16px;
       letter-spacing:.02em;
       color:var(--text);
     }
+
     .card p{
       margin:0;
       color:var(--muted);
       font-size:16px;
       line-height:1.7;
     }
+
     .card ul{
       margin:10px 0 0;
       padding-left:18px;
       color:var(--muted);
       line-height:1.7;
     }
+
     .card li{margin:6px 0}
+
     .hint{
       margin-top:14px;
       padding:12px 14px;
@@ -156,8 +258,11 @@
       line-height:1.7;
       font-size:14px;
     }
+
     .btn{
-      display:inline-flex; align-items:center; justify-content:center;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
       padding:10px 12px;
       border-radius:12px;
       border:1px solid rgba(200,162,74,.45);
@@ -167,6 +272,7 @@
       gap:8px;
       white-space:nowrap;
     }
+
     .btn.ghost{
       border-color:var(--line);
       background:rgba(255,255,255,.02);
@@ -180,17 +286,46 @@
       color:var(--muted);
       font-size:13px;
     }
-    .footer-inner{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:14px; flex-wrap:wrap;
-    }
-    .footer-links{display:flex; gap:12px; flex-wrap:wrap}
-    .footer-links a{color:var(--muted); border-bottom:1px solid transparent}
-    .footer-links a:hover{color:var(--text); border-bottom-color:rgba(200,162,74,.5)}
 
-    @media (max-width:880px){
+    .footer-inner{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .footer-links{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .footer-links a{
+      color:var(--muted);
+      border-bottom:1px solid transparent;
+    }
+
+    .footer-links a:hover{
+      color:var(--text);
+      border-bottom-color:rgba(200,162,74,.5);
+    }
+
+    @media (max-width: 880px){
+      .desktop-only{display:none}
+      .mobile-only{display:block}
+      .nav-mobile{display:block}
       .brand strong{display:none}
       .hero{padding:36px 0 16px}
+      .card{padding:18px}
+      .card p,.card ul{font-size:15px}
+      .footer-inner{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .footer-links{
+        gap:10px;
+      }
     }
   </style>
 </head>
@@ -198,7 +333,9 @@
 <body>
   <header>
     <div class="wrap">
-      <div class="nav">
+
+      <!-- desktop -->
+      <div class="nav desktop-only">
         <a href="index.html" class="brand">
           <img src="logo.png" alt="Atelier Dante Time logo" />
           <strong>Atelier Dante Time</strong>
@@ -210,12 +347,39 @@
           <a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
           <a class="chip" href="index.html#contact" data-i18n="nav_contact">Kontakt</a>
 
-          <button class="langbtn" id="langBtn" type="button" aria-label="Switch language">
+          <button class="langbtn" id="langBtnDesktop" type="button" aria-label="Switch language">
             <span class="langdot"></span>
-            <span id="langLabel">CZ</span>
+            <span id="langLabelDesktop">CZ</span>
           </button>
         </div>
       </div>
+
+      <!-- mobile -->
+      <div class="nav-mobile mobile-only">
+        <div class="nav-mobile-row">
+          <a href="index.html" class="brand">
+            <img src="logo.png" alt="Atelier Dante Time logo" />
+            <strong>Atelier Dante Time</strong>
+          </a>
+
+          <button class="langbtn" id="langBtnMobile" type="button" aria-label="Switch language">
+            <span class="langdot"></span>
+            <span id="langLabelMobile">CZ</span>
+          </button>
+        </div>
+
+        <div class="mobile-scroll-wrap">
+          <div class="mobile-scroll">
+            <a class="chip" href="index.html" data-i18n="nav_home">Domů</a>
+            <a class="chip" href="about.html" data-i18n="nav_about">O nás</a>
+            <a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
+            <a class="chip" href="index.html#contact" data-i18n="nav_contact">Kontakt</a>
+            <a class="chip gold" href="https://www.instagram.com/dantetimeatelier/" target="_blank" rel="noopener">Instagram</a>
+            <a class="chip gold" href="https://www.tiktok.com/" target="_blank" rel="noopener">TikTok</a>
+          </div>
+        </div>
+      </div>
+
     </div>
   </header>
 
@@ -224,7 +388,7 @@
       <div class="wrap">
         <h1 data-i18n="title">Vrácení a výměna zboží</h1>
         <p class="subtitle" data-i18n="lead">
-          Obecné informace k odstoupení od smlouvy, výjimkám pro zakázkovou výrobu, výměně a postupu při poškození zásilky.
+          Obecné informace k odstoupení od smlouvy, výjimkám pro zakázkovou výrobu, výměně a postupům při poškození zásilky.
         </p>
         <div class="subline"></div>
       </div>
@@ -238,24 +402,28 @@
           <p data-i18n="s1_p1">
             Kupující – spotřebitel má právo odstoupit od smlouvy uzavřené na dálku do 14 dnů od převzetí zboží dle § 1829 občanského zákoníku.
           </p>
+
           <h3 data-i18n="s1_h3">Pro odstoupení je nutné:</h3>
           <ul>
             <li data-i18n="s1_b1">oznámit odstoupení písemně (e-mailem),</li>
             <li data-i18n="s1_b2">vrátit zboží nejpozději do 14 dnů od odstoupení,</li>
             <li data-i18n="s1_b3">zaslat zboží kompletní, nepoškozené a bez známek nadměrného opotřebení.</li>
           </ul>
+
           <p style="margin-top:12px" data-i18n="s1_p2">
             Prodávající je oprávněn snížit vracenou částku o náhradu za snížení hodnoty zboží, pokud bylo používáno jinak, než je nutné k jeho vyzkoušení.
           </p>
+
           <p style="margin-top:12px" data-i18n="s1_p3">
             Náklady na vrácení zboží nese kupující.
           </p>
+
           <p style="margin-top:12px" data-i18n="s1_p4">
             Peněžní prostředky budou vráceny do 14 dnů od doručení vráceného zboží stejným způsobem, jakým byly přijaty, pokud se strany nedohodnou jinak.
           </p>
 
           <div class="hint" data-i18n="contact_hint">
-            Pro odstoupení / výměnu napište na: dante.time.atelier@gmail.com
+            Pro odstoupení / výměnu napiš na: dante.time.atelier@gmail.com
           </div>
 
           <h2 style="margin-top:22px" data-i18n="s2_title">2. Výjimka – zakázková výroba</h2>
@@ -273,6 +441,7 @@
           <p data-i18n="s3_p1">
             Výměna je možná pouze u hotových kusů skladem a výhradně po předchozí dohodě.
           </p>
+
           <h3 data-i18n="s3_h3">Podmínky výměny:</h3>
           <ul>
             <li data-i18n="s3_b1">zboží musí být vráceno v původním stavu,</li>
@@ -280,6 +449,7 @@
             <li data-i18n="s3_b3">musí být kompletní včetně příslušenství,</li>
             <li data-i18n="s3_b4">kupující hradí veškeré náklady spojené s dopravou.</li>
           </ul>
+
           <p style="margin-top:12px" data-i18n="s3_p2">
             Prodávající si vyhrazuje právo výměnu odmítnout, pokud nejsou splněny uvedené podmínky.
           </p>
@@ -288,12 +458,14 @@
           <p data-i18n="s4_p1">
             Kupující je povinen při převzetí zásilky zkontrolovat její stav.
           </p>
+
           <h3 data-i18n="s4_h3">V případě zjevného poškození je nutné:</h3>
           <ul>
             <li data-i18n="s4_b1">sepsat s dopravcem škodní protokol,</li>
             <li data-i18n="s4_b2">bezodkladně informovat prodávajícího,</li>
             <li data-i18n="s4_b3">doložit fotodokumentaci.</li>
           </ul>
+
           <p style="margin-top:12px" data-i18n="s4_p2">
             Pozdější reklamace mechanického poškození způsobeného přepravou nemusí být uznány.
           </p>
@@ -313,10 +485,10 @@
       <div class="footer-inner">
         <div>© <span id="y"></span> Atelier Dante Time</div>
         <div class="footer-links">
-          <a href="returns.html">Vrácení a výměna zboží</a>
-          <a href="warranty.html">Záruka a servis</a>
-          <a href="care.html">Péče o hodinky</a>
-          <a href="terms.html">Obchodní podmínky</a>
+          <a href="returns.html" data-i18n="footer_returns">Vrácení a výměna zboží</a>
+          <a href="warranty.html" data-i18n="footer_warranty">Záruka a servis</a>
+          <a href="care.html" data-i18n="footer_care">Péče o hodinky</a>
+          <a href="terms.html" data-i18n="footer_terms">Obchodní podmínky</a>
         </div>
       </div>
     </div>
@@ -331,7 +503,7 @@
         nav_contact: "Kontakt",
 
         title: "Vrácení a výměna zboží",
-        lead: "Obecné informace k odstoupení od smlouvy, výjimkám pro zakázkovou výrobu, výměně a postupu při poškození zásilky.",
+        lead: "Obecné informace k odstoupení od smlouvy, výjimkám pro zakázkovou výrobu, výměně a postupům při poškození zásilky.",
 
         s1_title: "1. Odstoupení od smlouvy (spotřebitel)",
         s1_p1: "Kupující – spotřebitel má právo odstoupit od smlouvy uzavřené na dálku do 14 dnů od převzetí zboží dle § 1829 občanského zákoníku.",
@@ -343,7 +515,7 @@
         s1_p3: "Náklady na vrácení zboží nese kupující.",
         s1_p4: "Peněžní prostředky budou vráceny do 14 dnů od doručení vráceného zboží stejným způsobem, jakým byly přijaty, pokud se strany nedohodnou jinak.",
 
-        contact_hint: "Pro odstoupení / výměnu napište na: dante.time.atelier@gmail.com",
+        contact_hint: "Pro odstoupení / výměnu napiš na: dante.time.atelier@gmail.com",
 
         s2_title: "2. Výjimka – zakázková výroba",
         s2_p1: "Právo na odstoupení od smlouvy se nevztahuje na:",
@@ -370,7 +542,12 @@
         s4_p2: "Pozdější reklamace mechanického poškození způsobeného přepravou nemusí být uznány.",
 
         btn_back: "Zpět na web",
-        btn_email: "Napsat e-mail"
+        btn_email: "Napsat e-mail",
+
+        footer_returns: "Vrácení a výměna zboží",
+        footer_warranty: "Záruka a servis",
+        footer_care: "Péče o hodinky",
+        footer_terms: "Obchodní podmínky"
       },
 
       en: {
@@ -380,7 +557,7 @@
         nav_contact: "Contact",
 
         title: "Returns & Exchanges",
-        lead: "General information about withdrawal from a distance contract, custom-made exceptions, exchanges, and procedure in the event of shipping damage.",
+        lead: "General information about withdrawal from a distance contract, custom-made exceptions, exchanges, and shipping damage procedures.",
 
         s1_title: "1. Withdrawal from contract (consumer)",
         s1_p1: "A consumer has the right to withdraw from a distance contract within 14 days from receiving the goods (Czech Civil Code § 1829).",
@@ -419,26 +596,35 @@
         s4_p2: "Later claims for mechanical damage caused by shipping may not be accepted.",
 
         btn_back: "Back to site",
-        btn_email: "Email us"
+        btn_email: "Email us",
+
+        footer_returns: "Returns & exchanges",
+        footer_warranty: "Warranty & service",
+        footer_care: "Watch care",
+        footer_terms: "Terms & conditions"
       }
     };
 
     function getLang(){
       return localStorage.getItem("lang") || "cs";
     }
+
     function applyLang(lang){
       document.documentElement.lang = lang;
       const dict = I18N[lang] || I18N.cs;
 
       document.querySelectorAll("[data-i18n]").forEach(el=>{
         const key = el.getAttribute("data-i18n");
-        if (dict[key]) el.textContent = dict[key];
+        if(dict[key]) el.textContent = dict[key];
       });
 
-      const txt = (lang === "cs") ? "CZ" : "EN";
-      const label = document.getElementById("langLabel");
-      if (label) label.textContent = txt;
+      const txt = lang === "cs" ? "CZ" : "EN";
+      const d = document.getElementById("langLabelDesktop");
+      const m = document.getElementById("langLabelMobile");
+      if(d) d.textContent = txt;
+      if(m) m.textContent = txt;
     }
+
     function setLang(lang){
       localStorage.setItem("lang", lang);
       applyLang(lang);
@@ -446,11 +632,22 @@
 
     document.getElementById("y").textContent = new Date().getFullYear();
 
-    const langBtn = document.getElementById("langBtn");
-    if (langBtn) langBtn.addEventListener("click", ()=>{
-      const current = getLang();
-      setLang(current === "cs" ? "en" : "cs");
-    });
+    const btnDesktop = document.getElementById("langBtnDesktop");
+    const btnMobile = document.getElementById("langBtnMobile");
+
+    if(btnDesktop){
+      btnDesktop.addEventListener("click", ()=>{
+        const current = getLang();
+        setLang(current === "cs" ? "en" : "cs");
+      });
+    }
+
+    if(btnMobile){
+      btnMobile.addEventListener("click", ()=>{
+        const current = getLang();
+        setLang(current === "cs" ? "en" : "cs");
+      });
+    }
 
     applyLang(getLang());
   </script>
