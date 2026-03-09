@@ -1,418 +1,660 @@
 
-
 <!doctype html>
 <html lang="cs">
 <head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Služby — Atelier Dante Time</title>
+  <meta name="description" content="Služby Atelier Dante Time — servis, renovace a zakázkové sestavy mechanických hodinek." />
+  <link rel="icon" href="logo.png" />
 
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{
+      --bg:#070707;
+      --text:#f2f2f2;
+      --muted:#b9b9b9;
+      --gold:#c8a24a;
+      --line:rgba(255,255,255,.10);
+      --shadow:0 18px 50px rgba(0,0,0,.45);
+      --radius:18px;
+      --max:1100px;
+      --card:#0b0b0b;
+    }
 
-<title>Služby — Atelier Dante Time</title>
+    *{box-sizing:border-box}
+    html,body{height:100%}
 
-<link rel="icon" href="logo.png">
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 55%),
+        radial-gradient(1200px 700px at 50% -120px, rgba(200,162,74,.12), rgba(0,0,0,0) 60%),
+        var(--bg);
+      overflow-x:hidden;
+    }
 
-<style>
+    a{
+      color:inherit;
+      text-decoration:none;
+    }
 
-:root{
---bg:#070707;
---text:#f2f2f2;
---muted:#b9b9b9;
---gold:#c8a24a;
---line:rgba(255,255,255,.10);
---shadow:0 18px 50px rgba(0,0,0,.45);
---radius:18px;
---max:1100px;
---card:#0b0b0b;
-}
+    a:hover{opacity:.95}
 
-*{box-sizing:border-box}
+    .wrap{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:0 20px;
+    }
 
-body{
-margin:0;
-font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-color:var(--text);
-background:
-linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 55%),
-radial-gradient(1200px 700px at 50% -120px, rgba(200,162,74,.12), rgba(0,0,0,0) 60%),
-var(--bg);
-}
+    header{
+      position:sticky;
+      top:0;
+      z-index:20;
+      backdrop-filter: blur(10px);
+      background:rgba(7,7,7,.65);
+      border-bottom:1px solid var(--line);
+    }
 
-.wrap{
-max-width:var(--max);
-margin:auto;
-padding:0 20px;
-}
+    .nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 0;
+      gap:12px;
+    }
 
-header{
-position:sticky;
-top:0;
-backdrop-filter:blur(10px);
-background:rgba(7,7,7,.65);
-border-bottom:1px solid var(--line);
-}
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:180px;
+    }
 
-.nav{
-display:flex;
-align-items:center;
-justify-content:space-between;
-padding:14px 0;
-}
+    .brand img{
+      width:28px;
+      height:28px;
+      object-fit:contain;
+      filter: drop-shadow(0 10px 30px rgba(0,0,0,.6));
+    }
 
-.brand{
-display:flex;
-align-items:center;
-gap:10px;
-}
+    .brand strong{
+      letter-spacing:.08em;
+      font-weight:700;
+      font-size:12px;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
 
-.brand img{
-width:28px;
-}
+    .links{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
 
-.brand strong{
-font-size:12px;
-letter-spacing:.08em;
-text-transform:uppercase;
-color:var(--muted);
-}
+    .chip, .langbtn{
+      padding:8px 12px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      color:var(--muted);
+      font-size:13px;
+      transition:.2s ease;
+      background:rgba(255,255,255,.02);
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+      font-family:inherit;
+    }
 
-.links{
-display:flex;
-gap:10px;
-}
+    .chip:hover, .langbtn:hover{
+      border-color:rgba(200,162,74,.45);
+      color:var(--text);
+    }
 
-.chip{
-padding:8px 12px;
-border:1px solid var(--line);
-border-radius:999px;
-font-size:13px;
-color:var(--muted);
-background:rgba(255,255,255,.02);
-}
+    .langbtn{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+    }
 
-.langbtn{
-padding:8px 12px;
-border:1px solid var(--line);
-border-radius:999px;
-font-size:13px;
-background:none;
-color:var(--text);
-cursor:pointer;
-}
+    .langdot{
+      width:8px;
+      height:8px;
+      border-radius:99px;
+      background:rgba(200,162,74,.75);
+      box-shadow:0 0 0 4px rgba(200,162,74,.12);
+    }
 
-.hero{
-padding:50px 0 20px;
-}
+    .desktop-only{display:flex}
+    .mobile-only{display:none}
 
-h1{
-font-family:Georgia,serif;
-font-size:42px;
-margin:0;
-}
+    .nav-mobile{
+      display:none;
+      padding:14px 0 12px;
+    }
 
-.subtitle{
-margin-top:8px;
-color:var(--muted);
-}
+    .nav-mobile-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
 
-.card{
-background:var(--card);
-border:1px solid var(--line);
-border-radius:var(--radius);
-box-shadow:var(--shadow);
-padding:24px;
-margin-top:20px;
-}
+    .mobile-scroll-wrap{
+      position:relative;
+      margin-top:14px;
+    }
 
-.service-top{
-display:flex;
-gap:30px;
-align-items:flex-start;
-}
+    .mobile-scroll{
+      display:flex;
+      gap:10px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      padding:2px 2px 8px;
+    }
 
-.service-top > div:first-child{
-flex:1;
-}
+    .mobile-scroll::-webkit-scrollbar{
+      display:none;
+    }
 
-.service-photo img{
-width:100%;
-max-width:420px;
-border-radius:12px;
-}
+    .mobile-scroll-wrap::after{
+      content:"";
+      position:absolute;
+      right:0;
+      top:0;
+      bottom:8px;
+      width:36px;
+      pointer-events:none;
+      background:linear-gradient(90deg, rgba(7,7,7,0), rgba(7,7,7,.95));
+    }
 
-h3{
-margin-top:20px;
-}
+    .hero{
+      padding:46px 0 20px;
+      text-align:left;
+    }
 
-ul{
-padding-left:18px;
-color:var(--muted);
-line-height:1.7;
-}
+    h1{
+      margin:0;
+      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      font-size:clamp(26px, 3.6vw, 44px);
+      line-height:1.1;
+    }
 
-.brands{
-margin-top:18px;
-padding-top:18px;
-border-top:1px solid var(--line);
-color:var(--muted);
-}
+    .subtitle{
+      margin:10px 0 0;
+      color:var(--muted);
+      line-height:1.7;
+      max-width:900px;
+      font-size:16px;
+    }
 
-.cta{
-margin-top:20px;
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-}
+    .subline{
+      width:min(220px, 60vw);
+      height:1px;
+      margin:18px 0 0;
+      background:linear-gradient(90deg, rgba(200,162,74,0), rgba(200,162,74,.9), rgba(200,162,74,0));
+      opacity:.75;
+    }
 
-.btn{
-padding:10px 14px;
-border-radius:12px;
-border:1px solid rgba(200,162,74,.45);
-background:linear-gradient(180deg, rgba(200,162,74,.18), rgba(200,162,74,.04));
-}
+    .section{
+      padding:18px 0 34px;
+    }
 
-.btn.ghost{
-border:1px solid var(--line);
-background:rgba(255,255,255,.02);
-color:var(--muted);
-}
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:22px;
+      overflow:hidden;
+      position:relative;
+    }
 
-footer{
-margin-top:40px;
-padding:20px 0;
-border-top:1px solid var(--line);
-font-size:13px;
-color:var(--muted);
-display:flex;
-justify-content:space-between;
-flex-wrap:wrap;
-}
+    .service-top{
+      display:flex;
+      gap:26px;
+      align-items:flex-start;
+    }
 
-footer a{
-margin-right:12px;
-color:var(--muted);
-}
+    .service-top > div:first-child{
+      flex:1;
+      min-width:0;
+    }
 
-@media (max-width:800px){
+    .card h3{
+      margin:22px 0 8px;
+      font-size:22px;
+      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+      letter-spacing:.02em;
+      color:var(--text);
+    }
 
-.service-top{
-flex-direction:column;
-}
+    .card p{
+      margin:0;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.7;
+    }
 
-.service-photo img{
-max-width:100%;
-}
+    .card ul{
+      margin:10px 0 0;
+      padding-left:18px;
+      color:var(--muted);
+      line-height:1.7;
+      font-size:16px;
+    }
 
-}
+    .card li{margin:6px 0}
 
-</style>
+    .service-photo{
+      width:360px;
+      flex:0 0 360px;
+      border-radius:16px;
+      overflow:hidden;
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      background:#050505;
+      align-self:flex-start;
+    }
+
+    .service-photo img{
+      display:block;
+      width:100%;
+      height:auto;
+      object-fit:cover;
+    }
+
+    .service-photo-note{
+      padding:10px 14px;
+      border-top:1px solid var(--line);
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.6;
+      background:rgba(255,255,255,.02);
+    }
+
+    .brands{
+      margin-top:18px;
+      padding-top:18px;
+      border-top:1px solid var(--line);
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.7;
+    }
+
+    .cta{
+      margin-top:26px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(200,162,74,.45);
+      background:linear-gradient(180deg, rgba(200,162,74,.18), rgba(200,162,74,.04));
+      color:var(--text);
+      font-size:13px;
+      gap:8px;
+      white-space:nowrap;
+    }
+
+    .btn.ghost{
+      border-color:var(--line);
+      background:rgba(255,255,255,.02);
+      color:var(--muted);
+    }
+
+    footer{
+      padding:28px 0 34px;
+      border-top:1px solid var(--line);
+      margin-top:32px;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .footer-inner{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .footer-links{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .footer-links a{
+      color:var(--muted);
+      border-bottom:1px solid transparent;
+    }
+
+    .footer-links a:hover{
+      color:var(--text);
+      border-bottom-color:rgba(200,162,74,.5);
+    }
+
+    @media (max-width: 980px){
+      .service-photo{
+        width:300px;
+        flex-basis:300px;
+      }
+    }
+
+    @media (max-width: 880px){
+      .desktop-only{display:none}
+      .mobile-only{display:block}
+      .nav-mobile{display:block}
+
+      .brand{
+        min-width:auto;
+      }
+
+      .brand strong{
+        display:none;
+      }
+
+      .hero{
+        padding:36px 0 16px;
+      }
+
+      .card{
+        padding:18px;
+      }
+
+      .card p,
+      .card ul{
+        font-size:15px;
+      }
+
+      .card h3{
+        font-size:20px;
+      }
+
+      .service-top{
+        flex-direction:column;
+      }
+
+      .service-photo{
+        width:100%;
+        flex:none;
+      }
+
+      .footer-inner{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+
+      .cta .btn{
+        width:100%;
+      }
+    }
+  </style>
 </head>
 
 <body>
+  <header>
+    <div class="wrap">
 
-<header>
-<div class="wrap">
+      <div class="nav desktop-only">
+        <a href="index.html" class="brand" aria-label="Domů">
+          <img src="logo.png" alt="Atelier Dante Time logo" />
+          <strong>Atelier Dante Time</strong>
+        </a>
 
-<div class="nav">
+        <div class="links">
+          <a class="chip" href="index.html" data-i18n="nav_home">Domů</a>
+          <a class="chip" href="about.html" data-i18n="nav_about">O nás</a>
+          <a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
+          <a class="chip" href="index.html#contact" data-i18n="nav_contact">Kontakt</a>
 
-<a href="index.html" class="brand">
-<img src="logo.png">
-<strong>Atelier Dante Time</strong>
-</a>
+          <button class="langbtn" id="langBtnDesktop" type="button" aria-label="Switch language">
+            <span class="langdot"></span>
+            <span id="langLabelDesktop">CZ</span>
+          </button>
+        </div>
+      </div>
 
-<div class="links">
-<a class="chip" href="index.html" data-i18n="home">Domů</a>
-<a class="chip" href="about.html" data-i18n="about">O nás</a>
-<a class="chip" href="services.html" data-i18n="services">Služby</a>
-<a class="chip" href="index.html#contact" data-i18n="contact">Kontakt</a>
+      <div class="nav-mobile mobile-only">
+        <div class="nav-mobile-row">
+          <a href="index.html" class="brand" aria-label="Domů">
+            <img src="logo.png" alt="Atelier Dante Time logo" />
+            <strong>Atelier Dante Time</strong>
+          </a>
 
-<button class="langbtn" id="langBtn">CZ</button>
-</div>
+          <button class="langbtn" id="langBtnMobile" type="button" aria-label="Switch language">
+            <span class="langdot"></span>
+            <span id="langLabelMobile">CZ</span>
+          </button>
+        </div>
 
-</div>
-</div>
-</header>
+        <div class="mobile-scroll-wrap">
+          <div class="mobile-scroll">
+            <a class="chip" href="index.html" data-i18n="nav_home">Domů</a>
+            <a class="chip" href="about.html" data-i18n="nav_about">O nás</a>
+            <a class="chip" href="services.html" data-i18n="nav_services">Služby</a>
+            <a class="chip" href="index.html#contact" data-i18n="nav_contact">Kontakt</a>
+          </div>
+        </div>
+      </div>
 
-<main>
+    </div>
+  </header>
 
-<div class="wrap">
+  <main>
+    <section class="hero">
+      <div class="wrap">
+        <h1 data-i18n="title">Služby</h1>
+        <p class="subtitle" data-i18n="lead">
+          Servis, renovace a zakázkové sestavy mechanických hodinek s individuálním přístupem ke každému kusu.
+        </p>
+        <div class="subline"></div>
+      </div>
+    </section>
 
-<div class="hero">
-<h1 data-i18n="title">Služby</h1>
-<div class="subtitle" data-i18n="subtitle">
-Servis, renovace a zakázkové sestavy mechanických hodinek s individuálním přístupem.
-</div>
-</div>
+    <section class="section">
+      <div class="wrap">
+        <div class="card">
 
-<div class="card">
+          <div class="service-top">
+            <div>
+              <p data-i18n="intro">
+                Servis a citlivá renovace mechanických hodinek s respektem k původnímu řemeslu a charakteru každého kusu. Každou zakázku řeším individuálně.
+              </p>
 
-<div class="service-top">
+              <h3 data-i18n="s1_title">Servis mechanických hodinek</h3>
+              <ul>
+                <li data-i18n="s1_b1">Kompletní rozebrání, čištění, mazání a opětovné sestavení</li>
+                <li data-i18n="s1_b2">Kontrola opotřebení a doporučení případných výměn dílů</li>
+                <li data-i18n="s1_b3">Regulace chodu a závěrečné testování</li>
+              </ul>
 
-<div>
+              <h3 data-i18n="s2_title">Renovace / opravy (vintage)</h3>
+              <ul>
+                <li data-i18n="s2_b1">Citlivé opravy a záchrana starších modelů</li>
+                <li data-i18n="s2_b2">Řešení závad po pádu či neodborném zásahu</li>
+                <li data-i18n="s2_b3">Možnost doplnění dílů dle dostupnosti</li>
+              </ul>
 
-<p data-i18n="intro">
-Servis a citlivá renovace mechanických hodinek s respektem k původnímu řemeslu a charakteru každého kusu.
-</p>
+              <h3 data-i18n="s3_title">Zakázkové sestavy</h3>
+              <ul>
+                <li data-i18n="s3_b1">Sestavení hodinek na míru dle dohody</li>
+                <li data-i18n="s3_b2">Důraz na detail a finální prezentaci</li>
+              </ul>
 
-<h3 data-i18n="s1">Servis mechanických hodinek</h3>
+              <div class="brands">
+                <span data-i18n="brands_text">Zaměření především na značky:</span>
+                <strong>PRIM, Omega, Bulova, Zaria, Doxa</strong>
+                <span data-i18n="brands_tail">a další vintage modely.</span>
+              </div>
 
-<ul>
-<li data-i18n="s1a">Kompletní rozebrání, čištění, mazání a opětovné sestavení</li>
-<li data-i18n="s1b">Kontrola opotřebení a doporučení výměny dílů</li>
-<li data-i18n="s1c">Regulace chodu a závěrečné testování</li>
-</ul>
+              <div class="cta">
+                <a class="btn" href="mailto:dante.time.atelier@gmail.com" data-i18n="email_btn">Napsat e-mail</a>
+                <a class="btn ghost" target="_blank" rel="noopener"
+                   href="https://www.instagram.com/dantetimeatelier?igsh=Mjc5eTJydWNwaGg4&utm_source=qr">Instagram</a>
+                <a class="btn ghost" target="_blank" rel="noopener"
+                   href="https://www.tiktok.com/@atelierdt?_r=1&_t=ZN-94KrQVJd7OJ">TikTok</a>
+              </div>
+            </div>
 
-<h3 data-i18n="s2">Renovace / opravy</h3>
+            <div class="service-photo">
+              <img src="service-watch-box.jpg" alt="Ukázka dokončeného kusu Atelier Dante Time" />
+              <div class="service-photo-note" data-i18n="photo_note">
+                Ukázka finální prezentace hotového kusu.
+              </div>
+            </div>
+          </div>
 
-<ul>
-<li data-i18n="s2a">Citlivé opravy starších modelů</li>
-<li data-i18n="s2b">Řešení závad po pádu</li>
-<li data-i18n="s2c">Možnost doplnění dílů</li>
-</ul>
+        </div>
+      </div>
+    </section>
+  </main>
 
-<h3 data-i18n="s3">Zakázkové sestavy</h3>
+  <footer>
+    <div class="wrap">
+      <div class="footer-inner">
+        <div>© <span id="y"></span> Atelier Dante Time</div>
+        <div class="footer-links">
+          <a href="returns.html" data-i18n="footer_returns">Vrácení a výměna zboží</a>
+          <a href="warranty.html" data-i18n="footer_warranty">Záruka a servis</a>
+          <a href="care.html" data-i18n="footer_care">Péče o hodinky</a>
+          <a href="terms.html" data-i18n="footer_terms">Obchodní podmínky</a>
+        </div>
+      </div>
+    </div>
+  </footer>
 
-<ul>
-<li data-i18n="s3a">Sestavení hodinek na míru</li>
-<li data-i18n="s3b">Důraz na detail</li>
-</ul>
+  <script>
+    const I18N = {
+      cs: {
+        nav_home: "Domů",
+        nav_about: "O nás",
+        nav_services: "Služby",
+        nav_contact: "Kontakt",
 
-<div class="brands">
-<span data-i18n="brands">Zaměření především na značky</span>
-<strong>PRIM, Omega, Bulova, Zaria, Doxa</strong>
-</div>
+        title: "Služby",
+        lead: "Servis, renovace a zakázkové sestavy mechanických hodinek s individuálním přístupem ke každému kusu.",
+        intro: "Servis a citlivá renovace mechanických hodinek s respektem k původnímu řemeslu a charakteru každého kusu. Každou zakázku řeším individuálně.",
+        photo_note: "Ukázka finální prezentace hotového kusu.",
 
-<div class="cta">
+        s1_title: "Servis mechanických hodinek",
+        s1_b1: "Kompletní rozebrání, čištění, mazání a opětovné sestavení",
+        s1_b2: "Kontrola opotřebení a doporučení případných výměn dílů",
+        s1_b3: "Regulace chodu a závěrečné testování",
 
-<a class="btn" href="mailto:dante.time.atelier@gmail.com" data-i18n="email">
-Napsat e-mail
-</a>
+        s2_title: "Renovace / opravy (vintage)",
+        s2_b1: "Citlivé opravy a záchrana starších modelů",
+        s2_b2: "Řešení závad po pádu či neodborném zásahu",
+        s2_b3: "Možnost doplnění dílů dle dostupnosti",
 
-<a class="btn ghost" target="_blank"
-href="https://www.instagram.com/dantetimeatelier">
-Instagram
-</a>
+        s3_title: "Zakázkové sestavy",
+        s3_b1: "Sestavení hodinek na míru dle dohody",
+        s3_b2: "Důraz na detail a finální prezentaci",
 
-<a class="btn ghost" target="_blank"
-href="https://www.tiktok.com/@atelierdt">
-TikTok
-</a>
+        brands_text: "Zaměření především na značky:",
+        brands_tail: "a další vintage modely.",
+        email_btn: "Napsat e-mail",
 
-</div>
+        footer_returns: "Vrácení a výměna zboží",
+        footer_warranty: "Záruka a servis",
+        footer_care: "Péče o hodinky",
+        footer_terms: "Obchodní podmínky"
+      },
 
-</div>
+      en: {
+        nav_home: "Home",
+        nav_about: "About",
+        nav_services: "Services",
+        nav_contact: "Contact",
 
-<div class="service-photo">
-<img src="service-watch-box.jpg">
-</div>
+        title: "Services",
+        lead: "Service, restoration and custom builds of mechanical watches with an individual approach to each piece.",
+        intro: "Service and sensitive restoration of mechanical watches with respect for original craftsmanship and the character of each piece. Every project is handled individually.",
+        photo_note: "Example of final presentation of a finished piece.",
 
-</div>
+        s1_title: "Mechanical watch service",
+        s1_b1: "Complete disassembly, cleaning, lubrication and reassembly",
+        s1_b2: "Wear inspection and recommendation of possible part replacements",
+        s1_b3: "Rate adjustment and final testing",
 
-</div>
+        s2_title: "Restoration / repairs (vintage)",
+        s2_b1: "Sensitive repairs and rescue of older models",
+        s2_b2: "Solving faults after falls or unprofessional interventions",
+        s2_b3: "Possibility of sourcing parts depending on availability",
 
-</div>
+        s3_title: "Custom builds",
+        s3_b1: "Custom watch assembly according to agreement",
+        s3_b2: "Emphasis on detail and final presentation",
 
-</main>
+        brands_text: "Focused mainly on brands:",
+        brands_tail: "and other vintage models.",
+        email_btn: "Send email",
 
-<footer class="wrap">
+        footer_returns: "Returns & exchanges",
+        footer_warranty: "Warranty & service",
+        footer_care: "Watch care",
+        footer_terms: "Terms & conditions"
+      }
+    };
 
-<div>
-© <span id="year"></span> Atelier Dante Time
-</div>
+    function getLang(){
+      return localStorage.getItem("lang") || "cs";
+    }
 
-<div>
-<a href="returns.html" data-i18n="returns">Vrácení</a>
-<a href="warranty.html" data-i18n="warranty">Záruka</a>
-<a href="care.html" data-i18n="care">Péče o hodinky</a>
-<a href="terms.html" data-i18n="terms">Podmínky</a>
-</div>
+    function applyLang(lang){
+      document.documentElement.lang = lang;
+      const dict = I18N[lang] || I18N.cs;
 
-</footer>
+      document.querySelectorAll("[data-i18n]").forEach(el=>{
+        const key = el.getAttribute("data-i18n");
+        if (dict[key]) el.textContent = dict[key];
+      });
 
-<script>
+      const txt = lang === "cs" ? "CZ" : "EN";
+      const d = document.getElementById("langLabelDesktop");
+      const m = document.getElementById("langLabelMobile");
+      if (d) d.textContent = txt;
+      if (m) m.textContent = txt;
+    }
 
-const I18N={
+    function setLang(lang){
+      localStorage.setItem("lang", lang);
+      applyLang(lang);
+    }
 
-cs:{
-home:"Domů",
-about:"O nás",
-services:"Služby",
-contact:"Kontakt",
-title:"Služby",
-subtitle:"Servis, renovace a zakázkové sestavy mechanických hodinek s individuálním přístupem.",
-intro:"Servis a citlivá renovace mechanických hodinek s respektem k původnímu řemeslu a charakteru každého kusu.",
-s1:"Servis mechanických hodinek",
-s1a:"Kompletní rozebrání, čištění, mazání a opětovné sestavení",
-s1b:"Kontrola opotřebení a doporučení výměny dílů",
-s1c:"Regulace chodu a závěrečné testování",
-s2:"Renovace / opravy",
-s2a:"Citlivé opravy starších modelů",
-s2b:"Řešení závad po pádu",
-s2c:"Možnost doplnění dílů",
-s3:"Zakázkové sestavy",
-s3a:"Sestavení hodinek na míru",
-s3b:"Důraz na detail",
-brands:"Zaměření především na značky",
-email:"Napsat e-mail",
-returns:"Vrácení",
-warranty:"Záruka",
-care:"Péče o hodinky",
-terms:"Podmínky"
-},
+    document.getElementById("y").textContent = new Date().getFullYear();
 
-en:{
-home:"Home",
-about:"About",
-services:"Services",
-contact:"Contact",
-title:"Services",
-subtitle:"Service, restoration and custom builds of mechanical watches.",
-intro:"Service and careful restoration of mechanical watches.",
-s1:"Mechanical watch service",
-s1a:"Complete disassembly and cleaning",
-s1b:"Inspection of wear",
-s1c:"Rate adjustment",
-s2:"Restoration / repairs",
-s2a:"Sensitive repairs",
-s2b:"Damage repair",
-s2c:"Parts replacement",
-s3:"Custom builds",
-s3a:"Custom watch assembly",
-s3b:"Attention to detail",
-brands:"Focused on brands",
-email:"Send email",
-returns:"Returns",
-warranty:"Warranty",
-care:"Watch care",
-terms:"Terms"
-}
+    const btnDesktop = document.getElementById("langBtnDesktop");
+    const btnMobile = document.getElementById("langBtnMobile");
 
-}
+    if (btnDesktop){
+      btnDesktop.addEventListener("click", ()=>{
+        const current = getLang();
+        setLang(current === "cs" ? "en" : "cs");
+      });
+    }
 
-function applyLang(lang){
+    if (btnMobile){
+      btnMobile.addEventListener("click", ()=>{
+        const current = getLang();
+        setLang(current === "cs" ? "en" : "cs");
+      });
+    }
 
-document.querySelectorAll("[data-i18n]").forEach(el=>{
-const key=el.dataset.i18n
-if(I18N[lang][key]) el.textContent=I18N[lang][key]
-})
-
-document.getElementById("langBtn").textContent=lang.toUpperCase()
-
-}
-
-let lang="cs"
-
-document.getElementById("langBtn").onclick=()=>{
-
-lang=lang==="cs"?"en":"cs"
-applyLang(lang)
-
-}
-
-applyLang(lang)
-
-document.getElementById("year").textContent=new Date().getFullYear()
-
-</script>
-
+    applyLang(getLang());
+  </script>
 </body>
 </html>
