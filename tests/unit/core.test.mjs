@@ -8,6 +8,7 @@ import { describe, productName, productJsonLd } from '../../src/shop/describe.mj
 import { slugify, formatCzk } from '../../src/shop/format.mjs';
 import { esc } from '../../src/layout.mjs';
 import { ALL_LEGAL } from '../../src/legal/docs.mjs';
+import { SERVICES_OFFERED } from '../../src/site.mjs';
 import { base32Encode, base32Decode, totpCode, verifyTotp, hashPassword, timingSafeEqual } from '../../server/auth.js';
 
 test('IBAN a QR platba (SPD)', () => {
@@ -94,9 +95,12 @@ test('rezervace: kus nelze prodat dvakrát ani při souběhu (SQL na SQLite)', (
 
 test('právní dokumenty: obsahují povinné náležitosti (CZ)', () => {
   const all = ALL_LEGAL.filter((d) => d.lang === 'cs').map((d) => d.body()).join('\n');
-  for (const must of ['14 dnů', '24 měsíců', 'Odstoupit od smlouvy', 'adr.coi.cz', 'Úřad pro ochranu osobních údajů', '363/2013 Sb.', '§ 1837', 'každého dalšího majitele', 'identifikace hodinek', 'vrácení kupní ceny', '539/1992 Sb.', 'Pozlacen', 'dobírk', 'nemá vliv', 'strojky, ciferníky a ručičky', '±30', '50 %', '30 dnů', 'Skladné se neúčtuje', '3 pracovních dnů', 'IBAN', 'PRIM', 'Evropské spotřebitelské centrum']) {
+  for (const must of ['14 dnů', '24 měsíců', 'Odstoupit od smlouvy', 'adr.coi.cz', 'Úřad pro ochranu osobních údajů', '363/2013 Sb.', '§ 1837', 'každého dalšího majitele', 'identifikace hodinek', 'vrácení kupní ceny', '539/1992 Sb.', 'Pozlacen', 'dobírk', 'nemá vliv', 'strojky, ciferníky a ručičky', '±30', '30 dnů', '3 pracovních dnů', 'IBAN', 'PRIM', 'Evropské spotřebitelské centrum',
+    ...(SERVICES_OFFERED ? ['50 %', 'Skladné se neúčtuje'] : [])]) {
     assert.ok(all.includes(must), `Chybí: ${must}`);
   }
+  // Bez služeb se nenabízí servis ani zakázky (otevřený právní bod L1)
+  if (!SERVICES_OFFERED) assert.ok(!/zakazkova-vyroba|custom-work/.test(ALL_LEGAL.map((d) => d.body()).join('')));
   assert.ok(!/ec\.europa\.eu\/consumers\/odr/.test(all)); // zrušená platforma ODR
   assert.ok(!all.includes('19/1993')); // chybné číslo puncovního zákona
 });

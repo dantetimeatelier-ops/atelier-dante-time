@@ -1,5 +1,5 @@
 // Prezentační stránky (CZ + EN). Texty vycházejí z původního webu.
-import { SITE, PAGES } from '../site.mjs';
+import { SITE, PAGES, SERVICES_OFFERED as SVC } from '../site.mjs';
 import { hero, esc, socialLinks } from '../layout.mjs';
 
 const T = (lang, cs, en) => (lang === 'cs' ? cs : en);
@@ -10,16 +10,18 @@ export function home(lang) {
   return {
     key: 'home',
     title: '',
-    description: L(
+    description: SVC ? L(
       'Atelier Dante Time – český hodinářský ateliér. Unikátní renovované mechanické hodinky, servis, renovace a zakázkové sestavy s doživotní garancí pravosti originálních dílů.',
-      'Atelier Dante Time – Czech watch atelier. Unique restored mechanical watches, service, restoration and custom builds with a lifetime authenticity guarantee on original parts.'),
+      'Atelier Dante Time – Czech watch atelier. Unique restored mechanical watches, service, restoration and custom builds with a lifetime authenticity guarantee on original parts.') : L(
+      'Atelier Dante Time – český hodinářský ateliér. Unikátní renovované mechanické hodinky a ateliérové přestavby s doživotní garancí pravosti originálních dílů.',
+      'Atelier Dante Time – Czech watch atelier. Unique restored mechanical watches and atelier rebuilds with a lifetime authenticity guarantee on original parts.'),
     head: `<link rel="preload" as="image" href="/img/hero-v2-m800.webp" media="(max-width: 880px)">
 <link rel="preload" as="image" href="/img/hero-v2-1280.webp" media="(min-width: 881px) and (max-width: 1400px)">
 <link rel="preload" as="image" href="/img/hero-v2-1920.webp" media="(min-width: 1401px)">
 <script type="application/ld+json">${JSON.stringify({
       '@context': 'https://schema.org', '@type': 'Organization', name: SITE.name, url: SITE.origin + '/',
       logo: SITE.origin + '/img/logo-160.webp', image: SITE.origin + '/img/og-image.jpg', email: 'mailto:' + SITE.email,
-      description: 'Český hodinářský atelier zaměřený na renovaci, servis a zakázkové sestavy mechanických hodinek.',
+      description: SVC ? 'Český hodinářský atelier zaměřený na renovaci, servis a zakázkové sestavy mechanických hodinek.' : 'Český hodinářský atelier: unikátní renovované mechanické hodinky a ateliérové přestavby.',
       sameAs: [SITE.instagram, SITE.tiktok, SITE.facebook].filter(Boolean),
     })}</script>`,
     scripts: ['/assets/featured.js'],
@@ -34,7 +36,7 @@ export function home(lang) {
       <p class="tagline">${L('Český hodinářský ateliér. Renovace a ateliérové přestavby mechanických hodinek s důrazem na řemeslo a detail.', 'A Czech watch atelier. Restoration and atelier rebuilds of mechanical watches with craftsmanship and attention to detail.')}</p>
       <div class="cta-row">
         <a class="btn solid" href="${PAGES.collection[lang]}">${L('Objevte naši tvorbu', 'Discover our work')}</a>
-        <a class="btn" href="${PAGES.services[lang]}#poptavka">${L('Servis a zakázka na míru', 'Service &amp; custom commission')}</a>
+        ${SVC ? `<a class="btn" href="${PAGES.services[lang]}#poptavka">${L('Servis a zakázka na míru', 'Service &amp; custom commission')}</a>` : `<a class="btn" href="${PAGES.about[lang]}">${L('Příběh ateliéru', 'Our story')}</a>`}
       </div>
     </div>
   </div>
@@ -64,21 +66,26 @@ export function home(lang) {
     <div class="card">
       <p class="eyebrow">${L('O ateliéru', 'About the atelier')}</p>
       <h2>${L('Řemeslo s respektem k historii', 'Craft with respect for history')}</h2>
-      <p>${L('Každé hodinky mají svůj příběh. Vracíme mechanickým hodinkám život: citlivou renovací, servisem a zakázkovými sestavami, které respektují původní charakter každého kusu.', 'Every watch has a story. We bring mechanical watches back to life through careful restoration, service and custom builds that respect the original character of each piece.')}</p>
+      <p>${SVC ? L('Každé hodinky mají svůj příběh. Vracíme mechanickým hodinkám život: citlivou renovací, servisem a zakázkovými sestavami, které respektují původní charakter každého kusu.', 'Every watch has a story. We bring mechanical watches back to life through careful restoration, service and custom builds that respect the original character of each piece.') : L('Každé hodinky mají svůj příběh. Vracíme mechanickým hodinkám život: citlivou renovací a ateliérovými přestavbami, které respektují původní charakter každého kusu.', 'Every watch has a story. We bring mechanical watches back to life through careful restoration and atelier rebuilds that respect the original character of each piece.')}</p>
       <ul class="list-dots">
         <li>${L('Mechanické hodinky a vintage renovace', 'Mechanical watches and vintage restoration')}</li>
         <li>${L('Čištění, mazání, regulace chodu', 'Cleaning, lubrication, regulation')}</li>
-        <li>${L('Zakázkové sestavy (limitované kusy)', 'Custom builds (limited pieces)')}</li>
+        <li>${SVC ? L('Zakázkové sestavy (limitované kusy)', 'Custom builds (limited pieces)') : L('Ateliérové přestavby (unikátní kusy)', 'Atelier rebuilds (unique pieces)')}</li>
         <li>${L('Dokončovací práce a prezentace', 'Finishing and presentation')}</li>
       </ul>
       <p style="margin-top:20px"><a class="btn ghost" href="${PAGES.about[lang]}">${L('Přečíst příběh', 'Read the story')}</a></p>
     </div>
-    <div class="card">
+    <div class="card">${SVC ? `
       <p class="eyebrow">${L('Nezávazná konzultace', 'Free consultation')}</p>
       <h2>${L('Máte hodinky, které si zaslouží druhý život?', 'Have a watch that deserves a second life?')}</h2>
       <p>${L('Pošlete fotografie a krátký popis stavu. Připravím návrh postupu a orientační cenu.', 'Send photos and a short description of its condition. I will suggest the next steps and an estimated price.')}</p>
       <div class="cta-row" style="justify-content:flex-start">
-        <a class="btn solid" href="${PAGES.services[lang]}#poptavka">${L('Poptat servis', 'Request a service')}</a>
+        <a class="btn solid" href="${PAGES.services[lang]}#poptavka">${L('Poptat servis', 'Request a service')}</a>` : `
+      <p class="eyebrow">${L('Osobní konzultace', 'Personal consultation')}</p>
+      <h2>${L('Hledáte hodinky s vlastním příběhem?', 'Looking for a watch with its own story?')}</h2>
+      <p>${L('Napište, jaký styl nebo model vás oslovuje. Rád poradím s výběrem z kolekce a dám vědět o kusech, které se právě připravují.', 'Tell me which style or model appeals to you. I am happy to help you choose from the collection and let you know about pieces currently in preparation.')}</p>
+      <div class="cta-row" style="justify-content:flex-start">
+        <a class="btn solid" href="${PAGES.contact[lang]}">${L('Napsat zprávu', 'Send a message')}</a>`}
         <a class="btn ghost" href="${SITE.instagram}" rel="noopener noreferrer" target="_blank">Instagram</a>
       </div>
     </div>
@@ -105,7 +112,7 @@ export function about(lang) {
   return {
     key: 'about',
     title: L('O nás', 'About'),
-    description: L('Příběh Atelier Dante Time – českého hodinářského ateliéru zaměřeného na renovaci a zakázkové sestavy mechanických hodinek.', 'The story of Atelier Dante Time – a Czech atelier focused on restoration and custom builds of mechanical watches.'),
+    description: SVC ? L('Příběh Atelier Dante Time – českého hodinářského ateliéru zaměřeného na renovaci a zakázkové sestavy mechanických hodinek.', 'The story of Atelier Dante Time – a Czech atelier focused on restoration and custom builds of mechanical watches.') : L('Příběh Atelier Dante Time – českého hodinářského ateliéru, který dává mechanickým hodinkám druhý život.', 'The story of Atelier Dante Time – a Czech atelier giving mechanical watches a second life.'),
     body: `${hero({ eyebrow: 'Atelier Dante Time', title: L('O nás', 'About'), lead: L('Druhý život pro čas.', 'A second life for time.') })}
 <section class="section"><div class="wrap split">
   <div class="card prose">
@@ -220,7 +227,7 @@ export function care(lang) {
 <ul><li>${L('chraňte hodinky před nárazy, pády, silnými vibracemi a otřesy,', 'protect the watch from impacts, drops, strong vibrations and shocks,')}</li><li>${L('nevystavujte je magnetickému poli ani náhlým změnám teplot,', 'keep it away from magnetic fields and sudden temperature changes,')}</li><li>${L('nevystavujte je vlhkosti nebo vodě, pokud nejsou výslovně označeny jako vodotěsné,', 'keep it away from moisture and water unless explicitly marked as water-resistant,')}</li><li>${L('vyhněte se kontaktu s chemikáliemi.', 'avoid contact with chemicals.')}</li></ul>
 <h2>${L('5. Servis', '5. Service')}</h2>
 <p>${L('Doporučujeme odborný servis přibližně každých 3–5 let, aby byla zachována správná funkčnost strojku.', 'We recommend a professional service roughly every 3–5 years to keep the movement working properly.')}</p>
-<p><a href="${PAGES.services[lang]}#poptavka">${L('Objednat servis', 'Book a service')}</a></p>
+${SVC ? `<p><a href="${PAGES.services[lang]}#poptavka">${L('Objednat servis', 'Book a service')}</a></p>` : ''}
 </div></div></section>`,
   };
 }
@@ -232,7 +239,7 @@ export function contact(lang) {
     title: L('Kontakt', 'Contact'),
     description: L('Kontakt na Atelier Dante Time: e-mail, Instagram, TikTok a formulář pro nezávaznou poptávku.', 'Contact Atelier Dante Time: e-mail, Instagram, TikTok and an enquiry form.'),
     scripts: ['/assets/forms.js'],
-    body: `${hero({ eyebrow: L('Kontakt', 'Contact'), title: L('Napište mi', 'Get in touch'), lead: L('Rád zodpovím dotazy ke kolekci, servisu i zakázkám na míru.', 'Happy to answer questions about the collection, service or commissions.') })}
+    body: `${hero({ eyebrow: L('Kontakt', 'Contact'), title: L('Napište mi', 'Get in touch'), lead: SVC ? L('Rád zodpovím dotazy ke kolekci, servisu i zakázkám na míru.', 'Happy to answer questions about the collection, service or commissions.') : L('Rád zodpovím dotazy ke kolekci i k jednotlivým hodinkám.', 'Happy to answer questions about the collection and individual watches.') })}
 <section class="section"><div class="wrap split">
   <div class="card">
     <h2>${L('Zpráva', 'Message')}</h2>

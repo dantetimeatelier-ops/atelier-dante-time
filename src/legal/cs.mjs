@@ -1,6 +1,6 @@
 // Právní dokumenty – ČESKÁ VERZE (návrh 3)
 // ⚖️ ÚROVEŇ 3 – změny jen se souhlasem majitele. Nejasnosti: docs/LEGAL-REVIEW.md
-import { SITE, OPERATOR, INDEPENDENCE } from '../site.mjs';
+import { SITE, OPERATOR, INDEPENDENCE, SERVICES_OFFERED as SVC } from '../site.mjs';
 import { head, toc, email, seller, vatText, returnAddress, coi, ecc, tradeOffice, registerText, LEGAL_VERSION } from './common.mjs';
 
 const L = 'cs';
@@ -17,7 +17,7 @@ ${toc(L, [['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky, součásti a materi
 <li>Prodávajícím je ${seller(L)}, e-mail ${email} (dále jen „prodávající“ nebo „ateliér“).</li>
 <li>Kupujícím je spotřebitel nebo podnikatel, který s prodávajícím uzavírá kupní smlouvu (dále jen „kupující“). Spotřebitelem je člověk, který mimo rámec své podnikatelské činnosti nebo samostatného výkonu povolání uzavírá smlouvu s podnikatelem (§ 419 zákona č. 89/2012 Sb., občanský zákoník, dále jen „OZ“).</li>
 <li>${INDEPENDENCE.cs}</li>
-<li>Součástí podmínek jsou: <a href="/reklamace">Reklamační řád</a>, <a href="/returns">Odstoupení od smlouvy a vrácení zboží</a> (včetně formuláře), <a href="/warranty">Záruka a doživotní garance pravosti</a>, <a href="/doprava-a-platba">Doprava a platba</a> a <a href="/prodej-do-eu">Prodej do zemí EU</a>. Servis, renovace, přestavby a zakázková výroba se řídí <a href="/zakazkova-vyroba">Podmínkami zakázkové výroby a servisu</a>.</li>
+<li>Součástí podmínek jsou: <a href="/reklamace">Reklamační řád</a>, <a href="/returns">Odstoupení od smlouvy a vrácení zboží</a> (včetně formuláře), <a href="/warranty">Záruka a doživotní garance pravosti</a>, <a href="/doprava-a-platba">Doprava a platba</a> a <a href="/prodej-do-eu">Prodej do zemí EU</a>.${SVC ? ' Servis, renovace, přestavby a zakázková výroba se řídí <a href="/zakazkova-vyroba">Podmínkami zakázkové výroby a servisu</a>.' : ''}</li>
 <li>Smlouvu lze uzavřít v českém nebo anglickém jazyce. Obě jazykové verze podmínek mají stejný obsah.</li>
 </ol>
 
@@ -113,13 +113,13 @@ ${toc(L, [['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky, součásti a materi
 
 // ---------------------------------------------------------------------------
 export const claims = doc('claims', '/reklamace', 'Reklamační řád',
-  'Reklamační řád Atelier Dante Time: záruka 24 měsíců, lhůty a postup reklamace hodinek, zakázek a servisu.',
+  `Reklamační řád Atelier Dante Time: záruka 24 měsíců, lhůty a postup reklamace hodinek${SVC ? ', zakázek a servisu' : ''}.`,
   () => `${head(L)}
 <h2>1. Na co se reklamační řád vztahuje</h2>
 <ul>
 <li><strong>hotové hodinky</strong> koupené od prodávajícího (kupní smlouva),</li>
-<li><strong>zakázková výroba</strong> – hodinky sestavené z dílů ateliéru podle přání zákazníka,</li>
-<li><strong>servis, renovace a přestavby</strong> hodinek zákazníka (smlouva o dílo) – provedená práce a nově dodané součásti.</li>
+${SVC ? `<li><strong>zakázková výroba</strong> – hodinky sestavené z dílů ateliéru podle přání zákazníka,</li>
+<li><strong>servis, renovace a přestavby</strong> hodinek zákazníka (smlouva o dílo) – provedená práce a nově dodané součásti.</li>` : ''}
 </ul>
 <p>Provozovatel: ${seller(L)}, e-mail ${email}.</p>
 
@@ -127,7 +127,7 @@ export const claims = doc('claims', '/reklamace', 'Reklamační řád',
 <ol>
 <li>Na prodávané hodinky poskytujeme <strong>záruku 24 měsíců</strong> od převzetí (podmínky na stránce <a href="/warranty">Záruka a garance pravosti</a>).</li>
 <li>Spotřebitel má navíc zákonná práva z vadného plnění po dobu 24 měsíců od převzetí, i u použitých hodinek. Projeví-li se vada do jednoho roku od převzetí, má se za to, že hodinky byly vadné již při převzetí.</li>
-<li>U servisu, renovace a přestavby odpovídáme za provedenou práci a nově dodané součásti 24 měsíců od předání.</li>
+${SVC ? '<li>U servisu, renovace a přestavby odpovídáme za provedenou práci a nově dodané součásti 24 měsíců od předání.</li>' : ''}
 </ol>
 
 <h2>3. Co není vadou</h2>
@@ -188,8 +188,8 @@ export const withdrawal = doc('withdrawal', '/returns', 'Odstoupení od smlouvy 
 </ol>
 <h2>5. Kdy nelze odstoupit</h2>
 <ul>
-<li><strong>zakázková výroba a přestavby podle vašeho zadání</strong> (§ 1837 písm. d) OZ). Přestavby a sestavy z e-shopu jako hotové kusy vrátit lze,</li>
-<li><strong>servis a renovace</strong> zcela dokončené s vaším výslovným souhlasem před uplynutím lhůty (§ 1837 písm. a) OZ). Viz <a href="/zakazkova-vyroba">Zakázková výroba a servis</a>.</li>
+<li><strong>zakázková výroba a přestavby podle vašeho zadání</strong> (§ 1837 písm. d) OZ). Přestavby a sestavy z e-shopu jako hotové kusy vrátit lze${SVC ? ',' : '.'}</li>
+${SVC ? '<li><strong>servis a renovace</strong> zcela dokončené s vaším výslovným souhlasem před uplynutím lhůty (§ 1837 písm. a) OZ). Viz <a href="/zakazkova-vyroba">Zakázková výroba a servis</a>.</li>' : ''}
 </ul>
 <h2 id="poskozeni">6. Poškozená zásilka</h2>
 <p>Zjevně poškozenou zásilku sepište s dopravcem, případně ji nepřebírejte. Pořiďte fotografie a do 2 pracovních dnů nám napište. Pozdější uplatnění nemá vliv na vaše práva z vadného plnění.</p>
@@ -231,8 +231,8 @@ export const warranty = doc('warranty', '/warranty', 'Záruka a doživotní gara
 <li><strong>Náprava při prokázané nepravosti</strong> podle volby oprávněné osoby: <strong>výměna</strong> za originální součást na náklady ateliéru, je-li dostupná, nebo <strong>vrácení kupní ceny</strong> zaplacené ateliéru proti vrácení hodinek. Není-li originální součást dostupná, náleží vrácení kupní ceny.</li>
 <li><strong>Zákonná práva:</strong> garance <strong>neomezuje</strong> zákonná práva z vadného plnění. Spotřebitel je může vždy uplatnit místo garance.</li>
 </ol>
-<h2>3. Hodinky zákazníků (servis, renovace, přestavby)</h2>
-<p>U zakázek se garance pravosti vztahuje na strojky, ciferníky a ručičky dodané ateliérem a v popisu prací výslovně označené jako originální. Původní součásti hodinek zákazníka ateliér neověřuje, nebylo-li to sjednáno.</p>
+${SVC ? `<h2>3. Hodinky zákazníků (servis, renovace, přestavby)</h2>
+<p>U zakázek se garance pravosti vztahuje na strojky, ciferníky a ručičky dodané ateliérem a v popisu prací výslovně označené jako originální. Původní součásti hodinek zákazníka ateliér neověřuje, nebylo-li to sjednáno.</p>` : ''}
 <p class="doc-meta">${INDEPENDENCE.cs}</p>`);
 
 // ---------------------------------------------------------------------------
@@ -246,7 +246,7 @@ export const custom = doc('custom', '/zakazkova-vyroba', 'Zakázková výroba, s
 <tr><td><strong>Přestavba</strong></td><td>úprava hodinek zákazníka podle jeho zadání</td><td>smlouva o dílo</td></tr>
 <tr><td><strong>Zakázková výroba</strong></td><td>sestavení hodinek z dílů ateliéru podle zadání zákazníka</td><td>kupní smlouva o věci, která má být vyrobena</td></tr>
 </tbody></table>
-<p>Zakázky provádí ${seller(L)} (dále jen „ateliér“). Odborné hodinářské práce může ateliér provést prostřednictvím spolupracujícího hodináře s příslušným živnostenským oprávněním. Za jeho práci odpovídá ateliér, jako by ji provedl sám.</p>
+<p>Zakázky provádí ${seller(L)} (dále jen „ateliér“).</p>
 <h2>2. Cena a schválení prací</h2>
 <ol>
 <li>Ateliér pošle nabídku s popisem prací, cenou a orientačním termínem. Smlouva vzniká písemným (e-mailovým) přijetím nabídky.</li>
@@ -322,7 +322,6 @@ export const privacy = doc('privacy', '/privacy', 'Zásady ochrany osobních úd
 <li><strong>Cloudflare, Inc.</strong> – hosting, databáze (uložená v EU) a fotografie,</li>
 <li><strong>Google</strong> – e-mailová schránka Gmail,</li>
 <li><strong>Resend</strong> – odesílání e-mailů z webu (potvrzení objednávek, faktury, odpovědi na poptávky),</li>
-<li><strong>spolupracující hodinář</strong> – provedení odborných prací na zakázce (jen údaje nezbytné k zakázce),</li>
 <li><strong>Zásilkovna s.r.o.</strong>, <strong>Česká pošta, s.p.</strong> a další dopravci podle cílové země – doručení zásilky,</li>
 <li><strong>Česká spořitelna, a.s.</strong> – příjem plateb (jako samostatný správce),</li>
 <li>poskytovatel platební brány – až po její aktivaci (doplníme sem jeho název),</li>
@@ -408,4 +407,4 @@ export const operator = doc('operator', '/provozovatel', 'Informace o provozovat
 </ul>
 <p>Mimosoudní řešení sporů: <a href="/reseni-sporu">Řešení sporů</a>.</p>`);
 
-export const DOCS_CS = [terms, claims, withdrawal, warranty, custom, shipping, privacy, cookies, adr, eu, operator];
+export const DOCS_CS = [terms, claims, withdrawal, warranty, ...(SVC ? [custom] : []), shipping, privacy, cookies, adr, eu, operator];

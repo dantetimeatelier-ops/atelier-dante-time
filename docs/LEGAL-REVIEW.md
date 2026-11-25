@@ -1,6 +1,6 @@
 # Právní dokumenty – kontrola před zveřejněním
 
-**Stav:** ⚖️ NÁVRH 3.2 – závěrečná kontrola 25. 11. 2026 (část 2b), živnostenské oprávnění rozebráno (části 2c a 2d), čeká na schválení majitele
+**Stav:** ⚖️ NÁVRH 3.3 – závěrečná kontrola 25. 11. 2026 (část 2b), otevřený právní bod L1 (část 2e), čeká na schválení majitele
 **Připraveno:** 25. 11. 2026
 **Zdroj textů:** `src/legal/cs.mjs` (česky), `src/legal/en.mjs` (anglicky), společné údaje
 `src/legal/common.mjs` a `src/site.mjs` (objekt `OPERATOR`).
@@ -92,8 +92,6 @@ Zásilkovna 99 Kč, Balíkovna 79 Kč, dobírka 49 Kč). Opravy:
 |---|---|---|
 | GDPR (CZ + EN) | doplněn **Resend** (odesílání e-mailů) a předání do USA | služba je od 25. 11. 2026 zapojená |
 | GDPR (CZ + EN) | odstraněn GitHub („hosting současné verze webu“) | po spuštění starý web nepoběží; GitHub neobsahuje zákaznická data |
-| GDPR (CZ + EN) | doplněn **spolupracující hodinář** jako příjemce (jen údaje nutné k zakázce) | model s externím hodinářem |
-| Zakázková výroba (CZ + EN) | práce může provést spolupracující hodinář s oprávněním, ateliér za ni odpovídá jako za vlastní (§ 2589 OZ) | zákazník musí vědět, kdo odpovídá |
 | Cookies (CZ + EN) | doplněn Facebook mezi odkazy, které se nenačítají | nová ikona v patičce |
 
 **Ve dni spuštění** se nastaví datum účinnosti a číslo verze `1.0` místo `2026-12-navrh-3`
@@ -177,6 +175,20 @@ proto je vždy zprostředkovat.
 
 **Ohlášení:** doplnit obor č. 49 „Zastavárenská činnost a maloobchod s použitým zbožím“
 (změna oboru volné živnosti je bez poplatku). Hodinářství se neohlašuje.
+
+## 2e. 🔴 OTEVŘENÝ PRÁVNÍ BOD L1 – živnostenské oprávnění (rozhodnutí R15)
+
+| | |
+|---|---|
+| **Stav** | otevřeno, **na odpovědnosti majitele** (R15, 25. 11. 2026) |
+| **Co chybí** | živnost Hodinářství (servis, opravy, sestavování hodinek) a obor č. 49 „maloobchod s použitým zbožím“ (prodej vintage hodinek a originálních strojků) |
+| **Řeší** | majitel osobně (absolvovaný hodinářský kurz; doklady posoudí živnostenský úřad) |
+| **Dočasné nastavení webu** | `SERVICES_OFFERED = false`: web nabízí jen prodej hotových hodinek. Stránka Služby, poptávka servisu a podmínky zakázkové výroby nejsou zveřejněné, staré adresy se dočasně přesměrují (302) |
+| **Dokumenty** | bez zmínek o externích hodinářích; zakázky, servis a renovace v dokumentech jen při `SERVICES_OFFERED = true` |
+| **Upozornění agenta** | prodej použitých hodinek pokrývá až obor č. 49 (doplnění zdarma). Popisy hodinek uvádějí, že strojek prošel servisem v ateliéru: to je pravdivé, ale odpovídá to činnosti Hodinářství |
+| **Uzavření** | majitel pošle výpis z rejstříku → agent ověří v RŽP, přepne `SERVICES_OFFERED` a zapíše uzavření |
+
+Části 2c a 2d (odpovědný zástupce, § 34) jsou rozbor možností. Majitel je **neuplatnil**.
 
 ## 3. Upozornění
 

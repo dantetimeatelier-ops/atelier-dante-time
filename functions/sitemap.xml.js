@@ -1,10 +1,10 @@
 // Mapa webu včetně všech zveřejněných hodinek
-import { SITE, PAGES } from '../src/site.mjs';
+import { SITE, PAGES, SERVICES_OFFERED } from '../src/site.mjs';
 import { ALL_LEGAL } from '../src/legal/docs.mjs';
 
 export const onRequestGet = async ({ env }) => {
   const urls = [];
-  for (const key of ['home', 'collection', 'services', 'about', 'care', 'contact']) {
+  for (const key of ['home', 'collection', ...(SERVICES_OFFERED ? ['services'] : []), 'about', 'care', 'contact']) {
     urls.push({ loc: PAGES[key].cs, alt: PAGES[key].en }, { loc: PAGES[key].en, alt: PAGES[key].cs });
   }
   for (const d of ALL_LEGAL) urls.push({ loc: d.path });

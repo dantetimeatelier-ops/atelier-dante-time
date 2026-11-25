@@ -52,7 +52,7 @@ nameservery WEDOS (viz bod 6).
 
 ## 5. Etapa C – spuštění nového webu (až po schválení majitelem)
 
-Podmínky: schválené právní dokumenty, vyřešené živnostenské oprávnění, nastavená
+Podmínky: schválené právní dokumenty, otevřený bod L1 evidován (R15), nastavená
 doprava a ceny v administraci zkušební verze, etapa B dokončena.
 
 1. Agent nastaví datum účinnosti právních dokumentů a finální číslo verze.

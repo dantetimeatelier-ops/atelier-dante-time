@@ -6,7 +6,7 @@ import { writeAssetVersion } from './asset-version.mjs';
 // Otisk stylů musí vzniknout dřív, než se načte vzhled stránek (proto dynamické importy)
 writeAssetVersion();
 const { layout, hero } = await import('../src/layout.mjs');
-const { PAGES, SITE } = await import('../src/site.mjs');
+const { PAGES, SITE, SERVICES_OFFERED } = await import('../src/site.mjs');
 const M = await import('../src/pages/marketing.mjs');
 const S = await import('../src/pages/shop.mjs');
 const { ALL_LEGAL } = await import('../src/legal/docs.mjs');
@@ -33,7 +33,12 @@ async function page(urlPath, html) {
 const common = { shop, banner: SHOP_BANNER[MODE] };
 
 // Prezentační stránky v obou jazycích
-for (const fn of [M.home, M.about, M.services, M.care, M.contact, S.cart]) {
+// Služby jen při SERVICES_OFFERED (otevřený právní bod L1). Jinak dočasné přesměrování starých adres.
+if (!SERVICES_OFFERED) {
+  await writeFile(path.join(DIST, '_redirects'), ['/services /kolekce 302', '/services.html /kolekce 302', '/en/services /en/collection 302',
+    '/zakazkova-vyroba /terms 302', '/en/custom-work /en/terms 302'].join('\n') + '\n');
+}
+for (const fn of [M.home, M.about, ...(SERVICES_OFFERED ? [M.services] : []), M.care, M.contact, S.cart]) {
   for (const lang of ['cs', 'en']) {
     const p = fn(lang);
     const other = lang === 'cs' ? 'en' : 'cs';

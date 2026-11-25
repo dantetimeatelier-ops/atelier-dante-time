@@ -1,6 +1,6 @@
 // Sdílený vzhled všech stránek: <head>, hlavička, patička.
 // Používá ho generátor statických stránek i serverové funkce (katalog).
-import { SITE, PAGES, INDEPENDENCE, OPERATOR } from './site.mjs';
+import { SITE, PAGES, INDEPENDENCE, OPERATOR, SERVICES_OFFERED } from './site.mjs';
 import { UI } from './i18n/ui.mjs';
 import { ASSET_V } from './asset-version.mjs';
 const asset = (u) => (u.startsWith('/assets/') ? `${u}?v=${ASSET_V}` : u);
@@ -27,7 +27,7 @@ function nav(lang, active, shopEnabled) {
   const t = UI[lang];
   const items = [
     ['collection', t.nav_collection],
-    ['services', t.nav_services],
+    ...(SERVICES_OFFERED ? [['services', t.nav_services]] : []),
     ['about', t.nav_about],
     ['contact', t.nav_contact],
   ];
@@ -136,7 +136,7 @@ ${o.body}
       <h2 id="f-atelier">${L('Ateliér', 'Atelier')}</h2>
       <ul>
         <li><a href="${PAGES.collection[lang]}">${esc(t.nav_collection)}</a></li>
-        <li><a href="${PAGES.services[lang]}">${esc(t.nav_services)}</a></li>
+        ${SERVICES_OFFERED ? `<li><a href="${PAGES.services[lang]}">${esc(t.nav_services)}</a></li>` : ''}
         <li><a href="${PAGES.about[lang]}">${esc(t.nav_about)}</a></li>
         <li><a href="${PAGES.care[lang]}">${esc(t.footer_care)}</a></li>
         <li><a href="${PAGES.contact[lang]}">${esc(t.nav_contact)}</a> · <a href="mailto:${SITE.email}">${SITE.email}</a></li>
@@ -149,7 +149,7 @@ ${o.body}
         <li><a href="${legalHref('/returns')}">${L('Vrácení do 14 dnů', '14-day returns')}</a> · <a href="${lang === 'en' ? '/odstoupeni' : '/odstoupeni'}">${L('odstoupit online', 'withdraw online')}</a></li>
         <li><a href="${legalHref('/reklamace')}">${L('Reklamace a záruka 24 měsíců', 'Complaints &amp; 24-month warranty')}</a></li>
         <li><a href="${legalHref('/warranty')}">${L('Doživotní garance pravosti', 'Lifetime authenticity guarantee')}</a></li>
-        <li><a href="${legalHref('/zakazkova-vyroba')}">${L('Servis a zakázky na míru – podmínky', 'Service &amp; commissions – terms')}</a></li>
+        ${SERVICES_OFFERED ? `<li><a href="${legalHref('/zakazkova-vyroba')}">${L('Servis a zakázky na míru – podmínky', 'Service &amp; commissions – terms')}</a></li>` : ''}
       </ul>
     </section>
     <section aria-labelledby="f-follow">

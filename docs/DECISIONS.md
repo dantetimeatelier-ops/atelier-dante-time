@@ -96,3 +96,16 @@ majitel je zveřejňuje na Instagramu. Do katalogu se přidávají jen fotografi
 Původní osobní účet se pro nové objednávky nepoužívá. Dříve vystavené doklady se nemění.
 **Technicky:** jediné místo `src/site.mjs` (OPERATOR); objednávky a faktury si účet ukládají
 (migrace 0006), proto pozdější změna účtu staré doklady neovlivní.
+
+## R15 – Živnostenské oprávnění a nabídka webu (2026-11-25)
+**Rozhodl:** majitel
+**Rozhodnutí:** Odpovědného zástupce se neustanovuje. Majitel absolvoval hodinářský kurz
+a rozšíření živnostenského oprávnění si vyřeší osobně. Záležitost zůstává na odpovědnosti
+majitele a eviduje se jako **otevřený právní bod L1** (`docs/LEGAL-REVIEW.md`, část 2e).
+Web se zveřejní s nabídkou činností, které pokrývá současné oprávnění, tedy s prodejem
+hotových hodinek. Servis, renovace a zakázky pro zákazníky se do vyřešení nenabízejí.
+Dokumenty neuvádějí nepravdivé informace o externích hodinářích. Design, fotografie
+a produkty zůstávají beze změny.
+**Technicky:** přepínač `SERVICES_OFFERED` v `src/site.mjs` (false). Po zápisu oprávnění
+ho agent na pokyn majitele přepne na true a stránka Služby, poptávka servisu a podmínky
+zakázkové výroby se vrátí.

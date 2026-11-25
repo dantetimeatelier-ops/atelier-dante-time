@@ -174,10 +174,10 @@ try {
   step('e-maily (potvrzení, platba, odeslání, odstoupení) připraveny');
 
   // 8) Poptávka z webu
-  await shop.goto(`${BASE}/services#poptavka`);
+  await shop.goto(`${BASE}/kontakt`);
   await shop.getByLabel('Jméno').fill('Petr Poptávka');
   await shop.getByLabel('E-mail').fill('petr@example.com');
-  await shop.getByLabel('Zpráva').fill('Prosím o servis hodinek PRIM, přestaly jít.');
+  await shop.getByLabel('Zpráva').fill('Mám zájem o hodinky PRIM z kolekce.');
   await shop.getByRole('button', { name: 'Odeslat poptávku' }).click();
   await shop.getByText(/poptávka byla odeslána/).waitFor();
   await page.goto(`${BASE}/admin/#/poptavky`);

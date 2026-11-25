@@ -4,6 +4,15 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-25 – Claude – claude/eshop-platforma (R15: nabídka podle oprávnění)
+**Hotovo:** přepínač `SERVICES_OFFERED` (false): bez stránky Služby, poptávky servisu
+a podmínek zakázek; přesměrování starých adres (302); dokumenty bez zmínek o externích
+hodinářích; testy hlídají, že se služby nenabízejí. Otevřený právní bod L1 (LEGAL-REVIEW 2e).
+**Další krok:** schválení dokumentů, doména etapy A–C, spuštění. Pak Dante Time OS.
+**Pozor na:** služby zapnout jen na výslovný pokyn majitele po zápisu oprávnění.
+
+---
+
 ## 2026-11-25 – Claude – claude/eshop-platforma (závěrečná kontrola, doména, živnost)
 **Hotovo:** právní dokumenty 3.2 (Resend, spolupracující hodinář, Facebook; CZ = EN),
 rozbor živnostenského oprávnění (LEGAL-REVIEW 2c: Hodinářství + obor č. 49 pro použité

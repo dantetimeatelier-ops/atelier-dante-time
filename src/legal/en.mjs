@@ -1,6 +1,6 @@
 // Legal documents – ENGLISH VERSION (draft 3). Same content as the Czech version (src/legal/cs.mjs).
 // ⚖️ LEVEL 3 – changes only with the owner's approval.
-import { SITE, OPERATOR, INDEPENDENCE } from '../site.mjs';
+import { SITE, OPERATOR, INDEPENDENCE, SERVICES_OFFERED as SVC } from '../site.mjs';
 import { head, toc, email, seller, vatText, returnAddress, coi, ecc, tradeOffice, registerText, LEGAL_VERSION } from './common.mjs';
 
 const L = 'en';
@@ -16,7 +16,7 @@ ${toc(L, [['t1', 'Introduction'], ['t2', 'Watches, components and materials'], [
 <li>The seller is ${seller(L)}, e-mail ${email} (the “Seller” or the “Atelier”).</li>
 <li>The buyer is a consumer or a business concluding a purchase contract with the Seller (the “Buyer”). A consumer is a natural person acting outside their trade, business or profession (Section 419 of Act No. 89/2012 Coll., the Czech Civil Code, the “Civil Code”).</li>
 <li>${INDEPENDENCE.en}</li>
-<li>The following form part of these Terms: <a href="/en/complaints">Complaints Procedure</a>, <a href="/en/withdrawal">Withdrawal and Returns</a> (including the model form), <a href="/en/warranty">Warranty and Lifetime Authenticity Guarantee</a>, <a href="/en/shipping-payment">Shipping and Payment</a> and <a href="/en/eu-sales">Sales to EU Countries</a>. Service, restoration, rebuilds and custom work are governed by the <a href="/en/custom-work">Custom Work and Service Terms</a>.</li>
+<li>The following form part of these Terms: <a href="/en/complaints">Complaints Procedure</a>, <a href="/en/withdrawal">Withdrawal and Returns</a> (including the model form), <a href="/en/warranty">Warranty and Lifetime Authenticity Guarantee</a>, <a href="/en/shipping-payment">Shipping and Payment</a> and <a href="/en/eu-sales">Sales to EU Countries</a>.${SVC ? ' Service, restoration, rebuilds and custom work are governed by the <a href="/en/custom-work">Custom Work and Service Terms</a>.' : ''}</li>
 <li>The contract may be concluded in Czech or English. Both language versions of these Terms have the same content.</li>
 </ol>
 <h2 id="t2">2. Watches, components and materials</h2>
@@ -96,10 +96,10 @@ export const claims = doc('claims', '/en/complaints', 'Complaints Procedure',
   'Atelier Dante Time complaints procedure: 24-month warranty, deadlines and how to make a claim.',
   () => `${head(L)}
 <h2>1. Scope</h2>
-<ul><li><strong>finished watches</strong> bought from the Seller (purchase contract),</li><li><strong>custom builds</strong> assembled from the Atelier’s parts to the customer’s specification,</li><li><strong>service, restoration and rebuilds</strong> of the customer’s watch (contract for work) – the work done and newly supplied components.</li></ul>
+<ul><li><strong>finished watches</strong> bought from the Seller (purchase contract),</li>${SVC ? '<li><strong>custom builds</strong> assembled from the Atelier’s parts to the customer’s specification,</li><li><strong>service, restoration and rebuilds</strong> of the customer’s watch (contract for work) – the work done and newly supplied components.</li>' : ''}</ul>
 <p>Operator: ${seller(L)}, e-mail ${email}.</p>
 <h2>2. Warranty period and liability for defects</h2>
-<ol><li>The watches sold carry a <strong>24-month warranty</strong> from receipt (see <a href="/en/warranty">Warranty and Authenticity Guarantee</a>).</li><li>Consumers also have statutory rights for defects for 24 months from receipt, including for pre-owned watches. A defect appearing within one year of receipt is presumed to have existed at receipt.</li><li>For service, restoration and rebuilds we are liable for the work done and new components for 24 months from handover.</li></ol>
+<ol><li>The watches sold carry a <strong>24-month warranty</strong> from receipt (see <a href="/en/warranty">Warranty and Authenticity Guarantee</a>).</li><li>Consumers also have statutory rights for defects for 24 months from receipt, including for pre-owned watches. A defect appearing within one year of receipt is presumed to have existed at receipt.</li>${SVC ? '<li>For service, restoration and rebuilds we are liable for the work done and new components for 24 months from handover.</li>' : ''}</ol>
 <h2>3. What is not a defect</h2>
 <ul><li>condition and features stated in the description (patina, signs of use, replaced or new components) and defects for which a lower price was agreed,</li><li>for pre-owned watches, wear corresponding to the degree of use at receipt,</li><li>normal wear (strap, crystal, case surface, gradual wear of gold plating),</li><li>a rate deviation within the indicative tolerance of <strong>±30 seconds per day</strong> for vintage mechanical watches, depending on the calibre, technical condition and age (a different tolerance stated for a piece prevails),</li><li>damage caused by drops, impacts, water or moisture (unless expressly water-resistant), magnetism, chemicals or improper intervention by third parties,</li><li>damage resulting from not following the <a href="/en/care">watch care recommendations</a>.</li></ul>
 <h2>4. How to make a claim</h2>
@@ -124,7 +124,7 @@ export const withdrawal = doc('withdrawal', '/en/withdrawal', 'Withdrawal and Re
 <h2>4. Refund</h2>
 <ol><li>We refund all payments received, including delivery costs (up to the cheapest delivery method offered), within 14 days of withdrawal, in the same currency and by the same means used, unless agreed otherwise.</li><li>We may withhold the refund until we receive the watch or proof that it has been sent.</li></ol>
 <h2>5. When withdrawal is not possible</h2>
-<ul><li><strong>custom builds and rebuilds made to your specification</strong> (Section 1837(d) of the Civil Code). Rebuilds and builds sold in the Shop as finished pieces can be returned,</li><li><strong>service and restoration</strong> fully completed with your express consent before the withdrawal period expired. See <a href="/en/custom-work">Custom Work and Service</a>.</li></ul>
+<ul><li><strong>custom builds and rebuilds made to your specification</strong> (Section 1837(d) of the Civil Code). Rebuilds and builds sold in the Shop as finished pieces can be returned${SVC ? ',' : '.'}</li>${SVC ? '<li><strong>service and restoration</strong> fully completed with your express consent before the withdrawal period expired. See <a href="/en/custom-work">Custom Work and Service</a>.</li>' : ''}</ul>
 <h2 id="damage">6. Damaged parcel</h2>
 <p>Record visible damage with the carrier or refuse the parcel, take photos and write to us within 2 working days. A later claim does not affect your statutory rights.</p>
 <h2 id="form">7. Model withdrawal form</h2>
@@ -160,8 +160,8 @@ export const warranty = doc('warranty', '/en/warranty', 'Warranty and Lifetime A
 <li><strong>Remedy for proven non-authenticity</strong>, at the entitled person’s choice: <strong>replacement</strong> with an original component at the Atelier’s cost if available, or a <strong>refund of the purchase price</strong> paid to the Atelier against return of the watch. If no original component is available, the purchase price is refunded.</li>
 <li><strong>Statutory rights:</strong> the guarantee <strong>does not limit</strong> statutory rights for defects; consumers may always assert them instead.</li>
 </ol>
-<h2>3. Customers’ watches (service, restoration, rebuilds)</h2>
-<p>For jobs, the authenticity guarantee covers movements, dials and hands supplied by the Atelier and expressly declared as original in the work report. The Atelier does not verify the original components of a customer’s watch unless agreed.</p>
+${SVC ? `<h2>3. Customers’ watches (service, restoration, rebuilds)</h2>
+<p>For jobs, the authenticity guarantee covers movements, dials and hands supplied by the Atelier and expressly declared as original in the work report. The Atelier does not verify the original components of a customer’s watch unless agreed.</p>` : ''}
 <p class="doc-meta">${INDEPENDENCE.en}</p>`);
 
 export const custom = doc('custom', '/en/custom-work', 'Custom Work, Service and Restoration',
@@ -174,7 +174,7 @@ export const custom = doc('custom', '/en/custom-work', 'Custom Work, Service and
 <tr><td><strong>Rebuild</strong></td><td>modification of the customer’s watch to their specification</td><td>contract for work</td></tr>
 <tr><td><strong>Custom build</strong></td><td>assembly of a watch from the Atelier’s parts to the customer’s specification</td><td>purchase contract for goods to be made</td></tr>
 </tbody></table>
-<p>Jobs are carried out by ${seller(L)} (the “Atelier”). The Atelier may have specialised watchmaking work performed by a partner watchmaker holding the relevant trade licence. The Atelier is liable for such work as if it had performed it itself.</p>
+<p>Jobs are carried out by ${seller(L)} (the “Atelier”).</p>
 <h2>2. Price and approval of work</h2>
 <ol><li>The Atelier sends an offer with the scope of work, price and indicative timing. The contract is concluded by written (e-mail) acceptance.</li><li><strong>The customer must approve the price and any additional work in advance.</strong> The Atelier does not carry out work beyond the approved offer without consent.</li><li>For custom builds and rebuilds, a <strong>50% deposit</strong> is payable before work starts and is credited to the price. The balance is payable before handover.</li><li>${vatText(L)}</li></ol>
 <h2>3. Timing</h2>
@@ -228,7 +228,7 @@ export const privacy = doc('privacy', '/en/privacy', 'Privacy Policy',
 </tbody></table>
 <p>No profiling, automated decision-making or marketing messages.</p>
 <h2>3. Recipients and processors</h2>
-<ul><li><strong>Cloudflare, Inc.</strong> – hosting, database (stored in the EU) and photos,</li><li><strong>Google</strong> – Gmail mailbox,</li><li><strong>Resend</strong> – sending e-mails from the website (order confirmations, invoices, replies to enquiries),</li><li><strong>partner watchmaker</strong> – carrying out specialised work on a job (only data necessary for the job),</li><li><strong>Packeta (Zásilkovna s.r.o.)</strong>, <strong>Czech Post (Česká pošta, s.p.)</strong> and other carriers depending on the destination – delivery,</li><li><strong>Česká spořitelna, a.s.</strong> – receipt of payments (as an independent controller),</li><li>the payment gateway provider – only once activated (its name will be added here),</li><li>public authorities where required by law.</li></ul>
+<ul><li><strong>Cloudflare, Inc.</strong> – hosting, database (stored in the EU) and photos,</li><li><strong>Google</strong> – Gmail mailbox,</li><li><strong>Resend</strong> – sending e-mails from the website (order confirmations, invoices, replies to enquiries),</li><li><strong>Packeta (Zásilkovna s.r.o.)</strong>, <strong>Czech Post (Česká pošta, s.p.)</strong> and other carriers depending on the destination – delivery,</li><li><strong>Česká spořitelna, a.s.</strong> – receipt of payments (as an independent controller),</li><li>the payment gateway provider – only once activated (its name will be added here),</li><li>public authorities where required by law.</li></ul>
 <h2>4. Transfers outside the EU</h2>
 <p>Cloudflare, Google and Resend may process data in the USA based on the Commission’s adequacy decision (EU–US Data Privacy Framework) or standard contractual clauses.</p>
 <h2>5. Your rights</h2>
@@ -296,4 +296,4 @@ export const operator = doc('operator', '/en/legal-notice', 'Legal Notice',
 <ul><li>Czech Trade Inspection Authority – <a href="https://www.coi.gov.cz" rel="noopener noreferrer">coi.gov.cz</a></li><li>Trade licensing: ${tradeOffice(L)}</li><li>Precious metal articles: Czech Assay Office (Puncovní úřad) – <a href="https://www.puncovniurad.cz" rel="noopener noreferrer">puncovniurad.cz</a></li><li>Personal data: Office for Personal Data Protection – <a href="https://uoou.gov.cz" rel="noopener noreferrer">uoou.gov.cz</a></li></ul>
 <p>Dispute resolution: <a href="/en/dispute-resolution">Dispute Resolution</a>.</p>`);
 
-export const DOCS_EN = [terms, claims, withdrawal, warranty, custom, shipping, privacy, cookies, adr, eu, operator];
+export const DOCS_EN = [terms, claims, withdrawal, warranty, ...(SVC ? [custom] : []), shipping, privacy, cookies, adr, eu, operator];
