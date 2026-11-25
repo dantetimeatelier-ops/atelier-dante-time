@@ -15,6 +15,7 @@ import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { demoSql, demoImages } from './demo-data.mjs';
+import { loadCatalog, catalogSql, catalogMedia } from './catalog.mjs';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const PROJECT = 'atelier-dante-time';
@@ -136,6 +137,26 @@ if (!production) {
     run(['kv', 'key', 'put', img.key, '--namespace-id', kv.id, '--remote', '--path', path.join(ROOT, img.file), '--metadata', '{"type":"image/webp"}'], { cwd: scratch, capture: true });
   }
   console.log('hotovo');
+}
+
+// 7b) Katalog hodinek z repozitáře (katalog/<slug>/) – zkušební i ostrá verze
+{
+  const list = loadCatalog();
+  step(`Katalog hodinek (${list.length})`);
+  if (list.length) {
+    // Fotografie: nahrát jen ty, které v úložišti ještě nejsou (název obsahuje otisk obsahu)
+    const existing = new Set(JSON.parse((s => s.slice(s.indexOf('[')))(run(['kv', 'key', 'list', '--namespace-id', kv.id, '--remote', '--prefix', 'catalog/'], { cwd: scratch, capture: true }))).map((k) => k.name));
+    let uploaded = 0;
+    for (const m of catalogMedia(list)) {
+      if (existing.has(m.key)) continue;
+      run(['kv', 'key', 'put', m.key, '--namespace-id', kv.id, '--remote', '--path', m.file, '--metadata', '{"type":"image/webp"}'], { cwd: scratch, capture: true });
+      uploaded++;
+    }
+    const catFile = path.join(scratch, 'katalog.sql');
+    writeFileSync(catFile, catalogSql(list));
+    run(['d1', 'execute', names.d1, '--remote', '--file', catFile, ...(env ? ['--env', env] : [])], { capture: true });
+    console.log(`hodinky zapsány: ${list.map((w) => `${w.slug} (${w.status})`).join(', ')}; nových fotografií ${uploaded}`);
+  }
 }
 
 // 8) Sestavení a nasazení

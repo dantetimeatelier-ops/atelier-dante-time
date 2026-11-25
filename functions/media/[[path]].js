@@ -2,7 +2,7 @@
 import { media } from '../../server/media.js';
 export const onRequestGet = async ({ env, params }) => {
   const key = (Array.isArray(params.path) ? params.path : [params.path]).join('/');
-  if (!/^products\/[a-z0-9]+\/[a-z0-9-]+\.(jpg|webp)$/.test(key)) return new Response('Nenalezeno', { status: 404 });
+  if (!/^(products\/[a-z0-9]+|catalog\/[a-z0-9-]+)\/[a-z0-9-]+\.(jpg|webp)$/.test(key)) return new Response('Nenalezeno', { status: 404 });
   const obj = await media(env).get(key);
   if (!obj) return new Response('Nenalezeno', { status: 404 });
   return new Response(obj.body, { headers: {

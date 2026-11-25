@@ -125,3 +125,31 @@ test('puncovní zákon: pozlacené pouzdro bez klamavých výrazů, drahý kov j
   assert.match(puncCheck({ ...gold, precious_weight_g: null }, { punc_notified: '1' }), /hmotnost/);
   assert.equal(puncCheck({ status: 'draft', case_metal: 'pozlaceno', dial: 'zlatý' }), null); // koncept se nekontroluje
 });
+
+test('katalog hodinek: zápis do databáze, prodané kusy si stav ponechají, kontrola punc', async () => {
+  const { loadCatalog, catalogSql } = await import('../../scripts/catalog.mjs');
+  const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const dir = mkdtempSync(`${tmpdir()}/kat-`);
+  const put = (slug, w) => { mkdirSync(`${dir}/${slug}`, { recursive: true }); writeFileSync(`${dir}/${slug}/hodinky.json`, JSON.stringify(w)); };
+  mkdirSync(`${dir}/prim-test`); writeFileSync(`${dir}/prim-test/01-l.webp`, 'a'); writeFileSync(`${dir}/prim-test/01-s.webp`, 'b');
+  put('prim-test', { status: 'available', title: "PRIM Sport – test", kind: 'original', brand: 'PRIM', case_metal: 'pozlaceno', dial: 'v barvě zlata', price_czk: 12900, fotky: [{ soubor: '01', alt: 'PRIM' }] });
+  const list = loadCatalog(dir);
+  assert.equal(list.length, 1);
+  const db = new DatabaseSync(':memory:');
+  for (const m of ['0001_zaklad', '0002_druhy_kovy_dobirka_faktury', '0003_eu_meny_garance', '0004_punc_pojisteni_eu']) db.exec(readFileSync(new URL(`../../migrations/${m}.sql`, import.meta.url), 'utf8'));
+  db.exec(catalogSql(list));
+  assert.equal(db.prepare("SELECT status FROM products WHERE id='kat-prim-test'").get().status, 'available');
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM product_images WHERE product_id='kat-prim-test'").get().n, 1);
+  db.exec("UPDATE products SET status='sold' WHERE id='kat-prim-test'");
+  db.exec(catalogSql(list)); // další nasazení
+  assert.equal(db.prepare("SELECT status FROM products WHERE id='kat-prim-test'").get().status, 'sold');
+  // Klamavé označení u pozlaceného pouzdra zastaví nasazení
+  put('prim-test', { status: 'available', title: 'PRIM zlaté', case_metal: 'pozlaceno', price_czk: 1, fotky: [{ soubor: '01' }] });
+  assert.throws(() => loadCatalog(dir), /klamat/);
+});
+
+test('katalog hodinek v repozitáři je platný', async () => {
+  const { loadCatalog } = await import('../../scripts/catalog.mjs');
+  assert.doesNotThrow(() => loadCatalog());
+});
