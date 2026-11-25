@@ -20,7 +20,7 @@ export const CATALOG_DIR = path.join(ROOT, 'katalog');
 
 export const CATALOG_FIELDS = ['title', 'kind', 'brand', 'model', 'reference', 'year', 'movement', 'movement_type', 'case_metal', 'hallmark', 'plating',
   'precious_weight_g', 'case_material', 'case_diameter_mm', 'lug_width_mm', 'crystal', 'water_resistance', 'dial', 'strap', 'condition', 'service_done',
-  'original_parts', 'authenticity_parts', 'authenticity_note', 'replaced_parts', 'accessories', 'manufacturer_info', 'safety_info',
+  'original_parts', 'authenticity_parts', 'authenticity_note', 'serial_ref', 'replaced_parts', 'accessories', 'manufacturer_info', 'safety_info',
   'description_cs', 'description_en', 'seo_title', 'seo_description', 'price_czk', 'featured', 'sort_order'];
 const STATUSES = ['draft', 'in_progress', 'available'];
 
