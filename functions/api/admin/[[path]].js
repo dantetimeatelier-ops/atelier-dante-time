@@ -7,6 +7,7 @@ import { qrSvg } from '../../../server/qr.js';
 import { media } from '../../../server/media.js';
 import { markPaid, markShipped, cancelOrder, shopConfig, createInvoice } from '../../../server/orders.js';
 import { describe, productName } from '../../../src/shop/describe.mjs';
+import { puncCheck } from '../../../src/shop/punc.mjs';
 import { slugify } from '../../../src/shop/format.mjs';
 import { OPERATOR } from '../../../src/site.mjs';
 
@@ -97,7 +98,18 @@ route('GET', 'dashboard', async ({ env }) => {
   if (!cfg.shipping.length) warnings.push('Nejsou nastaveny ceny dopravy (Nastavení)');
   if (!cfg.payment.length) warnings.push('Není dostupný žádný způsob platby');
   if (env.EMAIL_PROVIDER !== 'resend') warnings.push('E-maily se zatím neodesílají, jen ukládají (chybí poskytovatel e-mailů)');
+  // Hlídání limitů DPH u neplátce: obrat za kalendářní rok (vystavené faktury) a prodej spotřebitelům do jiných zemí EU
+  const yearStart = `${new Date().getUTCFullYear()}-01-01`;
+  const live = mode(env) === 'live' ? "mode = 'live'" : '1=1';
+  const turnover = (await q(`SELECT COALESCE(SUM(total),0) AS s FROM invoices WHERE cancelled_at IS NULL AND issued_at >= ? AND ${live}`, yearStart)).s;
+  const euSales = (await q(`SELECT COALESCE(SUM(i.total),0) AS s FROM invoices i JOIN orders o ON o.id = i.order_id WHERE i.cancelled_at IS NULL AND i.issued_at >= ? AND o.billing_country <> 'CZ' AND (o.company_ico IS NULL OR o.company_ico = '') AND ${live.replace('mode', 'i.mode')}`, yearStart)).s;
+  const eurRate = Number(cfg.eurRate) || 25;
+  const vatLimit = 2000000;
+  const euLimitCzk = Math.round(10000 * eurRate);
+  if (!OPERATOR.vatPayer && turnover >= vatLimit * 0.8) warnings.push(`Obrat letos ${turnover.toLocaleString('cs-CZ')} Kč se blíží limitu pro registraci k DPH (2 000 000 Kč). Poraďte se s účetní.`);
+  if (euSales >= euLimitCzk * 0.8) warnings.push(`Prodej spotřebitelům do jiných zemí EU letos ${euSales.toLocaleString('cs-CZ')} Kč se blíží limitu 10 000 € (DPH v zemi zákazníka / OSS). Poraďte se s účetní.`);
   return json({
+    turnover, euSales, vatLimit, euLimitCzk,
     mode: mode(env), products: counts, warnings,
     inquiriesNew: (await q("SELECT COUNT(*) AS n FROM inquiries WHERE status='nova'")).n,
     ordersAwaiting: (await q("SELECT COUNT(*) AS n FROM orders WHERE status='awaiting_payment'")).n,
@@ -108,7 +120,7 @@ route('GET', 'dashboard', async ({ env }) => {
 });
 
 // --- Hodinky -------------------------------------------------------------------
-function productInput(body, existing = {}) {
+function productInput(body, existing = {}, settings = {}) {
   const d = {};
   for (const [k, max] of Object.entries(PRODUCT_TEXT)) if (k in body) d[k] = str(body[k], { max, name: k });
   if ('status' in body) d.status = oneOf(body.status, STATUSES, 'stav');
@@ -132,10 +144,9 @@ function productInput(body, existing = {}) {
   if (!merged.title || merged.title === 'Hodinky' || merged.title === autoOld) merged.title = productName({ ...merged, title: null });
   d.title = merged.title;
   if (d.status === 'available' && merged.price_czk == null) throw new HttpError('Pro zveřejnění „Skladem“ vyplňte cenu');
-  // Zákon o puncovnictví: pouzdro z drahého kovu jen s údajem o ryzosti a puncu
-  if (['available', 'in_progress'].includes(merged.status) && ['zlato', 'stribro', 'platina'].includes(merged.case_metal) && !merged.hallmark) {
-    throw new HttpError('U pouzdra z drahého kovu vyplňte ryzost a puncovní značku (např. „Au 585/1000, česká puncovní značka“). Bez puncu nelze prodávat.');
-  }
+  // Puncovní zákon: drahé kovy jen s puncem, hmotností a po oznámení; obecné kovy bez klamavých výrazů
+  const puncErr = puncCheck(merged, settings);
+  if (puncErr) throw new HttpError(puncErr);
   return d;
 }
 
@@ -150,7 +161,7 @@ route('GET', 'products', async ({ env }) => {
   return json({ products: await productsWithImages(env, '1=1', [], "CASE status WHEN 'draft' THEN 0 WHEN 'in_progress' THEN 1 WHEN 'available' THEN 2 WHEN 'reserved' THEN 3 ELSE 4 END, updated_at DESC", 500) });
 });
 route('POST', 'products', async ({ env, body, user }) => {
-  const d = productInput(body);
+  const d = productInput(body, {}, await getSettings(env));
   const id = randomId(8);
   d.slug = await uniqueSlug(env, [d.brand, d.model, d.year].filter(Boolean).join(' ') || d.title, id);
   d.status = d.status || 'draft';
@@ -168,7 +179,7 @@ route('GET', 'products/:id', async ({ env, params }) => {
 route('PUT', 'products/:id', async ({ env, params, body, user }) => {
   const old = await env.DB.prepare('SELECT * FROM products WHERE id = ?').bind(params.id).first();
   if (!old) throw new HttpError('Hodinky nenalezeny', 404);
-  const d = productInput(body, old);
+  const d = productInput(body, old, await getSettings(env));
   if (d.status && d.status !== old.status) {
     if (old.status === 'reserved' && d.status !== 'reserved') {
       const o = await env.DB.prepare("SELECT number FROM orders WHERE id=? AND status='awaiting_payment'").bind(old.reserved_order_id).first();
@@ -386,7 +397,7 @@ route('POST', 'invoices/:id/cancel', async ({ env, params, user }) => {
 
 // --- Nastavení, e-maily, historie ------------------------------------------------------
 const SETTINGS = { shipping_zasilkovna_czk: 'int', shipping_balikovna_czk: 'int', shipping_osobni_enabled: 'bool', reservation_hours_bank: 'int', reservation_minutes_card: 'int', cod_enabled: 'bool', cod_fee_czk: 'int',
-  eur_rate: 'num', insured_threshold_czk: 'int', insured_price_czk: 'int', insured_eu_price_czk: 'int', shipping_eu_json: 'json' };
+  eur_rate: 'num', punc_notified: 'bool', shipping_eu_insured_json: 'json', insured_threshold_czk: 'int', insured_price_czk: 'int', insured_eu_price_czk: 'int', shipping_eu_json: 'json' };
 route('GET', 'settings', async ({ env }) => {
   const s = await getSettings(env);
   return json({

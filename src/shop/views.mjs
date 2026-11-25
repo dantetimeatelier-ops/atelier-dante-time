@@ -1,8 +1,8 @@
 // Vykreslení katalogu a detailu hodinek (používají serverové funkce)
 import { esc, hero } from '../layout.mjs';
 import { PAGES, SITE } from '../site.mjs';
-import { formatCzk, STATUS, KIND, METAL } from './format.mjs';
-import { productName, productJsonLd, authenticityParts, AUTH_PARTS } from './describe.mjs';
+import { formatCzk, STATUS, KIND, METAL, PRECIOUS } from './format.mjs';
+import { productName, productJsonLd, authenticityParts, AUTH_PARTS, describe } from './describe.mjs';
 import { INDEPENDENCE } from '../site.mjs';
 import { inquiryForm } from '../pages/marketing.mjs';
 
@@ -20,6 +20,7 @@ export function productCard(p, lang) {
     <span class="status ${p.status}">${esc(st)}</span>
     <h3 style="margin-top:10px">${esc(productName(p))}</h3>
     <div class="sub">${esc([p.kind && p.kind !== 'original' ? KIND[p.kind]?.[lang] : null, p.year, p.movement, p.case_diameter_mm && `${p.case_diameter_mm} mm`].filter(Boolean).join(' · '))}</div>
+    ${p.case_metal === 'pozlaceno' || PRECIOUS.includes(p.case_metal) ? `<div class="sub metal">${esc(METAL[p.case_metal][lang])}</div>` : ''}
     <div style="margin-top:10px">${price}</div>
   </div>
 </a>`;
@@ -73,7 +74,8 @@ export function productPage({ p, images, lang, mode, origin }) {
   const ld = productJsonLd(p, images, origin, lang);
   return {
     title: p.seo_title || name,
-    description: p.seo_description || desc.slice(0, 155),
+    // Bez ručně vyplněného popisu se použije automatický popis z parametrů (meta description nesmí chybět)
+    description: p.seo_description || desc.slice(0, 155) || (lang === 'cs' ? describe(p).seo_description : describe(p).description_en.slice(0, 155)),
     image: main ? `${origin}/media/${main.key_large}` : undefined,
     ogType: 'product',
     head: `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>`,

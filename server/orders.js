@@ -27,6 +27,8 @@ export async function shopConfig(env, lang = 'cs', { country = 'CZ', itemsTotal 
   const insuredOnly = insuredFrom != null && itemsTotal >= insuredFrom;
   let euPrices = {};
   try { euPrices = JSON.parse(s.shipping_eu_json || '{}'); } catch { euPrices = {}; }
+  let euInsured = {};
+  try { euInsured = JSON.parse(s.shipping_eu_insured_json || '{}'); } catch { euInsured = {}; }
 
   const shipping = [];
   if (cc === 'CZ' && !insuredOnly) {
@@ -39,7 +41,7 @@ export async function shopConfig(env, lang = 'cs', { country = 'CZ', itemsTotal 
     shipping.push({ id: 'eu', label: L(`Doprava do země ${countryName(cc, 'cs')} – doručení na adresu`, `Delivery to ${countryName(cc, 'en')} – to your address`), price: num(euPrices[cc]), note: L('Dopravce podle cílové země (např. Zásilkovna a její partneři).', 'Carrier depends on the destination country (e.g. Packeta and its partners).') });
   }
   if (insuredOnly) {
-    const price = num(cc === 'CZ' ? s.insured_price_czk : s.insured_eu_price_czk);
+    const price = num(cc === 'CZ' ? s.insured_price_czk : (euInsured[cc] ?? s.insured_eu_price_czk));
     if (price != null) shipping.push({ id: 'pojistena', label: L('Pojištěná přeprava kurýrem na plnou hodnotu', 'Courier delivery insured for the full value'), price, note: L('U hodinek vyšší hodnoty posíláme jen pojištěnou zásilkou.', 'Higher-value watches are sent only by insured shipment.') });
   }
   if (s.shipping_osobni_enabled === '1') {

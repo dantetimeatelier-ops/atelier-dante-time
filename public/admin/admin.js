@@ -102,6 +102,7 @@
         <a class="stat" href="#/hodinky"><b>${p.available || 0}</b>skladem</a>
         <a class="stat" href="#/hodinky"><b>${(p.draft || 0) + (p.in_progress || 0)}</b>v přípravě</a>
       </div>
+      <div class="card" style="margin-top:12px"><b>Limity DPH (neplátce)</b><p class="small" style="margin:6px 0 0">Obrat letos (vystavené faktury): <b>${d.turnover.toLocaleString('cs-CZ')} Kč</b> z 2 000 000 Kč<br>Prodej spotřebitelům do jiných zemí EU: <b>${d.euSales.toLocaleString('cs-CZ')} Kč</b> z ${d.euLimitCzk.toLocaleString('cs-CZ')} Kč (10 000 €)</p><p class="small muted" style="margin:6px 0 0">Orientační přehled. Rozhodující je evidence vaší účetní.</p></div>
       ${d.withdrawals ? `<a class="card err" style="display:block;margin-top:12px" href="#/odstoupeni">⚠ ${d.withdrawals} odstoupení od smlouvy za 30 dní</a>` : ''}
       <p class="muted small" style="margin-top:16px">Režim e-shopu: <b>${{ preview: 'náhled (bez nákupu)', test: 'testovací', live: 'ostrý' }[d.mode]}</b></p>`;
   };
@@ -370,6 +371,7 @@
   views.nastaveni = async () => {
     const { settings: s, integrations: i } = await api('GET', 'settings');
     let eu = {}; try { eu = JSON.parse(s.shipping_eu_json || '{}'); } catch { eu = {}; }
+    let euIns = {}; try { euIns = JSON.parse(s.shipping_eu_insured_json || '{}'); } catch { euIns = {}; }
     const yes = (v) => (v ? '<span class="chip available">aktivní</span>' : '<span class="chip">neaktivní</span>');
     app.innerHTML = `<h1>Nastavení</h1>
       <form id="setf" class="card"><h2 style="margin-top:0">Doprava</h2>
@@ -384,9 +386,13 @@
         <div class="grid"><label>Cena pojištěné přepravy v ČR (Kč)<input name="insured_price_czk" inputmode="numeric" value="${esc(s.insured_price_czk)}"></label><label>Cena pojištěné přepravy do EU (Kč)<input name="insured_eu_price_czk" inputmode="numeric" value="${esc(s.insured_eu_price_czk)}"></label></div>
         <h2>Platby v eurech</h2>
         <label>Kurz CZK za 1 EUR (prázdné = platba v EUR se nenabízí)<input name="eur_rate" inputmode="decimal" value="${esc(s.eur_rate)}"></label>
-        <details><summary>Doprava do zemí EU (cena v Kč, prázdné = do země nedoručujeme)</summary>
-          <div class="grid" style="margin-top:10px">${EU.filter((c) => c[0] !== 'CZ').map(([c, n]) => `<label>${n}<input data-eu="${c}" inputmode="numeric" value="${esc(eu[c] ?? '')}"></label>`).join('')}</div>
+        <details><summary>Doprava do zemí EU – cena v Kč (prázdné = do země běžně nedoručujeme)</summary>
+          <p class="small muted">Běžná = doprava na adresu. Pojištěná = pro hodinky nad hranicí výše; prázdné = použije se společná cena pojištěné přepravy do EU.</p>
+          <table class="small" style="margin-top:6px"><tr><th>Země</th><th>Běžná</th><th>Pojištěná</th></tr>${EU.filter((c) => c[0] !== 'CZ').map(([c, n]) => `<tr><td>${n}</td><td><input aria-label="${n} – běžná doprava" data-eu="${c}" inputmode="numeric" value="${esc(eu[c] ?? '')}"></td><td><input aria-label="${n} – pojištěná přeprava" data-eu-ins="${c}" inputmode="numeric" value="${esc(euIns[c] ?? '')}"></td></tr>`).join('')}</table>
         </details>
+        <h2>Puncovní úřad</h2>
+        <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="punc_notified" ${s.punc_notified === '1' ? 'checked' : ''} style="width:22px;min-height:22px"> Obchod s hodinkami z drahých kovů a e-shop jsem oznámil Puncovnímu úřadu</label>
+        <p class="small muted">Nutné jen pro pouzdra ze zlata, stříbra nebo platiny. Nerezová a pozlacená pouzdra oznámení nevyžadují. Bez zaškrtnutí nelze hodinky z drahého kovu zveřejnit.</p>
         <h2>Rezervace</h2>
         <div class="grid"><label>Převod – hodin<input name="reservation_hours_bank" inputmode="numeric" value="${esc(s.reservation_hours_bank)}"></label><label>Karta – minut<input name="reservation_minutes_card" inputmode="numeric" value="${esc(s.reservation_minutes_card)}"></label></div>
         <button class="btn primary block">Uložit nastavení</button></form>
@@ -398,7 +404,8 @@
         <tr><th>Odesílání e-mailů</th><td>${yes(i.email)}</td></tr>
       </table><p class="small muted">Integrace se zapínají v Cloudflare podle návodu docs/INTEGRATIONS.md. Ostrý režim a ostré platby jen po vašem rozhodnutí.</p></div>`;
     app.querySelector('#setf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
-      const d = formData(e.target); d.shipping_osobni_enabled = e.target.shipping_osobni_enabled.checked; d.cod_enabled = e.target.cod_enabled.checked;
+      const d = formData(e.target); d.shipping_osobni_enabled = e.target.shipping_osobni_enabled.checked; d.cod_enabled = e.target.cod_enabled.checked; d.punc_notified = e.target.punc_notified.checked;
+      d.shipping_eu_insured_json = Object.fromEntries([...e.target.querySelectorAll('[data-eu-ins]')].map((x) => [x.dataset.euIns, x.value.trim()]));
       d.shipping_eu_json = Object.fromEntries([...e.target.querySelectorAll('[data-eu]')].map((x) => [x.dataset.eu, x.value.trim()]));
       await api('PUT', 'settings', d); toast('Uloženo');
     }); });

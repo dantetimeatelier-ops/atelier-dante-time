@@ -85,7 +85,21 @@ try {
   step('zlaté pouzdro bez puncu zveřejnit nelze');
   await page.getByLabel(/Ryzost a punc/).fill('Au 585/1000, česká puncovní značka');
   await page.getByRole('button', { name: 'Uložit', exact: true }).click();
+  await page.locator('.toast.err', { hasText: 'hmotnost' }).waitFor();
+  await page.getByLabel(/Hmotnost drahého kovu/).fill('9.4');
+  await page.getByRole('button', { name: 'Uložit', exact: true }).click();
+  await page.locator('.toast.err', { hasText: 'Puncovnímu úřadu' }).waitFor();
+  step('drahý kov jen s hmotností a po oznámení Puncovnímu úřadu');
+  // Skutečný sortiment: pozlacené pouzdro – bez klamavých výrazů (puncovní zákon § 40)
+  await page.locator('select[name=case_metal]').selectOption('pozlaceno');
+  await page.evaluate(() => document.querySelectorAll('#pf details').forEach((d) => { d.open = true; }));
+  await page.locator('input[name=dial]').fill('zlaté indexy');
+  await page.getByRole('button', { name: 'Uložit', exact: true }).click();
+  await page.locator('.toast.err', { hasText: 'může klamat' }).waitFor();
+  await page.locator('input[name=dial]').fill('champagne, indexy v barvě zlata');
+  await page.getByRole('button', { name: 'Uložit', exact: true }).click();
   await page.getByRole('link', { name: /Zobrazit na webu/ }).waitFor();
+  step('pozlacené pouzdro: klamavé označení zachyceno, správné projde');
   await shot(page, '2-editor');
   step('hodinky zveřejněny');
 

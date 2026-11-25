@@ -23,9 +23,10 @@ export const OPERATOR = {
   address: 'Buková 1561, 273 51 Unhošť, Česká republika',
   addressEn: 'Buková 1561, 273 51 Unhošť, Czech Republic',
   businessSince: '2. 12. 2025',
-  register: null,       // OVĚŘIT: zápis v živnostenském rejstříku a příslušný úřad (pravděpodobně Magistrát města Kladna)
-  tradeOffice: null,    // OVĚŘIT: příslušný živnostenský úřad
-  vatPayer: null,       // OVĚŘIT: plátce / neplátce DPH (true / false)
+  // Ověřeno v živnostenském rejstříku (ARES/RŽP) 25. 11. 2026: živnost volná od 2. 12. 2025, úřad Magistrát města Kladna
+  register: { cs: 'zapsaný v živnostenském rejstříku (živnostenský úřad Magistrát města Kladna)', en: 'registered in the Czech Trade Register (trade licensing office: Kladno City Council)' },
+  tradeOffice: { cs: 'Magistrát města Kladna, živnostenský úřad', en: 'Kladno City Council, Trade Licensing Office' },
+  vatPayer: false,      // potvrdil majitel 25. 11. 2026 (ARES: v registru DPH nezapsán)
   dic: null,            // DIČ, je-li přiděleno
   phone: null,          // telefon (nepovinné, na webu zatím není)
   bankName: 'Česká spořitelna, a.s.',
@@ -34,7 +35,7 @@ export const OPERATOR = {
   iban: 'CZ6308000000002854824133',
   ibanPretty: 'CZ63 0800 0000 0028 5482 4133',
   bic: 'GIBACZPX',
-  returnAddress: null,  // adresa pro vracení – není-li vyplněna, použije se sídlo
+  returnAddress: null,  // potvrzeno majitelem: vrácení na adresu sídla v Unhošti (null = sídlo)
 };
 
 // Nezávislost ateliéru – uvádí se na webu, v obchodních podmínkách i u hodinek

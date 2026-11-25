@@ -57,7 +57,7 @@ export function describe(p) {
 
   const kind = mv ? mv.csAdj : 'mechanické';
   const seoTitle = `${name}${has(p.year) ? ` (${p.year})` : ''} – ${kind === 'mechanické' ? 'mechanické hodinky' : `mechanické hodinky, ${kind}`}`.slice(0, 70);
-  const seoDescription = `${name}${has(p.year) ? ` z roku ${p.year}` : ''}, ${join([has(p.movement) && `strojek ${p.movement}`, has(p.case_diameter_mm) && `${p.case_diameter_mm} mm`, has(p.case_material) && p.case_material])}. Renovováno v ateliéru Dante Time, unikátní kus s garancí pravosti.`
+  const seoDescription = `${name}${has(p.year) ? ` z roku ${p.year}` : ''}, ${join([has(p.movement) && `strojek ${p.movement}`, has(p.case_diameter_mm) && `${p.case_diameter_mm} mm`, has(p.case_material) && p.case_material])}. Z ateliéru Dante Time, unikátní kus${ap.length ? ' s garancí pravosti' : ''}.`
     .replace(/, \./, '.').replace(/,\s*,/g, ',').slice(0, 160);
 
   return { description_cs: cs.join(' '), description_en: en.join(' '), seo_title: seoTitle, seo_description: seoDescription };

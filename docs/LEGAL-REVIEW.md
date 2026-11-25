@@ -1,6 +1,6 @@
 # Právní dokumenty – kontrola před zveřejněním
 
-**Stav:** ⚖️ NÁVRH 3 – údaje a rozhodnutí majitele zapracovány, CZ i EN, čeká na ověření bodů níže
+**Stav:** ⚖️ NÁVRH 3.1 – rejstřík, DPH a punc ověřeny 25. 11. 2026, čeká na schválení majitele (část 2a)
 **Připraveno:** 25. 11. 2026
 **Zdroj textů:** `src/legal/cs.mjs` (česky), `src/legal/en.mjs` (anglicky), společné údaje
 `src/legal/common.mjs` a `src/site.mjs` (objekt `OPERATOR`).
@@ -48,28 +48,39 @@
 | EU | geoblokační nařízení 2018/302, Řím I čl. 6, Evropské spotřebitelské centrum |
 | Datum účinnosti | = den ostrého spuštění (do té doby se ostrý web nesestaví) |
 
-## 2. 🔴 Co je potřeba ověřit před ostrým spuštěním
+## 2. Ověřeno 25. 11. 2026
 
-Na zkušebním webu jsou tyto body vidět jako zvýrazněné `[OVĚŘIT: …]` nebo
-`[DOPLNIT: …]`. **Ostrý režim nejde sestavit, dokud tam zůstanou.**
+| Bod | Výsledek | Zdroj |
+|---|---|---|
+| DPH | **neplátce DPH** (potvrdil majitel; v registru DPH není zápis). Na webu: „Prodávající není plátcem DPH. Uvedené ceny jsou konečné.“ Faktura: „Není plátcem DPH.“ | majitel, ARES |
+| Živnostenský úřad | **Magistrát města Kladna** | ARES – RŽP |
+| Živnostenské oprávnění | 1 živnost volná „Výroba, obchod a služby neuvedené v přílohách 1 až 3“ od 2. 12. 2025, obory: velkoobchod a maloobchod; zprostředkování obchodu a služeb; reklamní činnost; výroba plastových a pryžových výrobků; poskytování software… **Hodinářství (řemeslná živnost) zapsáno není.** | ARES – RŽP |
+| Vedlejší činnost | na obsah dokumentů nemá vliv | majitel |
+| Punc – sortiment | nerezová a pozlacená pouzdra **nejsou zboží z drahých kovů** → nepodléhají puncovní kontrole a **nevzniká oznamovací povinnost**. U pozlacených platí zákaz klamavého označení (§ 40): používat „pozlacené“, „v barvě zlata“, „gold-plated“, ne „zlaté“, „gold“, „18k“ apod. | zákon 539/1992 Sb. §§ 2, 35, 39, 40 (znění od 1. 7. 2017 na zakonyprolidi.cz); výklad Puncovního úřadu k „pozlaceným“ podle puncovnictvivpraxi.cz |
+| Punc – zlatá pouzdra (výjimečně) | před prvním prodejem: oznámit Puncovnímu úřadu obchod s drahými kovy (do 15 dnů od zahájení, § 35 odst. 1) a e-shop (nejméně 3 dny předem, § 35 odst. 2); pouzdro musí mít platný punc (cizí vintage kusy předložit k puncovní kontrole); doklad uvádí druh, cenu, hmotnost a ryzost (§ 39) | zákon 539/1992 Sb. |
+| Adresa pro vrácení | sídlo Buková 1561, Unhošť | majitel |
+| Doprava, pojištění, kurz EUR | nastavitelné v administraci (ceny pro každou zemi EU zvlášť, pojištěná přeprava pro každou zemi zvlášť nebo společná cena) | – |
 
-| # | Co ověřit | Kde a jak | Proč |
+**Pojistky v administraci (nové):** hodinky z drahého kovu nejdou zveřejnit bez puncu,
+hmotnosti a potvrzení „oznámeno Puncovnímu úřadu“ (Nastavení). U ostatních pouzder
+administrace zastaví zveřejnění, pokud text obsahuje klamavý výraz (zlatý, gold, 18k, 585/1000…).
+Přehled hlídá obrat neplátce (limit 2 000 000 Kč) a prodej spotřebitelům do EU (limit 10 000 €).
+
+## 2a. ⚖️ Ke schválení majitelem před ostrým spuštěním
+
+| # | Bod | Riziko | Můj návrh |
 |---|---|---|---|
-| 1 | 🔴 **Plátce / neplátce DPH** | daňová přiznání, účetní; ARES (nedostupný z mého prostředí) | věta o DPH v cenách, faktura, OSS |
-| 2 | 🔴 **Zápis v živnostenském rejstříku** a příslušný úřad (pravděpodobně Magistrát města Kladna) | výpis z rzp.gov.cz | provozovatel, faktura, dozor |
-| 3 | 🔴 **Živnosti:** hodinářství (řemeslná, vyžaduje odbornou způsobilost) + výroba, obchod a služby (volná, prodej) | výpis z rejstříku | prodej i servis musí být kryty |
-| 4 | 🔴 **Puncovní úřad:** oznámení zahájení obchodu se zbožím z drahých kovů (do 15 dnů) a provozu e-shopu (nejméně 3 dny předem) | puncovniurad.cz | povinnost dle zákona 539/1992 Sb. před prodejem zlatých/stříbrných pouzder |
-| 5 | **OSS (DPH při prodeji do EU)** – sledovat limit 10 000 EUR ročně | účetní | nad limitem DPH v zemi zákazníka (týká se plátců i neplátců – ověřit s účetní) |
-| 6 | **Ceny dopravy do jednotlivých zemí EU** | administrace → Nastavení | dokud nejsou vyplněné, země nabídne jen osobní předání / poptávku |
-| 7 | **Hranice a cena pojištěné přepravy** (ČR i EU) a konkrétní dopravce | administrace → Nastavení | zkušební web má ukázku 50 000 Kč / 290 Kč / 890 Kč |
-| 8 | **Kurz EUR** (pevný v administraci, aktualizovat ručně) | administrace → Nastavení | zkušební web má ukázku 25 Kč/EUR |
-| 9 | **Adresa pro vracení zboží** – zatím se používá sídlo | potvrďte, nebo pošlete jinou | odstoupení, reklamace |
-| 10 | **Pojištění** odpovědnosti / převzatých hodinek – **nikde se neuvádí**, dokud ho nedoložíte | – | nesmíme tvrdit neověřené |
-| 11 | Funkce „Odstoupit od smlouvy“ (§ 1830a OZ od 1. 1. 2027) – číslo zákona 159/2026 Sb. jen ze sekundárních zdrojů | e-Sbírka | ověřit konečné znění |
-| 12 | Novela „právo na opravu“ (sněmovní tisk 53) | sledovat | po účinnosti upravit reklamační řád |
-| 13 | Platební brána a e-mailová služba – názvy doplnit do GDPR po aktivaci | – | GDPR čl. 3 |
-| 14 | GPSR (bezpečnost výrobků) – u sestav z ateliéru jste výrobce | advokát / ČOI | údaje o výrobci a upozornění |
-| 15 | Kontrola advokátem (CZ + EN) | – | doporučeno |
+| 1 | 🔴 **Chybí řemeslná živnost Hodinářství.** Ta podle živnostenského zákona (příloha 1) zahrnuje výrobu, sestavování, seřizování a opravy hodinek. Web nabízí servis, renovace, přestavby a zakázkové sestavy a e-shop prodává hodinky renovované a sestavené v ateliéru. Volná živnost (maloobchod) kryje **jen prodej**. | podnikání bez oprávnění (pokuta od živnostenského úřadu) | ohlásit Hodinářství na Magistrátu Kladno (doklad: výuční list „hodinář“, nebo jiný doklad o způsobilosti, nebo odpovědný zástupce). Do té doby ověřit na živnostenském úřadu, co smíte nabízet. |
+| 2 | **Limit 10 000 € pro prodej do EU (OSS).** Neplátce, který překročí limit u prodeje spotřebitelům do jiných zemí EU, řeší DPH v zemi zákazníka. | doměření DPH | ověřit s účetní; administrace na blížící se limit upozorní |
+| 3 | **Limit obratu 2 000 000 Kč** pro povinnou registraci k DPH | registrace k DPH | administrace upozorní při 80 % |
+| 4 | Text „pozlacené“ / „gold-plated“ – Puncovní úřad toleruje zavedený výraz „pozlacené“; anglické „gold-plated“ je analogie | výklad úřadu | doporučuji krátký dotaz Puncovnímu úřadu (zdarma) |
+| 5 | Funkce „Odstoupit od smlouvy“ (§ 1830a OZ od 1. 1. 2027) – číslo zákona 159/2026 Sb. jen ze sekundárních zdrojů | – | ověřit v e-Sbírce před spuštěním |
+| 6 | Novela „právo na opravu“ (sněmovní tisk 53) | – | po účinnosti upravit reklamační řád |
+| 7 | Platební brána a e-mailová služba – doplnit do GDPR po aktivaci | – | až po vašem výběru |
+| 8 | GPSR (bezpečnost výrobků) – u sestav z ateliéru jste výrobce | – | údaje o výrobci vyplňovat u každého kusu |
+| 9 | Pojištění odpovědnosti / převzatých hodinek – nikde neuvádím | – | uvedu po doložení |
+| 10 | Datum účinnosti = den spuštění | – | doplním v den spuštění |
+| 11 | Kontrola dokumentů advokátem (CZ + EN) | – | doporučeno |
 
 ## 3. Upozornění
 
@@ -87,7 +98,9 @@ Na zkušebním webu jsou tyto body vidět jako zvýrazněné `[OVĚŘIT: …]` n
 
 - Zákon č. 89/2012 Sb., občanský zákoník (novela 374/2022 Sb.; § 1830a od 1. 1. 2027)
 - Zákon č. 634/1992 Sb., o ochraně spotřebitele
-- Zákon č. 539/1992 Sb., o puncovnictví a zkoušení drahých kovů
+- Zákon č. 539/1992 Sb., o puncovnictví a zkoušení drahých kovů (§§ 2, 27, 35, 39, 40)
+- Zákon č. 455/1991 Sb., živnostenský zákon, příloha 1 (Hodinářství – řemeslná živnost)
+- ARES / Registr živnostenského podnikání, IČO 24020885 (výpis 25. 11. 2026)
 - Nařízení vlády č. 363/2013 Sb. (vzorový formulář)
 - Nařízení (EU) 2016/679 (GDPR), zákon č. 110/2019 Sb.
 - Směrnice 2002/58/ES, § 89 odst. 3 zákona č. 127/2005 Sb. (cookies)
@@ -96,7 +109,7 @@ Na zkušebním webu jsou tyto body vidět jako zvýrazněné `[OVĚŘIT: …]` n
 
 ## 5. Jak dokumenty schválit
 
-1. Ověřte body 1–4 z části 2 a pošlete mi výsledek (stačí v chatu).
-2. Doplním je, vyplníte ceny dopravy v administraci.
+1. Rozhodněte bod 1 z části 2a (živnost Hodinářství) a projděte ostatní body.
+2. Vyplníte ceny dopravy, pojištění a kurz EUR v administraci.
 3. Doporučuji kontrolu advokátem.
 4. Po vašem „schvaluji“ nastavím datum účinnosti = den spuštění a e-shop se zveřejní.

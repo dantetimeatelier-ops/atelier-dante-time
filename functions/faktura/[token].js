@@ -21,7 +21,7 @@ export const onRequestGet = handle(async ({ env, params }) => {
 <main class="inv">
 <header><div><h1>${title}</h1><p>č. ${esc(inv.number)}</p></div><div class="brand">${SITE.name}</div></header>
 <section class="parties">
-<div><h2>Dodavatel</h2><p><strong>${v('name', 'jméno / firma')}</strong> – ${esc(OPERATOR.tradeName || '')}<br>${v('address', 'adresa')}<br>IČO: ${v('ico', 'IČO')}<br>${vatLine}<br>${OPERATOR.register ? esc(OPERATOR.register) : verify('zápis v živnostenském rejstříku')}</p></div>
+<div><h2>Dodavatel</h2><p><strong>${v('name', 'jméno / firma')}</strong> – ${esc(OPERATOR.tradeName || '')}<br>${v('address', 'adresa')}<br>IČO: ${v('ico', 'IČO')}<br>${vatLine}<br>${OPERATOR.register ? esc(OPERATOR.register.cs) : verify('zápis v živnostenském rejstříku')}</p></div>
 <div><h2>Odběratel</h2><p><strong>${esc(inv.buyer_company || inv.buyer_name)}</strong><br>${inv.buyer_company ? `${esc(inv.buyer_name)}<br>` : ''}${inv.buyer_street ? `${esc(inv.buyer_street)}<br>` : ''}${esc(inv.buyer_zip || '')} ${esc(inv.buyer_city || '')}${inv.buyer_ico ? `<br>IČO: ${esc(inv.buyer_ico)}` : ''}${inv.buyer_dic ? `<br>DIČ: ${esc(inv.buyer_dic)}` : ''}</p></div>
 </section>
 <table class="meta"><tbody>

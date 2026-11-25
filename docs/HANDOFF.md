@@ -4,6 +4,17 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-25 – Claude – claude/eshop-platforma (rejstřík, DPH, punc)
+**Hotovo:** ověřeno v ARES/RŽP (IČO 24020885): jen volná živnost, úřad Magistrát
+města Kladna, **chybí řemeslná živnost Hodinářství**; neplátce DPH (`OPERATOR.vatPayer
+= false`); puncovní pojistky `src/shop/punc.mjs` (klamavé výrazy u obecných kovů,
+drahý kov jen s puncem, hmotností a potvrzením oznámení); migrace 0004
+(`punc_notified`, `shipping_eu_insured_json`); pojištěná přeprava pro každou zemi EU;
+přehled obratu a limitu OSS v administraci; meta description i bez ručního popisu.
+**Další krok:** majitel rozhodne body v `docs/LEGAL-REVIEW.md` část 2a.
+**Pozor na:** povolené hosty v prostředí `atelier-dante-time` (ARES, RŽP, punc.gov.cz,
+zakonyprolidi.cz, e-sbirka.gov.cz).
+
 ## 2026-11-25 – Claude – claude/eshop-platforma (údaje provozovatele, EU, právní v3)
 **Hotovo:** údaje provozovatele a banky v `src/site.mjs`; prodej do 27 zemí EU
 (`src/shop/eu.mjs`, výběr země v košíku, ceny dopravy podle země z administrace);

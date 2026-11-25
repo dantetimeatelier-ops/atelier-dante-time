@@ -11,7 +11,7 @@ export const head = (lang) => `<p class="doc-meta">${lang === 'cs' ? 'Verze' : '
 export const toc = (lang, items) => `<nav class="toc" aria-label="${lang === 'cs' ? 'Obsah' : 'Contents'}"><strong>${lang === 'cs' ? 'Obsah' : 'Contents'}</strong><ol>${items.map(([id, t]) => `<li><a href="#${id}">${t}</a></li>`).join('')}</ol></nav>`;
 export const email = `<a href="mailto:${SITE.email}">${SITE.email}</a>`;
 
-export const registerText = (lang) => OPERATOR.register
+export const registerText = (lang) => OPERATOR.register?.[lang]
   ?? verify(lang === 'cs' ? 'zápis v živnostenském rejstříku a příslušný živnostenský úřad' : 'entry in the Trade Register and competent trade licensing office');
 
 export const vatText = (lang) => {
@@ -34,5 +34,5 @@ export const ecc = (lang) => (lang === 'cs'
   ? 'Evropské spotřebitelské centrum ČR (síť ECC-Net), <a href="https://www.evropskyspotrebitel.cz" rel="noopener noreferrer">evropskyspotrebitel.cz</a>'
   : 'European Consumer Centre Czech Republic (ECC-Net), <a href="https://www.evropskyspotrebitel.cz" rel="noopener noreferrer">evropskyspotrebitel.cz</a>');
 
-export const tradeOffice = (lang) => OPERATOR.tradeOffice
+export const tradeOffice = (lang) => OPERATOR.tradeOffice?.[lang]
   ?? verify(lang === 'cs' ? 'příslušný živnostenský úřad (pravděpodobně Magistrát města Kladna)' : 'competent trade licensing office (probably Kladno City Council)');

@@ -31,7 +31,7 @@ test('automatický popis nic nevymýšlí', () => {
   assert.doesNotMatch(empty.description_cs, /undefined|null|false|Provedené|Stav:/i);
   const part = describe({ brand: 'PRIM', kind: 'prestavba', case_metal: 'pozlaceno', plating: '20 µm', dial: 'černý' });
   assert.doesNotMatch(part.description_cs + part.description_en, /undefined|null|false/i);
-  assert.match(part.description_cs, /pozlacené \(není z drahého kovu\), 20 µm/);
+  assert.match(part.description_cs, /pozlacené – obecný kov, není z drahého kovu, 20 µm/);
   assert.match(part.description_cs, /některé díly nejsou původní/);
   assert.equal(productName({ brand: 'Omega', model: 'Genève' }), 'Omega Genève');
 });
@@ -111,4 +111,17 @@ test('právní dokumenty: anglická verze má stejné dokumenty a náležitosti'
     assert.ok(all.includes(must), `Missing: ${must}`);
   }
   assert.equal(new Set(ALL_LEGAL.map((d) => d.path)).size, ALL_LEGAL.length); // unikátní URL
+});
+
+test('puncovní zákon: pozlacené pouzdro bez klamavých výrazů, drahý kov jen po oznámení', async () => {
+  const { misleadingWords, puncCheck } = await import('../../src/shop/punc.mjs');
+  assert.deepEqual(misleadingWords({ case_metal: 'pozlaceno', dial: 'v barvě zlata', description_cs: 'Pouzdro: pozlacené – obecný kov, není z drahého kovu.', description_en: 'gold-plated base metal – not a precious metal' }), []);
+  assert.deepEqual(misleadingWords({ case_metal: 'pozlaceno', dial: 'zlaté indexy' }), ['zlaté']);
+  assert.ok(misleadingWords({ case_metal: 'ocel', description_en: 'Solid 18k gold case' }).includes('18k'));
+  assert.deepEqual(misleadingWords({ case_metal: 'zlato', dial: 'zlatý' }), []);
+  const gold = { status: 'available', case_metal: 'zlato', hallmark: 'Au 585/1000', precious_weight_g: 9.1 };
+  assert.match(puncCheck(gold, { punc_notified: '0' }), /Puncovnímu úřadu/);
+  assert.equal(puncCheck(gold, { punc_notified: '1' }), null);
+  assert.match(puncCheck({ ...gold, precious_weight_g: null }, { punc_notified: '1' }), /hmotnost/);
+  assert.equal(puncCheck({ status: 'draft', case_metal: 'pozlaceno', dial: 'zlatý' }), null); // koncept se nekontroluje
 });

@@ -53,3 +53,14 @@ dokumentech předložit před zveřejněním.
 **Důvod:** urychlení projektu a minimum průběžného schvalování.
 **Důsledky:** nahrazuje omezení průběžného schvalování z R0 a R8 pro
 technické změny. Po dokončení projektu se nastaví omezená oprávnění.
+
+## R11 – Daňový režim, sortiment a nastavení dopravy (2026-11-25)
+**Rozhodl:** majitel
+**Rozhodnutí:** Provozovatel je **neplátce DPH** a podniká jako OSVČ na vedlejší
+činnost. Sortiment tvoří převážně **nerezová a pozlacená pouzdra**; pozlacená se
+vždy odlišují od pouzder z ryzího zlata a zlatých slitin. Doručuje se po celé EU.
+Ceny dopravy, pojištění zásilek a kurz eura se nastavují v administraci.
+Adresa pro vrácení zboží je zatím adresa sídla v Unhošti. Údaje o živnosti
+a povinnosti vůči Puncovnímu úřadu ověřuje agent ve veřejných zdrojích.
+Zbývající neověřené právní údaje agent předloží ke schválení před spuštěním.
+**Důsledky:** viz `docs/LEGAL-REVIEW.md`, části 2 a 2a.
