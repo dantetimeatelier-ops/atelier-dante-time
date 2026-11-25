@@ -16,7 +16,7 @@ const watches = [
   ['t4', 'test-doxa-projekt', 'in_progress', 'TEST – Doxa (renovace)', 'Doxa', '', '1955', 'Doxa cal. 102', 'manual', 'ocel', 35, 18, null, 0],
 ];
 const q = (v) => (v == null ? 'NULL' : typeof v === 'number' ? String(v) : `'${String(v).replace(/'/g, "''")}'`);
-let sql = "DELETE FROM product_images; DELETE FROM order_items; DELETE FROM orders; DELETE FROM products WHERE id LIKE 't%';\n";
+let sql = "DELETE FROM withdrawals; DELETE FROM product_images; DELETE FROM order_items; DELETE FROM orders; DELETE FROM products WHERE id LIKE 't%';\n";
 for (const [id, slug, status, title, brand, model, year, movement, mt, mat, dia, lug, price, featured] of watches) {
   sql += `INSERT INTO products (id, slug, status, title, brand, model, year, movement, movement_type, case_material, case_diameter_mm, lug_width_mm, dial, crystal, strap, condition, service_done, original_parts, replaced_parts, price_czk, featured, published_at, description_cs, description_en)
 VALUES (${[id, slug, status, title, brand, model, year, movement, mt, mat, dia, lug, 'stříbrný', 'akrylátové', 'kožený, hnědý', 'velmi dobrý, drobné stopy používání', 'kompletní servis, čištění, mazání, regulace', 'strojek, ciferník, ručky, pouzdro', 'sklíčko, řemínek', price, featured].map(q).join(', ')}, strftime('%Y-%m-%dT%H:%M:%fZ','now'), ${q(`Testovací kus ${title}. Popis vygeneruje administrace.`)}, ${q(`Test piece ${title}.`)});\n`;
