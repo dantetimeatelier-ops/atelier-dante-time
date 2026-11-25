@@ -52,10 +52,22 @@ Každá změna patří do jedné úrovně. Při pochybnostech platí **vyšší*
 úroveň. Technické řešení a seznamy souborů jsou v
 [`docs/AUTOMATION.md`](docs/AUTOMATION.md).
 
-> **Stav automatického publikování: ❌ NEAKTIVNÍ.** Dokud majitel
-> výslovně neschválí krok C v `docs/AUTOMATION.md` (záznam v
-> `docs/DECISIONS.md`), jde **každá** změna do `main` jen po schválení
-> majitelem, i změna úrovně 1.
+> **Platí dočasný rozšířený mandát R10** (`docs/DECISIONS.md`, od 25. 11. 2026
+> do dokončení projektu e-shopu). Agent smí samostatně vyvíjet, testovat,
+> slučovat a publikovat změny úrovně 1 a 2, **pokud prošly všemi
+> automatickými testy**. Úroveň 3 platí beze změny s těmito upřesněními:
+>
+> - **právní dokumenty** smí agent připravit a přepracovat, ale před
+>   zveřejněním předloží majiteli seznam nejasností a rizik,
+> - **e-shop** se nesmí spustit pro skutečné objednávky, dokud majitel
+>   neověří právní dokumenty, zabezpečení a celý objednávkový proces,
+> - **nikdy bez výslovného souhlasu:** změna prodejních cen, aktivace
+>   placených služeb nebo předplatného, skutečné platební transakce,
+>   mazání záloh, rozšíření vlastních oprávnění, ukládání zákaznických
+>   údajů, faktur, hesel nebo klíčů do veřejného repozitáře.
+>
+> Po dokončení projektu majitel nastaví omezená oprávnění pro dlouhodobou
+> údržbu (kroky B–C v `docs/AUTOMATION.md`).
 
 ### 🟢 Úroveň 1: Bezpečné technické opravy
 *Po zapnutí automatiky se publikují samy po úspěšných testech.*

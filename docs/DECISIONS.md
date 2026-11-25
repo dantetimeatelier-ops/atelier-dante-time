@@ -38,3 +38,18 @@ zapne se až samostatným schválením kroku C v `docs/AUTOMATION.md`.
 **Důvod:** historie změn, kontrola kvality a přehled bez nutnosti zásahu.
 **Důsledky:** soubory v `.github/` (úroveň 3) jsou součástí PR #1.
 Automatické publikování (krok C) zůstává **vypnuté**.
+
+## R10 – Rozšířený mandát pro dokončení projektu (2026-11-25)
+**Rozhodl:** majitel
+**Rozhodnutí:** Agent samostatně modernizuje web, buduje administraci a
+e-shop, přepracuje právní dokumenty a smí slučovat a publikovat bezpečné
+a úspěšně otestované změny bez průběžného schvalování.
+**Výjimky (vždy jen s výslovným souhlasem):** prodejní ceny, placené služby
+a předplatné, skutečné platby, mazání záloh, rozšíření vlastních oprávnění,
+zákaznické údaje, faktury, hesla a klíče ve veřejném repozitáři.
+E-shop pro skutečné objednávky až po ověření právních dokumentů,
+zabezpečení a objednávkového procesu majitelem. Nejasnosti v právních
+dokumentech předložit před zveřejněním.
+**Důvod:** urychlení projektu a minimum průběžného schvalování.
+**Důsledky:** nahrazuje omezení průběžného schvalování z R0 a R8 pro
+technické změny. Po dokončení projektu se nastaví omezená oprávnění.
