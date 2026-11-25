@@ -179,3 +179,9 @@ test('bankovní údaje: podnikatelský účet, platný IBAN odpovídá číslu �
   assert.equal(docBank({ bank_iban: 'CZ6308000000002854824133', bank_account: '2854824133/0800' }).account, '2854824133/0800');
   assert.equal(docBank({}).account, '7058919329/0800');
 });
+
+test('bezpečnostní hlavičky: _headers má jediný blok /* s HSTS, CSP a X-Frame-Options', async () => {
+  const h = readFileSync(new URL('../../public/_headers', import.meta.url), 'utf8');
+  assert.equal(h.match(/^\/\*$/gm).length, 1);
+  for (const k of ['Strict-Transport-Security', 'Content-Security-Policy', 'X-Frame-Options', 'X-Content-Type-Options']) assert.ok(h.includes(k), k);
+});

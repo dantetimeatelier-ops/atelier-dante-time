@@ -56,8 +56,13 @@ await page('/404', layout({ ...common, lang: 'cs', title: 'Stránka nenalezena',
 // Zkušební verze se nesmí dostat do vyhledávačů
 const PREVIEW = process.env.SITE_ENV === 'preview';
 if (PREVIEW) {
-  const { appendFile } = await import('node:fs/promises');
-  await appendFile(path.join(DIST, '_headers'), '\n/*\n  X-Robots-Tag: noindex, nofollow\n');
+  // Přidat do PRVNÍHO bloku „/*“ – druhý blok se stejnou cestou by na Cloudflare přebil
+  // bezpečnostní hlavičky (HSTS, CSP, X-Frame-Options).
+  const { readFile } = await import('node:fs/promises');
+  const hf = path.join(DIST, '_headers');
+  const h = await readFile(hf, 'utf8');
+  if (!h.startsWith('/*\n')) throw new Error('public/_headers musí začínat blokem /*');
+  await writeFile(hf, h.replace('/*\n', '/*\n  X-Robots-Tag: noindex, nofollow\n'));
 }
 await writeFile(path.join(DIST, 'robots.txt'), PREVIEW ? 'User-agent: *\nDisallow: /\n' : `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nDisallow: /kosik\nDisallow: /en/cart\nDisallow: /objednavka/\nDisallow: /faktura/\n\nSitemap: ${SITE.origin}/sitemap.xml\n`);
 await writeFile(path.join(DIST, 'build-info.json'), JSON.stringify({ mode: MODE, builtAt: new Date().toISOString(), pages: files.length }, null, 2));
