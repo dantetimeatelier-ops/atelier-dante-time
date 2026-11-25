@@ -1,9 +1,12 @@
-# Konfigurace Cloudflare Pages (hosting, databáze D1, úložiště fotografií R2).
-# Tajné hodnoty (klíče, hesla) sem NEPATŘÍ – nastavují se v Cloudflare jako Secrets.
+# Konfigurace Cloudflare Pages (hosting, databáze D1, úložiště fotografií KV).
+# Tajné hodnoty (klíče, hesla) sem NEPATŘÍ.
+# ID databází a úložišť doplní automatické nasazení (scripts/cf-deploy.mjs),
+# zástupné hodnoty níže slouží jen pro místní vývoj.
 name = "atelier-dante-time"
 pages_build_output_dir = "./dist"
 compatibility_date = "2026-11-01"
 
+# --- Ostrý web (větev main) ---
 [vars]
 # preview = katalog bez nákupu (výchozí) · test = zkušební nákupy · live = ostrý provoz (jen se souhlasem majitele)
 SHOP_MODE = "preview"
@@ -12,17 +15,24 @@ EMAIL_PROVIDER = "none"
 [[d1_databases]]
 binding = "DB"
 database_name = "dante-time"
-# ID databáze doplní majitel po jejím vytvoření v Cloudflare (docs/CLOUDFLARE-SETUP.md)
 database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "migrations"
 
-# Fotografie hodinek: Workers KV (zdarma, nevyžaduje platební kartu).
-# ID doplní automatické nasazení z proměnné KV_NAMESPACE_ID (docs/CLOUDFLARE-SETUP.md).
 [[kv_namespaces]]
 binding = "MEDIA_KV"
 id = "11111111111111111111111111111111"
 
-# Volitelně místo KV úložiště R2 (vyžaduje platební kartu v účtu Cloudflare):
-# [[r2_buckets]]
-# binding = "MEDIA"
-# bucket_name = "dante-time-media"
+# --- Zkušební verze (ostatní větve) – oddělená databáze s ukázkovými daty ---
+[env.preview.vars]
+SHOP_MODE = "test"
+EMAIL_PROVIDER = "none"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "dante-time-preview"
+database_id = "22222222-2222-2222-2222-222222222222"
+migrations_dir = "migrations"
+
+[[env.preview.kv_namespaces]]
+binding = "MEDIA_KV"
+id = "33333333333333333333333333333333"

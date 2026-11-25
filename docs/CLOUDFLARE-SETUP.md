@@ -1,89 +1,73 @@
-# Spuštění nové platformy na Cloudflare – návod pro majitele
+# Spuštění zkušební verze na Cloudflare – co musíte udělat vy
 
-Toto je jediná část, kterou za vás agent udělat nemůže, protože jde o založení
-účtu na vaše jméno. Trvá asi **30–45 minut** a **nic to nestojí**.
-Platební kartu zadávat nemusíte.
-
-## Co budete potřebovat
-- e-mail a heslo pro nový účet Cloudflare,
-- přístup k nastavení domény `atelier-dante-time.cz` u registrátora
-  (např. Forpsi, Wedos, Active24 – kde doménu platíte).
+Všechno ostatní je automatické: databáze (uložená v EU), úložiště fotografií,
+projekt, ukázková data i samotné nasazení vytvoří GitHub sám po úspěšných
+testech. Vy uděláte jen tyto **3 kroky (asi 15 minut)**. Je to **zdarma**,
+platební kartu nezadáváte a **ostrá doména se nemění**. Web
+atelier-dante-time.cz běží dál beze změny.
 
 ---
 
-## Krok 1: Účet Cloudflare
-1. Otevřete **dash.cloudflare.com/sign-up** a zaregistrujte se.
-2. V nastavení účtu zapněte **dvoufázové ověření** (My Profile → Authentication).
+## Krok 1: Účet Cloudflare (5 minut)
+1. Na počítači otevřete **https://dash.cloudflare.com/sign-up**.
+2. Zadejte e-mail a heslo a potvrďte e-mail.
+3. Doporučeno: **My Profile → Authentication → Two-Factor Authentication**
+   zapnout (aplikace Hesla v iPhonu umí ověřovací kódy).
 
-## Krok 2: Databáze (D1)
-1. V levém menu **Storage & Databases → D1** → **Create database**.
-2. Název: `dante-time` → **Create**.
-3. Zkopírujte **Database ID** (dlouhý kód s pomlčkami).
-
-## Krok 3: Úložiště fotografií (KV)
-1. **Storage & Databases → KV** → **Create namespace**.
-2. Název: `dante-time-media` → **Add**.
-3. Zkopírujte **ID** (32 znaků).
-
-## Krok 4: Přístupový klíč pro GitHub
+## Krok 2: Klíč pro GitHub (5 minut)
 1. Vpravo nahoře ikona profilu → **My Profile → API Tokens → Create Token**.
-2. **Create Custom Token**, pojmenujte „GitHub nasazení Dante Time“.
-3. Oprávnění (Permissions), vše na úrovni **Account**:
-   - Cloudflare Pages → **Edit**
-   - D1 → **Edit**
-   - Workers KV Storage → **Edit**
-4. **Continue → Create Token** a token zkopírujte. Zobrazí se jen jednou.
-5. Zkopírujte i **Account ID** (na hlavní stránce účtu vpravo, „Account ID“).
+2. Úplně dole **Custom token → Get started**.
+3. Název: `GitHub Dante Time`.
+4. **Permissions** (tři řádky, vždy **Account**):
+   | Account | Cloudflare Pages | Edit |
+   |---|---|---|
+   | Account | D1 | Edit |
+   | Account | Workers KV Storage | Edit |
+5. **Account Resources:** Include → váš účet.
+6. **Continue to summary → Create Token** → token **zkopírujte**
+   (zobrazí se jen jednou).
+7. Zkopírujte také **Account ID**: v levém menu **Workers & Pages**,
+   vpravo ve sloupci „Account details“ → **Account ID** (ikona kopírování).
 
-## Krok 5: Uložení do GitHubu (bezpečně, nikdo jiný je neuvidí)
-V repozitáři na GitHubu: **Settings → Secrets and variables → Actions**.
+## Krok 3: Uložení do GitHubu (5 minut)
+1. Otevřete https://github.com/dantetimeatelier-ops/atelier-dante-time
+2. **Settings → Secrets and variables → Actions → New repository secret**.
+3. Vytvořte postupně tyto **tři** tajné hodnoty:
 
-Záložka **Secrets** → **New repository secret**:
-| Název | Hodnota |
+| Name | Secret |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | token z kroku 4 |
-| `CLOUDFLARE_ACCOUNT_ID` | Account ID z kroku 4 |
+| `CLOUDFLARE_API_TOKEN` | token z kroku 2 |
+| `CLOUDFLARE_ACCOUNT_ID` | Account ID z kroku 2 |
+| `ADMIN_SETUP_TOKEN` | **váš instalační kód**: vymyslete dlouhou větu bez mezer, alespoň 24 znaků (např. `MojeHodinkyTikajiUzOd1968Rano`). Uložte si ji do Hesel v iPhonu. Použijete ji jen jednou při prvním přihlášení. |
 
-Záložka **Variables** → **New repository variable**:
-| Název | Hodnota |
-|---|---|
-| `D1_DATABASE_ID` | Database ID z kroku 2 |
-| `KV_NAMESPACE_ID` | ID z kroku 3 |
-| `SHOP_MODE` | `preview` |
-
-Pak mi napište „Cloudflare je nastavený“. První nasazení spustím na náhledové
-adrese a otestuji ho.
-
-## Krok 6: Tajný instalační kód administrace
-Až bude projekt `atelier-dante-time` vidět v **Workers & Pages**:
-1. Otevřete ho → **Settings → Variables and Secrets → Add**.
-2. Typ **Secret**, název `ADMIN_SETUP_TOKEN`, hodnota: libovolných
-   30 a více znaků (např. vymyšlená dlouhá věta bez mezer). Uložte ji
-   do Hesel v iPhonu.
-3. Přidejte i proměnnou (typ **Text**) `SHOP_MODE` = `preview`.
-4. Otevřete `https://<náhledová-adresa>/admin/` a projděte první nastavení
-   (návod v `docs/NAVOD-IPHONE.md`).
-
-## Krok 7: Přesměrování domény (až bude vše otestováno)
-1. V projektu **Custom domains → Set up a custom domain** → `atelier-dante-time.cz`.
-2. Cloudflare ukáže, jaký záznam DNS nastavit u registrátora (obvykle
-   CNAME na `atelier-dante-time.pages.dev`). Případně nabídne převedení
-   celé domény pod Cloudflare, což je jednodušší a také zdarma.
-3. Po změně DNS (do několika hodin) poběží web na Cloudflare.
-4. Teprve potom se sloučí pull request s novou platformou. Do té doby
-   běží současný web na GitHub Pages beze změny.
+Hotovo. Napište mi „Cloudflare je nastavený“. Spustím nasazení a pošlu vám
+adresu zkušební verze.
 
 ---
 
-## Co je zdarma a jaké jsou limity (Cloudflare Free, stav 11/2026)
+## Co se pak stane automaticky
+1. GitHub spustí testy. Když projdou, vytvoří na Cloudflare:
+   - projekt `atelier-dante-time`,
+   - databázi `dante-time-preview` (zkušební, s ukázkovými hodinkami) uloženou v EU.
+     Ostrá databáze `dante-time` vznikne až při spuštění ostré verze,
+   - úložiště fotografií,
+2. nahraje zkušební verzi na adresu typu
+   `https://claude-eshop-platforma.atelier-dante-time.pages.dev`
+   (vyhledávače ji neindexují, objednávky jsou jen testovací),
+3. při každé další změně se zkušební verze sama aktualizuje.
 
-| Služba | Limit zdarma | Odhad potřeby Dante Time |
+## Co se NEstane bez vašeho souhlasu
+- **Doména atelier-dante-time.cz se nepřesměruje.** Přesměrování uděláte
+  až po schválení (návod připravím), jde o změnu u registrátora domény.
+- Nezapne se žádná placená služba ani ostré platby.
+
+## Limity zdarma (Cloudflare Free)
+| Služba | Limit zdarma | Potřeba Dante Time |
 |---|---|---|
-| Pages (hosting) | neomezený provoz statických stránek | ✓ |
-| Functions (katalog, objednávky) | 100 000 požadavků denně | stovky až tisíce denně |
-| D1 (databáze) | 5 GB, 5 mil. čtení denně | jednotky MB |
-| KV (fotografie) | 1 GB, 100 000 čtení a 1 000 zápisů denně | ~1 GB ≈ 3 000 fotek |
+| Pages (web) | neomezený provoz statických stránek | ✓ |
+| Functions (katalog, objednávky) | 100 000 požadavků denně | stovky až tisíce |
+| D1 (databáze) | 5 GB | jednotky MB |
+| KV (fotografie) | 1 GB, 1 000 zápisů denně | ~3 000 fotek |
 
-Při překročení limitu zdarma služba **nepřejde do placeného režimu sama**.
-Požadavky nad limit jen selžou. Placený tarif by bylo nutné výslovně
-aktivovat, a to agent bez vašeho souhlasu neudělá.
+Při překročení limitu se nic nezačne účtovat. Požadavky nad limit jen
+selžou. Placený tarif by se musel výslovně zapnout.

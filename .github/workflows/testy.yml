@@ -122,21 +122,22 @@ jobs:
     # Pull requesty z cizích repozitářů nemají přístup k tajným klíčům
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    concurrency:
+      group: nasazeni-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: false
     permissions:
       contents: read
-      deployments: write
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
-      KV_NAMESPACE_ID: ${{ vars.KV_NAMESPACE_ID }}
-      WRANGLER_SEND_METRICS: 'false'
+      ADMIN_SETUP_TOKEN: ${{ secrets.ADMIN_SETUP_TOKEN }}
+      SHOP_MODE_PRODUCTION: ${{ vars.SHOP_MODE || 'preview' }}
     steps:
       - name: Je Cloudflare nastaven?
         id: ready
         run: |
-          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && [ -n "$D1_DATABASE_ID" ] && [ -n "$KV_NAMESPACE_ID" ]; then
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && [ -n "$ADMIN_SETUP_TOKEN" ]; then
             echo "ok=true" >> "$GITHUB_OUTPUT"
           else
             echo "::notice::Nasazení přeskočeno – Cloudflare zatím není nastaven (docs/CLOUDFLARE-SETUP.md)."
@@ -152,19 +153,6 @@ jobs:
           cache: npm
       - if: steps.ready.outputs.ok == 'true'
         run: npm ci --no-audit --no-fund
-      - name: Sestavení
+      - name: Příprava Cloudflare a nasazení (main = ostrý web, ostatní větve = zkušební verze)
         if: steps.ready.outputs.ok == 'true'
-        env:
-          SHOP_MODE: ${{ vars.SHOP_MODE || 'preview' }}
-        run: |
-          sed -i "s/00000000-0000-0000-0000-000000000000/${D1_DATABASE_ID}/; s/11111111111111111111111111111111/${KV_NAMESPACE_ID}/" wrangler.toml
-          npm run build
-      - name: Aktualizace struktury databáze (jen hlavní verze)
-        if: steps.ready.outputs.ok == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        run: npx wrangler d1 migrations apply DB --remote
-      - name: Nasazení (main = ostrý web, ostatní větve = náhledová adresa)
-        if: steps.ready.outputs.ok == 'true'
-        run: |
-          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-          npx wrangler pages project create atelier-dante-time --production-branch main 2>/dev/null || true
-          npx wrangler pages deploy dist --project-name atelier-dante-time --branch "$BRANCH" --commit-dirty=true
+        run: node scripts/cf-deploy.mjs "${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"

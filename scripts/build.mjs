@@ -49,7 +49,13 @@ await page('/odstoupeni', layout({ ...common, lang: 'cs', ...w, path: '/odstoupe
 // Stránka 404 (Cloudflare Pages ji použije automaticky)
 await page('/404', layout({ ...common, lang: 'cs', title: 'Stránka nenalezena', description: 'Stránka nenalezena.', path: '/404', noindex: true, body: notFoundBody('cs') }));
 
-await writeFile(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nDisallow: /kosik\nDisallow: /en/cart\nDisallow: /objednavka/\nDisallow: /faktura/\n\nSitemap: ${SITE.origin}/sitemap.xml\n`);
+// Zkušební verze se nesmí dostat do vyhledávačů
+const PREVIEW = process.env.SITE_ENV === 'preview';
+if (PREVIEW) {
+  const { appendFile } = await import('node:fs/promises');
+  await appendFile(path.join(DIST, '_headers'), '\n/*\n  X-Robots-Tag: noindex, nofollow\n');
+}
+await writeFile(path.join(DIST, 'robots.txt'), PREVIEW ? 'User-agent: *\nDisallow: /\n' : `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nDisallow: /kosik\nDisallow: /en/cart\nDisallow: /objednavka/\nDisallow: /faktura/\n\nSitemap: ${SITE.origin}/sitemap.xml\n`);
 await writeFile(path.join(DIST, 'build-info.json'), JSON.stringify({ mode: MODE, builtAt: new Date().toISOString(), pages: files.length }, null, 2));
 
 // Pojistka: v ostrém režimu nesmí na webu zůstat nevyplněné údaje
