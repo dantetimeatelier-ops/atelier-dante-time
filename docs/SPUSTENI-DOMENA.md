@@ -40,6 +40,11 @@ nameservery WEDOS (viz bod 6).
    - přidat TXT `_dmarc` = `v=DMARC1; p=none;` (doporučení pro doručitelnost).
 4. Cloudflare ukáže **2 nameservery** (např. `xxx.ns.cloudflare.com`). Opsat.
 
+**Stav 25. 11. 2026 večer:** etapa A hotová. Resend ověřen (DKIM, SPF). Zóna v Cloudflare (Free)
+obsahuje: 3× A @ (GitHub, DNS only), CNAME www (DNS only), CNAME rsend, CNAME send, TXT google,
+TXT _dmarc, TXT resend._domainkey. Zástupný `*` nepřevzat. **Nameservery Cloudflare:
+`aurora.ns.cloudflare.com`, `donovan.ns.cloudflare.com`.**
+
 ## 4. Etapa B – přepnutí DNS (web se stále nemění)
 
 1. **WEDOS → Domény → atelier-dante-time.cz → DNSSEC → vypnout.**
