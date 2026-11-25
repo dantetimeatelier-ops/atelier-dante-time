@@ -112,3 +112,10 @@ zakázkové výroby se vrátí.
 **Změna týž den (majitel):** „Ne, vše nech, vše nabízíme.“ Web nabízí i servis, renovace
 a zakázky (`SERVICES_OFFERED = true`). Odpovědnost za živnostenské oprávnění nese majitel,
 bod L1 zůstává otevřený.
+**Upřesnění týž den (majitel):** Současná prezentace Dante Time se zásadně nemění: filozofie,
+historie, fotografie, tvorba, design, individualizace a dokončené projekty zůstávají.
+Dante Time nesmí působit jako pouhý přeprodejce. Právní omezení jen v nezbytném rozsahu
+u nabídky a objednávání konkrétních služeb, nic se trvale nemaže. **Zásadní změny textů
+nebo struktury webu agent nejdřív předloží majiteli ke schválení.** Priorita: dokončení
+a spuštění webu.
+
