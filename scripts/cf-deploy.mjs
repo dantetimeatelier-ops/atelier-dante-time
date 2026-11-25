@@ -18,6 +18,8 @@ import { demoSql, demoImages } from './demo-data.mjs';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const PROJECT = 'atelier-dante-time';
+// Account ID není tajný údaj (jen označuje účet Cloudflare). Slouží jako záloha, když tajná hodnota v GitHubu chybí nebo je chybná.
+const KNOWN_ACCOUNT_ID = 'd0ea3159408fb0fd4a8621e5ac201c27';
 const branch = process.argv[2];
 if (!branch) throw new Error('Chybí název větve');
 const production = branch === 'main';
@@ -35,7 +37,10 @@ for (const k of ['CLOUDFLARE_API_TOKEN', 'ADMIN_SETUP_TOKEN']) process.env[k] = 
   const raw = process.env.CLOUDFLARE_ACCOUNT_ID;
   const m = raw.match(/[0-9a-f]{32}/i) || raw.replace(/[\s-]/g, '').match(/^[0-9a-f]{32}$/i);
   if (m) process.env.CLOUDFLARE_ACCOUNT_ID = m[0].toLowerCase();
-  else {
+  else if (KNOWN_ACCOUNT_ID) {
+    console.log('Uložené Account ID není platné – použije se Account ID účtu Dante Time uvedené ve skriptu.');
+    process.env.CLOUDFLARE_ACCOUNT_ID = KNOWN_ACCOUNT_ID;
+  } else {
     // Záloha: zjistit Account ID přímo z Cloudflare podle tokenu (token smí jen do jednoho účtu)
     // Bezpečný popis tvaru hodnoty (bez prozrazení obsahu)
     const shape = [...raw].map((c) => (/[0-9a-f]/i.test(c) ? 'h' : /[a-z]/i.test(c) ? 'p' : /[-/:. _]/.test(c) ? c : '?')).join('').replace(/(h+|p+)/g, (x) => `${x[0]}${x.length}`).slice(0, 80);
