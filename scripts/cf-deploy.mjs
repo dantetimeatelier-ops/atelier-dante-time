@@ -1,6 +1,6 @@
 // Automatické nasazení na Cloudflare (spouští GitHub Actions po úspěšných testech).
 // Samo vytvoří vše potřebné: projekt Pages, databáze D1 (uložené v EU),
-// úložiště fotografií KV, strukturu databáze, ukázková data pro zkušební verzi
+// úložiště fotografií KV, strukturu databáze, hodinky z katalogu (katalog/)
 // a otisk instalačního kódu administrace. Nic placeného neaktivuje.
 //
 // Potřebné tajné hodnoty (GitHub → Settings → Secrets → Actions):
@@ -8,13 +8,12 @@
 //
 // Použití: node scripts/cf-deploy.mjs <větev>
 //   main            → ostrý web (prázdná databáze, SHOP_MODE z proměnné repozitáře, výchozí preview)
-//   jakákoli jiná   → zkušební verze s ukázkovými daty (SHOP_MODE=test, neindexuje se)
+//   jakákoli jiná   → zkušební verze (SHOP_MODE=test, neindexuje se), hodinky z katalogu
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { demoSql, demoImages } from './demo-data.mjs';
 import { loadCatalog, catalogSql, catalogMedia } from './catalog.mjs';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
@@ -127,15 +126,17 @@ if (!production) {
 }
 console.log('uloženo');
 
-// 7) Ukázková data – jen zkušební verze
+// 7) Ukázkové hodinky se už nenahrávají (rozhodnutí majitele 25. 11. 2026: e-shop jen se
+// skutečnými inzeráty z katalogu). Dříve nahrané ukázky se odstraní; kusy, na které odkazuje
+// testovací objednávka, se jen skryjí (stav koncept), aby objednávky zůstaly v pořádku.
 if (!production) {
-  step('Ukázková data zkušební verze');
-  const demoFile = path.join(scratch, 'demo.sql');
-  writeFileSync(demoFile, demoSql());
-  run(['d1', 'execute', names.d1, '--remote', '--file', demoFile, '--env', 'preview'], { capture: true });
-  for (const img of demoImages) {
-    run(['kv', 'key', 'put', img.key, '--namespace-id', kv.id, '--remote', '--path', path.join(ROOT, img.file), '--metadata', '{"type":"image/webp"}'], { cwd: scratch, capture: true });
-  }
+  step('Odstranění ukázkových hodinek');
+  const cleanFile = path.join(scratch, 'demo-cleanup.sql');
+  writeFileSync(cleanFile, `DELETE FROM product_images WHERE product_id LIKE 'demo%' AND product_id NOT IN (SELECT product_id FROM order_items);
+DELETE FROM products WHERE id LIKE 'demo%' AND id NOT IN (SELECT product_id FROM order_items);
+UPDATE products SET status = 'draft', featured = 0 WHERE id LIKE 'demo%';
+INSERT OR IGNORE INTO settings (key, value) VALUES ('demo_seeded', '1');\n`);
+  run(['d1', 'execute', names.d1, '--remote', '--file', cleanFile, '--env', 'preview'], { capture: true });
   console.log('hotovo');
 }
 
