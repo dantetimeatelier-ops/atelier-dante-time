@@ -13,8 +13,9 @@ export function home(lang) {
     description: L(
       'Atelier Dante Time – český hodinářský ateliér. Unikátní renovované mechanické hodinky, servis, renovace a zakázkové sestavy s doživotní garancí pravosti originálních dílů.',
       'Atelier Dante Time – Czech watch atelier. Unique restored mechanical watches, service, restoration and custom builds with a lifetime authenticity guarantee on original parts.'),
-    head: `<link rel="preload" as="image" href="/img/hero-800.webp" media="(max-width: 880px)">
-<link rel="preload" as="image" href="/img/hero-1536.webp" media="(min-width: 881px)">
+    head: `<link rel="preload" as="image" href="/img/hero-dt-m800.webp" media="(max-width: 880px)">
+<link rel="preload" as="image" href="/img/hero-dt-1280.webp" media="(min-width: 881px) and (max-width: 1400px)">
+<link rel="preload" as="image" href="/img/hero-dt-1920.webp" media="(min-width: 1401px)">
 <script type="application/ld+json">${JSON.stringify({
       '@context': 'https://schema.org', '@type': 'Organization', name: SITE.name, url: SITE.origin + '/',
       logo: SITE.origin + '/img/logo-160.webp', image: SITE.origin + '/img/og-image.jpg', email: 'mailto:' + SITE.email,
@@ -25,13 +26,16 @@ export function home(lang) {
     body: `
 <section class="home-hero">
   <div class="wrap">
-    <img class="mark" src="/img/logo-160.webp" width="160" height="160" alt="">
-    <h1>Atelier Dante Time</h1>
-    <p class="subtitle">${L('Český hodinářský ateliér', 'Czech Watch Atelier')}</p>
-    <p class="tagline">${L('Druhý život pro čas. Renovace a zakázkové sestavy mechanických hodinek s důrazem na řemeslo a detail.', 'A second life for time. Restoration and custom builds of mechanical watches with craftsmanship and attention to detail.')}</p>
-    <div class="cta-row">
-      <a class="btn solid" href="${PAGES.collection[lang]}">${L('Prohlédnout kolekci', 'View the collection')}</a>
-      <a class="btn" href="${PAGES.services[lang]}#poptavka">${L('Servis a zakázka na míru', 'Service &amp; custom commission')}</a>
+    <div class="hero-copy">
+      <img class="mark" src="/img/logo-160.webp" width="160" height="160" alt="">
+      <h1>Dante Time</h1>
+      <p class="subtitle">${L('Dáváme času nový život', 'Giving time a new life')}</p>
+      <p class="motto">${L('Tradice. Řemeslo. Čas.', 'Tradition. Craft. Time.')}</p>
+      <p class="tagline">${L('Český hodinářský ateliér. Renovace a ateliérové přestavby mechanických hodinek s důrazem na řemeslo a detail.', 'A Czech watch atelier. Restoration and atelier rebuilds of mechanical watches with craftsmanship and attention to detail.')}</p>
+      <div class="cta-row">
+        <a class="btn solid" href="${PAGES.collection[lang]}">${L('Objevte naši tvorbu', 'Discover our work')}</a>
+        <a class="btn" href="${PAGES.services[lang]}#poptavka">${L('Servis a zakázka na míru', 'Service &amp; custom commission')}</a>
+      </div>
     </div>
   </div>
 </section>

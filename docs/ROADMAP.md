@@ -139,7 +139,7 @@ Začíná po zveřejnění všech šesti produktových inzerátů. Změny vyžad
 nebo schválení majitele se nejprve konzultují.
 
 - [ ] 0. Šest skutečných inzerátů hodinek (4/5 hotovo, Chopard zrušen: PRIM – bílý ciferník, nerez a safír; PRIM kalibr 111 – datum a malá vteřina; PRIM 17 Jewels – nerez s plastickým vzorem; PRIM 17 Jewels – leštěná nerez)
-- [ ] 1. Nová úvodní fotografie (podklad od majitele), úprava pro počítač, tablet i mobil
+- [x] 1. Nová úvodní fotografie (podklad od majitele), úprava pro počítač, tablet i mobil
 - [x] 2a. Ukázkové hodinky odstraněny ze zkušební verze (25. 11.)
 - [ ] 2. Vyčištění e-shopu: ponechat šest skutečných, kontrola fotek, cen, popisů a dostupnosti
 - [ ] 3. Sociální sítě: elegantní ikony Instagram, TikTok, Facebook v horní liště a patičce, návrh další decentní propagace (podklad: odkaz na Facebook)
