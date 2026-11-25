@@ -4,6 +4,17 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-25 – Claude – claude/eshop-platforma (zkušební verze nasazena)
+**Hotovo:** zkušební verze běží na https://claude-eshop-platforma.atelier-dante-time.pages.dev
+(Cloudflare Pages + D1 v EU + KV, režim test, noindex). Majitel vytvořil účet
+do administrace (2FA přes aplikaci Hesla). `scripts/cf-deploy.mjs` je odolný
+vůči chybám při kopírování tajných údajů (Account ID ze záložní konstanty,
+token z okolního textu, náhradní otisk instalačního kódu jen pro zkušební verzi).
+**Další krok:** přidat do administrace výměnu klíče 2FA (klíč byl vidět na
+snímku v chatu) a doporučit ji majiteli; projít s majitelem přidání hodinek.
+**Pozor na:** tajná hodnota ADMIN_SETUP_TOKEN v GitHubu neodpovídá kódu
+předanému majiteli – pro ostrou verzi ji před spuštěním nastavit znovu.
+
 ## 2026-11-25 – Claude – claude/eshop-platforma (rejstřík, DPH, punc)
 **Hotovo:** ověřeno v ARES/RŽP (IČO 24020885): jen volná živnost, úřad Magistrát
 města Kladna, **chybí řemeslná živnost Hodinářství**; neplátce DPH (`OPERATOR.vatPayer
