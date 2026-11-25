@@ -9,7 +9,7 @@ export const SITE = {
   instagramHandle: '@dantetimeatelier',
   tiktok: 'https://www.tiktok.com/@atelierdt',
   tiktokHandle: '@atelierdt',
-  facebook: null,        // doplnit odkaz na Facebook – dokud chybí, ikona se nezobrazuje
+  facebook: 'https://www.facebook.com/share/1535FzNjTSz/',
   brands: ['PRIM', 'Omega', 'Bulova', 'Zaria', 'Doxa'],
 };
 

@@ -108,6 +108,7 @@ try {
   shop.on('pageerror', (e) => errors.push(e.message));
   await shop.goto(`${BASE}/kolekce`);
   await shop.locator('a.product-card[href="/hodinky/omega-geneve-1968"]').click();
+  await shop.waitForLoadState('load'); // skripty stránky (defer) musí být načtené, jinak tlačítko ještě nereaguje
   await shop.getByRole('button', { name: 'Vložit do košíku' }).click();
   await shop.getByRole('heading', { name: 'Košík' }).waitFor();
   await shop.locator('[data-cart-items] .cart-item').waitFor();
@@ -207,6 +208,7 @@ try {
   </script></body></html>` }));
   await shop.goto(`${BASE}/kolekce`);
   await shop.locator('a.product-card[href="/hodinky/prim-sport"]').click();
+  await shop.waitForLoadState('load');
   await shop.getByRole('button', { name: 'Vložit do košíku' }).click();
   await shop.locator('[data-cart-items] .cart-item').waitFor();
   await shop.getByLabel(/Balíkovna – výdejní místo/).check();
