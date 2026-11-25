@@ -160,13 +160,20 @@ INSERT OR IGNORE INTO settings (key, value) VALUES ('demo_seeded', '1');\n`);
   }
 }
 
-// 7c) E-maily přes Resend: klíč z GitHub Secrets → tajná proměnná Cloudflare (nikdy do repozitáře)
+// 7c) E-maily přes Resend: klíč z GitHub Secrets → šifrovaná proměnná projektu Cloudflare Pages
+//     (pro zkušební i ostrou verzi; hodnota se nikde nevypisuje a nepatří do repozitáře)
 if (process.env.RESEND_API_KEY) {
   step('Klíč pro odesílání e-mailů (Resend)');
-  execFileSync(path.join(ROOT, 'node_modules', '.bin', 'wrangler'), ['pages', 'secret', 'put', 'RESEND_API_KEY', '--project-name', PROJECT, ...(env ? ['--env', env] : [])], {
-    cwd: ROOT, input: process.env.RESEND_API_KEY.trim(), stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, WRANGLER_SEND_METRICS: 'false', CI: 'true' },
-  });
-  console.log('uloženo');
+  const api = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/pages/projects/${PROJECT}`;
+  const headers = { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, 'Content-Type': 'application/json' };
+  const secret = { RESEND_API_KEY: { type: 'secret_text', value: process.env.RESEND_API_KEY.trim() } };
+  const r = await fetch(api, { method: 'PATCH', headers, body: JSON.stringify({ deployment_configs: { preview: { env_vars: secret }, production: { env_vars: secret } } }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.success) throw new Error(`Uložení klíče Resend selhalo (HTTP ${r.status}): ${JSON.stringify((j.errors || []).map((e) => e.message))}`);
+  // Kontrola: klíč je u projektu uložen (Cloudflare vrací jen název, ne hodnotu)
+  const g = await (await fetch(api, { headers })).json();
+  const has = (envName) => Boolean(g.result?.deployment_configs?.[envName]?.env_vars?.RESEND_API_KEY);
+  console.log(`uloženo (zkušební verze: ${has('preview') ? 'ano' : 'NE'}, ostrá verze: ${has('production') ? 'ano' : 'NE'})`);
 }
 
 // 8) Sestavení a nasazení
