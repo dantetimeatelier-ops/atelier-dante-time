@@ -34,6 +34,15 @@ for (const k of ['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID', 'ADMIN_SETUP_T
 // Odolnost vůči chybám při kopírování z telefonu: mezery, konce řádků, celá adresa dash.cloudflare.com/<ID>/home
 for (const k of ['CLOUDFLARE_API_TOKEN', 'ADMIN_SETUP_TOKEN']) process.env[k] = process.env[k].trim();
 {
+  // Token vložený i s okolním textem (např. „Bearer …“ nebo celý ukázkový příkaz z Cloudflare): vybrat jen samotný token
+  const t = process.env.CLOUDFLARE_API_TOKEN;
+  if (!/^[A-Za-z0-9_-]{30,}$/.test(t)) {
+    const runs = t.match(/cf[a-z]{2}_[A-Za-z0-9_-]{20,}|[A-Za-z0-9_-]{35,}/g) || [];
+    if (runs.length === 1) { process.env.CLOUDFLARE_API_TOKEN = runs[0]; console.log('Token obsahoval navíc jiný text – použije se jen samotný token.'); }
+    else console.log(`Pozor: CLOUDFLARE_API_TOKEN nemá tvar tokenu (délka ${t.length}, nalezených kandidátů ${runs.length}).`);
+  }
+}
+{
   const raw = process.env.CLOUDFLARE_ACCOUNT_ID;
   const m = raw.match(/[0-9a-f]{32}/i) || raw.replace(/[\s-]/g, '').match(/^[0-9a-f]{32}$/i);
   if (m) process.env.CLOUDFLARE_ACCOUNT_ID = m[0].toLowerCase();
