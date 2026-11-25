@@ -4,6 +4,18 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-25 – Claude – claude/eshop-platforma (e-maily Resend)
+**Hotovo:** e-maily přes Resend zapojené. Klíč `RESEND_API_KEY` je v GitHub Secrets
+(oprávnění Sending access) a nasazení ho zapisuje do proměnných Cloudflare Pages
+(zkušební i ostrá verze). Zkušební poptávka 25. 11. 2026 majiteli dorazila.
+**Další krok:** ověřit doménu atelier-dante-time.cz v Resend (DNS záznamy u registrátora,
+se souhlasem majitele). Do té doby zkušební verze odesílá z onboarding@resend.dev,
+a to jen na e-mail účtu Resend.
+**Pozor na:** ostrá verze má EMAIL_FROM objednavky@atelier-dante-time.cz. Bez ověřené
+domény Resend e-maily odmítne. Doplnit Resend do GDPR (LEGAL-REVIEW 2a, bod 7).
+
+---
+
 ## 2026-11-25 – Claude – claude/eshop-platforma (inzeráty hodinek)
 **Hotovo:** katalog hodinek v repozitáři (`katalog/`, `scripts/catalog.mjs`, R12/R13);
 zveřejněny 2 ze 6 inzerátů: PRIM – bílý ciferník, nerez a safír; PRIM kalibr 111 –
