@@ -64,3 +64,14 @@ Adresa pro vrácení zboží je zatím adresa sídla v Unhošti. Údaje o živno
 a povinnosti vůči Puncovnímu úřadu ověřuje agent ve veřejných zdrojích.
 Zbývající neověřené právní údaje agent předloží ke schválení před spuštěním.
 **Důsledky:** viz `docs/LEGAL-REVIEW.md`, části 2 a 2a.
+
+## R12 – Hodinky do e-shopu přidává agent (2026-11-25)
+**Rozhodl:** majitel
+**Rozhodnutí:** Majitel posílá agentovi fotografie, základní údaje, cenu a případně
+vlastní text. Agent samostatně vytvoří kompletní produktovou kartu (texty v prémiovém
+stylu Dante Time, technické parametry, druh hodinek, pořadí fotografií, SEO, cena,
+dostupnost, záruční informace), zkontroluje zobrazení na počítači i mobilu a hodinky
+zveřejní, pokud majitel výslovně neřekne, že mají zůstat jako koncept.
+**Omezení:** agent nevymýšlí neověřené technické ani historické údaje; na chybějící
+důležité údaje se zeptá jen na ně. Cenu nastavuje vždy jen podle majitele.
+**Technicky:** složka `katalog/` v repozitáři → automatické nasazení (`scripts/catalog.mjs`).
