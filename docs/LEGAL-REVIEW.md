@@ -1,6 +1,6 @@
 # Právní dokumenty – kontrola před zveřejněním
 
-**Stav:** ⚖️ NÁVRH 3.2 – závěrečná kontrola 25. 11. 2026 (část 2b), živnostenské oprávnění rozebráno (část 2c), čeká na schválení majitele
+**Stav:** ⚖️ NÁVRH 3.2 – závěrečná kontrola 25. 11. 2026 (část 2b), živnostenské oprávnění rozebráno (části 2c a 2d), čeká na schválení majitele
 **Připraveno:** 25. 11. 2026
 **Zdroj textů:** `src/legal/cs.mjs` (česky), `src/legal/en.mjs` (anglicky), společné údaje
 `src/legal/common.mjs` a `src/site.mjs` (objekt `OPERATOR`).
@@ -133,6 +133,50 @@ servisu a zakázek jménem Dante Time a prodej použitých hodinek.
 
 > Toto je rozbor podle znění zákonů, ne právní služba. Konkrétní postup doporučuji
 > potvrdit telefonicky na živnostenském úřadě Magistrátu města Kladna.
+
+## 2d. Model bez odpovědného zástupce – § 34 živnostenského zákona (25. 11. 2026)
+
+Majitel spolupracuje s více nezávislými hodináři podle zakázky, proto řešení A (odpovědný
+zástupce) není možné. Znění § 34 (ověřeno na zakonyprolidi.cz):
+
+- **odst. 1 písm. c)–e):** obchodník smí sám provádět drobné změny zboží na žádost kupujícího
+  a jednoduchou výměnu součástí **bez zvláštních odborných znalostí**,
+- **odst. 2:** smí provádět **servis dodaného zboží**, použije-li k tomu odborně způsobilé osoby,
+- **odst. 4:** smí **přijímat objednávky na zhotovení, zpracování nebo úpravy zboží, k jehož
+  prodeji je oprávněn, a dát tyto práce provést oprávněným výrobcem**.
+
+**Navržený model (oprávnění: maloobchod + obor č. 49 + zprostředkování obchodu a služeb):**
+
+| Činnost | Smluvní strana zákazníka | Právní základ | Kdo provádí hodinářskou práci |
+|---|---|---|---|
+| Prodej hotových hodinek (i přestaveb a sestav) | Dante Time | maloobchod, obor č. 49 (použité zboží) | hodinář s živností Hodinářství na objednávku Dante Time |
+| Zakázková přestavba / sestava na přání zákazníka | Dante Time | § 34 odst. 4 | oprávněný hodinář (výpis z RŽP v evidenci) |
+| Servis hodinek koupených u Dante Time (i záruční) | Dante Time | § 34 odst. 2 | odborně způsobilý hodinář |
+| Samostatná oprava / servis hodinek zákazníka | **hodinář** (Dante Time zprostředkuje) | obor „Zprostředkování obchodu a služeb“ | hodinář, který s zákazníkem uzavírá smlouvu o dílo |
+
+**Podmínky, aby model obstál:**
+1. Majitel sám nevykonává hodinářské práce (rozebírání, čištění, mazání, seřizování, opravy
+   strojku). Smí: návrh, výběr součástí, nákup, kontrolu kvality, fotografie, komunikaci
+   a jednoduché úkony podle § 34 odst. 1 (výměna řemínku, jednoduchá výměna součásti).
+2. Každý spolupracující hodinář má v RŽP živnost **Hodinářství**. Výpis se uloží k jeho
+   rámcové smlouvě (subdodávka, mlčenlivost, zpracování osobních údajů, odpovědnost za vady).
+3. U každé zakázky se eviduje, který hodinář práci provedl.
+4. U **zprostředkované opravy** zákazník předem a jasně ví, s kým smlouvu uzavírá
+   (jméno, IČO, sídlo hodináře). Fakturuje hodinář, za vady odpovídá hodinář. Provize Dante
+   Time je uvedena průhledně.
+5. Texty webu nesmí tvrdit, že práce provádí sám ateliér („rozebrány … v ateliéru“,
+   „komunikujete přímo s hodinářem“, „v našem ateliéru prošel servisem“). Jinak jde o klamavou
+   obchodní praktiku a zároveň o důkaz, že Dante Time hodinářskou činnost vykonává sám.
+
+**Nejistota:** zda „úpravy zboží, k jehož prodeji je oprávněn“ (odst. 4) zahrnují i úpravy
+hodinek, které zákazník nekoupil u Dante Time. Podle znění jde o **druh** zboží (hodinky),
+výslovný výklad úřadu jsem ale nenašel. Bezpečná varianta: přestavby vlastních hodinek
+zákazníka nabízet jako zakázku podle odst. 4 jen po potvrzení živnostenským úřadem,
+do té doby je zprostředkovat (řádek 4). Opravy nejsou „zhotovení, zpracování nebo úprava“,
+proto je vždy zprostředkovat.
+
+**Ohlášení:** doplnit obor č. 49 „Zastavárenská činnost a maloobchod s použitým zbožím“
+(změna oboru volné živnosti je bez poplatku). Hodinářství se neohlašuje.
 
 ## 3. Upozornění
 
