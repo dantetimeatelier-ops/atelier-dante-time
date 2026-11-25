@@ -8,13 +8,14 @@ To nastavuje **jen majitel**.
 | Integrace | Stav | Co je potřeba | Náklady |
 |---|---|---|---|
 | **Bankovní převod s QR platbou** | ✅ hotovo, otestováno | IBAN a číslo účtu (`src/site.mjs` nebo `SHOP_IBAN`, `SHOP_ACCOUNT`) | 0 Kč |
-| **Faktura** (stránka k tisku / PDF) | ✅ hotovo, otestováno | údaje provozovatele, režim DPH | 0 Kč |
+| **Faktury z administrace** (objednávky automaticky, zakázky a ruční faktury, storno, úhrada; tisk / PDF) | ✅ hotovo, otestováno, bez externího systému | údaje provozovatele, režim DPH | 0 Kč |
+| **Dobírka** (příplatek, rezervace do odeslání, faktura po zaplacení) | ✅ hotovo, otestováno | zapnout v administraci → Nastavení | dle ceníku dopravce |
 | **E-maily** (potvrzení, platba, odeslání, odstoupení, poptávky) | ✅ hotovo, bez poskytovatele se jen ukládají do administrace | účet **Resend** (free 3 000 e-mailů/měsíc), ověření domény v DNS, `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `EMAIL_FROM` | 0 Kč (free) |
-| **Zásilkovna – výběr výdejního místa** | ⚠️ připraveno (widget v6), neověřeno naostro | účet Zásilkovny, API klíč do `PACKETA_API_KEY`. Bez klíče zákazník místo napíše ručně. | poplatky za zásilky dle ceníku |
+| **Zásilkovna – výběr výdejního místa** | ⚠️ připraveno (widget v6), neověřeno naostro | bezplatný účet Zásilkovny a API klíč do `PACKETA_API_KEY`. Bez klíče zákazník dostane odkaz na mapu poboček a místo napíše. | poplatky za zásilky dle ceníku |
 | **Zásilkovna – podání zásilky** | ⏳ nedokončeno | zatím ručně v klientské sekci Zásilkovny (číslo zásilky se zadá v administraci) | – |
-| **Balíkovna – výběr místa** | ⏳ nedokončeno | zákazník zadá výdejní místo ručně. Widget České pošty ověřit při aktivaci smluvního účtu. | dle ceníku |
+| **Balíkovna – výběr místa na mapě** | ✅ hotovo (oficiální okno České pošty, bez klíče), otestováno s náhradou okna | naostro ověřit na zkušební verzi | dle ceníku |
 | **Platební brána (karta)** | ⚠️ připraveno pro Comgate (API v1.0), neověřeno | smlouva s Comgate, `COMGATE_MERCHANT`, `COMGATE_SECRET`, v portálu Comgate nastavit URL oznámení `https://atelier-dante-time.cz/api/payments/comgate`. **Před aktivací ověřit aktuální verzi API.** | ~1–2 % z platby (dle smlouvy) 💰 |
-| **Účetní systém (Fakturoid, iDoklad)** | ⏳ nedokončeno | po výběru služby přidat export | dle tarifu 💰 |
+| **Externí účetní systém** | ⏸ nezaváděn (rozhodnutí majitele) | faktury vystavuje přímo administrace | – |
 | **Automatické popisy pomocí AI** | ⏳ jen šablona bez AI | popisy se skládají z parametrů. Napojení na AI by bylo placené. | – |
 
 ## Bezpečnost tajných hodnot

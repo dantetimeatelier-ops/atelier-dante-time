@@ -38,6 +38,23 @@ Přijde vám e-mail. V administraci **Objednávky**:
 4. Nezaplacená objednávka se po 72 hodinách sama zruší a hodinky se vrátí
    do prodeje.
 
+## Dobírka
+Objednávka na dobírku nečeká na platbu. Zabalte hodinky, podejte je na
+dobírku a klepněte na **Odesláno na dobírku**. Až vám dopravce peníze
+pošle, klepněte na **Dobírka zaplacena** a faktura se vystaví sama.
+
+## Faktury
+- K objednávkám se faktura vystaví sama po zaplacení.
+- K zakázce: otevřete zakázku → **Vystavit fakturu** (položky se předvyplní).
+- Ruční faktura: **Více → Faktury → + Nová**.
+- Fakturu uložíte do PDF přes **Sdílet → Tisk**.
+
+## Zlaté a stříbrné hodinky
+U pouzdra ze zlata, stříbra nebo platiny vyplňte v části **Pouzdro a punc**
+ryzost a puncovní značku. Bez ní administrace hodinky nezveřejní (zákon
+o puncovnictví). Pozlacená pouzdra označte jako „pozlacené“. Na webu se
+zobrazí s poznámkou, že nejde o drahý kov.
+
 ## Poptávky a zakázky
 - **Více → Poptávky**: zprávy z webu. Odpovězte klepnutím na e-mail.
   Tlačítkem **→ Zakázka** z poptávky vytvoříte zakázku.

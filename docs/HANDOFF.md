@@ -4,6 +4,23 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-25 – Claude – claude/eshop-platforma (pokyny majitele z 25. 11.)
+**Hotovo:** migrace 0002 (druh hodinek, materiál pouzdra, punc, pozlacení,
+identifikace pro garanci, dobírka, tabulka faktur); pojistka punc u drahých kovů;
+dobírka; Balíkovna – oficiální okno České pošty (postMessage pickerResult, origin
+https://b2c.cpost.cz); faktury z administrace; právní dokumenty návrh 2 (garance
+i pro další majitele); automatické nasazení scripts/cf-deploy.mjs (D1 v EU, KV,
+ukázková data jen pro zkušební verzi, otisk instalačního kódu v DB); vizuální
+náhled jako soukromý artifact.
+**Rozpracováno:** nic – čeká se na 3 tajné hodnoty Cloudflare v GitHubu.
+**Další krok:** po nastavení secrets spustit testy (push) → zkušební verze;
+ověřit naostro okno Balíkovny; po schválení právních textů anglické verze.
+**Pozor na:** cf-deploy.mjs nebyl spuštěn proti skutečnému Cloudflare (API je
+z prostředí agenta nedostupné) – první běh sledovat a případně opravit.
+Ostrou doménu neměnit bez majitele.
+
+---
+
 ## 2026-11-25 – Claude – claude/eshop-platforma (PR #3, mandát R10)
 **Hotovo:** celá nová platforma: generátor stránek (CZ/EN), Cloudflare Pages
 Functions + D1 + KV, katalog a detail hodinek (SSR), košík a objednávky
