@@ -3,13 +3,15 @@
 // nákup zákazníkem → platba → faktura → odstoupení od smlouvy.
 // Spuštění: BASE=http://localhost:8788 SETUP_TOKEN=… node tests/e2e/flow.mjs
 import { chromium, devices } from 'playwright';
-import { createHmac } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 
 const BASE = process.env.BASE || 'http://localhost:8788';
 const TOKEN = process.env.SETUP_TOKEN;
 const SHOTS = process.env.SHOTS;
+// Heslo testovacího účtu se generuje při každém běhu (v kódu žádné heslo není)
+const PASS = randomBytes(18).toString('base64url');
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
 const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const b32dec = (s) => { let bits = 0; let v = 0; const out = []; for (const c of s) { v = (v << 5) | B32.indexOf(c); bits += 5; if (bits >= 8) { out.push((v >>> (bits - 8)) & 255); bits -= 8; } } return Buffer.from(out); };
@@ -33,14 +35,14 @@ try {
   await page.getByRole('button', { name: 'Pokračovat' }).click();
   const secret = (await page.locator('.code').textContent()).trim();
   await shot(page, '1-2fa');
-  await page.getByLabel('Heslo').fill('velmi-bezpecne-heslo-2026');
+  await page.getByLabel('Heslo').fill(PASS);
   await page.getByLabel('Ověřovací kód').fill(totp(secret));
   await page.getByRole('button', { name: 'Dokončit' }).click();
   await page.getByRole('heading', { name: 'Přehled' }).waitFor();
   step('první nastavení administrace s dvoufázovým ověřením');
 
   // Přihlášení se špatným kódem musí selhat
-  const bad = await page.evaluate(async () => (await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'majitel@example.com', password: 'velmi-bezpecne-heslo-2026', code: '000000' }) })).status);
+  const bad = await page.evaluate(async (pw) => (await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'majitel@example.com', password: pw, code: '000000' }) })).status, PASS);
   assert.equal(bad, 401); step('přihlášení se špatným kódem odmítnuto');
 
   // 2) Nastavení dopravy

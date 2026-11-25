@@ -65,10 +65,21 @@ route('POST', 'login', async ({ env, body, request }) => {
 
 route('POST', 'logout', async ({ env, request }) => json({ ok: true }, 200, { 'Set-Cookie': await destroySession(env, request) }), { auth: false });
 route('GET', 'me', async ({ user }) => json({ email: user.email }));
+route('POST', 'logout-all', async ({ env, user }) => {
+  await env.DB.prepare('DELETE FROM admin_sessions WHERE user_id = ?').bind(user.id).run();
+  await audit(env, user.email, 'odhlaseni_vsude');
+  return json({ ok: true }, 200, { 'Set-Cookie': '__Host-dt_admin=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0' });
+});
 
 // --- Přehled -------------------------------------------------------------------
 route('GET', 'dashboard', async ({ env }) => {
   await releaseExpired(env);
+  // Doby uložení podle zásad ochrany osobních údajů
+  const yearAgo = new Date(Date.now() - 365 * 86400000).toISOString();
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM inquiries WHERE created_at < ? AND id NOT IN (SELECT inquiry_id FROM commissions WHERE inquiry_id IS NOT NULL)").bind(yearAgo),
+    env.DB.prepare("DELETE FROM admin_sessions WHERE expires_at < ?").bind(new Date().toISOString()),
+  ]);
   const q = (sql, ...b) => env.DB.prepare(sql).bind(...b).first();
   const counts = {};
   const { results } = await env.DB.prepare('SELECT status, COUNT(*) AS n FROM products GROUP BY status').all();

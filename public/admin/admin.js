@@ -360,7 +360,9 @@
       <a class="item" href="#/nastaveni"><span class="grow">Nastavení</span></a>
       <a class="item" href="#/emaily"><span class="grow">E-maily</span></a>
       <a class="item" href="#/historie"><span class="grow">Historie změn</span></a>
-      <a class="item" href="/" target="_blank"><span class="grow">Otevřít web ↗</span></a></div>`;
+      <a class="item" href="/" target="_blank"><span class="grow">Otevřít web ↗</span></a></div>
+      <button class="btn ghost block" id="lall" style="margin-top:20px">Odhlásit všechna zařízení</button>`;
+    app.querySelector('#lall').addEventListener('click', () => run(async () => { if (!confirm('Odhlásit všechna zařízení včetně tohoto?')) return; await api('POST', 'logout-all', {}); showLogin(); }));
   };
 
   // --- Směrovač -------------------------------------------------------------------------
