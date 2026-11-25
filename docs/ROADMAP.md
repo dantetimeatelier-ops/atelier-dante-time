@@ -138,7 +138,7 @@ integraci v testovacím režimu a ostrý provoz zapne až po souhlasu.
 Začíná po zveřejnění všech šesti produktových inzerátů. Změny vyžadující podklady
 nebo schválení majitele se nejprve konzultují.
 
-- [ ] 0. Šest skutečných inzerátů hodinek (1/6 hotovo: PRIM – bílý ciferník, nerez a safír)
+- [ ] 0. Šest skutečných inzerátů hodinek (2/6 hotovo: PRIM – bílý ciferník, nerez a safír; PRIM kalibr 111 – datum a malá vteřina)
 - [ ] 1. Nová úvodní fotografie (podklad od majitele), úprava pro počítač, tablet i mobil
 - [ ] 2. Vyčištění e-shopu: odstranit ukázkové produkty, ponechat šest skutečných, kontrola fotek, cen, popisů a dostupnosti
 - [ ] 3. Sociální sítě: elegantní ikony Instagram, TikTok, Facebook v horní liště a patičce, návrh další decentní propagace (podklad: odkaz na Facebook)
