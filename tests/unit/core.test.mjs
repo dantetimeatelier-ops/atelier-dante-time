@@ -94,7 +94,7 @@ test('rezervace: kus nelze prodat dvakrát ani při souběhu (SQL na SQLite)', (
 
 test('právní dokumenty: obsahují povinné náležitosti', () => {
   const all = ALL_LEGAL.map((d) => d.body()).join('\n');
-  for (const must of ['14 dnů', '24 měsíců', 'Odstoupit od smlouvy', 'adr.coi.cz', 'Úřad pro ochranu osobních údajů', 'nařízení vlády č. 363/2013 Sb.', '§ 1837', 'garanc', 'Objednávka zavazující k platbě', '§ 89 odst. 3']) {
+  for (const must of ['14 dnů', '24 měsíců', 'Odstoupit od smlouvy', 'adr.coi.cz', 'Úřad pro ochranu osobních údajů', 'nařízení vlády č. 363/2013 Sb.', '§ 1837', 'garanc', 'Objednávka zavazující k platbě', '§ 89 odst. 3', 'každého dalšího majitele', 'identifikace hodinek', 'vrácení kupní ceny', 'puncovní značk', 'Pozlacená', 'na dobírku', 'nemá vliv na vaše zákonná práva']) {
     assert.ok(all.includes(must), `Chybí: ${must}`);
   }
   // Zrušená evropská platforma ODR se už nesmí uvádět

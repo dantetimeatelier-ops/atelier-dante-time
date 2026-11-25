@@ -4,8 +4,8 @@
 // se zobrazují jako [DOPLNIT: …] a test webu nepustí zveřejnění, dokud jsou.
 import { SITE, OPERATOR, op, missing } from '../site.mjs';
 
-export const LEGAL_VERSION = '2026-12-01-navrh';
-const DATE = '1. 12. 2026 (návrh)';
+export const LEGAL_VERSION = '2026-12-01-navrh-2';
+const DATE = '1. 12. 2026 (návrh 2)';
 const EFFECTIVE = missing('datum účinnosti');
 
 const email = `<a href="mailto:${SITE.email}">${SITE.email}</a>`;
@@ -36,7 +36,14 @@ ${toc([['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky a ceny'], ['op3', 'Obje
 
 <h2 id="op2">2. Hodinky a ceny</h2>
 <ol>
-<li>V e-shopu se prodávají převážně <strong>použité (vintage) hodinky</strong>, které prošly servisem nebo renovací v ateliéru, a hodinky sestavené v ateliéru. U každého kusu je uveden jeho stav, provedené práce, <strong>deklarované originální díly</strong> a díly vyměněné nebo neoriginální. Tyto údaje jsou součástí popisu zboží a smlouvy.</li>
+<li>V e-shopu se prodávají hotové mechanické hodinky těchto druhů (druh je uveden u každého kusu):
+  <ul>
+  <li><strong>Originální hodinky</strong> – použité (vintage) hodinky, které prošly servisem nebo renovací v ateliéru,</li>
+  <li><strong>Přestavby</strong> – hodinky upravené v ateliéru, u nichž některé díly nejsou původní,</li>
+  <li><strong>Sestavy z ateliéru</strong> – hodinky sestavené v ateliéru z vybraných dílů.</li>
+  </ul>
+  U každého kusu je uveden jeho stav, provedené práce, <strong>deklarované originální díly</strong> a díly vyměněné nebo neoriginální. Tyto údaje jsou součástí popisu zboží a smlouvy.</li>
+<li><strong>Materiál pouzdra.</strong> U každého kusu je uveden materiál pouzdra. Pouzdra z <strong>drahých kovů</strong> (zlato, stříbro, platina) prodávající nabízí pouze s uvedenou ryzostí a platnou puncovní značkou podle zákona č. 19/1993 Sb., o puncovnictví. <strong>Pozlacená</strong> (případně postříbřená) pouzdra nejsou z drahého kovu a jsou tak vždy výslovně označena.</li>
 <li>Každé hodinky jsou <strong>unikátní kus</strong> dostupný pouze jednou. Prezentace hodinek v e-shopu je informativní a není návrhem na uzavření smlouvy podle § 1732 odst. 2 OZ.</li>
 <li>Ceny jsou uvedeny v korunách českých a jsou konečné. ${vat()} Náklady na dopravu a případné poplatky za způsob platby jsou uvedeny na stránce <a href="/doprava-a-platba">Doprava a platba</a> a kupujícímu se zobrazí před odesláním objednávky.</li>
 <li>Prodávající neposkytuje slevy z ceny ani individuálně přizpůsobené ceny na základě automatizovaného rozhodování.</li>
@@ -46,7 +53,7 @@ ${toc([['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky a ceny'], ['op3', 'Obje
 <ol>
 <li>Kupující vloží hodinky do košíku, vyplní údaje, zvolí způsob dopravy a platby a seznámí se s těmito podmínkami. Před odesláním objednávky si může všechny údaje zkontrolovat a opravit.</li>
 <li>Objednávku kupující odešle tlačítkem <strong>„Objednávka zavazující k platbě“</strong>. Odesláním objednávky kupující potvrzuje, že se seznámil s podmínkami a souhlasí s nimi.</li>
-<li>Po odeslání objednávky e-shop hodinky <strong>pro kupujícího rezervuje</strong>, aby je nemohl současně koupit nikdo jiný. Rezervace trvá po dobu splatnosti zvolené platby (viz čl. 4).</li>
+<li>Po odeslání objednávky e-shop hodinky <strong>pro kupujícího rezervuje</strong>, aby je nemohl současně koupit nikdo jiný. Rezervace trvá po dobu splatnosti zvolené platby (viz čl. 4), u dobírky do odeslání zásilky.</li>
 <li>Kupní smlouva je uzavřena okamžikem, kdy prodávající kupujícímu doručí e-mailové <strong>potvrzení objednávky</strong>. Součástí potvrzení je text těchto podmínek ve znění platném v den objednávky.</li>
 <li>Prodávající uzavřenou smlouvu archivuje v elektronické podobě. Smlouva není přístupná třetím osobám. Kupujícímu je na vyžádání zpřístupněna.</li>
 <li>Pokud by hodinky nebylo možné dodat (např. byly prokazatelně poškozeny před odesláním), prodávající kupujícího bez zbytečného odkladu informuje a případně přijatou platbu vrátí nejpozději do 14 dnů.</li>
@@ -55,11 +62,12 @@ ${toc([['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky a ceny'], ['op3', 'Obje
 
 <h2 id="op4">4. Platba</h2>
 <ol>
-<li>Kupní cenu lze uhradit způsoby uvedenými na stránce <a href="/doprava-a-platba">Doprava a platba</a>, zejména <strong>bankovním převodem předem</strong> (s QR platbou) a po zprovoznění platební brány také <strong>platební kartou online</strong>.</li>
+<li>Kupní cenu lze uhradit způsoby uvedenými na stránce <a href="/doprava-a-platba">Doprava a platba</a>: <strong>bankovním převodem předem</strong> (s QR platbou), <strong>na dobírku</strong> při převzetí zásilky a po zprovoznění platební brány také <strong>platební kartou online</strong>.</li>
+<li>Při platbě <strong>na dobírku</strong> je cena splatná při převzetí zásilky. Za dobírku může být účtován příplatek uvedený před odesláním objednávky. Nepřevezme-li kupující zásilku na dobírku bez vážného důvodu, je prodávající oprávněn od smlouvy odstoupit a požadovat náhradu účelně vynaložených nákladů na dopravu.</li>
 <li>Při platbě převodem je cena splatná do ${missing('počet – návrh: 3')} dnů od uzavření smlouvy na účet prodávajícího ${op('bankAccount', 'číslo účtu')} s variabilním symbolem uvedeným v potvrzení objednávky. Při platbě kartou je cena splatná ihned.</li>
 <li>Pokud kupující cenu neuhradí ve lhůtě splatnosti, rezervace hodinek skončí a prodávající je oprávněn od smlouvy odstoupit. O tom kupujícího informuje e-mailem.</li>
 <li>Prodávající nepožaduje zálohu na hotové hodinky nad rámec ceny. Vlastnické právo přechází na kupujícího zaplacením celé kupní ceny a převzetím hodinek.</li>
-<li>Daňový doklad (fakturu) zašle prodávající kupujícímu elektronicky po zaplacení.</li>
+<li>Fakturu zašle prodávající kupujícímu elektronicky po zaplacení. Faktura obsahuje <strong>identifikaci hodinek</strong> (např. číslo pouzdra nebo strojku), která slouží i pro uplatnění garance pravosti.</li>
 </ol>
 
 <h2 id="op5">5. Dodání a přechod nebezpečí</h2>
@@ -76,12 +84,13 @@ ${toc([['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky a ceny'], ['op3', 'Obje
 </ol>
 
 <h2 id="op7">7. Garance pravosti</h2>
-<p>Na deklarované originální díly poskytuje prodávající <strong>doživotní garanci pravosti</strong> jako smluvní záruku podle § 2113 a násl. OZ. Podmínky jsou na stránce <a href="/warranty">Záruka a garance pravosti</a>. Garance nemá vliv na zákonná práva z vadného plnění.</p>
+<p>Na všechny díly deklarované jako originální poskytuje prodávající <strong>doživotní garanci pravosti</strong> jako smluvní záruku podle § 2113 a násl. OZ, a to i pro každého dalšího majitele hodinek. Podmínky jsou na stránce <a href="/warranty">Záruka a garance pravosti</a>. Garance nemá vliv na zákonná práva z vadného plnění.</p>
 
 <h2 id="op8">8. Odstoupení od smlouvy</h2>
 <ol>
 <li>Spotřebitel má právo od kupní smlouvy uzavřené prostřednictvím e-shopu odstoupit <strong>bez udání důvodu do 14 dnů</strong> od převzetí hodinek (§ 1829 OZ).</li>
-<li>Právo na odstoupení nemá spotřebitel u hodinek vyrobených podle jeho požadavků nebo přizpůsobených jeho osobním potřebám (§ 1837 písm. d) OZ), tedy u zakázkové výroby a přestaveb.</li>
+<li>Právo na odstoupení nemá spotřebitel u hodinek vyrobených podle jeho požadavků nebo přizpůsobených jeho osobním potřebám (§ 1837 písm. d) OZ), tedy u <strong>zakázkové výroby a přestavby podle zadání zákazníka</strong>. Přestavby a sestavy nabízené v e-shopu jako hotové kusy vrátit lze.</li>
+<li>Stejnou 14denní možnost vrácení hotových hodinek poskytuje prodávající smluvně i <strong>kupujícímu-podnikateli</strong>, a to za podmínek uvedených pro spotřebitele.</li>
 <li>Postup, vzorový formulář a <strong>funkce „Odstoupit od smlouvy“</strong> jsou na stránce <a href="/returns">Odstoupení od smlouvy a vrácení zboží</a>.</li>
 </ol>
 
@@ -97,7 +106,7 @@ ${toc([['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky a ceny'], ['op3', 'Obje
 </ol>
 
 <h2 id="op11">11. Kupující podnikatelé</h2>
-<p>Ustanovení o právech spotřebitele (zejména odstoupení od smlouvy podle čl. 8) se na kupujícího-podnikatele nevztahují. U kupujícího-podnikatele přechází nebezpečí škody předáním hodinek prvnímu dopravci. Práva z vadného plnění se u podnikatele řídí § 2099 a násl. OZ. Prodávající mu navíc poskytuje <strong>záruku za jakost 24 měsíců</strong> od převzetí.</p>
+<p>Ustanovení o právech spotřebitele se na kupujícího-podnikatele nevztahují, s výjimkou smluvní možnosti vrácení hotových hodinek podle čl. 8. U kupujícího-podnikatele přechází nebezpečí škody předáním hodinek prvnímu dopravci. Práva z vadného plnění se u podnikatele řídí § 2099 a násl. OZ. Prodávající mu navíc poskytuje <strong>záruku za jakost 24 měsíců</strong> od převzetí.</p>
 
 <h2 id="op12">12. Závěrečná ustanovení</h2>
 <ol>
@@ -134,7 +143,7 @@ ${toc([['rr1', 'Na co se reklamační řád vztahuje'], ['rr2', 'Doba pro uplatn
 <ul>
 <li>stav a vlastnosti, které jsou uvedeny v popisu konkrétního kusu (např. patina, stopy používání, vyměněné díly), a vady, pro které byla sjednána nižší cena,</li>
 <li>u použitých hodinek opotřebení odpovídající míře používání, kterou měly při převzetí,</li>
-<li>opotřebení způsobené obvyklým užíváním (např. řemínek, sklíčko, povrch pouzdra),</li>
+<li>opotřebení způsobené obvyklým užíváním (např. řemínek, sklíčko, povrch pouzdra), včetně postupného <strong>opotřebení pozlacení</strong> pozlacených pouzder,</li>
 <li>odchylka přesnosti chodu v rozsahu uvedeném u konkrétního kusu, jinak v rozsahu obvyklém pro daný typ a stáří strojku ${missing('ověřit / případně uvést konkrétní toleranci, např. ±30 s/den u vintage strojků')},</li>
 <li>poškození pádem, nárazem, vodou nebo vlhkostí (pokud hodinky nebyly výslovně označeny jako vodotěsné), magnetickým polem, chemikáliemi nebo neodborným zásahem třetí osoby,</li>
 <li>poškození vzniklé nedodržením <a href="/care">doporučení k péči o hodinky</a>.</li>
@@ -211,11 +220,11 @@ ${toc([['os1', 'Lhůta 14 dnů'], ['os2', 'Jak odstoupit'], ['os3', 'Vrácení h
 
 <h2 id="os5">5. Kdy nelze odstoupit</h2>
 <ul>
-<li><strong>zakázková výroba a přestavby</strong> – hodinky vyrobené nebo upravené podle vašich požadavků (§ 1837 písm. d) OZ),</li>
+<li><strong>zakázková výroba a přestavby podle vašeho zadání</strong> – hodinky vyrobené nebo upravené podle vašich požadavků (§ 1837 písm. d) OZ). Přestavby a sestavy nabízené v e-shopu jako hotové kusy vrátit <strong>lze</strong>,</li>
 <li><strong>servis a renovace</strong>, které byly se zahájením se vaším výslovným souhlasem před uplynutím lhůty pro odstoupení <strong>zcela dokončeny</strong> (§ 1837 písm. a) OZ). Podrobnosti v <a href="/zakazkova-vyroba">podmínkách zakázkové výroby a servisu</a>,</li>
-<li>kupující podnikatel – zákonné právo na odstoupení se vztahuje jen na spotřebitele. ${missing('rozhodnout: nabídnout 14denní vrácení i podnikatelům? (obchodní závazek „14denní možnost vrácení hotových hodinek“)')}</li>
+
 </ul>
-<p>Výměna hodinek za jiný kus je možná po vzájemné dohodě, protože každý kus je unikátní.</p>
+<p>Možnost vrácení hotových hodinek do 14 dnů poskytujeme smluvně i <strong>nákupům na firmu</strong> (kupujícím-podnikatelům), za stejných podmínek. Výměna hodinek za jiný kus je možná po vzájemné dohodě, protože každý kus je unikátní.</p>
 
 <h2 id="poskozeni">6. Poškozená zásilka</h2>
 <ol>
@@ -253,17 +262,32 @@ export const warranty = {
 <h2>2. Doživotní garance pravosti originálních dílů</h2>
 <p><strong>Prohlášení o záruce (smluvní záruka podle § 2113 a násl. OZ)</strong></p>
 <ol>
-<li><strong>Kdo garanci poskytuje:</strong> ${seller()}, e-mail ${email}.</li>
-<li><strong>Co garantujeme:</strong> že díly, které jsou u konkrétních hodinek v popisu, v potvrzení objednávky nebo v certifikátu výslovně označeny jako <strong>originální</strong> (deklarované originální díly), jsou originálními díly daného výrobce odpovídajícími popisu.</li>
-<li><strong>Doba trvání:</strong> bez časového omezení – po celou dobu existence hodinek. ${missing('rozhodnout: platí garance jen pro prvního kupujícího, nebo i pro každého dalšího majitele s dokladem o koupi?')}</li>
-<li><strong>Co garance nezahrnuje:</strong> díly označené jako vyměněné, neoriginální nebo bez deklarace; díly, které po prodeji vyměnil nebo upravil někdo jiný než ateliér; běžné opotřebení a poškození.</li>
-<li><strong>Jak garanci uplatnit:</strong> napište na ${email}, přiložte doklad o koupi a důvod pochybnosti (např. odborné vyjádření). Hodinky posoudíme, případně necháme posoudit nezávislým odborníkem. Náklady na posouzení neseme my, pokud se pochybnost potvrdí.</li>
-<li><strong>Co získáte, pokud se ukáže, že deklarovaný díl originální není:</strong> ${missing('zvolit nápravu – návrh: podle vaší volby (a) výměna dílu za originální na naše náklady, je-li dostupný, nebo (b) vrácení celé kupní ceny proti vrácení hodinek')}.</li>
+<li><strong>Kdo garanci poskytuje:</strong> ${seller()}, e-mail ${email} (dále jen „ateliér“).</li>
+<li><strong>Na co se vztahuje:</strong> na <strong>všechny součásti hodinek deklarované jako originální</strong> – tedy výslovně označené jako originální v popisu hodinek, v potvrzení objednávky, na faktuře nebo v popisu provedených prací. Ateliér garantuje, že tyto součásti jsou originálními díly daného výrobce hodinek odpovídajícími popisu.</li>
+<li><strong>Pro koho platí:</strong> pro kupujícího i pro <strong>každého dalšího majitele</strong> hodinek.</li>
+<li><strong>Jak dlouho:</strong> bez časového omezení – po celou dobu existence hodinek.</li>
+<li><strong>Podmínky uplatnění:</strong>
+  <ul>
+  <li><strong>identifikace hodinek</strong> – hodinky musí odpovídat identifikaci uvedené na faktuře nebo v popisu prací (např. číslo pouzdra nebo strojku, fotodokumentace ateliéru),</li>
+  <li><strong>ověření</strong>, že příslušné díly nebyly po prodeji (předání) vyměněny ani upraveny jinou osobou než ateliérem – ateliér hodinky za tím účelem prohlédne a porovná se svou dokumentací,</li>
+  <li>doložení původu hodinek z ateliéru (faktura, potvrzení objednávky nebo popis prací – další majitel může předložit doklad předchozího majitele, případně ateliér ověří identifikaci ve své evidenci).</li>
+  </ul></li>
+<li><strong>Co garance nezahrnuje:</strong> díly označené jako vyměněné, neoriginální nebo bez deklarace originality; díly vyměněné nebo upravené po prodeji jinou osobou než ateliérem; běžné opotřebení a poškození.</li>
+<li><strong>Jak garanci uplatnit:</strong> napište na ${email}, uveďte identifikaci hodinek a důvod pochybnosti (např. odborné vyjádření). Hodinky ateliér posoudí, případně nechá posoudit nezávislým odborníkem. <strong>Náklady na posouzení a dopravu nese ateliér</strong>, pokud se pochybnost potvrdí. O výsledku vás ateliér informuje písemně.</li>
+<li><strong>Co získáte při prokázané nepravosti</strong> – podle vaší volby:
+  <ul>
+  <li><strong>výměnu</strong> neoriginální součásti za originální díl na náklady ateliéru, je-li takový díl dostupný, nebo</li>
+  <li><strong>vrácení kupní ceny</strong> zaplacené ateliéru za hodinky, proti vrácení hodinek. Další majitel obdrží částku odpovídající kupní ceně, za kterou hodinky původně prodal ateliér.</li>
+  </ul>
+  Není-li originální díl dostupný, náleží vám vrácení kupní ceny.</li>
 <li><strong>Územní platnost:</strong> garanci lze uplatnit odkudkoli, komunikace probíhá v češtině nebo angličtině.</li>
-<li>Garance <strong>nemá vliv na vaše zákonná práva</strong> z vadného plnění, která trvají vedle ní a uplatnění garance je nijak neomezuje.</li>
+<li><strong>Vztah k zákonným právům:</strong> garance <strong>nemá vliv na vaše zákonná práva</strong> z vadného plnění. Ta trvají vedle ní a uplatnění garance je nijak neomezuje. Jste-li spotřebitel, můžete se vždy rozhodnout uplatnit místo garance svá zákonná práva.</li>
 </ol>
 
-<h2>3. Servis</h2>
+<h2>3. Hodinky upravené nebo servisované ateliérem pro zákazníka</h2>
+<p>U servisu, renovace a přestavby hodinek zákazníka se garance pravosti vztahuje na díly, které ateliér dodal a v popisu provedených prací výslovně označil jako originální. Původní díly zákazníkových hodinek ateliér neověřuje, pokud to nebylo výslovně sjednáno.</p>
+
+<h2>4. Servis</h2>
 <p>Pro zachování správné funkce doporučujeme odborný servis mechanických hodinek přibližně každých 3–5 let. Rádi jej provedeme – viz <a href="/services">Služby</a>.</p>`,
 };
 
@@ -312,6 +336,12 @@ ${toc([['zv1', 'Rozsah a druhy zakázek'], ['zv2', 'Poptávka, nabídka a uzavř
 <li>U vintage hodinek ateliér <strong>nezaručuje vodotěsnost</strong>, pokud nebyla výslovně sjednána a ověřena zkouškou.</li>
 </ol>
 
+<h3>Pouzdra z drahých kovů a pozlacená pouzdra</h3>
+<ul>
+<li>U pouzder z drahých kovů (zlato, stříbro, platina) ateliér při převzetí zaznamená ryzost a puncovní značku, je-li přítomna. Hodinky z drahých kovů ateliér nabízí k prodeji jen s platnou puncovní značkou.</li>
+<li>Pozlacená pouzdra ateliér nebrousí ani neleští způsobem, který by poškodil pozlacení, bez výslovného souhlasu zákazníka. Obnova pozlacení není součástí běžného servisu.</li>
+</ul>
+
 <h2 id="zv6">6. Termíny a předání</h2>
 <ol>
 <li>Termín uvedený v nabídce je předpokládaný. Obvyklá délka servisu je 2–3 týdny, u renovací a zakázkové výroby podle rozsahu a dostupnosti dílů. Pevný termín platí, jen je-li výslovně sjednán.</li>
@@ -343,7 +373,7 @@ export const shipping = {
 <h2>Doprava</h2>
 <table><thead><tr><th>Způsob</th><th>Cena</th><th>Doručení</th></tr></thead><tbody>
 <tr><td><strong>Zásilkovna</strong> – výdejní místo nebo Z-BOX</td><td>${missing('cena')}</td><td>obvykle 1–2 pracovní dny od odeslání</td></tr>
-<tr><td><strong>Balíkovna</strong> – výdejní místo</td><td>${missing('cena')}</td><td>obvykle 1–2 pracovní dny od odeslání</td></tr>
+<tr><td><strong>Balíkovna</strong> – výdejní místo (výběr na mapě České pošty)</td><td>${missing('cena')}</td><td>obvykle 1–2 pracovní dny od odeslání</td></tr>
 <tr><td><strong>Osobní převzetí</strong> po domluvě</td><td>zdarma</td><td>${missing('místo osobního převzetí, nebo tuto možnost odstranit')}</td></tr>
 </tbody></table>
 <p>Hodinky odesíláme pečlivě zabalené a pojištěné. ${missing('ověřit limity pojištění zásilek u Zásilkovny a Balíkovny pro hodnotu hodinek; u dražších kusů případně jen osobní převzetí')} Doručujeme v rámci České republiky. ${missing('rozhodnout: doručení na Slovensko / do EU?')}</p>
@@ -352,9 +382,10 @@ export const shipping = {
 <h2>Platba</h2>
 <table><thead><tr><th>Způsob</th><th>Poplatek</th><th>Poznámka</th></tr></thead><tbody>
 <tr><td><strong>Bankovní převod předem</strong> s QR platbou</td><td>zdarma</td><td>Platební údaje a QR kód dostanete v potvrzení objednávky. Hodinky jsou po dobu splatnosti rezervovány.</td></tr>
-<tr><td><strong>Platba kartou online</strong></td><td>zdarma</td><td>${missing('k dispozici po aktivaci platební brány – název poskytovatele')}</td></tr>
+<tr><td><strong>Dobírka</strong> – platba při převzetí</td><td>${missing('příplatek za dobírku, nebo „zdarma“')}</td><td>Hodinky jsou pro vás rezervovány do odeslání. Nelze kombinovat s osobním převzetím.</td></tr>
+<tr><td><strong>Platba kartou online</strong></td><td>zdarma</td><td>bude k dispozici po aktivaci platební brány (Comgate)</td></tr>
 </tbody></table>
-<p>Dobírku nenabízíme. Všechny ceny jsou v Kč. ${vat()} Fakturu zasíláme e-mailem po zaplacení.</p>`,
+<p>Všechny ceny jsou v Kč. ${vat()} Fakturu zasíláme e-mailem po zaplacení.</p>`,
 };
 
 // ---------------------------------------------------------------------------
@@ -380,10 +411,10 @@ ${toc([['gd1', 'Správce'], ['gd2', 'Jaké údaje, proč a jak dlouho'], ['gd3',
 
 <h2 id="gd3">3. Komu údaje předáváme</h2>
 <ul>
-<li><strong>Cloudflare, Inc.</strong> – hosting webu, databáze a úložiště fotografií (zpracovatel),</li>
+<li><strong>Cloudflare, Inc.</strong> – hosting webu, databáze a úložiště fotografií (zpracovatel). Databáze se zákaznickými údaji je uložena v Evropské unii,</li>
 <li><strong>Google Ireland Ltd. / Google LLC</strong> – e-mailová schránka Gmail (zpracovatel),</li>
 <li><strong>GitHub, Inc.</strong> – hosting současné verze webu do přechodu na Cloudflare (technické záznamy o přístupech),</li>
-<li><strong>Zásilkovna s.r.o.</strong> nebo <strong>Česká pošta, s.p.</strong> – doručení zásilky (jméno, e-mail, telefon, výdejní místo),</li>
+<li><strong>Zásilkovna s.r.o.</strong> nebo <strong>Česká pošta, s.p.</strong> – doručení zásilky (jméno, e-mail, telefon, výdejní místo, u dobírky částka),</li>
 <li>poskytovatel platební brány ${missing('název – po aktivaci')} – zpracování platby kartou,</li>
 <li>poskytovatel odesílání e-mailů ${missing('název – po aktivaci (např. Resend)')},</li>
 <li>${missing('účetní / fakturační služba (např. Fakturoid), pokud ji budete používat')},</li>
@@ -415,7 +446,7 @@ export const cookies = {
 </tbody></table>
 <h2>Služby třetích stran</h2>
 <ul>
-<li><strong>Výběr výdejního místa Zásilkovny</strong> se načte ze serveru Zásilkovny až ve chvíli, kdy na něj v košíku kliknete. Zásilkovna může při tom použít vlastní technická úložiště podle svých zásad.</li>
+<li><strong>Výběr výdejního místa</strong> (mapa Zásilkovny nebo mapa Balíkovny České pošty) se načte ze serveru dopravce až ve chvíli, kdy na něj v košíku kliknete. Dopravce může při tom použít vlastní technická úložiště podle svých zásad. Polohu zařízení mapa použije jen po vašem souhlasu v prohlížeči.</li>
 <li><strong>Platba kartou</strong> probíhá na stránce poskytovatele platební brány, který používá vlastní cookies nezbytné pro bezpečnost platby.</li>
 <li>Odkazy na Instagram a TikTok jsou obyčejné odkazy. Tyto služby se na našem webu nenačítají.</li>
 </ul>

@@ -1,6 +1,6 @@
 # Právní dokumenty – kontrola před zveřejněním
 
-**Stav:** ⚖️ NÁVRH – čeká na doplnění údajů a rozhodnutí majitele
+**Stav:** ⚖️ NÁVRH 2 – rozhodnutí majitele zapracována, čeká na doplnění firemních údajů
 **Připraveno:** 25. 11. 2026
 **Dokumenty:** `src/legal/docs.mjs` (na webu `/terms`, `/reklamace`, `/returns`, `/warranty`,
 `/zakazkova-vyroba`, `/doprava-a-platba`, `/privacy`, `/cookies`, `/provozovatel`, `/odstoupeni`)
@@ -41,19 +41,25 @@ a doplním je.
 | 17 | Název platební brány a poskytovatele e-mailů (po aktivaci) | GDPR, doprava a platba |
 | 18 | Účetní / fakturační služba (pokud ji používáte) | GDPR |
 
-## 2. Rozhodnutí, která jsou na vás
+## 2. Rozhodnutí
 
+### Zapracováno podle pokynů majitele (25. 11. 2026)
+| Téma | Jak je to v dokumentech |
+|---|---|
+| **Garance pravosti** | všechny součásti deklarované jako originální, doživotně, **i pro další majitele**. Podmínkou je identifikace hodinek a ověření, že díly nebyly později vyměněny. Náprava podle volby zákazníka: výměna za originální díl, nebo vrácení kupní ceny proti vrácení hodinek. Zákonná práva nejsou dotčena. |
+| **Druhy hodinek** | originální hodinky / přestavby / sestavy z ateliéru (u každého kusu uvedeno), zvlášť servis, renovace a přestavby hodinek zákazníka |
+| **Pouzdra** | drahé kovy jen s ryzostí a puncem (administrace bez puncu nedovolí zveřejnit), pozlacená pouzdra výslovně označena „není z drahého kovu“ |
+| **Dvouletá záruka** | 24 měsíců u hotových hodinek (i použitých), zakázkové výroby i servisu |
+| **14denní vrácení** | hotové hodinky včetně přestaveb a sestav z e-shopu, **smluvně i pro firmy**. Výjimka: zakázka podle zadání zákazníka. |
+| **Dobírka** | nabízena (příplatek nastavíte v administraci), rezervace do odeslání |
+| **Anglické verze** | připravím po schválení českého znění |
+
+### Zbývá rozhodnout
 | # | Otázka | Můj návrh |
 |---|---|---|
-| A | 🔴 **Garance pravosti – co zákazník dostane**, když se deklarovaný díl ukáže jako neoriginální? | Volba zákazníka: výměna dílu za originální na vaše náklady, nebo vrácení celé ceny proti vrácení hodinek. |
-| B | 🔴 **Garance pravosti – pro koho platí?** Jen pro prvního kupujícího, nebo pro každého dalšího majitele s dokladem? | Pro každého majitele s dokladem o koupi. Zvyšuje hodnotu hodinek při dalším prodeji a je to silný prodejní argument. |
-| C | Co přesně znamená „originální díl“? Díl od výrobce hodinek, nebo i dobově odpovídající díl? | Jen díl od výrobce daných hodinek. Dobové díly vždy uvádět jako „neoriginální“. |
-| D | **Dvouletá záruka i na servis?** Původní web uváděl 12 měsíců. Návrh nyní uvádí 24 měsíců podle vašeho závazku. | Ponechat 24 měsíců (na provedenou práci a nové díly). |
-| E | **14denní vrácení i pro firmy (podnikatele)?** Zákon ho dává jen spotřebitelům. | Nabídnout i podnikatelům, protože je to jednodušší a odpovídá vašemu závazku. |
-| F | Tolerance přesnosti chodu u vintage hodinek (co není vadou) | Uvádět u každého kusu, obecně např. ±30 s/den. |
-| G | Doručování mimo ČR (Slovensko, EU)? | Zatím jen ČR. |
-| H | Anglické verze právních dokumentů | Zatím jen česky (na webu je to označeno „CZ“). Překlad po schválení českých verzí. |
-| I | Dobírka | Nenabízet (riziko nepřevzetí u drahého zboží). |
+| F | Tolerance přesnosti chodu u vintage hodinek | uvádět u každého kusu, obecně ±30 s/den |
+| G | Doručování mimo ČR | zatím jen ČR |
+| J | Náhrada nákladů při nepřevzetí dobírky | ponechat, jak je v návrhu (OP čl. 4) |
 
 ## 3. Právní rizika a upozornění
 
