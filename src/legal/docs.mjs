@@ -270,7 +270,7 @@ export const warranty = {
 // ---------------------------------------------------------------------------
 export const custom = {
   path: '/zakazkova-vyroba',
-  title: 'Podmínky zakázkové výroby, renovací, servisu a přestaveb',
+  title: 'Zakázková výroba, renovace, servis a přestavby',
   description: 'Podmínky Atelier Dante Time pro servis, renovace, přestavby a zakázkovou výrobu mechanických hodinek.',
   body: () => `${head()}
 ${toc([['zv1', 'Rozsah a druhy zakázek'], ['zv2', 'Poptávka, nabídka a uzavření smlouvy'], ['zv3', 'Převzetí hodinek'], ['zv4', 'Cena, záloha a platba'], ['zv5', 'Průběh prací'], ['zv6', 'Termíny a předání'], ['zv7', 'Odstoupení spotřebitele'], ['zv8', 'Odpovědnost za vady'], ['zv9', 'Odpovědnost za svěřené hodinky']])}

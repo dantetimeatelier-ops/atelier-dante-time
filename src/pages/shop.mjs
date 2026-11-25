@@ -8,7 +8,7 @@ export function cart(lang) {
   const L = (cs, en) => T(lang, cs, en);
   return {
     key: 'cart',
-    title: L('Košík a objednávka', 'Cart & checkout'),
+    title: L('Košík a objednávka', 'Cart &amp; checkout'),
     description: L('Nákupní košík Atelier Dante Time.', 'Atelier Dante Time shopping cart.'),
     noindex: true,
     scripts: ['/assets/checkout.js'],
@@ -23,25 +23,25 @@ export function cart(lang) {
         <div data-pickup hidden style="margin-top:12px">
           <button class="btn ghost" type="button" data-pick-point>${L('Vybrat výdejní místo', 'Choose pickup point')}</button>
           <p class="doc-meta" data-pickup-label style="margin-top:8px"></p>
-          <label data-pickup-manual hidden>${L('Výdejní místo (název a adresa)', 'Pickup point (name and address)')}<input name="pickupPointName" maxlength="200"></label>
+          <label data-pickup-manual hidden>${L('Výdejní místo (název a adresa)', 'Pickup point (name and address)')}<input type="text" name="pickupPointName" maxlength="200"></label>
           <input type="hidden" name="pickupPointId">
         </div>
       </fieldset>
       <fieldset><legend>${L('Platba', 'Payment')}</legend><div data-payment></div></fieldset>
-      <fieldset><legend>${L('Kontaktní a fakturační údaje', 'Contact & billing details')}</legend>
+      <fieldset><legend>${L('Kontaktní a fakturační údaje', 'Contact &amp; billing details')}</legend>
         <div class="form">
-          <div class="row"><label>${L('Jméno a příjmení', 'Full name')}<input name="name" autocomplete="name" required maxlength="120"></label>
+          <div class="row"><label>${L('Jméno a příjmení', 'Full name')}<input type="text" name="name" autocomplete="name" required maxlength="120"></label>
           <label>E-mail<input name="email" type="email" autocomplete="email" required maxlength="200"></label></div>
           <label>${L('Telefon (pro dopravce)', 'Phone (for the carrier)')}<input name="phone" type="tel" autocomplete="tel" required maxlength="40"></label>
-          <label>${L('Ulice a číslo', 'Street')}<input name="street" autocomplete="street-address" required maxlength="200"></label>
-          <div class="row"><label>${L('Město', 'City')}<input name="city" autocomplete="address-level2" required maxlength="120"></label>
-          <label>PSČ<input name="zip" autocomplete="postal-code" required maxlength="12"></label></div>
+          <label>${L('Ulice a číslo', 'Street')}<input type="text" name="street" autocomplete="address-line1" required maxlength="200"></label>
+          <div class="row"><label>${L('Město', 'City')}<input type="text" name="city" autocomplete="address-level2" required maxlength="120"></label>
+          <label>PSČ<input type="text" name="zip" autocomplete="postal-code" required maxlength="12"></label></div>
           <details><summary class="doc-meta">${L('Nakupuji na firmu', 'Buying as a company')}</summary>
-            <div class="row" style="margin-top:10px"><label>${L('Firma', 'Company')}<input name="company" maxlength="200"></label><label>IČO<input name="ico" maxlength="20"></label></div>
-            <label>DIČ<input name="dic" maxlength="20"></label>
+            <div class="row" style="margin-top:10px"><label>${L('Firma', 'Company')}<input type="text" name="company" maxlength="200"></label><label>IČO<input type="text" name="ico" maxlength="20"></label></div>
+            <label>DIČ<input type="text" name="dic" maxlength="20"></label>
           </details>
           <label>${L('Poznámka (nepovinné)', 'Note (optional)')}<textarea name="note" maxlength="1000" style="min-height:80px"></textarea></label>
-          <label class="hp" aria-hidden="true">Web<input name="website" tabindex="-1" autocomplete="off"></label>
+          <label class="hp" aria-hidden="true">Web<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
         </div>
       </fieldset>
     </div>
@@ -68,12 +68,12 @@ export function withdrawalForm() {
 <section class="section" style="padding-top:8px"><div class="wrap"><div class="card" style="max-width:720px">
   <form class="form" data-withdrawal-form novalidate>
     <div data-step="1">
-      <div class="row"><label>Jméno a příjmení<input name="name" autocomplete="name" required maxlength="120"></label>
+      <div class="row"><label>Jméno a příjmení<input type="text" name="name" autocomplete="name" required maxlength="120"></label>
       <label>E-mail použitý při objednávce<input name="email" type="email" autocomplete="email" required maxlength="200"></label></div>
-      <label style="margin-top:14px">Číslo objednávky<input name="orderNumber" required maxlength="20" placeholder="např. 2026-0001"></label>
-      <label style="margin-top:14px">Zboží, kterého se odstoupení týká (nepovinné, jinak celá objednávka)<input name="items" maxlength="500"></label>
-      <label style="margin-top:14px">Číslo účtu pro vrácení peněz (nepovinné)<input name="account" maxlength="50"></label>
-      <label class="hp" aria-hidden="true">Web<input name="website" tabindex="-1" autocomplete="off"></label>
+      <label style="margin-top:14px">Číslo objednávky<input type="text" name="orderNumber" required maxlength="20" placeholder="např. 2026-0001"></label>
+      <label style="margin-top:14px">Zboží, kterého se odstoupení týká (nepovinné, jinak celá objednávka)<input type="text" name="items" maxlength="500"></label>
+      <label style="margin-top:14px">Číslo účtu pro vrácení peněz (nepovinné)<input type="text" name="account" maxlength="50"></label>
+      <label class="hp" aria-hidden="true">Web<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
       <button class="btn solid" type="button" data-next style="margin-top:16px">Odstoupit od smlouvy</button>
     </div>
     <div data-step="2" hidden>

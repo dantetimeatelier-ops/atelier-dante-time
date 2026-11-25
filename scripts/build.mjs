@@ -52,5 +52,13 @@ await page('/404', layout({ ...common, lang: 'cs', title: 'Stránka nenalezena',
 await writeFile(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nDisallow: /kosik\nDisallow: /en/cart\nDisallow: /objednavka/\nDisallow: /faktura/\n\nSitemap: ${SITE.origin}/sitemap.xml\n`);
 await writeFile(path.join(DIST, 'build-info.json'), JSON.stringify({ mode: MODE, builtAt: new Date().toISOString(), pages: files.length }, null, 2));
 
+// Pojistka: v ostrém režimu nesmí na webu zůstat nevyplněné údaje
+if (MODE === 'live') {
+  const { readFile } = await import('node:fs/promises');
+  const bad = [];
+  for (const rel of files) if ((await readFile(path.join(DIST, rel), 'utf8')).includes('[DOPLNIT')) bad.push(rel);
+  if (bad.length) throw new Error(`Ostrý režim nelze sestavit – chybí údaje k doplnění na stránkách: ${bad.join(', ')}`);
+}
+
 const count = (await readdir(DIST, { recursive: true })).length;
 console.log(`✅ Sestaveno ${files.length} stránek (režim ${MODE}), celkem ${count} souborů v dist/.`);

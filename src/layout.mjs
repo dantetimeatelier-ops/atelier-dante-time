@@ -4,7 +4,7 @@ import { SITE, PAGES } from './site.mjs';
 import { UI } from './i18n/ui.mjs';
 
 export const esc = (s) => String(s ?? '')
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/&(?!(?:amp|lt|gt|quot|#39);)/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 const LOGO = '/img/logo-160.webp';
@@ -41,6 +41,8 @@ function nav(lang, active, shopEnabled) {
  * @param {string[]} [o.scripts]  další skripty (cesty)
  * @param {string} [o.banner]     informační lišta nad hlavičkou
  */
+export const tidy = (h) => h.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n');
+
 export function layout(o) {
   const lang = o.lang || 'cs';
   const t = UI[lang];
@@ -57,7 +59,7 @@ export function layout(o) {
   const L = (cs, en) => (lang === 'cs' ? cs : en);
   const legalHref = (p) => p; // právní dokumenty jsou zatím jen česky
 
-  return `<!doctype html>
+  return tidy(`<!doctype html>
 <html lang="${lang}">
 <head>
 <meta charset="utf-8">
@@ -153,7 +155,7 @@ ${o.body}
 ${(o.scripts || []).map((s) => `<script src="${s}" defer></script>`).join('\n')}
 </body>
 </html>
-`;
+`);
 }
 
 // Pomocné bloky pro obsah stránek

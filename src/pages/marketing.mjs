@@ -31,7 +31,7 @@ export function home(lang) {
     <p class="tagline">${L('Druhý život pro čas. Renovace a zakázkové sestavy mechanických hodinek s důrazem na řemeslo a detail.', 'A second life for time. Restoration and custom builds of mechanical watches with craftsmanship and attention to detail.')}</p>
     <div class="cta-row">
       <a class="btn solid" href="${PAGES.collection[lang]}">${L('Prohlédnout kolekci', 'View the collection')}</a>
-      <a class="btn" href="${PAGES.services[lang]}#poptavka">${L('Servis a zakázka na míru', 'Service & custom commission')}</a>
+      <a class="btn" href="${PAGES.services[lang]}#poptavka">${L('Servis a zakázka na míru', 'Service &amp; custom commission')}</a>
     </div>
   </div>
 </section>
@@ -109,17 +109,17 @@ export function about(lang) {
 
 export function services(lang) {
   const L = (cs, en) => T(lang, cs, en);
-  const svc = (num, title, items) => `<div class="card feature"><div class="num">${num}</div><h3>${title}</h3><ul class="list-dots">${items.map((i) => `<li>${i}</li>`).join('')}</ul></div>`;
+  const svc = (num, title, items) => `<div class="card feature"><div class="num">${num}</div><h2 class="h3">${title}</h2><ul class="list-dots">${items.map((i) => `<li>${i}</li>`).join('')}</ul></div>`;
   return {
     key: 'services',
-    title: L('Služby a zakázky', 'Services & commissions'),
+    title: L('Služby a zakázky', 'Services &amp; commissions'),
     description: L('Servis, renovace a zakázkové sestavy mechanických hodinek. Nezávazná poptávka s orientační cenou. Atelier Dante Time.', 'Service, restoration and custom builds of mechanical watches. Free enquiry with an estimated price. Atelier Dante Time.'),
     scripts: ['/assets/forms.js'],
-    body: `${hero({ eyebrow: L('Služby', 'Services'), title: L('Servis, renovace a zakázky', 'Service, restoration & commissions'), lead: L('Servis a citlivá renovace mechanických hodinek s respektem k původnímu řemeslu a charakteru každého kusu. Každou zakázku řeším individuálně.', 'Service and careful restoration of mechanical watches with respect for the original craft and character of each piece. Every commission is handled individually.') })}
+    body: `${hero({ eyebrow: L('Služby', 'Services'), title: L('Servis, renovace a zakázky', 'Service, restoration &amp; commissions'), lead: L('Servis a citlivá renovace mechanických hodinek s respektem k původnímu řemeslu a charakteru každého kusu. Každou zakázku řeším individuálně.', 'Service and careful restoration of mechanical watches with respect for the original craft and character of each piece. Every commission is handled individually.') })}
 <section class="section"><div class="wrap grid-3">
   ${svc('I', L('Servis mechanických hodinek', 'Mechanical watch service'), [L('Kompletní rozebrání, čištění, mazání a opětovné sestavení', 'Complete disassembly, cleaning, lubrication and reassembly'), L('Kontrola opotřebení a doporučení případných výměn dílů', 'Wear inspection and recommended part replacements'), L('Regulace chodu a závěrečné testování', 'Regulation and final testing')])}
-  ${svc('II', L('Renovace a opravy (vintage)', 'Restoration & repairs (vintage)'), [L('Citlivé opravy a záchrana starších modelů', 'Careful repairs and rescue of older models'), L('Řešení závad po pádu či neodborném zásahu', 'Fixing damage after a fall or improper intervention'), L('Možnost doplnění dílů dle dostupnosti', 'Replacement parts subject to availability')])}
-  ${svc('III', L('Zakázkové sestavy a přestavby', 'Custom builds & conversions'), [L('Sestavení hodinek na míru dle dohody', 'Watches built to your brief'), L('Výběr strojku, ciferníku, pouzdra a řemínku', 'Choice of movement, dial, case and strap'), L('Důraz na detail a finální prezentaci', 'Focus on detail and final presentation')])}
+  ${svc('II', L('Renovace a opravy (vintage)', 'Restoration &amp; repairs (vintage)'), [L('Citlivé opravy a záchrana starších modelů', 'Careful repairs and rescue of older models'), L('Řešení závad po pádu či neodborném zásahu', 'Fixing damage after a fall or improper intervention'), L('Možnost doplnění dílů dle dostupnosti', 'Replacement parts subject to availability')])}
+  ${svc('III', L('Zakázkové sestavy a přestavby', 'Custom builds &amp; conversions'), [L('Sestavení hodinek na míru dle dohody', 'Watches built to your brief'), L('Výběr strojku, ciferníku, pouzdra a řemínku', 'Choice of movement, dial, case and strap'), L('Důraz na detail a finální prezentaci', 'Focus on detail and final presentation')])}
 </div></section>
 <section class="section"><div class="wrap split">
   <div class="card">
@@ -163,12 +163,12 @@ export function inquiryForm(lang, type, productId = '') {
   ${typeSelect}
   <input type="hidden" name="productId" value="${esc(productId)}">
   <div class="row">
-    <label>${L('Jméno', 'Name')}<input name="name" autocomplete="name" required maxlength="120"></label>
+    <label>${L('Jméno', 'Name')}<input type="text" name="name" autocomplete="name" required maxlength="120"></label>
     <label>E-mail<input name="email" type="email" autocomplete="email" required maxlength="200"></label>
   </div>
   <label>${L('Telefon (nepovinné)', 'Phone (optional)')}<input name="phone" type="tel" autocomplete="tel" maxlength="40"></label>
   <label>${L('Zpráva', 'Message')}<textarea name="message" required maxlength="4000" placeholder="${L('Značka, model, stav, co od hodinek očekáváte…', 'Brand, model, condition, what you expect…')}"></textarea></label>
-  <label class="hp" aria-hidden="true">Web<input name="website" tabindex="-1" autocomplete="off"></label>
+  <label class="hp" aria-hidden="true">Web<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
   <p class="doc-meta">${L('Údaje použiji jen k vyřízení vaší poptávky. Více v <a href="/privacy" style="color:var(--gold-2)">ochraně osobních údajů</a>.', 'I will only use your details to handle your enquiry. See the <a href="/privacy" style="color:var(--gold-2)">privacy policy (CZ)</a>.')}</p>
   <button class="btn solid" type="submit">${L('Odeslat poptávku', 'Send enquiry')}</button>
   <div class="notice" data-form-status hidden role="status" aria-live="polite"></div>

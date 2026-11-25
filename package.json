@@ -3,15 +3,17 @@
   "private": true,
   "description": "Nástroje pro automatické testy webu Atelier Dante Time (web samotný je statický a nástroje nepotřebuje).",
   "scripts": {
-    "test:html": "html-validate \"*.html\"",
+    "test:html": "html-validate \"dist/**/*.html\"",
     "test:smoke": "node tests/smoke.mjs",
     "test:lighthouse": "lhci autorun",
-    "test": "npm run test:html && npm run test:links && npm run test:smoke",
-    "test:links": "node tests/links.mjs",
+    "test": "npm run build && npm run test:unit && npm run test:html && npm run test:links",
+    "test:links": "node tests/links.mjs dist",
     "build": "node scripts/build.mjs",
     "seed:local": "node scripts/seed-local.mjs",
     "db:local": "wrangler d1 migrations apply DB --local",
-    "dev": "npm run build && wrangler pages dev dist --port 8788"
+    "dev": "npm run build && wrangler pages dev dist --port 8788",
+    "test:unit": "node --test tests/unit/*.test.mjs",
+    "test:e2e": "node tests/e2e/flow.mjs"
   },
   "devDependencies": {
     "@lhci/cli": "0.15.1",
