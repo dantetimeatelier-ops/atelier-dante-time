@@ -1,0 +1,56 @@
+# Po každé změně v main: označí verzi značkou (tag) a vytvoří záznam
+# v historii verzí (Releases) se seznamem změn. Z těchto značek lze
+# web kdykoli obnovit akcí „Návrat k verzi“.
+name: Záznam verze
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publikace
+  cancel-in-progress: false
+
+jobs:
+  verze:
+    name: Označit verzi
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PREVIOUS_SHA: ${{ github.event.before }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const tagExists = async (tag) => {
+              try { await github.rest.git.getRef({ owner, repo, ref: `tags/${tag}` }); return true; }
+              catch (e) { if (e.status === 404) return false; throw e; }
+            };
+
+            // Jednorázově: záloha původního webu před zavedením automatizace
+            const before = process.env.PREVIOUS_SHA;
+            if (before && !/^0+$/.test(before) && !(await tagExists('v0-puvodni-web'))) {
+              await github.rest.git.createRef({ owner, repo, ref: 'refs/tags/v0-puvodni-web', sha: before });
+              core.info('Vytvořena značka v0-puvodni-web');
+            }
+
+            const now = new Date();
+            const parts = Object.fromEntries(new Intl.DateTimeFormat('cs-CZ', {
+              timeZone: 'Europe/Prague', year: 'numeric', month: '2-digit', day: '2-digit',
+              hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+            }).formatToParts(now).map(p => [p.type, p.value]));
+            let tag = `deploy-${parts.year}-${parts.month}-${parts.day}-${parts.hour}${parts.minute}`;
+            if (await tagExists(tag)) tag += `-${context.sha.slice(0, 7)}`;
+
+            const release = await github.rest.repos.createRelease({
+              owner, repo,
+              tag_name: tag,
+              target_commitish: context.sha,
+              name: `Verze ${parts.day}. ${parts.month}. ${parts.year} ${parts.hour}:${parts.minute}`,
+              generate_release_notes: true,
+            });
+            core.notice(`Verze označena jako ${tag}: ${release.data.html_url}`);

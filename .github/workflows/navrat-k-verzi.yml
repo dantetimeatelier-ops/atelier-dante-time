@@ -1,0 +1,112 @@
+# Návrat webu k předchozí verzi. Spouští se ručně:
+# Actions → „Návrat k verzi“ → Run workflow → zadat značku verze.
+# Akce nic nepublikuje sama: připraví pull request, který majitel schválí.
+name: Návrat k verzi
+
+on:
+  workflow_dispatch:
+    inputs:
+      verze:
+        description: 'Značka verze, ke které se vrátit (např. deploy-2026-11-25-1430 nebo v0-puvodni-web). Seznam: záložka Releases.'
+        required: true
+        type: string
+      duvod:
+        description: 'Proč se vracíme (nepovinné)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: navrat
+  cancel-in-progress: false
+
+jobs:
+  navrat:
+    name: Připravit návrat
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Obnovení souborů webu ze zvolené verze
+        id: restore
+        env:
+          VERZE: ${{ inputs.verze }}
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$VERZE" | grep -qE '^[A-Za-z0-9._/-]{1,100}$'; then
+            echo "::error::Neplatný název verze."; exit 1
+          fi
+          git fetch --tags --quiet
+          if ! git rev-parse --verify --quiet "refs/tags/${VERZE}^{commit}" >/dev/null; then
+            echo "::error::Verze '${VERZE}' neexistuje. Seznam verzí je na záložce Releases."; exit 1
+          fi
+          safe=$(printf '%s' "$VERZE" | tr -c 'A-Za-z0-9._-' '-')
+          branch="navrat/${safe}-$(date -u +%Y%m%d%H%M)"
+          git switch -c "$branch"
+
+          # 1) celý obsah ze zvolené verze
+          git rm -rq --ignore-unmatch .
+          git checkout "refs/tags/${VERZE}" -- .
+          # 2) automatizace, testy a dokumentace zůstávají v aktuální podobě
+          for p in .github AGENTS.md CLAUDE.md docs tests tools package.json package-lock.json \
+                   lighthouserc.json .htmlvalidate.json .gitignore; do
+            if git cat-file -e "main:$p" 2>/dev/null; then
+              git rm -rq --ignore-unmatch -- "$p"
+              git checkout main -- "$p"
+            fi
+          done
+
+          if git diff --cached --quiet; then
+            echo "::notice::Web už odpovídá verzi ${VERZE}, není co vracet."
+            echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "Návrat webu k verzi ${VERZE}"
+          git push -q origin "$branch"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          git diff --stat main "$branch" | tail -1 > /tmp/stat.txt
+
+      - name: Vytvořit pull request a spustit testy
+        if: steps.restore.outputs.changed == 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          VERZE: ${{ inputs.verze }}
+          DUVOD: ${{ inputs.duvod }}
+          BRANCH: ${{ steps.restore.outputs.branch }}
+        with:
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const { VERZE, DUVOD, BRANCH } = process.env;
+            const stat = fs.readFileSync('/tmp/stat.txt', 'utf8').trim();
+            const pr = await github.rest.pulls.create({
+              owner, repo, base: 'main', head: BRANCH,
+              title: `⏪ Návrat webu k verzi ${VERZE}`,
+              body: [
+                `Tento pull request vrací **soubory webu** do stavu verze \`${VERZE}\`.`,
+                DUVOD ? `\n**Důvod:** ${DUVOD}` : '',
+                `\nSpustil: @${context.actor}`,
+                `\n**Rozsah:** ${stat}`,
+                '\n### Co se nemění',
+                'Automatizace (`.github/`), testy, nástroje a dokumentace zůstávají v aktuální podobě.',
+                '\n### Jak dokončit návrat',
+                '1. Počkejte na výsledek testů (záložka **Checks**).',
+                '2. Klikněte na **Merge pull request** → **Confirm merge**.',
+                '3. Za 1–2 minuty bude web ve zvolené verzi.',
+                '\n> U velmi starých verzí (např. `v0-puvodni-web`) mohou testy hlásit chyby, protože tehdejší web nesplňoval dnešní požadavky. To je v pořádku a návrat lze přesto sloučit.',
+                '\n🔴 Úroveň 3, slučuje jen majitel.',
+              ].join('\n'),
+            });
+            // Pull requesty vytvořené automatikou samy nespustí testy, proto je spustíme ručně
+            await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'testy.yml', ref: BRANCH });
+            core.notice(`Pull request připraven: ${pr.data.html_url}`);

@@ -1,0 +1,60 @@
+# Každé pondělí ráno vytvoří issue „Týdenní přehled“ se souhrnem změn,
+# stavem webu a doporučeními. GitHub ho majiteli pošle e-mailem.
+name: Týdenní přehled
+
+on:
+  schedule:
+    - cron: '7 7 * * 1'   # pondělí 7:07 UTC = 8:07 v zimě / 9:07 v létě
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  prehled:
+    name: Sestavit přehled
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+
+      - name: Rychlost ostrého webu (Lighthouse)
+        continue-on-error: true
+        run: |
+          mkdir -p prehled
+          for page in "" "services.html"; do
+            name="${page:-index.html}"
+            npx lighthouse "https://atelier-dante-time.cz/${page}" --quiet \
+              --chrome-flags="--headless=new --no-sandbox" \
+              --output=json --output-path="prehled/lh-${name%.html}.json" || true
+          done
+
+      - name: Seznam stránek ze sitemap.xml
+        id: urls
+        run: echo "list=$(grep -oE 'https://atelier-dante-time\.cz/[A-Za-z0-9./_-]*' sitemap.xml | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+
+      - name: Nefunkční odkazy na ostrém webu
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        continue-on-error: true
+        with:
+          lycheeVersion: v0.24.2
+          args: --no-progress --format json --max-retries 2 --accept 200..=299,403,429 ${{ steps.urls.outputs.list }}
+          output: prehled/odkazy.json
+          fail: false
+          jobSummary: false
+
+      - name: Vytvořit issue s přehledem
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const run = require('./.github/scripts/tydenni-prehled.cjs');
+            await run({ github, context, core });

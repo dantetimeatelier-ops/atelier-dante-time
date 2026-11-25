@@ -1,0 +1,67 @@
+# Každou hodinu ověří, že web funguje. Při výpadku založí issue
+# (GitHub pošle majiteli e-mail), po obnovení ho sám uzavře.
+name: Hlídání dostupnosti
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: dostupnost
+  cancel-in-progress: false
+
+jobs:
+  kontrola:
+    name: Kontrola webu
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Kontrola stránek
+        id: check
+        run: |
+          set +e
+          failed=""
+          for path in "/" "/services.html" "/about.html" "/sitemap.xml"; do
+            url="https://atelier-dante-time.cz${path}"
+            ok=0
+            for attempt in 1 2 3; do
+              code=$(curl -s -o /tmp/page -w '%{http_code}' --max-time 20 "$url")
+              if [ "$code" = "200" ] && grep -q "atelier-dante-time\|Atelier Dante Time" /tmp/page; then ok=1; break; fi
+              sleep 20
+            done
+            if [ "$ok" = "1" ]; then echo "OK   $url"; else echo "CHYBA $url (HTTP $code)"; failed="$failed $path (HTTP $code);"; fi
+          done
+          echo "failed=$failed" >> "$GITHUB_OUTPUT"
+
+      - name: Upozornění nebo uzavření výpadku
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          FAILED: ${{ steps.check.outputs.failed }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const label = 'výpadek';
+            try { await github.rest.issues.createLabel({ owner, repo, name: label, color: 'b60205', description: 'Web je nedostupný' }); } catch (e) { if (e.status !== 422) throw e; }
+            const open = await github.rest.issues.listForRepo({ owner, repo, labels: label, state: 'open' });
+            const failed = (process.env.FAILED || '').trim();
+            const time = new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' });
+            if (failed) {
+              if (open.data.length === 0) {
+                await github.rest.issues.create({ owner, repo, labels: [label],
+                  title: `🔴 Web atelier-dante-time.cz je nedostupný (${time})`,
+                  body: `Automatická kontrola zjistila problém (3 pokusy po 20 s):\n\n${failed.split(';').filter(Boolean).map(f => `- ${f.trim()}`).join('\n')}\n\nCo udělat:\n1. Otevřete https://atelier-dante-time.cz a zkuste, jestli web funguje.\n2. Zkontrolujte https://www.githubstatus.com, jestli nemá potíže GitHub.\n3. Pokud problém způsobila poslední změna, použijte akci **Návrat k verzi**.\n\nIssue se samo uzavře, až web zase poběží.` });
+              } else {
+                core.info('Výpadek už je nahlášen.');
+              }
+              core.setFailed(`Web nedostupný: ${failed}`);
+            } else {
+              for (const issue of open.data) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body: `✅ Web je znovu dostupný (${time}).` });
+                await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'closed', state_reason: 'completed' });
+              }
+            }
