@@ -160,6 +160,15 @@ INSERT OR IGNORE INTO settings (key, value) VALUES ('demo_seeded', '1');\n`);
   }
 }
 
+// 7c) E-maily přes Resend: klíč z GitHub Secrets → tajná proměnná Cloudflare (nikdy do repozitáře)
+if (process.env.RESEND_API_KEY) {
+  step('Klíč pro odesílání e-mailů (Resend)');
+  execFileSync(path.join(ROOT, 'node_modules', '.bin', 'wrangler'), ['pages', 'secret', 'put', 'RESEND_API_KEY', '--project-name', PROJECT, ...(env ? ['--env', env] : [])], {
+    cwd: ROOT, input: process.env.RESEND_API_KEY.trim(), stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, WRANGLER_SEND_METRICS: 'false', CI: 'true' },
+  });
+  console.log('uloženo');
+}
+
 // 8) Sestavení a nasazení
 step('Sestavení webu');
 execFileSync('node', ['scripts/build.mjs'], {

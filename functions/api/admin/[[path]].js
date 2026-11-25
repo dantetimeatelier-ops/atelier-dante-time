@@ -117,7 +117,7 @@ route('GET', 'dashboard', async ({ env }) => {
   }
   if (!cfg.shipping.length) warnings.push('Nejsou nastaveny ceny dopravy (Nastavení)');
   if (!cfg.payment.length) warnings.push('Není dostupný žádný způsob platby');
-  if (env.EMAIL_PROVIDER !== 'resend') warnings.push('E-maily se zatím neodesílají, jen ukládají (chybí poskytovatel e-mailů)');
+  if (env.EMAIL_PROVIDER !== 'resend' || !env.RESEND_API_KEY) warnings.push('E-maily se zatím neodesílají, jen ukládají (chybí poskytovatel e-mailů)');
   // Hlídání limitů DPH u neplátce: obrat za kalendářní rok (vystavené faktury) a prodej spotřebitelům do jiných zemí EU
   const yearStart = `${new Date().getUTCFullYear()}-01-01`;
   const live = mode(env) === 'live' ? "mode = 'live'" : '1=1';

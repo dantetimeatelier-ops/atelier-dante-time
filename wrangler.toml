@@ -10,7 +10,10 @@ compatibility_date = "2026-11-01"
 [vars]
 # preview = katalog bez nákupu (výchozí) · test = zkušební nákupy · live = ostrý provoz (jen se souhlasem majitele)
 SHOP_MODE = "preview"
-EMAIL_PROVIDER = "none"
+# E-maily: odesílají se přes Resend, jakmile je v Cloudflare tajný klíč RESEND_API_KEY (jinak se jen ukládají)
+EMAIL_PROVIDER = "resend"
+# Odesílatel: po ověření domény v Resend. Odpovědi zákazníků chodí na SITE.email (reply-to).
+EMAIL_FROM = "Atelier Dante Time <objednavky@atelier-dante-time.cz>"
 
 [[d1_databases]]
 binding = "DB"
@@ -25,7 +28,9 @@ id = "11111111111111111111111111111111"
 # --- Zkušební verze (ostatní větve) – oddělená databáze s ukázkovými daty ---
 [env.preview.vars]
 SHOP_MODE = "test"
-EMAIL_PROVIDER = "none"
+EMAIL_PROVIDER = "resend"
+# Zkušební verze: do ověření domény lze z adresy resend.dev posílat jen na e-mail účtu Resend (majitel)
+EMAIL_FROM = "Atelier Dante Time <onboarding@resend.dev>"
 
 [[env.preview.d1_databases]]
 binding = "DB"
