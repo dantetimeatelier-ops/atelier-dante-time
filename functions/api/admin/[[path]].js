@@ -1,17 +1,17 @@
 // API administrace. Všechny cesty kromě přihlášení vyžadují platnou relaci.
 import { json, handle, readJson, HttpError, assertSameOrigin } from '../../../server/http.js';
 import { requireAdmin, hashPassword, timingSafeEqual, verifyTotp, newTotpSecret, otpauthUrl, createSession, destroySession, checkLoginRate, recordLogin } from '../../../server/auth.js';
-import { randomId, now, audit, releaseExpired, getSettings, nextCounter, productsWithImages, mode } from '../../../server/db.js';
+import { randomId, now, audit, releaseExpired, getSettings, nextCounter, productsWithImages, mode, sha256Hex } from '../../../server/db.js';
 import { str, email as vEmail, oneOf, int, num } from '../../../server/validate.js';
 import { qrSvg } from '../../../server/qr.js';
 import { media } from '../../../server/media.js';
-import { markPaid, markShipped, cancelOrder, shopConfig } from '../../../server/orders.js';
+import { markPaid, markShipped, cancelOrder, shopConfig, createInvoice } from '../../../server/orders.js';
 import { describe, productName } from '../../../src/shop/describe.mjs';
 import { slugify } from '../../../src/shop/format.mjs';
 import { OPERATOR } from '../../../src/site.mjs';
 
 const STATUSES = ['draft', 'available', 'reserved', 'sold', 'in_progress', 'archived'];
-const PRODUCT_TEXT = { title: 200, brand: 80, model: 120, reference: 80, year: 20, movement: 120, case_material: 120, crystal: 80, water_resistance: 80, dial: 200, strap: 200, condition: 1000, service_done: 1000, original_parts: 1000, replaced_parts: 1000, accessories: 500, manufacturer_info: 500, safety_info: 500, description_cs: 5000, description_en: 5000, seo_title: 80, seo_description: 200 };
+const PRODUCT_TEXT = { title: 200, brand: 80, model: 120, reference: 80, year: 20, movement: 120, case_material: 120, crystal: 80, water_resistance: 80, dial: 200, strap: 200, condition: 1000, service_done: 1000, original_parts: 1000, replaced_parts: 1000, accessories: 500, manufacturer_info: 500, safety_info: 500, hallmark: 200, plating: 200, authenticity_note: 1000, serial_ref: 120, description_cs: 5000, description_en: 5000, seo_title: 80, seo_description: 200 };
 
 const routes = [];
 const route = (method, pattern, fn, { auth = true } = {}) => routes.push({ method, re: new RegExp(`^${pattern.replace(/:(\w+)/g, '(?<$1>[A-Za-z0-9_-]+)')}$`), fn, auth });
@@ -20,7 +20,12 @@ const route = (method, pattern, fn, { auth = true } = {}) => routes.push({ metho
 async function setupAllowed(env, token) {
   const { n } = await env.DB.prepare('SELECT COUNT(*) AS n FROM admin_users').first();
   if (n > 0) throw new HttpError('Administrace už je nastavena', 403);
-  if (!env.ADMIN_SETUP_TOKEN || env.ADMIN_SETUP_TOKEN.length < 24 || !timingSafeEqual(env.ADMIN_SETUP_TOKEN, token || '')) throw new HttpError('Neplatný instalační kód', 403);
+  // Instalační kód: buď tajná proměnná Cloudflare, nebo jeho otisk (SHA-256) uložený automatikou v databázi
+  const t = String(token || '');
+  const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'admin_setup_hash'").first().catch(() => null);
+  const byEnv = env.ADMIN_SETUP_TOKEN && env.ADMIN_SETUP_TOKEN.length >= 24 && timingSafeEqual(env.ADMIN_SETUP_TOKEN, t);
+  const byHash = row?.value && t.length >= 24 && timingSafeEqual(row.value, await sha256Hex(t));
+  if (!byEnv && !byHash) throw new HttpError('Neplatný instalační kód', 403);
 }
 route('GET', 'setup', async ({ env }) => {
   const { n } = await env.DB.prepare('SELECT COUNT(*) AS n FROM admin_users').first();
@@ -107,6 +112,8 @@ function productInput(body, existing = {}) {
   const d = {};
   for (const [k, max] of Object.entries(PRODUCT_TEXT)) if (k in body) d[k] = str(body[k], { max, name: k });
   if ('status' in body) d.status = oneOf(body.status, STATUSES, 'stav');
+  if ('kind' in body) d.kind = oneOf(body.kind || 'original', ['original', 'prestavba', 'sestava'], 'druh');
+  if ('case_metal' in body) d.case_metal = body.case_metal ? oneOf(body.case_metal, ['ocel', 'mosaz', 'chrom', 'pozlaceno', 'zlato', 'stribro', 'platina', 'titan', 'jine'], 'materiál pouzdra') : null;
   if ('movement_type' in body) d.movement_type = body.movement_type ? oneOf(body.movement_type, ['manual', 'automatic'], 'nátah') : null;
   if ('case_diameter_mm' in body) d.case_diameter_mm = num(body.case_diameter_mm, { max: 80, name: 'průměr' });
   if ('lug_width_mm' in body) d.lug_width_mm = num(body.lug_width_mm, { max: 40, name: 'šířka uchycení' });
@@ -119,6 +126,10 @@ function productInput(body, existing = {}) {
   if (!merged.title || merged.title === 'Hodinky' || merged.title === autoOld) merged.title = productName({ ...merged, title: null });
   d.title = merged.title;
   if (d.status === 'available' && merged.price_czk == null) throw new HttpError('Pro zveřejnění „Skladem“ vyplňte cenu');
+  // Zákon o puncovnictví: pouzdro z drahého kovu jen s údajem o ryzosti a puncu
+  if (['available', 'in_progress'].includes(merged.status) && ['zlato', 'stribro', 'platina'].includes(merged.case_metal) && !merged.hallmark) {
+    throw new HttpError('U pouzdra z drahého kovu vyplňte ryzost a puncovní značku (např. „Au 585/1000, česká puncovní značka“). Bez puncu nelze prodávat.');
+  }
   return d;
 }
 
@@ -239,7 +250,8 @@ route('GET', 'orders/:id', async ({ env, params }) => {
   if (!order) throw new HttpError('Objednávka nenalezena', 404);
   const { results: items } = await env.DB.prepare('SELECT i.*, p.slug, p.status AS product_status FROM order_items i LEFT JOIN products p ON p.id = i.product_id WHERE order_id = ?').bind(params.id).all();
   const { results: withdrawals } = await env.DB.prepare('SELECT * FROM withdrawals WHERE order_id = ? OR order_number = ?').bind(params.id, order.number).all();
-  return json({ order, items, withdrawals });
+  const { results: invoices } = await env.DB.prepare('SELECT id, number, public_token, total, paid_at, cancelled_at FROM invoices WHERE order_id = ?').bind(params.id).all();
+  return json({ order, items, withdrawals, invoices });
 });
 route('POST', 'orders/:id/paid', async ({ env, params, user, request }) => json({ order: await markPaid(env, params.id, user.email, new URL(request.url).origin) }));
 route('POST', 'orders/:id/shipped', async ({ env, params, body, user }) => { await markShipped(env, params.id, str(body.tracking, { max: 60 }), user.email); return json({ ok: true }); });
@@ -332,8 +344,42 @@ route('GET', 'withdrawals', async ({ env }) => {
   return json({ withdrawals: results });
 });
 
+// --- Faktury ----------------------------------------------------------------------------
+route('GET', 'invoices', async ({ env }) => {
+  const { results } = await env.DB.prepare('SELECT id, number, public_token, source, buyer_name, buyer_company, total, issued_at, paid_at, cancelled_at, mode, order_id, commission_id FROM invoices ORDER BY issued_at DESC LIMIT 300').all();
+  return json({ invoices: results });
+});
+route('POST', 'invoices', async ({ env, body, user }) => {
+  const items = Array.isArray(body.items) ? body.items.slice(0, 30).map((i) => ({ text: str(i.text, { max: 300, required: true, name: 'položku' }), price: int(i.price, { max: 50000000, nullable: false, name: 'cenu položky' }) })) : [];
+  let commission = null;
+  if (body.commission_id) commission = await env.DB.prepare('SELECT k.*, c.name, c.email FROM commissions k LEFT JOIN customers c ON c.id = k.customer_id WHERE k.id = ?').bind(body.commission_id).first();
+  const paid = Boolean(body.paid);
+  const dueDays = int(body.due_days, { max: 90 }) ?? 14;
+  const inv = await createInvoice(env, {
+    source: commission ? 'commission' : 'manual', commission_id: commission?.id || null,
+    buyer_name: str(body.buyer_name, { max: 200, required: true, name: 'odběratele' }), buyer_company: str(body.buyer_company, { max: 200 }),
+    buyer_ico: str(body.buyer_ico, { max: 20 }), buyer_dic: str(body.buyer_dic, { max: 20 }), buyer_street: str(body.buyer_street, { max: 200 }),
+    buyer_city: str(body.buyer_city, { max: 120 }), buyer_zip: str(body.buyer_zip, { max: 12 }), buyer_email: body.buyer_email ? vEmail(body.buyer_email) : null,
+    items, payment_method: oneOf(body.payment_method || 'bank_transfer', ['bank_transfer', 'card', 'cod', 'cash'], 'způsob úhrady'),
+    taxable_date: str(body.taxable_date, { max: 30 }) || now(), paid_at: paid ? now() : null,
+    due_date: paid ? null : new Date(Date.now() + dueDays * 86400000).toISOString(), note: str(body.note, { max: 500 }) || (commission ? `Zakázka ${commission.number}` : null),
+  });
+  await audit(env, user.email, 'faktura_vystavena', 'invoice', inv.id, { number: inv.number, total: inv.total });
+  return json({ id: inv.id, number: inv.number, token: inv.public_token }, 201);
+});
+route('POST', 'invoices/:id/paid', async ({ env, params, user }) => {
+  await env.DB.prepare('UPDATE invoices SET paid_at = ? WHERE id = ? AND paid_at IS NULL').bind(now(), params.id).run();
+  await audit(env, user.email, 'faktura_uhrazena', 'invoice', params.id);
+  return json({ ok: true });
+});
+route('POST', 'invoices/:id/cancel', async ({ env, params, user }) => {
+  await env.DB.prepare('UPDATE invoices SET cancelled_at = ? WHERE id = ? AND cancelled_at IS NULL').bind(now(), params.id).run();
+  await audit(env, user.email, 'faktura_stornovana', 'invoice', params.id);
+  return json({ ok: true });
+});
+
 // --- Nastavení, e-maily, historie ------------------------------------------------------
-const SETTINGS = { shipping_zasilkovna_czk: 'int', shipping_balikovna_czk: 'int', shipping_osobni_enabled: 'bool', reservation_hours_bank: 'int', reservation_minutes_card: 'int' };
+const SETTINGS = { shipping_zasilkovna_czk: 'int', shipping_balikovna_czk: 'int', shipping_osobni_enabled: 'bool', reservation_hours_bank: 'int', reservation_minutes_card: 'int', cod_enabled: 'bool', cod_fee_czk: 'int' };
 route('GET', 'settings', async ({ env }) => {
   const s = await getSettings(env);
   return json({

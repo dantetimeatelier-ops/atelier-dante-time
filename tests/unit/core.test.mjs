@@ -28,7 +28,11 @@ test('automatický popis nic nevymýšlí', () => {
   assert.doesNotMatch(d.description_cs, /undefined|null/);
   assert.ok(d.seo_title.length <= 70 && d.seo_description.length <= 160);
   const empty = describe({ title: 'Hodinky' });
-  assert.doesNotMatch(empty.description_cs, /undefined|null|Provedené|Stav:/);
+  assert.doesNotMatch(empty.description_cs, /undefined|null|false|Provedené|Stav:/i);
+  const part = describe({ brand: 'PRIM', kind: 'prestavba', case_metal: 'pozlaceno', plating: '20 µm', dial: 'černý' });
+  assert.doesNotMatch(part.description_cs + part.description_en, /undefined|null|false/i);
+  assert.match(part.description_cs, /pozlacené \(není z drahého kovu\), 20 µm/);
+  assert.match(part.description_cs, /některé díly nejsou původní/);
   assert.equal(productName({ brand: 'Omega', model: 'Genève' }), 'Omega Genève');
 });
 

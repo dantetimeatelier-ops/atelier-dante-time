@@ -38,7 +38,29 @@ export const SHIPPING = {
 export const PAYMENT = {
   bank_transfer: { cs: 'Bankovní převod (QR platba)', en: 'Bank transfer (QR payment)' },
   card: { cs: 'Platba kartou online', en: 'Card payment online' },
+  cod: { cs: 'Dobírka (platba při převzetí)', en: 'Cash on delivery' },
 };
+
+// Druh kusu – rozhoduje o popisu i o právním režimu (viz právní dokumenty)
+export const KIND = {
+  original: { cs: 'Originální hodinky', en: 'Original watch', note: { cs: 'Původní hodinky po servisu nebo renovaci v ateliéru.', en: 'Original watch, serviced or restored in the atelier.' } },
+  prestavba: { cs: 'Přestavba', en: 'Custom rebuild', note: { cs: 'Hodinky upravené v ateliéru – některé díly nejsou původní (viz parametry).', en: 'Watch modified in the atelier – some parts are not original (see specifications).' } },
+  sestava: { cs: 'Sestava z ateliéru', en: 'Atelier build', note: { cs: 'Hodinky sestavené v ateliéru z vybraných dílů.', en: 'Watch assembled in the atelier from selected parts.' } },
+};
+
+// Materiál pouzdra (zákon č. 19/1993 Sb., o puncovnictví)
+export const METAL = {
+  ocel: { cs: 'nerezová ocel', en: 'stainless steel' },
+  mosaz: { cs: 'mosaz', en: 'brass' },
+  chrom: { cs: 'chromovaná mosaz', en: 'chrome-plated brass' },
+  pozlaceno: { cs: 'pozlacené (není z drahého kovu)', en: 'gold-plated (not solid gold)' },
+  zlato: { cs: 'zlato', en: 'solid gold' },
+  stribro: { cs: 'stříbro', en: 'silver' },
+  platina: { cs: 'platina', en: 'platinum' },
+  titan: { cs: 'titan', en: 'titanium' },
+  jine: { cs: 'jiný materiál', en: 'other material' },
+};
+export const PRECIOUS = ['zlato', 'stribro', 'platina'];
 
 export const slugify = (s) => String(s || '')
   .normalize('NFD').replace(/[̀-ͯ]/g, '')

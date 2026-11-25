@@ -4,7 +4,7 @@ export const CSP = [
   "img-src 'self' data: blob: https://widget.packeta.com",
   "script-src 'self' https://widget.packeta.com",
   "style-src 'self' 'unsafe-inline' https://widget.packeta.com",
-  "frame-src https://widget.packeta.com",
+  "frame-src https://widget.packeta.com https://b2c.cpost.cz",
   "connect-src 'self'",
   "font-src 'self'",
   "object-src 'none'",

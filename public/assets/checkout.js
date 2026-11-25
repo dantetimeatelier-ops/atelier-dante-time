@@ -48,22 +48,60 @@
   const manual = $('[data-pickup-manual]');
   const pickLabel = $('[data-pickup-label]');
   const shippingSel = () => (config.shipping || []).find((s) => s.id === form.shipping?.value);
+  const paymentSel = () => (config.payment || []).find((p) => p.id === form.payment?.value);
   const update = () => {
     const s = shippingSel();
     const needsPoint = s && (s.id === 'zasilkovna' || s.id === 'balikovna');
     pickup.hidden = !needsPoint;
-    const widget = s?.id === 'zasilkovna' && config.packetaKey;
+    // Zásilkovna: mapa jen s API klíčem Zásilkovny; Balíkovna: oficiální mapa České pošty (bez klíče)
+    const widget = (s?.id === 'zasilkovna' && config.packetaKey) || s?.id === 'balikovna';
     $('[data-pick-point]').hidden = !widget;
-    manual.hidden = !needsPoint || widget;
-    manual.querySelector('input').required = needsPoint && !widget;
+    $('[data-pick-point]').textContent = s?.id === 'balikovna' ? L('Vybrat Balíkovnu na mapě', 'Choose Balíkovna on the map') : L('Vybrat výdejní místo na mapě', 'Choose pickup point on the map');
+    const manualNeeded = needsPoint && !(s?.id === 'zasilkovna' && config.packetaKey);
+    manual.hidden = !manualNeeded;
+    manual.querySelector('input').required = manualNeeded && !form.pickupPointId.value;
+    $('[data-zas-map]').hidden = !(s?.id === 'zasilkovna' && !config.packetaKey);
     const ship = s?.price ?? 0;
-    $('[data-summary]').innerHTML = `<div><span>${L('Hodinky', 'Watches')}</span><span>${fmt(itemsTotal)}</span></div><div><span>${L('Doprava', 'Shipping')}</span><span>${ship === 0 ? L('zdarma', 'free') : fmt(ship)}</span></div><div class="total"><span>${L('Celkem', 'Total')}</span><strong>${fmt(itemsTotal + ship)}</strong></div>`;
+    const p = paymentSel();
+    const cod = p?.id === 'cod' ? (p.price || 0) : 0;
+    $('[data-summary]').innerHTML = `<div><span>${L('Hodinky', 'Watches')}</span><span>${fmt(itemsTotal)}</span></div><div><span>${L('Doprava', 'Shipping')}</span><span>${ship === 0 ? L('zdarma', 'free') : fmt(ship)}</span></div>${p?.id === 'cod' ? `<div><span>${L('Dobírka', 'Cash on delivery')}</span><span>${cod === 0 ? L('zdarma', 'free') : fmt(cod)}</span></div>` : ''}<div class="total"><span>${L('Celkem', 'Total')}</span><strong>${fmt(itemsTotal + ship + cod)}</strong></div>`;
   };
-  form.addEventListener('change', (e) => { if (e.target.name === 'shipping') { form.pickupPointId.value = ''; pickLabel.textContent = ''; } update(); });
+  form.addEventListener('change', (e) => { if (e.target.name === 'shipping') { form.pickupPointId.value = ''; form.pickupPointName.value = ''; pickLabel.textContent = ''; } update(); });
+  manual.insertAdjacentHTML('afterend', `<p class="doc-meta" data-zas-map hidden><a href="https://www.zasilkovna.cz/pobocky" target="_blank" rel="noopener noreferrer">${L('Najít výdejní místo Zásilkovny na mapě', 'Find a Packeta pickup point on the map')}</a> ${L('a zkopírujte jeho název a adresu.', 'and copy its name and address.')}</p>`);
+
+  // Balíkovna: oficiální výběr České pošty v okně (iframe), výsledek přijde zprávou postMessage
+  const BALIKOVNA_ORIGIN = 'https://b2c.cpost.cz';
+  let bkFrame = null;
+  const closeBk = () => { document.querySelector('[data-bk-modal]')?.remove(); bkFrame = null; };
+  const openBalikovna = () => {
+    const url = `${BALIKOVNA_ORIGIN}/locations/?type=BALIKOVNY&skipLocation=false&messageId=pickerResult`;
+    document.body.insertAdjacentHTML('beforeend', `<div data-bk-modal role="dialog" aria-modal="true" aria-label="${L('Výběr Balíkovny', 'Choose Balíkovna')}" style="position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.75);display:grid;place-items:center;padding:12px">
+      <div style="width:min(960px,100%);height:min(720px,92vh);background:#fff;border-radius:14px;overflow:hidden;display:flex;flex-direction:column">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#111;color:#f2f2f2"><span>${L('Vyberte Balíkovnu', 'Choose Balíkovna')}</span><button type="button" class="btn ghost" data-bk-close style="min-height:36px;padding:6px 14px">${L('Zavřít', 'Close')}</button></div>
+        <iframe src="${url}" title="${L('Mapa výdejních míst Balíkovny', 'Balíkovna pickup point map')}" allow="geolocation" style="flex:1;border:0;width:100%"></iframe>
+      </div></div>`);
+    bkFrame = document.querySelector('[data-bk-modal] iframe');
+    document.querySelector('[data-bk-close]').addEventListener('click', closeBk);
+  };
+  window.addEventListener('message', (event) => {
+    if (!bkFrame || event.origin !== BALIKOVNA_ORIGIN || event.source !== bkFrame.contentWindow) return;
+    let data = event.data;
+    try { if (typeof data === 'string') data = JSON.parse(data); } catch { return; }
+    if (!data || !['pickerResult', 'pickResult'].includes(data.message) || !data.point) return;
+    const p = data.point;
+    if (!p.id || !p.name) return;
+    const city = p.municipality_name || p.city || '';
+    form.pickupPointId.value = String(p.id);
+    form.pickupPointName.value = [p.name, p.street || p.address, [p.zip, city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+    pickLabel.textContent = form.pickupPointName.value;
+    closeBk(); update();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeBk(); });
   update();
 
   // Výběr výdejního místa Zásilkovny (widget se načte až po kliknutí)
   $('[data-pick-point]').addEventListener('click', async () => {
+    if (shippingSel()?.id === 'balikovna') { openBalikovna(); return; }
     if (!window.Packeta) {
       await new Promise((ok, fail) => { const s = document.createElement('script'); s.src = 'https://widget.packeta.com/v6/www/js/library.js'; s.onload = ok; s.onerror = fail; document.head.appendChild(s); })
         .catch(() => { manual.hidden = false; manual.querySelector('input').required = true; });
@@ -79,7 +117,7 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const s = shippingSel();
-    if ((s?.id === 'zasilkovna' && config.packetaKey) && !form.pickupPointId.value) { showStatus(L('Vyberte prosím výdejní místo.', 'Please choose a pickup point.')); return; }
+    if (['zasilkovna', 'balikovna'].includes(s?.id) && !form.pickupPointName.value.trim()) { showStatus(L('Vyberte prosím výdejní místo.', 'Please choose a pickup point.')); return; }
     if (!form.checkValidity()) { form.reportValidity(); return; }
     const btn = form.querySelector('button[type=submit]');
     btn.disabled = true;

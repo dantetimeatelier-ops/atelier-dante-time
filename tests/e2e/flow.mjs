@@ -74,7 +74,14 @@ try {
   const desc = await page.getByLabel('Popis (česky)').inputValue();
   assert.match(desc, /Omega Genève z roku 1968/); assert.match(desc, /garance pravosti/);
   step('popis a SEO vygenerovány z parametrů');
+  // Pojistka: zlaté pouzdro bez puncu nelze zveřejnit
+  await page.locator('summary', { hasText: 'Pouzdro a punc' }).click();
+  await page.locator('select[name=case_metal]').selectOption('zlato');
   await page.getByLabel('Stav v e-shopu').selectOption('available');
+  await page.getByRole('button', { name: 'Uložit', exact: true }).click();
+  await page.locator('.toast.err', { hasText: 'puncovní značku' }).waitFor();
+  step('zlaté pouzdro bez puncu zveřejnit nelze');
+  await page.getByLabel(/Ryzost a punc/).fill('Au 585/1000, česká puncovní značka');
   await page.getByRole('button', { name: 'Uložit', exact: true }).click();
   await page.getByRole('link', { name: /Zobrazit na webu/ }).waitFor();
   await shot(page, '2-editor');
@@ -124,7 +131,7 @@ try {
   const inv = await page.locator('a', { hasText: /^\d{8}$/ }).getAttribute('href');
   const invPage = await ctx.newPage();
   await invPage.goto(`${BASE}${inv}`);
-  await invPage.getByText('Celkem k úhradě').waitFor();
+  await invPage.getByText('Uhrazeno – neplaťte.').waitFor();
   await shot(invPage, '5-faktura');
   step('faktura vystavena');
   await page.getByLabel(/Číslo zásilky/).fill('Z1234567890');
@@ -162,6 +169,59 @@ try {
   await page.getByRole('button', { name: 'Uložit' }).click();
   await page.getByText(/^Z-\d{4}-\d{3}$/).waitFor();
   step('poptávka převedena na zakázku');
+
+  // 9) Dobírka + výběr Balíkovny (okno České pošty nahrazeno testovací stránkou)
+  await page.goto(`${BASE}/admin/#/nastaveni`);
+  await page.getByLabel(/Balíkovna – cena/).fill('89');
+  await page.getByLabel('Nabízet platbu dobírkou').check();
+  await page.getByLabel(/Příplatek za dobírku/).fill('40');
+  await page.getByRole('button', { name: 'Uložit nastavení' }).click();
+  await page.locator('.toast', { hasText: 'Uloženo' }).waitFor();
+  await page.goto(`${BASE}/admin/#/hodinky/nove`);
+  await page.getByLabel('Značka', { exact: true }).waitFor();
+  await page.getByLabel('Značka', { exact: true }).fill('PRIM');
+  await page.getByLabel('Model', { exact: true }).fill('Sport');
+  await page.getByLabel('Cena (Kč)').fill('12900');
+  await page.getByLabel('Druh hodinek').selectOption('prestavba');
+  await page.getByLabel('Stav v e-shopu').selectOption('available');
+  await page.getByRole('button', { name: 'Uložit', exact: true }).click();
+  await page.getByRole('link', { name: /Zobrazit na webu/ }).waitFor();
+  await ctx.route('https://b2c.cpost.cz/**', (route) => route.fulfill({ contentType: 'text/html; charset=utf-8', body: `<!doctype html><html><body><script>
+    parent.postMessage({ message: 'pickerResult', point: { id: 'B12345', name: 'Balíkovna Praha 7', street: 'Dukelských hrdinů 1', zip: '17000', municipality_name: 'Praha' } }, '*');
+  </script></body></html>` }));
+  await shop.goto(`${BASE}/kolekce`);
+  await shop.getByRole('link', { name: /PRIM Sport/ }).click();
+  await shop.getByRole('button', { name: 'Vložit do košíku' }).click();
+  await shop.locator('[data-cart-items] .cart-item').waitFor();
+  await shop.getByLabel(/Balíkovna – výdejní místo/).check();
+  await shop.getByRole('button', { name: 'Vybrat Balíkovnu na mapě' }).click();
+  await shop.getByText('Balíkovna Praha 7, Dukelských hrdinů 1, 17000 Praha').waitFor();
+  await shop.getByLabel(/Dobírka/).check();
+  await shop.getByText('13 029 Kč').waitFor(); // 12 900 + 89 + 40
+  for (const [l, v] of [['Jméno a příjmení', 'Karel Dobírka'], ['E-mail', 'karel@example.com'], [/Telefon/, '+420 600 000 002'], ['Ulice a číslo', 'Testovací 9'], ['Město', 'Praha'], ['PSČ', '17000']]) await shop.getByLabel(l).fill(v);
+  await shop.locator('input[name=terms]').check();
+  await shop.getByRole('button', { name: 'Objednávka zavazující k platbě' }).click();
+  await shop.waitForURL(/\/objednavka\//);
+  await shop.getByText(/Platíte dobírkou při převzetí/).waitFor();
+  step('dobírka s výběrem Balíkovny na mapě');
+  await page.goto(`${BASE}/admin/#/objednavky`);
+  await page.locator('.item', { hasText: 'Karel Dobírka' }).click();
+  await page.getByRole('button', { name: /Odesláno na dobírku/ }).click();
+  await page.locator('.chip.shipped').waitFor();
+  await page.getByRole('button', { name: /Dobírka zaplacena/ }).click();
+  await page.locator('.chip.completed').waitFor();
+  await page.locator('a', { hasText: /^\d{8}$/ }).waitFor();
+  step('dobírka: odesláno → zaplaceno → faktura');
+
+  // 10) Faktura k zakázce z administrace
+  await page.goto(`${BASE}/admin/#/zakazky`);
+  await page.locator('.item').first().click();
+  await page.getByRole('link', { name: 'Vystavit fakturu' }).click();
+  await page.locator('#lines [name=price]').first().fill('1800');
+  await page.getByRole('button', { name: 'Vystavit fakturu' }).click();
+  await page.getByRole('heading', { name: 'Faktury' }).waitFor();
+  await page.locator('.item', { hasText: 'Petr Poptávka' }).waitFor();
+  step('faktura k zakázce vystavena z administrace');
 
   assert.deepEqual(errors, [], `Chyby v prohlížeči: ${errors.join(' | ')}`);
   console.log('\n✅ Celý proces funguje.');

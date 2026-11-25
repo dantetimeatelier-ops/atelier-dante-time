@@ -24,6 +24,10 @@ export async function shopConfig(env, lang = 'cs') {
   const iban = env.SHOP_IBAN || OPERATOR.iban;
   if (iban && isValidIban(iban)) payment.push({ id: 'bank_transfer', label: PAYMENT.bank_transfer[lang], note: lang === 'cs' ? 'Platební údaje a QR kód obdržíte hned po objednávce.' : 'Payment details and a QR code will be shown right after ordering.' });
   if (cardPaymentsAvailable(env)) payment.push({ id: 'card', label: PAYMENT.card[lang] });
+  if (s.cod_enabled === '1') {
+    const fee = Number(s.cod_fee_czk) || 0;
+    payment.push({ id: 'cod', label: PAYMENT.cod[lang], price: fee, note: lang === 'cs' ? 'Platíte při převzetí zásilky.' : 'Pay when you collect the parcel.' });
+  }
   return { mode: m, shipping, payment, packetaKey: env.PACKETA_API_KEY || null, settings: s };
 }
 
@@ -54,16 +58,19 @@ export async function createOrder(env, body, origin) {
   const pickupId = str(body.pickupPointId, { max: 40 });
   const pickupName = str(body.pickupPointName, { max: 200 });
   if (['zasilkovna', 'balikovna'].includes(ship.id) && !pickupName) throw new HttpError('Vyberte prosím výdejní místo');
+  if (ship.id === 'balikovna' && pickupId && !/^[BP]\d{5}$/.test(pickupId)) throw new HttpError('Neplatné výdejní místo Balíkovny');
+  if (pay.id === 'cod' && ship.id === 'osobni') throw new HttpError('Dobírku nelze kombinovat s osobním převzetím');
 
   await releaseExpired(env);
 
   const ph = ids.map(() => '?').join(',');
-  const { results: products } = await env.DB.prepare(`SELECT id, title, brand, model, price_czk, status FROM products WHERE id IN (${ph})`).bind(...ids).all();
+  const { results: products } = await env.DB.prepare(`SELECT id, title, brand, model, price_czk, status, serial_ref FROM products WHERE id IN (${ph})`).bind(...ids).all();
   const unavailable = ids.filter((id) => { const p = products.find((x) => x.id === id); return !p || p.status !== 'available' || p.price_czk == null; });
   if (unavailable.length) throw new HttpError('Některé hodinky už nejsou k dispozici', 409, { unavailable });
 
   const itemsTotal = products.reduce((s, p) => s + p.price_czk, 0);
-  const total = itemsTotal + ship.price;
+  const codFee = pay.id === 'cod' ? (pay.price || 0) : 0;
+  const total = itemsTotal + ship.price + codFee;
   const seq = await nextCounter(env, 'order');
   const year = new Date().getFullYear();
   const number = `${year}-${String(seq).padStart(4, '0')}`;
@@ -71,7 +78,8 @@ export async function createOrder(env, body, origin) {
   const orderId = randomId();
   const token = randomToken(24);
   const s = cfg.settings;
-  const reservedUntil = pay.id === 'card' ? addMinutes(Number(s.reservation_minutes_card || 30)) : addMinutes(Number(s.reservation_hours_bank || 72) * 60);
+  // Dobírka: kus zůstává rezervovaný až do odeslání (bez lhůty), ostatní podle splatnosti
+  const reservedUntil = pay.id === 'cod' ? null : pay.id === 'card' ? addMinutes(Number(s.reservation_minutes_card || 30)) : addMinutes(Number(s.reservation_hours_bank || 72) * 60);
   const t = now();
 
   // Vše v jedné dávce = jedné transakci. Pokud se některý kus nepodaří
@@ -81,11 +89,11 @@ export async function createOrder(env, body, origin) {
       ON CONFLICT(email) DO UPDATE SET name=excluded.name, phone=excluded.phone, updated_at=?`).bind(randomId(), customer.email, customer.name, customer.phone, t),
     env.DB.prepare(`INSERT INTO orders (id, number, public_token, status, mode, customer_id, email, name, phone,
       billing_street, billing_city, billing_zip, company, company_ico, company_dic, shipping_method, pickup_point_id, pickup_point_name,
-      payment_method, items_total, shipping_price, total, variable_symbol, customer_note, terms_version, terms_accepted_at, reserved_until)
-      VALUES (?, ?, ?, 'awaiting_payment', ?, (SELECT id FROM customers WHERE email = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      payment_method, items_total, shipping_price, total, variable_symbol, customer_note, terms_version, terms_accepted_at, reserved_until, cod_fee)
+      VALUES (?, ?, ?, 'awaiting_payment', ?, (SELECT id FROM customers WHERE email = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(orderId, number, token, m, customer.email, customer.email, customer.name, customer.phone, customer.street, customer.city, customer.zip,
         customer.company, customer.ico, customer.dic, ship.id, pickupId, pickupName, pay.id, itemsTotal, ship.price, total, vs, customer.note,
-        s.terms_version || LEGAL_VERSION, t, reservedUntil),
+        s.terms_version || LEGAL_VERSION, t, reservedUntil, codFee),
   ];
   for (const p of products) {
     stmts.push(env.DB.prepare(`UPDATE products SET status='reserved', reserved_order_id=?, reserved_until=?, updated_at=? WHERE id=? AND status='available'`).bind(orderId, reservedUntil, t, p.id));
@@ -120,6 +128,7 @@ async function orderEmails(env, order, items, origin) {
   const rows = items.map((i) => `<tr><td style="padding:6px 0">${i.title}</td><td style="text-align:right">${formatCzk(i.price_czk)}</td></tr>`).join('');
   const table = `<table style="width:100%;border-collapse:collapse">${rows}
 <tr><td style="padding:6px 0">Doprava: ${SHIPPING[order.shipping_method]?.cs || order.shipping_method}${order.pickup_point_name ? ` (${order.pickup_point_name})` : ''}</td><td style="text-align:right">${formatCzk(order.shipping_price)}</td></tr>
+${order.cod_fee ? `<tr><td style="padding:6px 0">Dobírka</td><td style="text-align:right">${formatCzk(order.cod_fee)}</td></tr>` : ''}
 <tr><td style="padding:8px 0;border-top:1px solid #ddd"><strong>Celkem</strong></td><td style="text-align:right;border-top:1px solid #ddd"><strong>${formatCzk(order.total)}</strong></td></tr></table>`;
   const link = `${origin}/objednavka/${order.public_token}`;
   await sendEmail(env, {
@@ -130,7 +139,7 @@ async function orderEmails(env, order, items, origin) {
 <p>Dobrý den, ${order.name},</p>
 <p>potvrzujeme přijetí vaší objednávky <strong>${order.number}</strong>. Tímto potvrzením je kupní smlouva uzavřena.</p>
 ${table}
-<p>Platba: ${PAYMENT[order.payment_method]?.cs}. ${order.payment_method === 'bank_transfer' ? `Platební údaje a QR kód najdete na stránce objednávky. Hodinky jsou pro vás rezervovány do ${new Date(order.reserved_until).toLocaleString('cs-CZ', { timeZone: 'Europe/Prague', day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}.` : ''}</p>
+<p>Platba: ${PAYMENT[order.payment_method]?.cs}. ${order.payment_method === 'cod' ? 'Částku zaplatíte při převzetí zásilky. Hodinky jsou pro vás rezervovány.' : ''} ${order.payment_method === 'bank_transfer' ? `Platební údaje a QR kód najdete na stránce objednávky. Hodinky jsou pro vás rezervovány do ${new Date(order.reserved_until).toLocaleString('cs-CZ', { timeZone: 'Europe/Prague', day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}.` : ''}</p>
 <p><a href="${link}" style="display:inline-block;background:#c8a24a;color:#000;padding:10px 18px;border-radius:999px;text-decoration:none">Zobrazit objednávku</a></p>
 <p style="font-size:13px;color:#555">Od kupní smlouvy můžete jako spotřebitel odstoupit do 14 dnů od převzetí hodinek, např. pomocí funkce <a href="${origin}/odstoupeni">Odstoupit od smlouvy</a>.</p>
 <hr style="border:none;border-top:1px solid #ddd;margin:24px 0">
@@ -151,8 +160,16 @@ ${table}
 export async function markPaid(env, orderId, actor, origin) {
   const order = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();
   if (!order) throw new HttpError('Objednávka neexistuje', 404);
-  if (order.status === 'paid' || order.status === 'shipped' || order.status === 'completed') return order;
+  if (order.status === 'paid' || order.status === 'completed') return order;
   const t = now();
+  if (order.status === 'shipped') {
+    // Dobírka: peníze dorazily po odeslání → objednávka je dokončena
+    await env.DB.prepare("UPDATE orders SET status='completed', paid_at=?, completed_at=?, updated_at=? WHERE id=?").bind(t, t, t, orderId).run();
+    const inv = await issueInvoice(env, orderId);
+    await audit(env, actor, 'dobirka_zaplacena', 'order', orderId);
+    await invoiceEmail(env, orderId, inv, origin);
+    return env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();
+  }
   // Pokud rezervace mezitím propadla a kus koupil někdo jiný, nelze označit jako zaplacené automaticky
   const { results: conflicts } = await env.DB.prepare(`SELECT p.id, p.title FROM order_items i JOIN products p ON p.id = i.product_id
     WHERE i.order_id = ? AND NOT (p.status = 'reserved' AND p.reserved_order_id = ?) AND NOT (p.status='available')`).bind(orderId, orderId).all();
@@ -161,35 +178,80 @@ export async function markPaid(env, orderId, actor, origin) {
     env.DB.prepare("UPDATE orders SET status='paid', paid_at=?, updated_at=?, reserved_until=NULL WHERE id=?").bind(t, t, orderId),
     env.DB.prepare(`UPDATE products SET status='sold', sold_at=?, reserved_until=NULL, updated_at=? WHERE id IN (SELECT product_id FROM order_items WHERE order_id=?)`).bind(t, t, orderId),
   ]);
-  await issueInvoice(env, orderId);
+  const inv = await issueInvoice(env, orderId);
   await audit(env, actor, 'objednavka_zaplacena', 'order', orderId);
   const fresh = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();
   await sendEmail(env, {
     to: fresh.email, subject: `Platba přijata – objednávka ${fresh.number}`, related: `order:${orderId}`,
     body: `<p>Dobrý den, ${fresh.name},</p><p>děkujeme, platbu za objednávku <strong>${fresh.number}</strong> jsme přijali. Hodinky pečlivě zabalíme a odešleme. O odeslání vás budeme informovat.</p>
-${fresh.invoice_number ? `<p>Fakturu najdete zde: <a href="${origin}/faktura/${fresh.public_token}">faktura ${fresh.invoice_number}</a></p>` : ''}`,
+<p>Fakturu najdete zde: <a href="${origin}/faktura/${inv.public_token}">faktura ${inv.number}</a></p>`,
   });
   return fresh;
 }
 
+async function invoiceEmail(env, orderId, inv, origin) {
+  const o = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();
+  await sendEmail(env, {
+    to: o.email, subject: `Faktura k objednávce ${o.number}`, related: `order:${orderId}`,
+    body: `<p>Dobrý den, ${o.name},</p><p>děkujeme za zaplacení objednávky <strong>${o.number}</strong>. Fakturu najdete zde: <a href="${origin}/faktura/${inv.public_token}">faktura ${inv.number}</a>.</p>`,
+  });
+}
+
+/** Vystaví fakturu (doklad) k objednávce. Opakované volání vrátí existující. */
 export async function issueInvoice(env, orderId) {
-  const o = await env.DB.prepare('SELECT invoice_number FROM orders WHERE id=?').bind(orderId).first();
-  if (o?.invoice_number) return o.invoice_number;
+  const existing = await env.DB.prepare('SELECT * FROM invoices WHERE order_id = ? AND cancelled_at IS NULL').bind(orderId).first();
+  if (existing) return existing;
+  const o = await env.DB.prepare('SELECT * FROM orders WHERE id=?').bind(orderId).first();
+  const { results: items } = await env.DB.prepare('SELECT i.title, i.price_czk, p.serial_ref FROM order_items i LEFT JOIN products p ON p.id = i.product_id WHERE i.order_id = ?').bind(orderId).all();
+  const lines = items.map((i) => ({ text: i.serial_ref ? `${i.title} (identifikace: ${i.serial_ref})` : i.title, price: i.price_czk }));
+  lines.push({ text: `Doprava – ${SHIPPING[o.shipping_method]?.cs || o.shipping_method}`, price: o.shipping_price });
+  if (o.cod_fee) lines.push({ text: 'Dobírka', price: o.cod_fee });
+  const inv = await createInvoice(env, {
+    source: 'order', order_id: orderId, mode: o.mode,
+    buyer_name: o.name, buyer_company: o.company, buyer_ico: o.company_ico, buyer_dic: o.company_dic,
+    buyer_street: o.billing_street, buyer_city: o.billing_city, buyer_zip: o.billing_zip, buyer_email: o.email,
+    items: lines, payment_method: o.payment_method, taxable_date: o.paid_at || now(), paid_at: o.paid_at || now(), variable_symbol: o.variable_symbol,
+    note: `Objednávka ${o.number}`,
+  });
+  await env.DB.prepare('UPDATE orders SET invoice_number=?, invoice_issued_at=? WHERE id=?').bind(inv.number, inv.issued_at, orderId).run();
+  return inv;
+}
+
+/** Obecné vystavení faktury (objednávka, zakázka, ruční). */
+export async function createInvoice(env, d) {
+  const items = (d.items || []).filter((i) => i && String(i.text || '').trim() && Number.isInteger(Number(i.price)));
+  if (!items.length) throw new HttpError('Faktura musí mít alespoň jednu položku');
+  const total = items.reduce((sum, i) => sum + Number(i.price), 0);
   const seq = await nextCounter(env, 'invoice');
   const number = `${new Date().getFullYear()}${String(seq).padStart(4, '0')}`;
-  await env.DB.prepare('UPDATE orders SET invoice_number=?, invoice_issued_at=? WHERE id=?').bind(number, now(), orderId).run();
-  return number;
+  const inv = {
+    id: randomId(), number, public_token: randomToken(24), source: d.source, order_id: d.order_id || null, commission_id: d.commission_id || null,
+    mode: d.mode || (mode(env) === 'live' ? 'live' : 'test'),
+    buyer_name: d.buyer_name, buyer_company: d.buyer_company || null, buyer_ico: d.buyer_ico || null, buyer_dic: d.buyer_dic || null,
+    buyer_street: d.buyer_street || null, buyer_city: d.buyer_city || null, buyer_zip: d.buyer_zip || null, buyer_email: d.buyer_email || null,
+    items: JSON.stringify(items.map((i) => ({ text: String(i.text).slice(0, 300), price: Number(i.price) }))), total,
+    payment_method: d.payment_method || 'bank_transfer', issued_at: now(), taxable_date: d.taxable_date || now(),
+    due_date: d.due_date || null, paid_at: d.paid_at || null, variable_symbol: d.variable_symbol || number, note: d.note || null,
+  };
+  const keys = Object.keys(inv);
+  await env.DB.prepare(`INSERT INTO invoices (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`).bind(...keys.map((k) => inv[k])).run();
+  return inv;
 }
 
 export async function markShipped(env, orderId, tracking, actor) {
   const order = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();
   if (!order) throw new HttpError('Objednávka neexistuje', 404);
-  if (order.status !== 'paid') throw new HttpError('Odeslat lze jen zaplacenou objednávku');
-  await env.DB.prepare("UPDATE orders SET status='shipped', shipped_at=?, tracking_number=?, updated_at=? WHERE id=?").bind(now(), tracking, now(), orderId).run();
+  const cod = order.payment_method === 'cod' && order.status === 'awaiting_payment';
+  if (order.status !== 'paid' && !cod) throw new HttpError('Odeslat lze jen zaplacenou objednávku nebo dobírku');
+  const t = now();
+  const stmts = [env.DB.prepare("UPDATE orders SET status='shipped', shipped_at=?, tracking_number=?, updated_at=? WHERE id=?").bind(t, tracking, t, orderId)];
+  // Dobírka: odesláním se kus považuje za prodaný
+  if (cod) stmts.push(env.DB.prepare("UPDATE products SET status='sold', sold_at=?, reserved_until=NULL, updated_at=? WHERE id IN (SELECT product_id FROM order_items WHERE order_id=?)").bind(t, t, orderId));
+  await env.DB.batch(stmts);
   await audit(env, actor, 'objednavka_odeslana', 'order', orderId, { tracking });
   await sendEmail(env, {
     to: order.email, subject: `Objednávka ${order.number} je na cestě`, related: `order:${orderId}`,
-    body: `<p>Dobrý den, ${order.name},</p><p>vaše hodinky jsou na cestě${order.pickup_point_name ? ` na výdejní místo ${order.pickup_point_name}` : ''}.${tracking ? ` Číslo zásilky: <strong>${tracking}</strong>.` : ''}</p><p>Po převzetí doporučujeme nechat hodinky několik hodin v klidu při pokojové teplotě. Rady k péči: <a href="${SITE.origin}/care">Péče o hodinky</a>.</p>`,
+    body: `<p>Dobrý den, ${order.name},</p>${cod ? `<p>Při převzetí zaplatíte <strong>${formatCzk(order.total)}</strong>.</p>` : ''}<p>vaše hodinky jsou na cestě${order.pickup_point_name ? ` na výdejní místo ${order.pickup_point_name}` : ''}.${tracking ? ` Číslo zásilky: <strong>${tracking}</strong>.` : ''}</p><p>Po převzetí doporučujeme nechat hodinky několik hodin v klidu při pokojové teplotě. Rady k péči: <a href="${SITE.origin}/care">Péče o hodinky</a>.</p>`,
   });
 }
 

@@ -14,6 +14,7 @@ export const onRequestGet = handle(async ({ env, params }) => {
   const o = /^[A-Za-z0-9_-]{20,64}$/.test(token) ? await env.DB.prepare('SELECT * FROM orders WHERE public_token = ?').bind(token).first() : null;
   if (!o) return page(env, { lang: 'cs', title: 'Objednávka nenalezena', description: '', path: '/objednavka', noindex: true, body: hero({ title: 'Objednávka nenalezena', lead: `Zkontrolujte prosím odkaz z e-mailu nebo napište na ${SITE.email}.` }) }, 404, 'no-store');
   const { results: items } = await env.DB.prepare('SELECT title, price_czk FROM order_items WHERE order_id = ?').bind(o.id).all();
+  const invoice = await env.DB.prepare('SELECT number, public_token FROM invoices WHERE order_id = ? AND cancelled_at IS NULL').bind(o.id).first();
 
   let payment = '';
   if (o.status === 'awaiting_payment' && o.payment_method === 'bank_transfer') {
@@ -34,11 +35,13 @@ export const onRequestGet = handle(async ({ env, params }) => {
   <div style="display:grid;gap:18px">${payment}
     <div class="card"><h2>Shrnutí</h2><table class="specs"><tbody>${rows}
       <tr><th>Doprava – ${esc(SHIPPING[o.shipping_method]?.cs || o.shipping_method)}${o.pickup_point_name ? `<br><span class="doc-meta">${esc(o.pickup_point_name)}</span>` : ''}</th><td>${formatCzk(o.shipping_price)}</td></tr>
+      ${o.cod_fee ? `<tr><th>Dobírka</th><td>${formatCzk(o.cod_fee)}</td></tr>` : ''}
       <tr><th>Platba</th><td>${esc(PAYMENT[o.payment_method]?.cs || o.payment_method)}</td></tr>
       <tr><th><strong>Celkem</strong></th><td><strong>${formatCzk(o.total)}</strong></td></tr>
     </tbody></table>
     ${o.tracking_number ? `<p style="margin-top:14px">Číslo zásilky: <strong>${esc(o.tracking_number)}</strong></p>` : ''}
-    ${o.invoice_number ? `<p style="margin-top:14px"><a class="btn ghost" href="/faktura/${esc(o.public_token)}">Faktura ${esc(o.invoice_number)}</a></p>` : ''}</div>
+    ${invoice ? `<p style="margin-top:14px"><a class="btn ghost" href="/faktura/${esc(invoice.public_token)}">Faktura ${esc(invoice.number)}</a></p>` : ''}
+    ${o.payment_method === 'cod' && o.status === 'awaiting_payment' ? '<p class="notice" style="margin-top:14px">Platíte dobírkou při převzetí. Hodinky jsou pro vás rezervovány, o odeslání vás budeme informovat.</p>' : ''}</div>
   </div>
   <aside class="card"><h2 style="font-size:24px">Potřebujete pomoc?</h2><p>Napište na <a href="mailto:${SITE.email}">${SITE.email}</a> a uveďte číslo objednávky ${esc(o.number)}.</p>
     <p class="doc-meta">Hotové hodinky můžete jako spotřebitel vrátit do 14 dnů od převzetí.</p>

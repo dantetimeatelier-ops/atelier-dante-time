@@ -14,7 +14,7 @@
     inq: { nova: 'Nová', vyrizuje_se: 'Vyřizuje se', vyrizena: 'Vyřízená', spam: 'Spam' },
     itype: { servis: 'Servis', renovace: 'Renovace', zakazkova_vyroba: 'Zakázková sestava', prestavba: 'Přestavba', jine: 'Jiný dotaz', product: 'Zájem o hodinky', general: 'Dotaz' },
     ship: { zasilkovna: 'Zásilkovna', balikovna: 'Balíkovna', osobni: 'Osobně' },
-    pay: { bank_transfer: 'Převod', card: 'Karta' },
+    pay: { bank_transfer: 'Převod', card: 'Karta', cod: 'Dobírka', cash: 'Hotově' },
   };
   const chip = (group, v) => `<span class="chip ${esc(v)}">${esc(L[group][v] || v)}</span>`;
   const toast = (msg, err) => { toastEl.textContent = msg; toastEl.className = `toast${err ? ' err' : ''}`; toastEl.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { toastEl.hidden = true; }, err ? 6000 : 2500); };
@@ -143,17 +143,23 @@
           <div class="grid">${field('year', 'Rok výroby', p)}${field('price_czk', 'Cena (Kč)', p, 'inputmode="numeric"')}</div>
           ${field('title', 'Název na webu (vyplní se sám ze značky a modelu)', p)}
           <label>Stav v e-shopu<select name="status">${['draft', 'in_progress', 'available', 'sold', 'archived'].map((s) => `<option value="${s}" ${p.status === s ? 'selected' : ''}>${L.product[s]}</option>`).join('')}${p.status === 'reserved' ? '<option value="reserved" selected>Rezervováno (objednávkou)</option>' : ''}</select></label>
+          <label>Druh hodinek<select name="kind">${[['original', 'Originální hodinky (po servisu / renovaci)'], ['prestavba', 'Přestavba (upravené, část dílů není původní)'], ['sestava', 'Sestava z ateliéru (z vybraných dílů)']].map(([v, t]) => `<option value="${v}" ${(p.kind || 'original') === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
           <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="featured" ${p.featured ? 'checked' : ''} style="width:22px;min-height:22px"> Zobrazit na hlavní stránce</label>
+        </details>
+        <details ${['zlato', 'stribro', 'platina', 'pozlaceno'].includes(p.case_metal) ? 'open' : ''}><summary>Pouzdro a punc</summary>
+          <label>Materiál pouzdra<select name="case_metal"><option value="">–</option>${[['ocel', 'nerezová ocel'], ['mosaz', 'mosaz'], ['chrom', 'chromovaná mosaz'], ['pozlaceno', 'pozlacené (není drahý kov)'], ['zlato', 'zlato'], ['stribro', 'stříbro'], ['platina', 'platina'], ['titan', 'titan'], ['jine', 'jiné']].map(([v, t]) => `<option value="${v}" ${p.case_metal === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+          ${field('hallmark', 'Ryzost a punc (u zlata, stříbra, platiny povinné)', p, 'placeholder="např. Au 585/1000, česká puncovní značka"')}
+          ${field('plating', 'Pozlacení (u pozlacených pouzder)', p, 'placeholder="např. pozlaceno 20 µm"')}
         </details>
         <details><summary>Strojek a pouzdro</summary>
           ${field('movement', 'Strojek (kalibr)', p)}
           <label>Nátah<select name="movement_type"><option value="">–</option><option value="manual" ${p.movement_type === 'manual' ? 'selected' : ''}>ruční</option><option value="automatic" ${p.movement_type === 'automatic' ? 'selected' : ''}>automatický</option></select></label>
           <div class="grid">${field('case_diameter_mm', 'Průměr pouzdra (mm)', p, 'inputmode="decimal"')}${field('lug_width_mm', 'Šířka uchycení (mm)', p, 'inputmode="decimal"')}</div>
-          ${field('case_material', 'Materiál pouzdra', p)}${field('dial', 'Ciferník', p)}${field('crystal', 'Sklíčko', p)}${field('strap', 'Řemínek / tah', p)}${field('water_resistance', 'Vodotěsnost (prázdné = není do vody)', p)}${field('reference', 'Reference', p)}
+          ${field('case_material', 'Materiál pouzdra – podrobnosti (nepovinné)', p)}${field('dial', 'Ciferník', p)}${field('crystal', 'Sklíčko', p)}${field('strap', 'Řemínek / tah', p)}${field('water_resistance', 'Vodotěsnost (prázdné = není do vody)', p)}${field('reference', 'Reference', p)}
         </details>
         <details><summary>Stav, práce a originalita</summary>
           ${area('condition', 'Stav hodinek (opotřebení, vzhled)', p)}${area('service_done', 'Provedené práce', p)}
-          ${area('original_parts', 'Deklarované originální díly (garance pravosti!)', p)}${area('replaced_parts', 'Vyměněné / neoriginální díly', p)}${field('accessories', 'Příslušenství', p)}
+          ${area('original_parts', 'Deklarované originální díly (doživotní garance pravosti!)', p)}${area('authenticity_note', 'Jak byla originalita ověřena (nepovinné)', p)}${field('serial_ref', 'Identifikace hodinek – č. pouzdra / strojku (neveřejné, pro garanci)', p)}${area('replaced_parts', 'Vyměněné / neoriginální díly', p)}${field('accessories', 'Příslušenství', p)}
         </details>
         <details><summary>Popis a SEO</summary>
           <button class="btn block" type="button" id="gen" style="margin-bottom:12px">✨ Vygenerovat popis a SEO z parametrů</button>
@@ -207,7 +213,7 @@
   };
 
   views['objednavky/:id'] = async ({ id }) => {
-    const { order: o, items, withdrawals } = await api('GET', `orders/${id}`);
+    const { order: o, items, withdrawals, invoices } = await api('GET', `orders/${id}`);
     app.innerHTML = `<p><a href="#/objednavky">← Objednávky</a></p><h1>${esc(o.number)}</h1><p>${chip('order', o.status)} ${o.mode === 'test' ? '<span class="chip">test</span>' : ''}</p>
       ${withdrawals.length ? `<div class="card err">⚠ Zákazník odstoupil od smlouvy ${date(withdrawals[0].created_at)}: ${esc(withdrawals[0].statement)}</div>` : ''}
       <div class="card"><table>
@@ -216,7 +222,8 @@
         <tr><th><b>Celkem</b></th><td><b>${czk(o.total)}</b></td></tr>
         <tr><th>Platba</th><td>${esc(L.pay[o.payment_method])} · VS ${esc(o.variable_symbol)}</td></tr>
         ${o.reserved_until && o.status === 'awaiting_payment' ? `<tr><th>Rezervace do</th><td>${date(o.reserved_until)}</td></tr>` : ''}
-        ${o.invoice_number ? `<tr><th>Faktura</th><td><a href="/faktura/${esc(o.public_token)}" target="_blank">${esc(o.invoice_number)}</a></td></tr>` : ''}
+        ${o.cod_fee ? `<tr><th>Dobírka</th><td>${czk(o.cod_fee)}</td></tr>` : ''}
+        ${invoices.map((v) => `<tr><th>Faktura</th><td><a href="/faktura/${esc(v.public_token)}" target="_blank">${esc(v.number)}</a>${v.cancelled_at ? ' (storno)' : ''}</td></tr>`).join('')}
       </table></div>
       <div class="card"><table>
         <tr><th>Zákazník</th><td>${esc(o.name)}${o.company ? `<br>${esc(o.company)} (IČO ${esc(o.company_ico || '')})` : ''}</td></tr>
@@ -227,9 +234,10 @@
         <tr><th>Podmínky</th><td class="small">verze ${esc(o.terms_version)}, ${date(o.terms_accepted_at)}</td></tr>
       </table></div>
       <div class="list" id="actions">
-        ${o.status === 'awaiting_payment' || o.status === 'expired' ? '<button class="btn primary block" data-a="paid">✓ Platba přijata</button>' : ''}
-        ${o.status === 'paid' ? '<label>Číslo zásilky (nepovinné)<input id="tracking"></label><button class="btn primary block" data-a="shipped">Odesláno – informovat zákazníka</button>' : ''}
-        ${o.status === 'shipped' ? '<button class="btn block" data-a="completed">Dokončeno (převzato)</button>' : ''}
+        ${(o.status === 'awaiting_payment' && o.payment_method !== 'cod') || o.status === 'expired' ? '<button class="btn primary block" data-a="paid">✓ Platba přijata</button>' : ''}
+        ${o.status === 'paid' || (o.status === 'awaiting_payment' && o.payment_method === 'cod') ? `<label>Číslo zásilky (nepovinné)<input id="tracking"></label><button class="btn primary block" data-a="shipped">Odesláno${o.payment_method === 'cod' ? ' na dobírku' : ''} – informovat zákazníka</button>` : ''}
+        ${o.status === 'shipped' && o.payment_method === 'cod' ? '<button class="btn primary block" data-a="paid">✓ Dobírka zaplacena – vystavit fakturu</button>' : ''}
+        ${o.status === 'shipped' && o.payment_method !== 'cod' ? '<button class="btn block" data-a="completed">Dokončeno (převzato)</button>' : ''}
         ${['paid', 'shipped', 'completed'].includes(o.status) ? '<button class="btn ghost block" data-a="withdrawn">Zákazník odstoupil – vrátit hodinky do prodeje</button>' : ''}
         ${o.status === 'awaiting_payment' ? '<button class="btn danger block" data-a="cancel">Zrušit objednávku a uvolnit hodinky</button>' : ''}
       </div>
@@ -276,7 +284,9 @@
     const { commissions } = await api('GET', 'commissions');
     const k = commissions.find((x) => x.id === id);
     if (!k) { app.innerHTML = '<p>Zakázka nenalezena.</p>'; return; }
-    app.innerHTML = `<p><a href="#/zakazky">← Zakázky</a></p><h1>${esc(k.number)}</h1><p class="small muted">Vytvořeno ${date(k.created_at)}</p>${commissionForm(k)}`;
+    app.innerHTML = `<p><a href="#/zakazky">← Zakázky</a></p><h1>${esc(k.number)}</h1><p class="small muted">Vytvořeno ${date(k.created_at)}</p>
+      <a class="btn block" style="margin-bottom:12px" href="#/faktury/nova?z=${encodeURIComponent(JSON.stringify({ commission_id: k.id, buyer_name: k.customer_name, buyer_email: k.customer_email, items: [{ text: `${L.ctype[k.type]} – ${k.watch || 'hodinky'} (zakázka ${k.number})`, price: k.final_price_czk ?? k.estimate_czk ?? '' }] }))}">Vystavit fakturu</a>
+      ${commissionForm(k)}`;
     app.querySelector('#kf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `commissions/${id}`, formData(e.target)); toast('Uloženo'); }); });
   };
 
@@ -310,6 +320,43 @@
     app.querySelector('#cf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `customers/${id}`, formData(e.target)); toast('Uloženo'); }); });
   };
 
+  views.faktury = async () => {
+    const { invoices } = await api('GET', 'invoices');
+    app.innerHTML = `<div class="row" style="justify-content:space-between"><h1>Faktury</h1><a class="btn primary" href="#/faktury/nova">+ Nová</a></div>
+      <p class="small muted">Faktury k objednávkám se vystavují samy po zaplacení. Zde vystavíte fakturu k zakázce nebo ručně.</p>
+      <div class="list">${invoices.map((v) => `<div class="item"><span class="grow"><span class="t">${esc(v.number)} · ${esc(v.buyer_company || v.buyer_name)}</span><br><span class="small muted">${czk(v.total)} · ${date(v.issued_at)} · ${v.cancelled_at ? 'storno' : v.paid_at ? 'uhrazeno' : 'neuhrazeno'}${v.mode === 'test' ? ' · test' : ''}</span></span>
+        <span class="row" style="gap:4px"><a class="btn ghost" style="min-height:38px;padding:8px 12px" href="/faktura/${esc(v.public_token)}" target="_blank">Zobrazit</a>
+        ${!v.paid_at && !v.cancelled_at ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-paid="${v.id}">Uhrazeno</button>` : ''}
+        ${!v.cancelled_at && !v.order_id ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-storno="${v.id}">Storno</button>` : ''}</span></div>`).join('') || '<p class="muted">Zatím žádné faktury.</p>'}</div>`;
+    app.querySelectorAll('[data-paid]').forEach((b) => b.addEventListener('click', () => run(async () => { await api('POST', `invoices/${b.dataset.paid}/paid`, {}); views.faktury(); })));
+    app.querySelectorAll('[data-storno]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Stornovat fakturu?')) return; await api('POST', `invoices/${b.dataset.storno}/cancel`, {}); views.faktury(); })));
+  };
+
+  views['faktury/nova'] = async (_, q) => {
+    const pre = q.get('z') ? JSON.parse(decodeURIComponent(q.get('z'))) : {};
+    const lines = pre.items?.length ? pre.items : [{ text: '', price: '' }];
+    const lineHtml = (l = {}) => `<div class="grid line"><input name="text" placeholder="Položka (např. Servis Omega Seamaster)" value="${esc(l.text)}"><input name="price" inputmode="numeric" placeholder="Cena Kč" value="${esc(l.price)}"></div>`;
+    app.innerHTML = `<p><a href="#/faktury">← Faktury</a></p><h1>Nová faktura</h1><form id="if">
+      <details open><summary>Odběratel</summary>${field('buyer_name', 'Jméno', pre, 'required')}${field('buyer_email', 'E-mail', pre, 'type="email"')}${field('buyer_street', 'Ulice', pre)}
+        <div class="grid">${field('buyer_city', 'Město', pre)}${field('buyer_zip', 'PSČ', pre)}</div>
+        <div class="grid">${field('buyer_company', 'Firma', pre)}${field('buyer_ico', 'IČO', pre)}</div></details>
+      <details open><summary>Položky</summary><div id="lines" style="display:grid;gap:8px">${lines.map(lineHtml).join('')}</div>
+        <button class="btn ghost block" type="button" id="addl" style="margin-top:8px">+ Další položka</button></details>
+      <details open><summary>Platba</summary>
+        <label>Způsob úhrady<select name="payment_method"><option value="bank_transfer">Bankovní převod</option><option value="cash">Hotově</option><option value="card">Kartou</option><option value="cod">Dobírka</option></select></label>
+        <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="paid" style="width:22px;min-height:22px"> Již uhrazeno</label>
+        <label>Splatnost (dní)<input name="due_days" inputmode="numeric" value="14"></label>
+        ${field('note', 'Poznámka na faktuře', pre)}</details>
+      <div class="sticky-save"><button class="btn primary block">Vystavit fakturu</button></div></form>`;
+    app.querySelector('#addl').addEventListener('click', () => app.querySelector('#lines').insertAdjacentHTML('beforeend', lineHtml()));
+    app.querySelector('#if').addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
+      const f = e.target; const d = formData(f);
+      d.items = [...f.querySelectorAll('.line')].map((l) => ({ text: l.querySelector('[name=text]').value, price: l.querySelector('[name=price]').value })).filter((i) => i.text.trim());
+      d.paid = f.paid.checked; d.commission_id = pre.commission_id;
+      const r = await api('POST', 'invoices', d); toast(`Faktura ${r.number} vystavena`); window.open(`/faktura/${r.token}`, '_blank'); location.hash = '#/faktury';
+    }); });
+  };
+
   views.odstoupeni = async () => {
     const { withdrawals } = await api('GET', 'withdrawals');
     app.innerHTML = `<h1>Odstoupení od smlouvy</h1>${withdrawals.map((w) => `<div class="card"><p class="small muted">${date(w.created_at)} · potvrzení odesláno ${date(w.confirmation_sent_at) || 'NE'}</p><p><b>${esc(w.name)}</b> · ${esc(w.email)} · obj. ${esc(w.order_number)}${w.order_id ? ` · <a href="#/objednavky/${w.order_id}">otevřít</a>` : ' · <b>objednávka nenalezena</b>'}</p><p>${esc(w.statement)}</p></div>`).join('') || '<p class="muted">Žádná odstoupení.</p>'}`;
@@ -323,6 +370,9 @@
         <label>Zásilkovna – cena (Kč, prázdné = nenabízet)<input name="shipping_zasilkovna_czk" inputmode="numeric" value="${esc(s.shipping_zasilkovna_czk)}"></label>
         <label>Balíkovna – cena (Kč, prázdné = nenabízet)<input name="shipping_balikovna_czk" inputmode="numeric" value="${esc(s.shipping_balikovna_czk)}"></label>
         <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="shipping_osobni_enabled" ${s.shipping_osobni_enabled === '1' ? 'checked' : ''} style="width:22px;min-height:22px"> Nabízet osobní převzetí</label>
+        <h2>Dobírka</h2>
+        <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="cod_enabled" ${s.cod_enabled === '1' ? 'checked' : ''} style="width:22px;min-height:22px"> Nabízet platbu dobírkou</label>
+        <label>Příplatek za dobírku (Kč, prázdné = 0)<input name="cod_fee_czk" inputmode="numeric" value="${esc(s.cod_fee_czk)}"></label>
         <h2>Rezervace</h2>
         <div class="grid"><label>Převod – hodin<input name="reservation_hours_bank" inputmode="numeric" value="${esc(s.reservation_hours_bank)}"></label><label>Karta – minut<input name="reservation_minutes_card" inputmode="numeric" value="${esc(s.reservation_minutes_card)}"></label></div>
         <button class="btn primary block">Uložit nastavení</button></form>
@@ -334,7 +384,7 @@
         <tr><th>Odesílání e-mailů</th><td>${yes(i.email)}</td></tr>
       </table><p class="small muted">Integrace se zapínají v Cloudflare podle návodu docs/INTEGRATIONS.md. Ostrý režim a ostré platby jen po vašem rozhodnutí.</p></div>`;
     app.querySelector('#setf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
-      const d = formData(e.target); d.shipping_osobni_enabled = e.target.shipping_osobni_enabled.checked; await api('PUT', 'settings', d); toast('Uloženo');
+      const d = formData(e.target); d.shipping_osobni_enabled = e.target.shipping_osobni_enabled.checked; d.cod_enabled = e.target.cod_enabled.checked; await api('PUT', 'settings', d); toast('Uloženo');
     }); });
   };
 
@@ -355,6 +405,7 @@
   views.vice = async () => {
     app.innerHTML = `<h1>Více</h1><div class="list">
       <a class="item" href="#/poptavky"><span class="grow">Poptávky</span></a>
+      <a class="item" href="#/faktury"><span class="grow">Faktury</span></a>
       <a class="item" href="#/zakaznici"><span class="grow">Zákazníci</span></a>
       <a class="item" href="#/odstoupeni"><span class="grow">Odstoupení od smlouvy</span></a>
       <a class="item" href="#/nastaveni"><span class="grow">Nastavení</span></a>
@@ -376,7 +427,7 @@
     const top = parts[0] || '';
     tabs.querySelectorAll('a').forEach((a) => {
       const t = a.getAttribute('href').replace('#/', '');
-      a.toggleAttribute('aria-current', t === top || (t === 'vice' && ['poptavky', 'zakaznici', 'nastaveni', 'emaily', 'historie', 'odstoupeni'].includes(top)));
+      a.toggleAttribute('aria-current', t === top || (t === 'vice' && ['poptavky', 'zakaznici', 'nastaveni', 'emaily', 'historie', 'odstoupeni', 'faktury'].includes(top)));
       if (a.hasAttribute('aria-current')) a.setAttribute('aria-current', 'page');
     });
     window.scrollTo(0, 0);

@@ -3,7 +3,9 @@
 // Nic nevymýšlí – co majitel nevyplní, v popisu nebude.
 
 const has = (v) => v != null && String(v).trim() !== '';
-const join = (parts, sep = ', ') => parts.filter(has).join(sep);
+const join = (parts, sep = ', ') => parts.filter((x) => typeof x === 'string' && x.trim() !== '').join(sep);
+
+import { KIND, METAL, PRECIOUS } from './format.mjs';
 
 const MOVEMENT = {
   manual: { cs: 'ručním nátahem', en: 'manual winding', csAdj: 'ruční nátah', enAdj: 'hand-wound' },
@@ -24,6 +26,12 @@ export function describe(p) {
   cs.push(`${name}${has(p.year) ? ` z roku ${p.year}` : ''} – mechanické hodinky${mv ? ` s ${mv.cs}` : ''}${has(p.movement) ? ` (strojek ${p.movement})` : ''}.`);
   en.push(`${name}${has(p.year) ? ` from ${p.year}` : ''} – a mechanical watch${mv ? ` with ${mv.en}` : ''}${has(p.movement) ? ` (movement ${p.movement})` : ''}.`);
 
+  if (KIND[p.kind] && p.kind !== 'original') { cs.push(KIND[p.kind].note.cs); en.push(KIND[p.kind].note.en); }
+  const metal = METAL[p.case_metal];
+  if (metal) {
+    const extra = PRECIOUS.includes(p.case_metal) && has(p.hallmark) ? `, ${p.hallmark}` : p.case_metal === 'pozlaceno' && has(p.plating) ? `, ${p.plating}` : '';
+    cs.push(`Pouzdro: ${metal.cs}${extra}.`); en.push(`Case: ${metal.en}${extra}.`);
+  }
   const caseCs = join([has(p.case_material) && `pouzdro ${p.case_material}`, has(p.case_diameter_mm) && `průměr ${p.case_diameter_mm} mm`, has(p.lug_width_mm) && `šířka uchycení ${p.lug_width_mm} mm`]);
   const caseEn = join([has(p.case_material) && `${p.case_material} case`, has(p.case_diameter_mm) && `${p.case_diameter_mm} mm diameter`, has(p.lug_width_mm) && `${p.lug_width_mm} mm lug width`]);
   if (caseCs) { cs.push(`${caseCs[0].toUpperCase()}${caseCs.slice(1)}.`); en.push(`${caseEn[0].toUpperCase()}${caseEn.slice(1)}.`); }
