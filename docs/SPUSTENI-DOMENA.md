@@ -47,6 +47,11 @@ TXT _dmarc, TXT resend._domainkey. Zástupný `*` nepřevzat. **Nameservery Clou
 
 ## 4. Etapa B – přepnutí DNS (web se stále nemění)
 
+**Stav 25. 11. 2026 22:20:** u WEDOS podán požadavek na zrušení DNSSEC („nepoužívat DNSSEC“).
+Další krok: ověřit, že záznam DS zmizel (`dns.google/resolve?name=atelier-dante-time.cz&type=DS`),
+počkat ještě nejméně 1 hodinu (TTL), pak změnit DNS servery na aurora/donovan.ns.cloudflare.com.
+**Pozor:** registrace domény u WEDOS vyprší 9. 3. 2027, prodloužení je placené a hradí ho majitel.
+
 1. **WEDOS → Domény → atelier-dante-time.cz → DNSSEC → vypnout.**
 2. Počkat **nejméně 2 hodiny** (DS záznam má platnost 1 h). Ověří agent.
 3. **WEDOS → Domény → atelier-dante-time.cz → Změna DNS serverů →** zadat 2 nameservery Cloudflare.
