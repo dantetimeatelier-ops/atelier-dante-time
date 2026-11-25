@@ -18,7 +18,7 @@ const ALLOWED = [
   /not (a )?(solid gold|precious metal)|není z drahého kovu|base metal/giu,
 ];
 // Slova, která u obecného kovu mohou klamat
-const RISKY = /(?<![\p{L}])(zlat\p{L}*|zlato|stříbr\p{L}*|platin\p{L}*|gold\p{L}*|silver\p{L}*|platinum|solid|\d{1,2}\s?(k|kt|ct)(?![\p{L}])|au\s?\d{3}|ag\s?\d{3}|\d{3}\s?\/\s?1000)/giu;
+const RISKY = /(?<![\p{L}])(zlat\p{L}*|zlato|stříbr\p{L}*|platin\p{L}*|gold\p{L}*|silver\p{L}*|platinum|solid\s+(?:gold|silver|platinum)|\d{1,2}\s?(k|kt|ct)(?![\p{L}])|au\s?\d{3}|ag\s?\d{3}|\d{3}\s?\/\s?1000)/giu;
 
 export function misleadingWords(p) {
   if (PRECIOUS.includes(p.case_metal)) return [];

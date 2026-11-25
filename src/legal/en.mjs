@@ -21,7 +21,7 @@ ${toc(L, [['t1', 'Introduction'], ['t2', 'Watches, components and materials'], [
 </ol>
 <h2 id="t2">2. Watches, components and materials</h2>
 <ol>
-<li>The Shop offers finished mechanical watches of the following types, stated for each piece: <strong>Original watches</strong> (pre-owned vintage watches serviced or restored in the Atelier), <strong>Rebuilds</strong> (watches modified in the Atelier in which some components were replaced with new ones) and <strong>Atelier builds</strong> (watches assembled in the Atelier from selected components).</li>
+<li>The Shop offers finished mechanical watches of the following types, stated for each piece: <strong>Original watches</strong> (pre-owned vintage watches serviced or restored in the Atelier), <strong>Dante Time Atelier Rebuilds</strong> (watches modified in the Atelier in which some components were replaced with new ones) and <strong>Atelier builds</strong> (watches assembled in the Atelier from selected components).</li>
 <li>For each piece the Seller clearly distinguishes the <strong>original components</strong> from the <strong>new components used in the Dante Time rebuild</strong> or otherwise replaced parts. The description of condition, work carried out and components forms part of the contract.</li>
 <li>Each watch is a <strong>unique piece</strong> available only once. The presentation in the Shop is informative and is not an offer to conclude a contract.</li>
 <li><strong>Precious metals.</strong> Cases made of gold, silver or platinum are offered only with the stated fineness and a valid hallmark under Czech Act No. 539/1992 Coll. on hallmarking. The sales document states the type of precious metal, its fineness and weight.</li>

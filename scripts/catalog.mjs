@@ -7,6 +7,7 @@
 //   katalog/<slug>/hodinky.json   – údaje (viz CATALOG_FIELDS)
 //   katalog/<slug>/NN-l.webp      – fotografie velká (max. 2000 px), bez metadat
 //   katalog/<slug>/NN-s.webp      – fotografie malá (max. 800 px)
+//   katalog/<slug>/NN.mp4         – video (u položky s "video": true; NN-l/-s.webp je náhled)
 // Pořadí fotografií = pořadí v poli "fotky"; první je hlavní.
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -50,8 +51,15 @@ export function loadCatalog(dir = CATALOG_DIR) {
       const small = path.join(dir, slug, `${f.soubor}-s.webp`);
       if (!existsSync(large) || !existsSync(small)) err(`chybí soubory fotografie ${f.soubor}`);
       const h = sha(large);
-      return { id: `kat-${slug}-${i + 1}`, alt: f.alt || w.title, width: f.width ?? null, height: f.height ?? null, sort: i,
-        large: { file: large, key: `catalog/${slug}/${h}-l.webp` }, small: { file: small, key: `catalog/${slug}/${h}-s.webp` } };
+      const item = { id: `kat-${slug}-${i + 1}`, alt: f.alt || w.title, width: f.width ?? null, height: f.height ?? null, sort: i, media: f.video ? 'video' : 'image',
+        large: { file: large, key: `catalog/${slug}/${h}-l.webp`, type: 'image/webp' }, small: { file: small, key: `catalog/${slug}/${h}-s.webp`, type: 'image/webp' } };
+      if (f.video) {
+        const v = path.join(dir, slug, `${f.soubor}.mp4`);
+        if (!existsSync(v)) err(`chybí video ${f.soubor}.mp4`);
+        if (readFileSync(v).length > 20e6) err(`video ${f.soubor}.mp4 je větší než 20 MB`);
+        item.video = { file: v, key: `catalog/${slug}/${sha(v)}.mp4`, type: 'video/mp4' };
+      }
+      return item;
     });
     out.push({ ...w, id: `kat-${slug}`, slug, fotky });
   }
@@ -72,11 +80,11 @@ ON CONFLICT(id) DO UPDATE SET ${cols.map((k) => `${k} = excluded.${k}`).join(', 
   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now');\n`;
     sql += `DELETE FROM product_images WHERE product_id = ${q(w.id)};\n`;
     for (const f of w.fotky) {
-      sql += `INSERT INTO product_images (id, product_id, key_large, key_small, width, height, alt, sort_order) VALUES (${[f.id, w.id, f.large.key, f.small.key, f.width, f.height, f.alt, f.sort].map(q).join(', ')});\n`;
+      sql += `INSERT INTO product_images (id, product_id, key_large, key_small, width, height, alt, sort_order, media, key_video) VALUES (${[f.id, w.id, f.large.key, f.small.key, f.width, f.height, f.alt, f.sort, f.media, f.video?.key ?? null].map(q).join(', ')});\n`;
     }
   }
   return sql;
 }
 
 /** Seznam souborů k nahrání do úložiště fotografií. */
-export const catalogMedia = (list) => list.flatMap((w) => w.fotky.flatMap((f) => [f.large, f.small]));
+export const catalogMedia = (list) => list.flatMap((w) => w.fotky.flatMap((f) => [f.large, f.small, f.video].filter(Boolean)));

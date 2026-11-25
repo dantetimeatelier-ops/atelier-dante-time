@@ -75,3 +75,14 @@ zveřejní, pokud majitel výslovně neřekne, že mají zůstat jako koncept.
 **Omezení:** agent nevymýšlí neověřené technické ani historické údaje; na chybějící
 důležité údaje se zeptá jen na ně. Cenu nastavuje vždy jen podle majitele.
 **Technicky:** složka `katalog/` v repozitáři → automatické nasazení (`scripts/catalog.mjs`).
+
+## R13 – Výchozí šablona hodinek PRIM a označení přestaveb (2026-11-25)
+**Rozhodl:** majitel
+**Rozhodnutí:** U hodinek PRIM platí, pokud majitel neuvede jinak: originální strojek,
+ciferník a ručičky PRIM; nové nerezové pouzdro Dante Time; průměr 39–42 mm podle modelu
+(přesný rozměr jen když ho majitel sdělí); šířka uchycení 20 mm; safírové přední sklo;
+průhledné dýnko; voděodolnost 3 ATM; kompletně servisovaný a seřízený strojek; záruka
+24 měsíců; doživotní garance pravosti originálních komponentů; dárková krabička a
+dokumentace Dante Time. Kalibr a rok výroby jen pokud jsou známé. Cenu sděluje majitel.
+Druh se označuje „Ateliérová přestavba Dante Time“. Galerie podporuje videa.
+**Technicky:** `katalog/sablona-prim.json`.

@@ -149,7 +149,7 @@ if (!production) {
     let uploaded = 0;
     for (const m of catalogMedia(list)) {
       if (existing.has(m.key)) continue;
-      run(['kv', 'key', 'put', m.key, '--namespace-id', kv.id, '--remote', '--path', m.file, '--metadata', '{"type":"image/webp"}'], { cwd: scratch, capture: true });
+      run(['kv', 'key', 'put', m.key, '--namespace-id', kv.id, '--remote', '--path', m.file, '--metadata', JSON.stringify({ type: m.type })], { cwd: scratch, capture: true });
       uploaded++;
     }
     const catFile = path.join(scratch, 'katalog.sql');

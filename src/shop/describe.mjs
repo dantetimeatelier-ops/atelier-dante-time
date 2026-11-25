@@ -15,8 +15,9 @@ const MOVEMENT = {
   automatic: { cs: 'automatickým nátahem', en: 'automatic winding', csAdj: 'automatický nátah', enAdj: 'automatic' },
 };
 
+// Zobrazovaný název: vlastní název hodinek, jinak značka a model
 export function productName(p) {
-  return join([p.brand, p.model], ' ') || p.title || 'Hodinky';
+  return (p.title && String(p.title).trim()) || join([p.brand, p.model], ' ') || 'Hodinky';
 }
 
 export function describe(p) {

@@ -32,7 +32,7 @@ test('automatický popis nic nevymýšlí', () => {
   const part = describe({ brand: 'PRIM', kind: 'prestavba', case_metal: 'pozlaceno', plating: '20 µm', dial: 'černý' });
   assert.doesNotMatch(part.description_cs + part.description_en, /undefined|null|false/i);
   assert.match(part.description_cs, /pozlacené – obecný kov, není z drahého kovu, 20 µm/);
-  assert.match(part.description_cs, /některé díly nejsou původní/);
+  assert.match(part.description_cs, /Ateliérová přestavba Dante Time/);
   assert.equal(productName({ brand: 'Omega', model: 'Genève' }), 'Omega Genève');
 });
 
@@ -137,7 +137,7 @@ test('katalog hodinek: zápis do databáze, prodané kusy si stav ponechají, ko
   const list = loadCatalog(dir);
   assert.equal(list.length, 1);
   const db = new DatabaseSync(':memory:');
-  for (const m of ['0001_zaklad', '0002_druhy_kovy_dobirka_faktury', '0003_eu_meny_garance', '0004_punc_pojisteni_eu']) db.exec(readFileSync(new URL(`../../migrations/${m}.sql`, import.meta.url), 'utf8'));
+  for (const m of ['0001_zaklad', '0002_druhy_kovy_dobirka_faktury', '0003_eu_meny_garance', '0004_punc_pojisteni_eu', '0005_video_v_galerii']) db.exec(readFileSync(new URL(`../../migrations/${m}.sql`, import.meta.url), 'utf8'));
   db.exec(catalogSql(list));
   assert.equal(db.prepare("SELECT status FROM products WHERE id='kat-prim-test'").get().status, 'available');
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM product_images WHERE product_id='kat-prim-test'").get().n, 1);

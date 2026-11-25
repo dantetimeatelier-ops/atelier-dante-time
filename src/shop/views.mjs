@@ -11,7 +11,7 @@ export const productPath = (p, lang) => (lang === 'cs' ? `/hodinky/${p.slug}` : 
 const img = (key) => `/media/${key}`;
 
 export function productCard(p, lang) {
-  const first = p.images?.[0];
+  const first = p.images?.find((i) => i.media !== 'video') || p.images?.[0];
   const st = STATUS[p.status]?.[lang] || '';
   const price = p.status === 'sold' ? '' : (p.price_czk != null ? `<span class="price">${formatCzk(p.price_czk, lang)}</span>` : '');
   return `<a class="product-card" href="${productPath(p, lang)}">
@@ -53,10 +53,12 @@ export function productPage({ p, images, lang, mode, origin }) {
   const L = (cs, en) => T(lang, cs, en);
   const name = productName(p);
   const desc = (lang === 'en' ? p.description_en : p.description_cs) || p.description_cs || '';
-  const main = images[0];
+  const main = images.find((i) => i.media !== 'video') || images[0];
+  const photos = images.filter((i) => i.media !== 'video');
+  const isVideo = (i) => i.media === 'video' && i.key_video;
   const gallery = images.length ? `<div class="gallery" data-gallery>
-  <div class="main"><img data-main src="${img(main.key_large)}" width="${main.width || 1600}" height="${main.height || 2000}" alt="${esc(main.alt || name)}" fetchpriority="high"></div>
-  ${images.length > 1 ? `<div class="thumbs">${images.map((i, n) => `<button type="button" data-src="${img(i.key_large)}" data-alt="${esc(i.alt || name)}"${n === 0 ? ' aria-current="true"' : ''}><img src="${img(i.key_small)}" alt="" loading="lazy"><span class="sr">${L('Fotografie', 'Photo')} ${n + 1}</span></button>`).join('')}</div>` : ''}
+  <div class="main" data-stage><img data-main src="${img(main.key_large)}" width="${main.width || 1600}" height="${main.height || 2000}" alt="${esc(main.alt || name)}" fetchpriority="high"></div>
+  ${images.length > 1 ? `<div class="thumbs">${images.map((i, n) => `<button type="button" data-src="${img(i.key_large)}" data-alt="${esc(i.alt || name)}"${isVideo(i) ? ` data-video="${img(i.key_video)}" class="is-video"` : ''}${i === main ? ' aria-current="true"' : ''}><img src="${img(i.key_small)}" alt="" loading="lazy"><span class="sr">${isVideo(i) ? L('Video', 'Video') : L('Fotografie', 'Photo')} ${n + 1}</span></button>`).join('')}</div>` : ''}
 </div>` : `<div class="gallery"><div class="main"></div></div>`;
 
   const canBuy = p.status === 'available' && p.price_czk != null && mode !== 'preview';
@@ -71,7 +73,7 @@ export function productPage({ p, images, lang, mode, origin }) {
     action = `<p class="notice">${L('Tento kus už našel nového majitele. Rád vám pomohu najít podobné hodinky.', 'This piece has found a new owner. I will gladly help you find something similar.')}</p><a class="btn block" href="#zajem">${L('Hledám podobné hodinky', 'Looking for something similar')}</a>`;
   }
 
-  const ld = productJsonLd(p, images, origin, lang);
+  const ld = productJsonLd(p, photos, origin, lang);
   return {
     title: p.seo_title || name,
     // Bez ručně vyplněného popisu se použije automatický popis z parametrů (meta description nesmí chybět)
@@ -101,7 +103,7 @@ export function productPage({ p, images, lang, mode, origin }) {
   <div class="split" style="margin-top:28px">
     <div class="card prose">
       <h2>${L('Popis', 'Description')}</h2>
-      <p>${esc(desc)}</p>
+      ${desc.split(/\n\s*\n/).map((t) => `<p>${esc(t.trim())}</p>`).join("")}
     </div>
     <div class="card">
       <h2>${L('Parametry', 'Specifications')}</h2>

@@ -46,7 +46,7 @@ export const PAYMENT = {
 // Druh kusu – rozhoduje o popisu i o právním režimu (viz právní dokumenty)
 export const KIND = {
   original: { cs: 'Originální hodinky', en: 'Original watch', note: { cs: 'Původní hodinky po servisu nebo renovaci v ateliéru.', en: 'Original watch, serviced or restored in the atelier.' } },
-  prestavba: { cs: 'Přestavba', en: 'Custom rebuild', note: { cs: 'Hodinky upravené v ateliéru – některé díly nejsou původní (viz parametry).', en: 'Watch modified in the atelier – some parts are not original (see specifications).' } },
+  prestavba: { cs: 'Ateliérová přestavba Dante Time', en: 'Dante Time Atelier Rebuild', note: { cs: 'Ateliérová přestavba Dante Time – originální díly v novém zpracování; které součásti jsou původní a které nové, uvádějí parametry.', en: 'A Dante Time Atelier Rebuild – original components in a new execution; the specifications state which parts are original and which are new.' } },
   sestava: { cs: 'Sestava z ateliéru', en: 'Atelier build', note: { cs: 'Hodinky sestavené v ateliéru z vybraných dílů.', en: 'Watch assembled in the atelier from selected parts.' } },
 };
 

@@ -26,7 +26,7 @@ ${toc(L, [['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky, součásti a materi
 <li>E-shop nabízí hotové mechanické hodinky těchto druhů, uvedených u každého kusu:
   <ul>
   <li><strong>Originální hodinky</strong> – použité (vintage) hodinky po servisu nebo renovaci v ateliéru,</li>
-  <li><strong>Přestavby</strong> – hodinky upravené v ateliéru, u nichž byly některé součásti nahrazeny novými,</li>
+  <li><strong>Ateliérové přestavby Dante Time</strong> – hodinky upravené v ateliéru, u nichž byly některé součásti nahrazeny novými,</li>
   <li><strong>Sestavy z ateliéru</strong> – hodinky sestavené v ateliéru z vybraných součástí.</li>
   </ul></li>
 <li>U každého kusu prodávající jasně odlišuje <strong>původní originální součásti</strong> hodinek a <strong>nové součásti použité při přestavbě Dante Time</strong> nebo jinak vyměněné díly. Popis stavu, provedených prací a součástí je součástí smlouvy.</li>

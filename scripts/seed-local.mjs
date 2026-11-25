@@ -21,6 +21,6 @@ const cat = loadCatalog();
 if (cat.length) {
   writeFileSync(path.join(tmp, 'katalog.sql'), catalogSql(cat));
   w('d1', 'execute', 'DB', '--local', '--file', path.join(tmp, 'katalog.sql'));
-  for (const m of catalogMedia(cat)) w('kv', 'key', 'put', m.key, '--binding', 'MEDIA_KV', '--local', '--path', m.file, '--metadata', '{"type":"image/webp"}');
+  for (const m of catalogMedia(cat)) w('kv', 'key', 'put', m.key, '--binding', 'MEDIA_KV', '--local', '--path', m.file, '--metadata', JSON.stringify({ type: m.type }));
 }
 console.log(`✅ Ukázková data nahrána (jen místně), hodinek z katalogu: ${cat.length}.`);

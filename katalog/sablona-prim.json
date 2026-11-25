@@ -1,0 +1,17 @@
+{
+  "_popis": "Výchozí šablona pro hodinky PRIM (rozhodnutí majitele R13). Platí, pokud majitel u konkrétních hodinek neuvede jinak. Kalibr a rok výroby jen pokud jsou známé, průměr pouzdra (39–42 mm) jen pokud ho majitel sdělí. Cenu vždy sděluje majitel.",
+  "kind": "prestavba",
+  "brand": "PRIM",
+  "movement_type": "manual",
+  "case_metal": "ocel",
+  "case_material": "nové nerezové pouzdro Dante Time",
+  "lug_width_mm": 20,
+  "crystal": "safírové",
+  "water_resistance": "3 ATM",
+  "service_done": "kompletní servis strojku – rozebrání, vyčištění, promazání a seřízení chodu",
+  "original_parts": "strojek, ciferník a ručičky PRIM",
+  "authenticity_parts": "strojek,cifernik,rucicky",
+  "replaced_parts": "nové nerezové pouzdro Dante Time, safírové přední sklo, průhledné dýnko",
+  "accessories": "dárková krabička a dokumentace Dante Time",
+  "zaruka": "24 měsíců (dle obchodních podmínek), doživotní garance pravosti originálních komponentů"
+}
