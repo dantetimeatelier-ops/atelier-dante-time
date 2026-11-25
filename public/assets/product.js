@@ -11,9 +11,13 @@
         const v = document.createElement('video');
         Object.assign(v, { src: b.dataset.video, poster: b.dataset.src, muted: true, loop: true, playsInline: true, autoplay: true, controls: true });
         v.setAttribute('playsinline', ''); v.setAttribute('aria-label', b.dataset.alt);
-        main.hidden = true; stage.appendChild(v); v.play().catch(() => {});
+        // Přesný rozměr: výška rámečku, šířka podle formátu videa (bez ořezu i v Safari)
+        const h = stage.clientHeight; const ratio = (Number(b.dataset.vw) || 9) / (Number(b.dataset.vh) || 16);
+        v.width = Math.round(Math.min(stage.clientWidth, h * ratio)); v.height = Math.round(v.width / ratio);
+        v.style.width = `${v.width}px`; v.style.height = `${v.height}px`; v.style.top = `${Math.round((h - v.height) / 2)}px`; v.style.bottom = 'auto';
+        main.hidden = true; stage.classList.add('has-video'); stage.appendChild(v); v.play().catch(() => {});
       } else {
-        main.hidden = false; main.src = b.dataset.src; main.alt = b.dataset.alt;
+        stage.classList.remove('has-video'); main.hidden = false; main.src = b.dataset.src; main.alt = b.dataset.alt;
       }
       g.querySelectorAll('.thumbs button').forEach((x) => x.removeAttribute('aria-current'));
       b.setAttribute('aria-current', 'true');

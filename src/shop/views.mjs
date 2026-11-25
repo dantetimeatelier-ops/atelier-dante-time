@@ -58,7 +58,7 @@ export function productPage({ p, images, lang, mode, origin }) {
   const isVideo = (i) => i.media === 'video' && i.key_video;
   const gallery = images.length ? `<div class="gallery" data-gallery>
   <div class="main" data-stage><img data-main src="${img(main.key_large)}" width="${main.width || 1600}" height="${main.height || 2000}" alt="${esc(main.alt || name)}" fetchpriority="high"></div>
-  ${images.length > 1 ? `<div class="thumbs">${images.map((i, n) => `<button type="button" data-src="${img(i.key_large)}" data-alt="${esc(i.alt || name)}"${isVideo(i) ? ` data-video="${img(i.key_video)}" class="is-video"` : ''}${i === main ? ' aria-current="true"' : ''}><img src="${img(i.key_small)}" alt="" loading="lazy"><span class="sr">${isVideo(i) ? L('Video', 'Video') : L('Fotografie', 'Photo')} ${n + 1}</span></button>`).join('')}</div>` : ''}
+  ${images.length > 1 ? `<div class="thumbs">${images.map((i, n) => `<button type="button" data-src="${img(i.key_large)}" data-alt="${esc(i.alt || name)}"${isVideo(i) ? ` data-video="${img(i.key_video)}" data-vw="${i.width || 1080}" data-vh="${i.height || 1920}" class="is-video"` : ''}${i === main ? ' aria-current="true"' : ''}><img src="${img(i.key_small)}" alt="" loading="lazy"><span class="sr">${isVideo(i) ? L('Video', 'Video') : L('Fotografie', 'Photo')} ${n + 1}</span></button>`).join('')}</div>` : ''}
 </div>` : `<div class="gallery"><div class="main"></div></div>`;
 
   const canBuy = p.status === 'available' && p.price_czk != null && mode !== 'preview';

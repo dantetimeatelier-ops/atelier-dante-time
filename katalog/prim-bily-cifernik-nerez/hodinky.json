@@ -25,10 +25,36 @@
   "price_czk": 9000,
   "featured": 1,
   "fotky": [
-    { "soubor": "01", "alt": "Hodinky PRIM s bílým ciferníkem a nerezovým tahem – pohled zepředu", "width": 1500, "height": 2000 },
-    { "soubor": "02", "alt": "Hodinky PRIM v dárkové krabičce Dante Time s dokumentací", "width": 1500, "height": 2000 },
-    { "soubor": "03", "alt": "Hodinky PRIM v ruce – nerezové pouzdro s broušenými a leštěnými plochami", "width": 1252, "height": 1612 },
-    { "soubor": "04", "alt": "Průhledné dýnko s mechanickým strojkem PRIM", "width": 1063, "height": 1902 },
-    { "soubor": "05", "alt": "Video: hodinky PRIM v pohybu", "width": 1080, "height": 1920, "video": true }
+    {
+      "soubor": "01",
+      "alt": "Hodinky PRIM s bílým ciferníkem a nerezovým tahem – pohled zepředu",
+      "width": 1500,
+      "height": 2000
+    },
+    {
+      "soubor": "02",
+      "alt": "Hodinky PRIM v dárkové krabičce Dante Time s dokumentací",
+      "width": 1500,
+      "height": 2000
+    },
+    {
+      "soubor": "03",
+      "alt": "Hodinky PRIM v ruce – nerezové pouzdro s broušenými a leštěnými plochami",
+      "width": 1252,
+      "height": 1612
+    },
+    {
+      "soubor": "04",
+      "alt": "Průhledné dýnko s mechanickým strojkem PRIM",
+      "width": 1063,
+      "height": 1902
+    },
+    {
+      "soubor": "05",
+      "alt": "Video: hodinky PRIM v pohybu",
+      "width": 720,
+      "height": 1280,
+      "video": true
+    }
   ]
 }
