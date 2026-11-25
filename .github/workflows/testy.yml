@@ -130,12 +130,13 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
+      KV_NAMESPACE_ID: ${{ vars.KV_NAMESPACE_ID }}
       WRANGLER_SEND_METRICS: 'false'
     steps:
       - name: Je Cloudflare nastaven?
         id: ready
         run: |
-          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && [ -n "$D1_DATABASE_ID" ]; then
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && [ -n "$D1_DATABASE_ID" ] && [ -n "$KV_NAMESPACE_ID" ]; then
             echo "ok=true" >> "$GITHUB_OUTPUT"
           else
             echo "::notice::Nasazení přeskočeno – Cloudflare zatím není nastaven (docs/CLOUDFLARE-SETUP.md)."
@@ -156,7 +157,7 @@ jobs:
         env:
           SHOP_MODE: ${{ vars.SHOP_MODE || 'preview' }}
         run: |
-          sed -i "s/00000000-0000-0000-0000-000000000000/${D1_DATABASE_ID}/" wrangler.toml
+          sed -i "s/00000000-0000-0000-0000-000000000000/${D1_DATABASE_ID}/; s/11111111111111111111111111111111/${KV_NAMESPACE_ID}/" wrangler.toml
           npm run build
       - name: Aktualizace struktury databáze (jen hlavní verze)
         if: steps.ready.outputs.ok == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -165,4 +166,5 @@ jobs:
         if: steps.ready.outputs.ok == 'true'
         run: |
           BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          npx wrangler pages project create atelier-dante-time --production-branch main 2>/dev/null || true
           npx wrangler pages deploy dist --project-name atelier-dante-time --branch "$BRANCH" --commit-dirty=true

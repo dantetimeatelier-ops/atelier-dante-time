@@ -26,7 +26,7 @@ sql += `UPDATE settings SET value='99' WHERE key='shipping_zasilkovna_czk'; UPDA
 writeFileSync(path.join(tmp, 'seed.sql'), sql);
 w('d1', 'execute', 'DB', '--local', '--file', path.join(tmp, 'seed.sql'));
 for (const [id] of watches) {
-  w('r2', 'object', 'put', `dante-time-media/products/${id}/img${id}-l.webp`, '--local', '--file', path.join(ROOT, 'public/img/watch-box-720.webp'), '--content-type', 'image/webp');
-  w('r2', 'object', 'put', `dante-time-media/products/${id}/img${id}-s.webp`, '--local', '--file', path.join(ROOT, 'public/img/watch-box-400.webp'), '--content-type', 'image/webp');
+  w('kv', 'key', 'put', `products/${id}/img${id}-l.webp`, '--binding', 'MEDIA_KV', '--local', '--path', path.join(ROOT, 'public/img/watch-box-720.webp'), '--metadata', '{"type":"image/webp"}');
+  w('kv', 'key', 'put', `products/${id}/img${id}-s.webp`, '--binding', 'MEDIA_KV', '--local', '--path', path.join(ROOT, 'public/img/watch-box-400.webp'), '--metadata', '{"type":"image/webp"}');
 }
 console.log('✅ Testovací data nahrána (jen místně).');

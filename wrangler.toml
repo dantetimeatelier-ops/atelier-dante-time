@@ -16,6 +16,13 @@ database_name = "dante-time"
 database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "migrations"
 
-[[r2_buckets]]
-binding = "MEDIA"
-bucket_name = "dante-time-media"
+# Fotografie hodinek: Workers KV (zdarma, nevyžaduje platební kartu).
+# ID doplní automatické nasazení z proměnné KV_NAMESPACE_ID (docs/CLOUDFLARE-SETUP.md).
+[[kv_namespaces]]
+binding = "MEDIA_KV"
+id = "11111111111111111111111111111111"
+
+# Volitelně místo KV úložiště R2 (vyžaduje platební kartu v účtu Cloudflare):
+# [[r2_buckets]]
+# binding = "MEDIA"
+# bucket_name = "dante-time-media"

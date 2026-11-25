@@ -4,6 +4,7 @@ import { requireAdmin, hashPassword, timingSafeEqual, verifyTotp, newTotpSecret,
 import { randomId, now, audit, releaseExpired, getSettings, nextCounter, productsWithImages, mode } from '../../../server/db.js';
 import { str, email as vEmail, oneOf, int, num } from '../../../server/validate.js';
 import { qrSvg } from '../../../server/qr.js';
+import { media } from '../../../server/media.js';
 import { markPaid, markShipped, cancelOrder, shopConfig } from '../../../server/orders.js';
 import { describe, productName } from '../../../src/shop/describe.mjs';
 import { slugify } from '../../../src/shop/format.mjs';
@@ -164,7 +165,7 @@ route('DELETE', 'products/:id', async ({ env, params, user }) => {
   const used = await env.DB.prepare('SELECT 1 FROM order_items WHERE product_id = ?').bind(params.id).first();
   if (used || p.status !== 'draft') throw new HttpError('Smazat lze jen koncept bez objednávek. Jinak použijte stav „Archiv“.', 409);
   const { results: imgs } = await env.DB.prepare('SELECT key_large, key_small FROM product_images WHERE product_id = ?').bind(params.id).all();
-  for (const i of imgs) await env.MEDIA.delete([i.key_large, i.key_small]);
+  for (const i of imgs) await media(env).delete([i.key_large, i.key_small]);
   await env.DB.prepare('DELETE FROM products WHERE id = ?').bind(params.id).run();
   await audit(env, user.email, 'hodinky_smazany', 'product', params.id);
   return json({ ok: true });
@@ -193,7 +194,7 @@ route('POST', 'products/:id/images', async ({ env, params, request, user }) => {
     const type = isWebp(buf) ? 'webp' : isJpeg(buf) ? 'jpg' : null;
     if (!type) throw new HttpError('Podporované formáty jsou JPEG a WebP');
     keys[field] = `products/${params.id}/${imgId}-${field[0]}.${type}`;
-    await env.MEDIA.put(keys[field], buf, { httpMetadata: { contentType: type === 'webp' ? 'image/webp' : 'image/jpeg', cacheControl: 'public, max-age=31536000, immutable' } });
+    await media(env).put(keys[field], buf, type === 'webp' ? 'image/webp' : 'image/jpeg');
   }
   const width = int(form.get('width'), { max: 10000 }); const height = int(form.get('height'), { max: 10000 });
   await env.DB.prepare('INSERT INTO product_images (id, product_id, key_large, key_small, width, height, alt, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
@@ -205,7 +206,7 @@ route('POST', 'products/:id/images', async ({ env, params, request, user }) => {
 route('DELETE', 'images/:id', async ({ env, params, user }) => {
   const i = await env.DB.prepare('SELECT * FROM product_images WHERE id = ?').bind(params.id).first();
   if (!i) throw new HttpError('Fotografie nenalezena', 404);
-  await env.MEDIA.delete([i.key_large, i.key_small]);
+  await media(env).delete([i.key_large, i.key_small]);
   await env.DB.prepare('DELETE FROM product_images WHERE id = ?').bind(params.id).run();
   await audit(env, user.email, 'foto_smazano', 'product', i.product_id);
   return json({ ok: true });
