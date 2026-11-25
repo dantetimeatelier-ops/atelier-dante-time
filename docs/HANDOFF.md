@@ -4,6 +4,15 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-25 – Claude – claude/eshop-platforma (inzeráty hodinek)
+**Hotovo:** katalog hodinek v repozitáři (`katalog/`, `scripts/catalog.mjs`, R12/R13);
+zveřejněny 2 ze 6 inzerátů: PRIM – bílý ciferník, nerez a safír; PRIM kalibr 111 –
+datum a malá vteřina (pozlacené nerezové pouzdro). Videa se v e-shopu nezobrazují
+(majitel je dává na Instagram). Oprava šířky galerie na mobilu (`contain:paint`).
+**Další krok:** další 4 inzeráty, pak etapa „Dokončení prodejní platformy“ (ROADMAP).
+**Pozor na:** u pozlacených pouzder nikdy „zlatý/gold“ bez „pozlacený/v barvě zlata“
+(kontrola v `src/shop/punc.mjs` nasazení zastaví).
+
 ## 2026-11-25 – Claude – claude/eshop-platforma (zkušební verze nasazena)
 **Hotovo:** zkušební verze běží na https://claude-eshop-platforma.atelier-dante-time.pages.dev
 (Cloudflare Pages + D1 v EU + KV, režim test, noindex). Majitel vytvořil účet
