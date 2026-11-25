@@ -33,7 +33,9 @@ export const COMMISSION_STATUS = {
 export const SHIPPING = {
   zasilkovna: { cs: 'Zásilkovna – výdejní místo', en: 'Packeta – pickup point' },
   balikovna: { cs: 'Balíkovna – výdejní místo', en: 'Balíkovna – pickup point' },
-  osobni: { cs: 'Osobní převzetí po domluvě', en: 'Personal pickup by arrangement' },
+  osobni: { cs: 'Osobní předání po předchozí domluvě', en: 'Personal handover by prior arrangement' },
+  eu: { cs: 'Doprava do zahraničí na adresu', en: 'International delivery to address' },
+  pojistena: { cs: 'Pojištěná přeprava kurýrem', en: 'Insured courier delivery' },
 };
 export const PAYMENT = {
   bank_transfer: { cs: 'Bankovní převod (QR platba)', en: 'Bank transfer (QR payment)' },
@@ -48,7 +50,7 @@ export const KIND = {
   sestava: { cs: 'Sestava z ateliéru', en: 'Atelier build', note: { cs: 'Hodinky sestavené v ateliéru z vybraných dílů.', en: 'Watch assembled in the atelier from selected parts.' } },
 };
 
-// Materiál pouzdra (zákon č. 19/1993 Sb., o puncovnictví)
+// Materiál pouzdra (zákon č. 539/1992 Sb., o puncovnictví a zkoušení drahých kovů)
 export const METAL = {
   ocel: { cs: 'nerezová ocel', en: 'stainless steel' },
   mosaz: { cs: 'mosaz', en: 'brass' },

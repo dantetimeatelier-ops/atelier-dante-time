@@ -1,6 +1,7 @@
 // Statické stránky e-shopu: košík s objednávkou a online odstoupení od smlouvy
 import { hero } from '../layout.mjs';
 import { PAGES } from '../site.mjs';
+import { sortedCountries, countryName } from '../shop/eu.mjs';
 
 const T = (lang, cs, en) => (lang === 'cs' ? cs : en);
 
@@ -19,7 +20,16 @@ export function cart(lang) {
   <form data-cart-form hidden class="split" novalidate>
     <div class="form">
       <div class="cart-items" data-cart-items></div>
+      <fieldset><legend>${L('Země doručení a měna', 'Delivery country & currency')}</legend>
+        <div class="row">
+          <label>${L('Země doručení', 'Delivery country')}<select name="country" data-country autocomplete="country">${sortedCountries(lang).map((c) => `<option value="${c}"${c === 'CZ' ? ' selected' : ''}>${countryName(c, lang)}</option>`).join('')}</select></label>
+          <label>${L('Měna platby', 'Payment currency')}<select name="currency" data-currency><option value="CZK">CZK (Kč)</option></select></label>
+        </div>
+        <p class="doc-meta" data-eu-note hidden>${L('Zahraniční objednávky hradíte předem. Ceny hodinek jsou stanoveny v Kč, v eurech se přepočtou aktuálním kurzem ateliéru a zaokrouhlí nahoru na celé euro.', 'International orders are paid in advance. Prices are set in CZK; in euros they are converted at the atelier rate and rounded up to a whole euro.')}</p>
+      </fieldset>
       <fieldset><legend>${L('Doprava', 'Shipping')}</legend><div data-shipping></div>
+        <p class="notice" data-insured-note hidden style="margin-top:10px">${L('Hodinky vyšší hodnoty posíláme pouze pojištěnou přepravou na plnou hodnotu, případně je předáme osobně po domluvě.', 'Higher-value watches are sent only by fully insured shipment, or handed over personally by arrangement.')}</p>
+        <p class="notice" data-no-shipping hidden style="margin-top:10px">${L('Do zvolené země zatím nemáme stanovenou cenu dopravy. Napište nám a připravíme vám nabídku.', 'We have no shipping price for this country yet. Contact us and we will prepare an offer.')} <a href="${'/kontakt'}">${L('Kontakt', 'Contact')}</a></p>
         <div data-pickup hidden style="margin-top:12px">
           <button class="btn ghost" type="button" data-pick-point>${L('Vybrat výdejní místo', 'Choose pickup point')}</button>
           <p class="doc-meta" data-pickup-label style="margin-top:8px"></p>

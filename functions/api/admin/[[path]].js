@@ -117,6 +117,12 @@ function productInput(body, existing = {}) {
   if ('movement_type' in body) d.movement_type = body.movement_type ? oneOf(body.movement_type, ['manual', 'automatic'], 'nátah') : null;
   if ('case_diameter_mm' in body) d.case_diameter_mm = num(body.case_diameter_mm, { max: 80, name: 'průměr' });
   if ('lug_width_mm' in body) d.lug_width_mm = num(body.lug_width_mm, { max: 40, name: 'šířka uchycení' });
+  if ('precious_weight_g' in body) d.precious_weight_g = num(body.precious_weight_g, { max: 2000, name: 'hmotnost drahého kovu' });
+  if ('authenticity_parts' in body) {
+    const parts = (Array.isArray(body.authenticity_parts) ? body.authenticity_parts : String(body.authenticity_parts || '').split(',')).map((x) => String(x).trim()).filter(Boolean);
+    for (const x of parts) oneOf(x, ['strojek', 'cifernik', 'rucicky'], 'součást garance');
+    d.authenticity_parts = parts.length ? [...new Set(parts)].join(',') : null;
+  }
   if ('price_czk' in body) d.price_czk = int(body.price_czk, { max: 50000000, name: 'cena' });
   if ('featured' in body) d.featured = body.featured ? 1 : 0;
   if ('sort_order' in body) d.sort_order = int(body.sort_order, { min: -10000, max: 10000, nullable: false, name: 'pořadí' });
@@ -379,7 +385,8 @@ route('POST', 'invoices/:id/cancel', async ({ env, params, user }) => {
 });
 
 // --- Nastavení, e-maily, historie ------------------------------------------------------
-const SETTINGS = { shipping_zasilkovna_czk: 'int', shipping_balikovna_czk: 'int', shipping_osobni_enabled: 'bool', reservation_hours_bank: 'int', reservation_minutes_card: 'int', cod_enabled: 'bool', cod_fee_czk: 'int' };
+const SETTINGS = { shipping_zasilkovna_czk: 'int', shipping_balikovna_czk: 'int', shipping_osobni_enabled: 'bool', reservation_hours_bank: 'int', reservation_minutes_card: 'int', cod_enabled: 'bool', cod_fee_czk: 'int',
+  eur_rate: 'num', insured_threshold_czk: 'int', insured_price_czk: 'int', insured_eu_price_czk: 'int', shipping_eu_json: 'json' };
 route('GET', 'settings', async ({ env }) => {
   const s = await getSettings(env);
   return json({
@@ -394,7 +401,19 @@ route('PUT', 'settings', async ({ env, body, user }) => {
   const stmts = [];
   for (const [k, type] of Object.entries(SETTINGS)) {
     if (!(k in body)) continue;
-    const v = type === 'bool' ? (body[k] ? '1' : '0') : (body[k] === '' || body[k] == null ? null : String(int(body[k], { max: 100000, name: k })));
+    let v;
+    if (type === 'bool') v = body[k] ? '1' : '0';
+    else if (type === 'json') {
+      const obj = typeof body[k] === 'object' && body[k] ? body[k] : {};
+      const clean = {};
+      for (const [cc, price] of Object.entries(obj)) {
+        if (!/^[A-Z]{2}$/.test(cc) || cc === 'CZ') continue;
+        if (price === '' || price == null) continue;
+        clean[cc] = int(price, { max: 100000, nullable: false, name: `cena dopravy ${cc}` });
+      }
+      v = JSON.stringify(clean);
+    } else if (body[k] === '' || body[k] == null) v = null;
+    else v = String(type === 'num' ? num(body[k], { min: 1, max: 1000, name: 'kurz EUR' }) : int(body[k], { max: 10000000, name: k }));
     stmts.push(env.DB.prepare('UPDATE settings SET value = ?, updated_at = ? WHERE key = ?').bind(v, now(), k));
   }
   if (stmts.length) await env.DB.batch(stmts);

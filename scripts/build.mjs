@@ -62,7 +62,7 @@ await writeFile(path.join(DIST, 'build-info.json'), JSON.stringify({ mode: MODE,
 if (MODE === 'live') {
   const { readFile } = await import('node:fs/promises');
   const bad = [];
-  for (const rel of files) if ((await readFile(path.join(DIST, rel), 'utf8')).includes('[DOPLNIT')) bad.push(rel);
+  for (const rel of files) { const t = await readFile(path.join(DIST, rel), 'utf8'); if (t.includes('[DOPLNIT') || t.includes('[OVĚŘIT')) bad.push(rel); }
   if (bad.length) throw new Error(`Ostrý režim nelze sestavit – chybí údaje k doplnění na stránkách: ${bad.join(', ')}`);
 }
 

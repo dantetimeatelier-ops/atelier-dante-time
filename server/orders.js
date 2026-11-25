@@ -5,41 +5,75 @@ import { mode, getSettings, releaseExpired, nextCounter, randomId, randomToken, 
 import { str, email as vEmail, oneOf } from './validate.js';
 import { sendEmail, ownerEmail } from './email.js';
 import { OPERATOR, SITE } from '../src/site.mjs';
-import { SHIPPING, PAYMENT, formatCzk } from '../src/shop/format.mjs';
+import { SHIPPING, PAYMENT, METAL, formatCzk } from '../src/shop/format.mjs';
 import { isValidIban } from '../src/shop/spd.mjs';
+import { EU_COUNTRIES, countryName, czkToEurCents, formatEur } from '../src/shop/eu.mjs';
 import { terms, withdrawal, LEGAL_VERSION } from '../src/legal/docs.mjs';
 import { productName } from '../src/shop/describe.mjs';
 import { createCardPayment, cardPaymentsAvailable } from './payments.js';
 
-export async function shopConfig(env, lang = 'cs') {
+const num = (v) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null);
+
+/**
+ * Nabídka dopravy, plateb a měn pro danou zemi a hodnotu zboží.
+ * Konečná cena dopravy je vždy známá před odesláním objednávky.
+ */
+export async function shopConfig(env, lang = 'cs', { country = 'CZ', itemsTotal = 0 } = {}) {
   const m = mode(env);
   const s = await getSettings(env);
+  const L = (cs, en) => (lang === 'cs' ? cs : en);
+  const cc = EU_COUNTRIES[country] ? country : 'CZ';
+  const insuredFrom = num(s.insured_threshold_czk);
+  const insuredOnly = insuredFrom != null && itemsTotal >= insuredFrom;
+  let euPrices = {};
+  try { euPrices = JSON.parse(s.shipping_eu_json || '{}'); } catch { euPrices = {}; }
+
   const shipping = [];
-  for (const id of ['zasilkovna', 'balikovna']) {
-    const price = s[`shipping_${id}_czk`];
-    if (price != null && price !== '' && Number.isInteger(Number(price))) shipping.push({ id, label: SHIPPING[id][lang], price: Number(price) });
+  if (cc === 'CZ' && !insuredOnly) {
+    for (const id of ['zasilkovna', 'balikovna']) {
+      const price = num(s[`shipping_${id}_czk`]);
+      if (price != null) shipping.push({ id, label: SHIPPING[id][lang], price, pickup: true });
+    }
   }
-  if (s.shipping_osobni_enabled === '1') shipping.push({ id: 'osobni', label: SHIPPING.osobni[lang], price: 0 });
+  if (cc !== 'CZ' && !insuredOnly && num(euPrices[cc]) != null) {
+    shipping.push({ id: 'eu', label: L(`Doprava do země ${countryName(cc, 'cs')} – doručení na adresu`, `Delivery to ${countryName(cc, 'en')} – to your address`), price: num(euPrices[cc]), note: L('Dopravce podle cílové země (např. Zásilkovna a její partneři).', 'Carrier depends on the destination country (e.g. Packeta and its partners).') });
+  }
+  if (insuredOnly) {
+    const price = num(cc === 'CZ' ? s.insured_price_czk : s.insured_eu_price_czk);
+    if (price != null) shipping.push({ id: 'pojistena', label: L('Pojištěná přeprava kurýrem na plnou hodnotu', 'Courier delivery insured for the full value'), price, note: L('U hodinek vyšší hodnoty posíláme jen pojištěnou zásilkou.', 'Higher-value watches are sent only by insured shipment.') });
+  }
+  if (s.shipping_osobni_enabled === '1') {
+    shipping.push({ id: 'osobni', label: SHIPPING.osobni[lang], price: 0, note: L('Pouze po předchozí individuální domluvě. Nemáme kamennou prodejnu.', 'Only by prior individual arrangement. We have no retail shop.') });
+  }
+
   const payment = [];
   const iban = env.SHOP_IBAN || OPERATOR.iban;
-  if (iban && isValidIban(iban)) payment.push({ id: 'bank_transfer', label: PAYMENT.bank_transfer[lang], note: lang === 'cs' ? 'Platební údaje a QR kód obdržíte hned po objednávce.' : 'Payment details and a QR code will be shown right after ordering.' });
+  if (iban && isValidIban(iban)) payment.push({ id: 'bank_transfer', label: PAYMENT.bank_transfer[lang], note: L('Platební údaje a QR kód obdržíte hned po objednávce. Splatnost 3 dny.', 'Payment details and a QR code are shown right after ordering. Due within 3 days.') });
   if (cardPaymentsAvailable(env)) payment.push({ id: 'card', label: PAYMENT.card[lang] });
-  if (s.cod_enabled === '1') {
-    const fee = Number(s.cod_fee_czk) || 0;
-    payment.push({ id: 'cod', label: PAYMENT.cod[lang], price: fee, note: lang === 'cs' ? 'Platíte při převzetí zásilky.' : 'Pay when you collect the parcel.' });
+  // Dobírka jen v ČR a jen s výdejním místem; zahraniční objednávky pouze s platbou předem
+  if (s.cod_enabled === '1' && cc === 'CZ' && !insuredOnly) {
+    payment.push({ id: 'cod', label: PAYMENT.cod[lang], price: num(s.cod_fee_czk) || 0, onlyWith: ['zasilkovna', 'balikovna'], note: L('Platíte při převzetí zásilky (jen Zásilkovna a Balíkovna v ČR).', 'Pay on collection (Czech pickup points only).') });
   }
-  return { mode: m, shipping, payment, packetaKey: env.PACKETA_API_KEY || null, settings: s };
+
+  const eurRate = num(s.eur_rate);
+  const currencies = ['CZK', ...(eurRate ? ['EUR'] : [])];
+  return { mode: m, country: cc, insuredOnly, insuredFrom, shipping, payment, currencies, eurRate, packetaKey: env.PACKETA_API_KEY || null, settings: s };
 }
 
 export async function createOrder(env, body, origin) {
   const m = mode(env);
   if (m === 'preview') throw new HttpError('E-shop zatím nepřijímá objednávky', 403);
   const lang = body.lang === 'en' ? 'en' : 'cs';
-  const cfg = await shopConfig(env, lang);
+  const country = EU_COUNTRIES[body.country] ? body.country : null;
+  if (!country) throw new HttpError('Vyberte prosím zemi doručení (doručujeme do zemí EU)');
 
   if (body.terms !== true) throw new HttpError('Pro objednání je nutný souhlas s obchodními podmínkami');
   const ids = Array.isArray(body.items) ? [...new Set(body.items.filter((x) => typeof x === 'string'))] : [];
   if (!ids.length || ids.length > 10) throw new HttpError('Košík je prázdný');
+  await releaseExpired(env);
+  const ph0 = ids.map(() => '?').join(',');
+  const pre = await env.DB.prepare(`SELECT COALESCE(SUM(price_czk), 0) AS total FROM products WHERE id IN (${ph0})`).bind(...ids).first();
+  const cfg = await shopConfig(env, lang, { country, itemsTotal: pre.total });
   const ship = cfg.shipping.find((x) => x.id === body.shipping);
   if (!ship) throw new HttpError('Zvolený způsob dopravy není dostupný');
   const pay = cfg.payment.find((x) => x.id === body.payment);
@@ -59,9 +93,9 @@ export async function createOrder(env, body, origin) {
   const pickupName = str(body.pickupPointName, { max: 200 });
   if (['zasilkovna', 'balikovna'].includes(ship.id) && !pickupName) throw new HttpError('Vyberte prosím výdejní místo');
   if (ship.id === 'balikovna' && pickupId && !/^[BP]\d{5}$/.test(pickupId)) throw new HttpError('Neplatné výdejní místo Balíkovny');
-  if (pay.id === 'cod' && ship.id === 'osobni') throw new HttpError('Dobírku nelze kombinovat s osobním převzetím');
-
-  await releaseExpired(env);
+  if (pay.onlyWith && !pay.onlyWith.includes(ship.id)) throw new HttpError('Dobírku lze zvolit jen s výdejním místem v ČR');
+  const currency = body.currency === 'EUR' && cfg.currencies.includes('EUR') ? 'EUR' : 'CZK';
+  if (currency === 'EUR' && pay.id !== 'bank_transfer') throw new HttpError('V eurech lze zatím platit jen převodem');
 
   const ph = ids.map(() => '?').join(',');
   const { results: products } = await env.DB.prepare(`SELECT id, title, brand, model, price_czk, status, serial_ref FROM products WHERE id IN (${ph})`).bind(...ids).all();
@@ -71,6 +105,7 @@ export async function createOrder(env, body, origin) {
   const itemsTotal = products.reduce((s, p) => s + p.price_czk, 0);
   const codFee = pay.id === 'cod' ? (pay.price || 0) : 0;
   const total = itemsTotal + ship.price + codFee;
+  const payCents = currency === 'EUR' ? czkToEurCents(total, cfg.eurRate) : total * 100;
   const seq = await nextCounter(env, 'order');
   const year = new Date().getFullYear();
   const number = `${year}-${String(seq).padStart(4, '0')}`;
@@ -89,11 +124,12 @@ export async function createOrder(env, body, origin) {
       ON CONFLICT(email) DO UPDATE SET name=excluded.name, phone=excluded.phone, updated_at=?`).bind(randomId(), customer.email, customer.name, customer.phone, t),
     env.DB.prepare(`INSERT INTO orders (id, number, public_token, status, mode, customer_id, email, name, phone,
       billing_street, billing_city, billing_zip, company, company_ico, company_dic, shipping_method, pickup_point_id, pickup_point_name,
-      payment_method, items_total, shipping_price, total, variable_symbol, customer_note, terms_version, terms_accepted_at, reserved_until, cod_fee)
-      VALUES (?, ?, ?, 'awaiting_payment', ?, (SELECT id FROM customers WHERE email = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      payment_method, items_total, shipping_price, total, variable_symbol, customer_note, terms_version, terms_accepted_at, reserved_until, cod_fee,
+      billing_country, pay_currency, pay_amount_cents, eur_rate)
+      VALUES (?, ?, ?, 'awaiting_payment', ?, (SELECT id FROM customers WHERE email = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(orderId, number, token, m, customer.email, customer.email, customer.name, customer.phone, customer.street, customer.city, customer.zip,
         customer.company, customer.ico, customer.dic, ship.id, pickupId, pickupName, pay.id, itemsTotal, ship.price, total, vs, customer.note,
-        s.terms_version || LEGAL_VERSION, t, reservedUntil, codFee),
+        s.terms_version || LEGAL_VERSION, t, reservedUntil, codFee, country, currency, payCents, currency === 'EUR' ? cfg.eurRate : null),
   ];
   for (const p of products) {
     stmts.push(env.DB.prepare(`UPDATE products SET status='reserved', reserved_order_id=?, reserved_until=?, updated_at=? WHERE id=? AND status='available'`).bind(orderId, reservedUntil, t, p.id));
@@ -129,7 +165,7 @@ async function orderEmails(env, order, items, origin) {
   const table = `<table style="width:100%;border-collapse:collapse">${rows}
 <tr><td style="padding:6px 0">Doprava: ${SHIPPING[order.shipping_method]?.cs || order.shipping_method}${order.pickup_point_name ? ` (${order.pickup_point_name})` : ''}</td><td style="text-align:right">${formatCzk(order.shipping_price)}</td></tr>
 ${order.cod_fee ? `<tr><td style="padding:6px 0">Dobírka</td><td style="text-align:right">${formatCzk(order.cod_fee)}</td></tr>` : ''}
-<tr><td style="padding:8px 0;border-top:1px solid #ddd"><strong>Celkem</strong></td><td style="text-align:right;border-top:1px solid #ddd"><strong>${formatCzk(order.total)}</strong></td></tr></table>`;
+<tr><td style="padding:8px 0;border-top:1px solid #ddd"><strong>Celkem</strong></td><td style="text-align:right;border-top:1px solid #ddd"><strong>${formatCzk(order.total)}</strong>${order.pay_currency === 'EUR' ? `<br>k úhradě ${formatEur(order.pay_amount_cents)}` : ''}</td></tr></table>`;
   const link = `${origin}/objednavka/${order.public_token}`;
   await sendEmail(env, {
     to: order.email,
@@ -202,8 +238,11 @@ export async function issueInvoice(env, orderId) {
   const existing = await env.DB.prepare('SELECT * FROM invoices WHERE order_id = ? AND cancelled_at IS NULL').bind(orderId).first();
   if (existing) return existing;
   const o = await env.DB.prepare('SELECT * FROM orders WHERE id=?').bind(orderId).first();
-  const { results: items } = await env.DB.prepare('SELECT i.title, i.price_czk, p.serial_ref FROM order_items i LEFT JOIN products p ON p.id = i.product_id WHERE i.order_id = ?').bind(orderId).all();
-  const lines = items.map((i) => ({ text: i.serial_ref ? `${i.title} (identifikace: ${i.serial_ref})` : i.title, price: i.price_czk }));
+  const { results: items } = await env.DB.prepare('SELECT i.title, i.price_czk, p.serial_ref, p.case_metal, p.hallmark, p.precious_weight_g FROM order_items i LEFT JOIN products p ON p.id = i.product_id WHERE i.order_id = ?').bind(orderId).all();
+  // Zákon o puncovnictví: u zboží z drahých kovů uvést druh, hmotnost a ryzost
+  const metalText = (i) => (['zlato', 'stribro', 'platina'].includes(i.case_metal)
+    ? `; pouzdro: ${METAL[i.case_metal].cs}${i.hallmark ? `, ${i.hallmark}` : ''}${i.precious_weight_g ? `, hmotnost drahého kovu ${i.precious_weight_g} g` : ''}` : '');
+  const lines = items.map((i) => ({ text: `${i.title}${i.serial_ref ? ` (identifikace: ${i.serial_ref}` : ' ('}${metalText(i)})`.replace(' ()', '').replace('(; ', '('), price: i.price_czk }));
   lines.push({ text: `Doprava – ${SHIPPING[o.shipping_method]?.cs || o.shipping_method}`, price: o.shipping_price });
   if (o.cod_fee) lines.push({ text: 'Dobírka', price: o.cod_fee });
   const inv = await createInvoice(env, {
@@ -212,6 +251,7 @@ export async function issueInvoice(env, orderId) {
     buyer_street: o.billing_street, buyer_city: o.billing_city, buyer_zip: o.billing_zip, buyer_email: o.email,
     items: lines, payment_method: o.payment_method, taxable_date: o.paid_at || now(), paid_at: o.paid_at || now(), variable_symbol: o.variable_symbol,
     note: `Objednávka ${o.number}`,
+    pay_currency: o.pay_currency || 'CZK', pay_amount_cents: o.pay_currency === 'EUR' ? o.pay_amount_cents : null, eur_rate: o.eur_rate || null,
   });
   await env.DB.prepare('UPDATE orders SET invoice_number=?, invoice_issued_at=? WHERE id=?').bind(inv.number, inv.issued_at, orderId).run();
   return inv;
@@ -232,6 +272,7 @@ export async function createInvoice(env, d) {
     items: JSON.stringify(items.map((i) => ({ text: String(i.text).slice(0, 300), price: Number(i.price) }))), total,
     payment_method: d.payment_method || 'bank_transfer', issued_at: now(), taxable_date: d.taxable_date || now(),
     due_date: d.due_date || null, paid_at: d.paid_at || null, variable_symbol: d.variable_symbol || number, note: d.note || null,
+    pay_currency: d.pay_currency || 'CZK', pay_amount_cents: d.pay_amount_cents ?? null, eur_rate: d.eur_rate ?? null,
   };
   const keys = Object.keys(inv);
   await env.DB.prepare(`INSERT INTO invoices (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`).bind(...keys.map((k) => inv[k])).run();

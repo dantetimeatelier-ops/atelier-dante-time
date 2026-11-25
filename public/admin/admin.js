@@ -16,6 +16,7 @@
     ship: { zasilkovna: 'Zásilkovna', balikovna: 'Balíkovna', osobni: 'Osobně' },
     pay: { bank_transfer: 'Převod', card: 'Karta', cod: 'Dobírka', cash: 'Hotově' },
   };
+  const EU = [['AT', 'Rakousko'], ['BE', 'Belgie'], ['BG', 'Bulharsko'], ['HR', 'Chorvatsko'], ['CY', 'Kypr'], ['CZ', 'Česko'], ['DK', 'Dánsko'], ['EE', 'Estonsko'], ['FI', 'Finsko'], ['FR', 'Francie'], ['DE', 'Německo'], ['GR', 'Řecko'], ['HU', 'Maďarsko'], ['IE', 'Irsko'], ['IT', 'Itálie'], ['LV', 'Lotyšsko'], ['LT', 'Litva'], ['LU', 'Lucembursko'], ['MT', 'Malta'], ['NL', 'Nizozemsko'], ['PL', 'Polsko'], ['PT', 'Portugalsko'], ['RO', 'Rumunsko'], ['SK', 'Slovensko'], ['SI', 'Slovinsko'], ['ES', 'Španělsko'], ['SE', 'Švédsko']];
   const chip = (group, v) => `<span class="chip ${esc(v)}">${esc(L[group][v] || v)}</span>`;
   const toast = (msg, err) => { toastEl.textContent = msg; toastEl.className = `toast${err ? ' err' : ''}`; toastEl.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { toastEl.hidden = true; }, err ? 6000 : 2500); };
 
@@ -149,6 +150,7 @@
         <details ${['zlato', 'stribro', 'platina', 'pozlaceno'].includes(p.case_metal) ? 'open' : ''}><summary>Pouzdro a punc</summary>
           <label>Materiál pouzdra<select name="case_metal"><option value="">–</option>${[['ocel', 'nerezová ocel'], ['mosaz', 'mosaz'], ['chrom', 'chromovaná mosaz'], ['pozlaceno', 'pozlacené (není drahý kov)'], ['zlato', 'zlato'], ['stribro', 'stříbro'], ['platina', 'platina'], ['titan', 'titan'], ['jine', 'jiné']].map(([v, t]) => `<option value="${v}" ${p.case_metal === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
           ${field('hallmark', 'Ryzost a punc (u zlata, stříbra, platiny povinné)', p, 'placeholder="např. Au 585/1000, česká puncovní značka"')}
+          ${field('precious_weight_g', 'Hmotnost drahého kovu v gramech (u zlata, stříbra, platiny)', p, 'inputmode="decimal"')}
           ${field('plating', 'Pozlacení (u pozlacených pouzder)', p, 'placeholder="např. pozlaceno 20 µm"')}
         </details>
         <details><summary>Strojek a pouzdro</summary>
@@ -159,7 +161,10 @@
         </details>
         <details><summary>Stav, práce a originalita</summary>
           ${area('condition', 'Stav hodinek (opotřebení, vzhled)', p)}${area('service_done', 'Provedené práce', p)}
-          ${area('original_parts', 'Deklarované originální díly (doživotní garance pravosti!)', p)}${area('authenticity_note', 'Jak byla originalita ověřena (nepovinné)', p)}${field('serial_ref', 'Identifikace hodinek – č. pouzdra / strojku (neveřejné, pro garanci)', p)}${area('replaced_parts', 'Vyměněné / neoriginální díly', p)}${field('accessories', 'Příslušenství', p)}
+          <fieldset style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px"><legend class="small">Doživotní garance pravosti – které součásti jsou deklarované originální</legend>
+            ${[['strojek', 'Strojek'], ['cifernik', 'Ciferník'], ['rucicky', 'Ručičky']].map(([v, t]) => `<label style="display:flex;gap:8px;align-items:center;margin:4px 0"><input type="checkbox" name="authenticity_parts" value="${v}" ${(p.authenticity_parts || '').split(',').includes(v) ? 'checked' : ''} style="width:22px;min-height:22px"> ${t}</label>`).join('')}
+          </fieldset>
+          ${area('original_parts', 'Původní originální součásti (popis)', p)}${area('authenticity_note', 'Jak byla originalita ověřena (nepovinné)', p)}${field('serial_ref', 'Identifikace hodinek – č. pouzdra / strojku (neveřejné, pro garanci)', p)}${area('replaced_parts', 'Nové součásti použité při přestavbě Dante Time / vyměněné díly', p)}${field('accessories', 'Příslušenství', p)}
         </details>
         <details><summary>Popis a SEO</summary>
           <button class="btn block" type="button" id="gen" style="margin-bottom:12px">✨ Vygenerovat popis a SEO z parametrů</button>
@@ -175,7 +180,7 @@
 
     const form = app.querySelector('#pf');
     const save = async (extra = {}) => {
-      const d = formData(form); d.featured = form.featured.checked; Object.assign(d, extra);
+      const d = formData(form); d.featured = form.featured.checked; d.authenticity_parts = [...form.querySelectorAll('[name=authenticity_parts]:checked')].map((x) => x.value); Object.assign(d, extra);
       await api('PUT', `products/${id}`, d); toast('Uloženo');
     };
     form.addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await save(); views['hodinky/:id']({ id }, new URLSearchParams()); }); });
@@ -364,6 +369,7 @@
 
   views.nastaveni = async () => {
     const { settings: s, integrations: i } = await api('GET', 'settings');
+    let eu = {}; try { eu = JSON.parse(s.shipping_eu_json || '{}'); } catch { eu = {}; }
     const yes = (v) => (v ? '<span class="chip available">aktivní</span>' : '<span class="chip">neaktivní</span>');
     app.innerHTML = `<h1>Nastavení</h1>
       <form id="setf" class="card"><h2 style="margin-top:0">Doprava</h2>
@@ -373,6 +379,14 @@
         <h2>Dobírka</h2>
         <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="cod_enabled" ${s.cod_enabled === '1' ? 'checked' : ''} style="width:22px;min-height:22px"> Nabízet platbu dobírkou</label>
         <label>Příplatek za dobírku (Kč, prázdné = 0)<input name="cod_fee_czk" inputmode="numeric" value="${esc(s.cod_fee_czk)}"></label>
+        <h2>Pojištěná přeprava</h2>
+        <label>Od ceny hodinek (Kč) nabízet jen pojištěnou přepravu / osobní předání<input name="insured_threshold_czk" inputmode="numeric" value="${esc(s.insured_threshold_czk)}"></label>
+        <div class="grid"><label>Cena pojištěné přepravy v ČR (Kč)<input name="insured_price_czk" inputmode="numeric" value="${esc(s.insured_price_czk)}"></label><label>Cena pojištěné přepravy do EU (Kč)<input name="insured_eu_price_czk" inputmode="numeric" value="${esc(s.insured_eu_price_czk)}"></label></div>
+        <h2>Platby v eurech</h2>
+        <label>Kurz CZK za 1 EUR (prázdné = platba v EUR se nenabízí)<input name="eur_rate" inputmode="decimal" value="${esc(s.eur_rate)}"></label>
+        <details><summary>Doprava do zemí EU (cena v Kč, prázdné = do země nedoručujeme)</summary>
+          <div class="grid" style="margin-top:10px">${EU.filter((c) => c[0] !== 'CZ').map(([c, n]) => `<label>${n}<input data-eu="${c}" inputmode="numeric" value="${esc(eu[c] ?? '')}"></label>`).join('')}</div>
+        </details>
         <h2>Rezervace</h2>
         <div class="grid"><label>Převod – hodin<input name="reservation_hours_bank" inputmode="numeric" value="${esc(s.reservation_hours_bank)}"></label><label>Karta – minut<input name="reservation_minutes_card" inputmode="numeric" value="${esc(s.reservation_minutes_card)}"></label></div>
         <button class="btn primary block">Uložit nastavení</button></form>
@@ -384,7 +398,9 @@
         <tr><th>Odesílání e-mailů</th><td>${yes(i.email)}</td></tr>
       </table><p class="small muted">Integrace se zapínají v Cloudflare podle návodu docs/INTEGRATIONS.md. Ostrý režim a ostré platby jen po vašem rozhodnutí.</p></div>`;
     app.querySelector('#setf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
-      const d = formData(e.target); d.shipping_osobni_enabled = e.target.shipping_osobni_enabled.checked; d.cod_enabled = e.target.cod_enabled.checked; await api('PUT', 'settings', d); toast('Uloženo');
+      const d = formData(e.target); d.shipping_osobni_enabled = e.target.shipping_osobni_enabled.checked; d.cod_enabled = e.target.cod_enabled.checked;
+      d.shipping_eu_json = Object.fromEntries([...e.target.querySelectorAll('[data-eu]')].map((x) => [x.dataset.eu, x.value.trim()]));
+      await api('PUT', 'settings', d); toast('Uloženo');
     }); });
   };
 

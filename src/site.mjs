@@ -12,21 +12,39 @@ export const SITE = {
   brands: ['PRIM', 'Omega', 'Bulova', 'Zaria', 'Doxa'],
 };
 
-// Údaje provozovatele. DOPLNÍ MAJITEL (viz docs/LEGAL-REVIEW.md).
+// Údaje provozovatele (sdělil majitel 25. 11. 2026).
+// Hodnota null = zatím neověřeno → na webu „[DOPLNIT/OVĚŘIT: …]“ a ostrý režim nejde sestavit.
 export const OPERATOR = {
-  name: null,           // jméno a příjmení podnikatele, nebo obchodní firma
-  ico: null,            // IČO
-  address: null,        // sídlo / místo podnikání
-  register: null,       // např. „zapsán v živnostenském rejstříku vedeném …“
-  vatPayer: null,       // true = plátce DPH, false = neplátce
+  name: 'Patrik Hužička',
+  tradeName: 'Dante Time',
+  legalForm: 'fyzická osoba podnikající (OSVČ)',
+  legalFormEn: 'sole trader (natural person engaged in business)',
+  ico: '24020885',
+  address: 'Buková 1561, 273 51 Unhošť, Česká republika',
+  addressEn: 'Buková 1561, 273 51 Unhošť, Czech Republic',
+  businessSince: '2. 12. 2025',
+  register: null,       // OVĚŘIT: zápis v živnostenském rejstříku a příslušný úřad (pravděpodobně Magistrát města Kladna)
+  tradeOffice: null,    // OVĚŘIT: příslušný živnostenský úřad
+  vatPayer: null,       // OVĚŘIT: plátce / neplátce DPH (true / false)
   dic: null,            // DIČ, je-li přiděleno
-  phone: null,          // telefon (nepovinné)
-  bankAccount: null,    // číslo účtu pro platby převodem
-  iban: null,           // IBAN (pro QR platbu)
-  returnAddress: null,  // adresa pro vracení zboží (pokud se liší od sídla)
+  phone: null,          // telefon (nepovinné, na webu zatím není)
+  bankName: 'Česká spořitelna, a.s.',
+  accountHolder: 'Patrik Hužička',
+  bankAccount: '2854824133/0800',
+  iban: 'CZ6308000000002854824133',
+  ibanPretty: 'CZ63 0800 0000 0028 5482 4133',
+  bic: 'GIBACZPX',
+  returnAddress: null,  // adresa pro vracení – není-li vyplněna, použije se sídlo
+};
+
+// Nezávislost ateliéru – uvádí se na webu, v obchodních podmínkách i u hodinek
+export const INDEPENDENCE = {
+  cs: 'Atelier Dante Time je nezávislý hodinářský ateliér. Není autorizovaným prodejcem ani servisem a nezastupuje značky PRIM, OMEGA, ROLEX ani jiné výrobce, jejichž hodinky nabízí nebo opravuje. Názvy značek slouží jen k popisu hodinek.',
+  en: 'Atelier Dante Time is an independent watch atelier. It is not an authorised dealer or service centre of, and does not represent, PRIM, OMEGA, ROLEX or any other manufacturer whose watches it offers or repairs. Brand names are used only to describe the watches.',
 };
 
 export const missing = (what) => `<mark class="todo">[DOPLNIT: ${what}]</mark>`;
+export const verify = (what) => `<mark class="todo">[OVĚŘIT: ${what}]</mark>`;
 export const op = (key, label) => OPERATOR[key] ?? missing(label);
 
 export const LANGS = ['cs', 'en'];
