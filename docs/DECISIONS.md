@@ -84,5 +84,7 @@ ciferník a ručičky PRIM; nové nerezové pouzdro Dante Time; průměr 39–42
 průhledné dýnko; voděodolnost 3 ATM; kompletně servisovaný a seřízený strojek; záruka
 24 měsíců; doživotní garance pravosti originálních komponentů; dárková krabička a
 dokumentace Dante Time. Kalibr a rok výroby jen pokud jsou známé. Cenu sděluje majitel.
-Druh se označuje „Ateliérová přestavba Dante Time“. Galerie podporuje videa.
+Druh se označuje „Ateliérová přestavba Dante Time“.
+**Doplněno týž den:** videa se v e-shopu nezobrazují (na iPhonu se nezobrazovala správně),
+majitel je zveřejňuje na Instagramu. Do katalogu se přidávají jen fotografie.
 **Technicky:** `katalog/sablona-prim.json`.
