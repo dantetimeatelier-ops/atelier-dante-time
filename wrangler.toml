@@ -30,7 +30,7 @@ id = "11111111111111111111111111111111"
 SHOP_MODE = "test"
 EMAIL_PROVIDER = "resend"
 # Zkušební verze: do ověření domény lze z adresy resend.dev posílat jen na e-mail účtu Resend (majitel)
-EMAIL_FROM = "Atelier Dante Time <onboarding@resend.dev>"
+EMAIL_FROM = "Atelier Dante Time <objednavky@atelier-dante-time.cz>"
 
 [[env.preview.d1_databases]]
 binding = "DB"
