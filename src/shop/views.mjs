@@ -1,0 +1,131 @@
+// Vykreslení katalogu a detailu hodinek (používají serverové funkce)
+import { esc, hero } from '../layout.mjs';
+import { PAGES, SITE } from '../site.mjs';
+import { formatCzk, STATUS } from './format.mjs';
+import { productName, productJsonLd } from './describe.mjs';
+import { inquiryForm } from '../pages/marketing.mjs';
+
+const T = (lang, cs, en) => (lang === 'cs' ? cs : en);
+export const productPath = (p, lang) => (lang === 'cs' ? `/hodinky/${p.slug}` : `/en/watches/${p.slug}`);
+const img = (key) => `/media/${key}`;
+
+export function productCard(p, lang) {
+  const first = p.images?.[0];
+  const st = STATUS[p.status]?.[lang] || '';
+  const price = p.status === 'sold' ? '' : (p.price_czk != null ? `<span class="price">${formatCzk(p.price_czk, lang)}</span>` : '');
+  return `<a class="product-card" href="${productPath(p, lang)}">
+  <div class="ph">${first ? `<img src="${img(first.key_small)}" width="${first.width || 800}" height="${first.height || 1000}" alt="${esc(first.alt || productName(p))}" loading="lazy" decoding="async">` : ''}</div>
+  <div class="meta">
+    <span class="status ${p.status}">${esc(st)}</span>
+    <h3 style="margin-top:10px">${esc(productName(p))}</h3>
+    <div class="sub">${esc([p.year, p.movement, p.case_diameter_mm && `${p.case_diameter_mm} mm`].filter(Boolean).join(' · '))}</div>
+    <div style="margin-top:10px">${price}</div>
+  </div>
+</a>`;
+}
+
+export function collectionPage({ products, lang, filter, mode }) {
+  const L = (cs, en) => T(lang, cs, en);
+  const base = PAGES.collection[lang];
+  const f = (key, label) => `<a href="${base}${key ? `?stav=${key}` : ''}"${(filter || '') === key ? ' aria-current="true"' : ''}>${label}</a>`;
+  const list = products.length
+    ? `<div class="products">${products.map((p) => productCard(p, lang)).join('')}</div>`
+    : `<div class="empty"><p>${L('Momentálně připravujeme nové kusy. Sledujte nás na Instagramu nebo si nechte poslat zprávu, až budou k dispozici.', 'New pieces are being prepared. Follow us on Instagram or ask to be notified when they are available.')}</p><a class="btn" href="${PAGES.contact[lang]}">${L('Mám zájem o upozornění', 'Notify me')}</a></div>`;
+  return {
+    title: L('Kolekce mechanických hodinek', 'Mechanical watch collection'),
+    description: L('Unikátní renovované mechanické hodinky z ateliéru Dante Time. Každý kus existuje jen jednou, s doživotní garancí pravosti deklarovaných originálních dílů.', 'Unique restored mechanical watches from Atelier Dante Time. Each piece exists only once, with a lifetime authenticity guarantee on declared original parts.'),
+    body: `${hero({ eyebrow: L('Kolekce', 'Collection'), title: L('Hodinky z ateliéru', 'Watches from the atelier'), lead: L('Každý kus prošel kompletním servisem nebo renovací v ateliéru. Unikátní – každé hodinky existují jen jednou.', 'Every piece has been fully serviced or restored in the atelier. Unique – each watch exists only once.') })}
+<section class="section" style="padding-top:12px"><div class="wrap">
+  <nav class="filters" aria-label="${L('Filtr', 'Filter')}">
+    ${f('', L('Vše', 'All'))}${f('available', L('Skladem', 'Available'))}${f('in_progress', L('V přípravě', 'In preparation'))}${f('sold', L('Prodané', 'Sold'))}
+  </nav>
+  ${list}
+  ${mode === 'preview' ? `<p class="notice" style="margin-top:24px">${L('E-shop spouštíme. Do té doby můžete o kterýkoli kus projevit nezávazný zájem a domluvíme se osobně.', 'Our online shop is launching soon. Until then you can enquire about any piece and we will arrange the details personally.')}</p>` : ''}
+</div></section>`,
+  };
+}
+
+const row = (label, value) => (value != null && String(value).trim() !== '' ? `<tr><th scope="row">${label}</th><td>${esc(value)}</td></tr>` : '');
+
+export function productPage({ p, images, lang, mode, origin }) {
+  const L = (cs, en) => T(lang, cs, en);
+  const name = productName(p);
+  const desc = (lang === 'en' ? p.description_en : p.description_cs) || p.description_cs || '';
+  const main = images[0];
+  const gallery = images.length ? `<div class="gallery" data-gallery>
+  <div class="main"><img data-main src="${img(main.key_large)}" width="${main.width || 1600}" height="${main.height || 2000}" alt="${esc(main.alt || name)}" fetchpriority="high"></div>
+  ${images.length > 1 ? `<div class="thumbs">${images.map((i, n) => `<button type="button" data-src="${img(i.key_large)}" data-alt="${esc(i.alt || name)}"${n === 0 ? ' aria-current="true"' : ''}><img src="${img(i.key_small)}" alt="" loading="lazy"><span class="sr">${L('Fotografie', 'Photo')} ${n + 1}</span></button>`).join('')}</div>` : ''}
+</div>` : `<div class="gallery"><div class="main"></div></div>`;
+
+  const canBuy = p.status === 'available' && p.price_czk != null && mode !== 'preview';
+  let action;
+  if (canBuy) {
+    action = `<button class="btn solid block" type="button" data-add-to-cart="${esc(p.id)}" data-cart-url="${PAGES.cart[lang]}">${L('Vložit do košíku', 'Add to cart')}</button>`;
+  } else if (p.status === 'available' || p.status === 'in_progress') {
+    action = `<a class="btn solid block" href="#zajem">${L('Mám zájem o tyto hodinky', 'I am interested in this watch')}</a>`;
+  } else if (p.status === 'reserved') {
+    action = `<p class="notice">${L('Tento kus je právě rezervován. Pokud rezervace vyprší, bude znovu k dispozici.', 'This piece is currently reserved. If the reservation expires it will become available again.')}</p><a class="btn block" href="#zajem">${L('Upozornit mě', 'Notify me')}</a>`;
+  } else {
+    action = `<p class="notice">${L('Tento kus už našel nového majitele. Rád vám pomohu najít podobné hodinky.', 'This piece has found a new owner. I will gladly help you find something similar.')}</p><a class="btn block" href="#zajem">${L('Hledám podobné hodinky', 'Looking for something similar')}</a>`;
+  }
+
+  const ld = productJsonLd(p, images, origin, lang);
+  return {
+    title: p.seo_title || name,
+    description: p.seo_description || desc.slice(0, 155),
+    image: main ? `${origin}/media/${main.key_large}` : undefined,
+    ogType: 'product',
+    head: `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>`,
+    scripts: ['/assets/product.js', '/assets/forms.js'],
+    body: `<section class="section"><div class="wrap">
+  <p class="doc-meta"><a href="${PAGES.collection[lang]}">← ${L('Kolekce', 'Collection')}</a></p>
+  <div class="product">
+    ${gallery}
+    <div class="buybox card">
+      <span class="status ${p.status}">${esc(STATUS[p.status]?.[lang] || '')}</span>
+      <h1 style="font-size:clamp(30px,4vw,44px);margin-top:12px">${esc(name)}</h1>
+      ${p.year ? `<p class="doc-meta">${esc(p.year)}</p>` : ''}
+      ${p.status !== 'sold' && p.price_czk != null ? `<p class="price" style="font-size:30px;margin:10px 0 2px">${formatCzk(p.price_czk, lang)}</p><p class="doc-meta">${L('Konečná cena', 'Final price')}${mode === 'preview' ? '' : `, ${L('doprava podle zvoleného způsobu', 'shipping depends on the chosen method')}`}</p>` : ''}
+      <div style="margin:18px 0">${action}</div>
+      <ul class="list-dots" style="font-size:14px">
+        <li>${L('Unikátní kus – existuje jen jednou', 'Unique piece – exists only once')}</li>
+        <li>${L('Doživotní garance pravosti deklarovaných originálních dílů', 'Lifetime authenticity guarantee on declared original parts')} (<a href="/warranty">${L('podmínky', 'terms (CZ)')}</a>)</li>
+        <li>${L('Práva z vadného plnění 24 měsíců a 14 dní na odstoupení od smlouvy podle zákona', 'Statutory 24-month liability for defects and 14-day right of withdrawal')}</li>
+      </ul>
+    </div>
+  </div>
+  <div class="split" style="margin-top:28px">
+    <div class="card prose">
+      <h2>${L('Popis', 'Description')}</h2>
+      <p>${esc(desc)}</p>
+    </div>
+    <div class="card">
+      <h2>${L('Parametry', 'Specifications')}</h2>
+      <table class="specs"><tbody>
+        ${row(L('Značka', 'Brand'), p.brand)}${row('Model', p.model)}${row(L('Reference', 'Reference'), p.reference)}${row(L('Rok výroby', 'Year'), p.year)}
+        ${row(L('Strojek', 'Movement'), p.movement)}${row(L('Nátah', 'Winding'), p.movement_type === 'manual' ? L('ruční', 'manual') : p.movement_type === 'automatic' ? L('automatický', 'automatic') : '')}
+        ${row(L('Materiál pouzdra', 'Case material'), p.case_material)}${row(L('Průměr pouzdra', 'Case diameter'), p.case_diameter_mm && `${p.case_diameter_mm} mm`)}${row(L('Šířka uchycení', 'Lug width'), p.lug_width_mm && `${p.lug_width_mm} mm`)}
+        ${row(L('Ciferník', 'Dial'), p.dial)}${row(L('Sklíčko', 'Crystal'), p.crystal)}${row(L('Řemínek', 'Strap'), p.strap)}${row(L('Vodotěsnost', 'Water resistance'), p.water_resistance || L('není určeno do vody', 'not intended for water'))}
+        ${row(L('Stav', 'Condition'), p.condition)}${row(L('Provedené práce', 'Work carried out'), p.service_done)}
+        ${row(L('Originální díly (garance pravosti)', 'Original parts (authenticity guarantee)'), p.original_parts)}${row(L('Vyměněné díly', 'Replaced parts'), p.replaced_parts)}${row(L('Příslušenství', 'Accessories'), p.accessories)}
+      </tbody></table>
+      ${p.manufacturer_info || p.safety_info ? `<h3 style="margin-top:20px">${L('Informace o výrobku', 'Product information')}</h3>${p.manufacturer_info ? `<p style="font-size:14px">${L('Výrobce', 'Manufacturer')}: ${esc(p.manufacturer_info)}</p>` : ''}${p.safety_info ? `<p style="font-size:14px">${esc(p.safety_info)}</p>` : ''}` : ''}
+    </div>
+  </div>
+  <div class="card" id="zajem" style="margin-top:28px">
+    <h2>${L('Dotaz k těmto hodinkám', 'Ask about this watch')}</h2>
+    ${inquiryForm(lang, 'product', p.id)}
+  </div>
+</div></section>`,
+  };
+}
+
+export const notFoundBody = (lang) => `${hero({ eyebrow: '404', title: T(lang, 'Tato stránka se zastavila v čase', 'This page has stopped in time'), lead: T(lang, 'Stránku, kterou hledáte, se nepodařilo najít.', 'The page you are looking for could not be found.') })}
+<section class="section"><div class="wrap cta-row" style="justify-content:flex-start"><a class="btn solid" href="${PAGES.home[lang]}">${T(lang, 'Hlavní stránka', 'Home')}</a><a class="btn ghost" href="${PAGES.collection[lang]}">${T(lang, 'Kolekce', 'Collection')}</a></div></section>`;
+
+export const SHOP_BANNER = {
+  preview: '',
+  test: '<strong>TESTOVACÍ PROVOZ</strong> – objednávky nejsou závazné a platby neprobíhají doopravdy.',
+  live: '',
+};
+export const siteEmail = SITE.email;
