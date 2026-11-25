@@ -33,8 +33,17 @@ for (const k of ['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID', 'ADMIN_SETUP_T
 for (const k of ['CLOUDFLARE_API_TOKEN', 'ADMIN_SETUP_TOKEN']) process.env[k] = process.env[k].trim();
 {
   const m = process.env.CLOUDFLARE_ACCOUNT_ID.match(/[0-9a-f]{32}/i);
-  if (!m) throw new Error('CLOUDFLARE_ACCOUNT_ID neobsahuje platné Account ID (32 znaků 0–9 a a–f). Zkopírujte ho z dash.cloudflare.com → Workers & Pages → Account details.');
-  process.env.CLOUDFLARE_ACCOUNT_ID = m[0].toLowerCase();
+  if (m) process.env.CLOUDFLARE_ACCOUNT_ID = m[0].toLowerCase();
+  else {
+    // Záloha: zjistit Account ID přímo z Cloudflare podle tokenu (token smí jen do jednoho účtu)
+    console.log(`Uložené Account ID není platné (délka ${process.env.CLOUDFLARE_ACCOUNT_ID.length} znaků) – zjišťuji ho z Cloudflare podle tokenu.`);
+    const r = await fetch('https://api.cloudflare.com/client/v4/accounts?per_page=5', { headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` } });
+    const j = await r.json().catch(() => ({}));
+    const ids = (j.result || []).map((a) => a.id).filter((id) => /^[0-9a-f]{32}$/.test(id));
+    if (ids.length !== 1) throw new Error(`Account ID se nepodařilo zjistit (HTTP ${r.status}, nalezeno účtů: ${ids.length}). Zkopírujte ho z dash.cloudflare.com → Workers & Pages → Account details do CLOUDFLARE_ACCOUNT_ID.`);
+    process.env.CLOUDFLARE_ACCOUNT_ID = ids[0];
+    console.log('Account ID zjištěno z Cloudflare.');
+  }
 }
 if (process.env.ADMIN_SETUP_TOKEN.length < 24) throw new Error('ADMIN_SETUP_TOKEN musí mít alespoň 24 znaků');
 
