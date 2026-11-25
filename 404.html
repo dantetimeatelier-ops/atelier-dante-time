@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stránka nenalezena — Atelier Dante Time</title>
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#070707" />
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" href="/img/favicon-32.png" type="image/png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+  <style>
+    :root{
+      --bg:#070707; --text:#f2f2f2; --muted:#b9b9b9; --gold:#c8a24a;
+      --line:rgba(255,255,255,.10);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1000px 600px at 50% -120px, rgba(200,162,74,.12), rgba(0,0,0,0) 60%),
+        var(--bg);
+      display:flex; align-items:center; justify-content:center;
+      text-align:center; padding:40px 20px;
+    }
+    main{max-width:560px}
+    img{width:72px; height:72px; display:block; margin:0 auto 22px; filter:drop-shadow(0 18px 40px rgba(0,0,0,.75))}
+    .code{
+      color:var(--gold); letter-spacing:.3em; font-size:13px; font-weight:600; margin:0 0 10px;
+    }
+    h1{
+      margin:0; font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+      font-weight:400; letter-spacing:.08em; font-size:clamp(26px, 5vw, 40px); line-height:1.2;
+    }
+    .subline{
+      width:min(200px, 60vw); height:1px; margin:20px auto;
+      background:linear-gradient(90deg, rgba(200,162,74,0), rgba(200,162,74,.9), rgba(200,162,74,0));
+    }
+    p{color:var(--muted); line-height:1.7; margin:0 0 6px}
+    p.en{font-size:14px; opacity:.8}
+    .actions{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:26px}
+    .btn{
+      display:inline-flex; padding:10px 16px; border-radius:12px; font-size:14px;
+      color:var(--text); text-decoration:none;
+      border:1px solid rgba(200,162,74,.45);
+      background:linear-gradient(180deg, rgba(200,162,74,.18), rgba(200,162,74,.04));
+    }
+    .btn.ghost{border-color:var(--line); background:rgba(255,255,255,.02); color:var(--muted)}
+    .btn:hover{border-color:rgba(200,162,74,.75); color:var(--text)}
+  </style>
+</head>
+<body>
+  <main>
+    <img src="/img/logo-160.webp" width="160" height="160" alt="Atelier Dante Time logo" />
+    <p class="code">404</p>
+    <h1>Tato stránka se zastavila v&nbsp;čase</h1>
+    <div class="subline"></div>
+    <p>Stránku, kterou hledáte, se nepodařilo najít. Možná byla přesunuta nebo adresa obsahuje překlep.</p>
+    <p class="en" lang="en">The page you are looking for could not be found.</p>
+    <div class="actions">
+      <a class="btn" href="/">Zpět na hlavní stránku</a>
+      <a class="btn ghost" href="/services.html">Služby</a>
+      <a class="btn ghost" href="/index.html#contact">Kontakt</a>
+    </div>
+  </main>
+</body>
+</html>

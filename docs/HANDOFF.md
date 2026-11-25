@@ -4,6 +4,24 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-25 – Claude – claude/dante-time-web-management-7g6wuy (dokončení fáze 1)
+**Hotovo:** `robots.txt`, `sitemap.xml`, `404.html` (absolutní cesty, `noindex`),
+`canonical` + OG/Twitter značky na všech stránkách, lepší `description`
+u care/warranty/returns/terms/privacy/reklamace, JSON-LD `Organization`
+na hlavní stránce, čisté odkazy na Instagram/TikTok (+ `noreferrer`),
+odkazy Reklamace a Soukromí v patičce (CZ/EN). `privacy.html` a
+`reklamace.html` převedeny do vzhledu webu, **text beze změny** (ověřeno
+porovnáním). Lighthouse viz `docs/ROADMAP.md`.
+**Rozpracováno:** nic.
+**Další krok:** čeká se na schválení majitele a pull request do `main`.
+Pak fáze 2 (Astro) po rozhodnutí R1.
+**Pozor na:** `about.html` nemá patičku vůbec (původní stav, neměněno).
+`privacy.html` a `reklamace.html` obsahují veřejně viditelné interní
+poznámky („Poznámka: Až budeš řešit e-shop…“). Úprava je ⚖️ a čeká na majitele.
+Při přidání stránky ji doplň do `sitemap.xml`.
+
+---
+
 ## 2026-11-25 – Claude – claude/dante-time-web-management-7g6wuy (optimalizace obrázků)
 **Hotovo:** Originály přesunuty do `assets/originals/`, optimalizované
 verze (WebP, správné rozměry, `srcset`, `loading="lazy"`) jsou v `img/`.

@@ -28,13 +28,20 @@ Cíl: rychlejší a lépe dohledatelný web, beze změny vzhledu a textů podmí
 
 - [x] Optimalizace obrázků (WebP, správné rozměry, `loading="lazy"`)
 - [x] Skutečný favicon a ikony pro mobil
-- [ ] `robots.txt`, `sitemap.xml`, `canonical`, OG značky všude
-- [ ] Stránka 404 ve stylu značky
-- [ ] Propojení `privacy.html` a `reklamace.html` z patičky a sjednocení vzhledu
-- [ ] Strukturovaná data `Organization`
-- [ ] Měření rychlosti (Lighthouse) před a po změnách
+- [x] `robots.txt`, `sitemap.xml`, `canonical`, OG značky všude
+- [x] Stránka 404 ve stylu značky
+- [x] Propojení `privacy.html` a `reklamace.html` z patičky a sjednocení vzhledu
+- [x] Strukturovaná data `Organization`
+- [x] Měření rychlosti (Lighthouse) před a po změnách
 
-**Výsledek:** hlavní stránka se zmenší z asi 4,3 MB na méně než 0,5 MB.
+**Výsledek (Lighthouse, mobil, 25. 11. 2026):**
+
+| Stránka | Výkon před → po | Velikost před → po | LCP před → po |
+|---|---|---|---|
+| Hlavní stránka | 75 → **100** | 5 942 kB → **91 kB** | 30,8 s → **1,1 s** |
+| Služby | 75 → **100** | 3 876 kB → **77 kB** | 21,2 s → **1,1 s** |
+
+Přístupnost, správné postupy a SEO: 98–100 před i po.
 
 ## Fáze 2: Nový technický základ
 
