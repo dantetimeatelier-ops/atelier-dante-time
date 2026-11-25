@@ -4,6 +4,15 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-25 – Claude – claude/eshop-platforma (závěrečná kontrola, doména, živnost)
+**Hotovo:** právní dokumenty 3.2 (Resend, spolupracující hodinář, Facebook; CZ = EN),
+rozbor živnostenského oprávnění (LEGAL-REVIEW 2c: Hodinářství + obor č. 49 pro použité
+zboží), návod na přesun domény WEDOS → Cloudflare s návratem (`docs/SPUSTENI-DOMENA.md`).
+**Další krok:** rozhodnutí majitele o živnosti (A–D), schválení dokumentů, etapy A–C domény.
+**Pozor na:** u WEDOS je zapnutý DNSSEC, před změnou NS ho vypnout. Na doméně není MX.
+
+---
+
 ## 2026-11-25 – Claude – claude/eshop-platforma (e-maily Resend)
 **Hotovo:** e-maily přes Resend zapojené. Klíč `RESEND_API_KEY` je v GitHub Secrets
 (oprávnění Sending access) a nasazení ho zapisuje do proměnných Cloudflare Pages

@@ -246,7 +246,7 @@ export const custom = doc('custom', '/zakazkova-vyroba', 'Zakázková výroba, s
 <tr><td><strong>Přestavba</strong></td><td>úprava hodinek zákazníka podle jeho zadání</td><td>smlouva o dílo</td></tr>
 <tr><td><strong>Zakázková výroba</strong></td><td>sestavení hodinek z dílů ateliéru podle zadání zákazníka</td><td>kupní smlouva o věci, která má být vyrobena</td></tr>
 </tbody></table>
-<p>Zakázky provádí ${seller(L)} (dále jen „ateliér“).</p>
+<p>Zakázky provádí ${seller(L)} (dále jen „ateliér“). Odborné hodinářské práce může ateliér provést prostřednictvím spolupracujícího hodináře s příslušným živnostenským oprávněním. Za jeho práci odpovídá ateliér, jako by ji provedl sám.</p>
 <h2>2. Cena a schválení prací</h2>
 <ol>
 <li>Ateliér pošle nabídku s popisem prací, cenou a orientačním termínem. Smlouva vzniká písemným (e-mailovým) přijetím nabídky.</li>
@@ -321,14 +321,15 @@ export const privacy = doc('privacy', '/privacy', 'Zásady ochrany osobních úd
 <ul>
 <li><strong>Cloudflare, Inc.</strong> – hosting, databáze (uložená v EU) a fotografie,</li>
 <li><strong>Google</strong> – e-mailová schránka Gmail,</li>
-<li><strong>GitHub, Inc.</strong> – hosting současné verze webu (technické záznamy),</li>
+<li><strong>Resend</strong> – odesílání e-mailů z webu (potvrzení objednávek, faktury, odpovědi na poptávky),</li>
+<li><strong>spolupracující hodinář</strong> – provedení odborných prací na zakázce (jen údaje nezbytné k zakázce),</li>
 <li><strong>Zásilkovna s.r.o.</strong>, <strong>Česká pošta, s.p.</strong> a další dopravci podle cílové země – doručení zásilky,</li>
 <li><strong>Česká spořitelna, a.s.</strong> – příjem plateb (jako samostatný správce),</li>
-<li>poskytovatel platební brány a poskytovatel odesílání e-mailů – až po jejich aktivaci (doplníme sem jejich názvy),</li>
+<li>poskytovatel platební brány – až po její aktivaci (doplníme sem jeho název),</li>
 <li>orgány veřejné moci, ukládá-li to zákon.</li>
 </ul>
 <h2>4. Předání mimo EU</h2>
-<p>Cloudflare, Google a GitHub mohou údaje zpracovávat v USA na základě rozhodnutí Komise o odpovídající ochraně (EU–US Data Privacy Framework) nebo standardních smluvních doložek.</p>
+<p>Cloudflare, Google a Resend mohou údaje zpracovávat v USA na základě rozhodnutí Komise o odpovídající ochraně (EU–US Data Privacy Framework) nebo standardních smluvních doložek.</p>
 <h2>5. Vaše práva</h2>
 <p>Máte právo na přístup, opravu, výmaz, omezení zpracování, přenositelnost a námitku proti zpracování na základě oprávněného zájmu. Uplatněte je na ${email}, odpovíme do měsíce. Stížnost můžete podat u Úřadu pro ochranu osobních údajů (Pplk. Sochora 27, 170 00 Praha 7, <a href="https://uoou.gov.cz" rel="noopener noreferrer">uoou.gov.cz</a>) nebo u dozorového úřadu ve státě vašeho bydliště.</p>
 <h2>6. Zabezpečení</h2>
@@ -349,7 +350,7 @@ export const cookies = doc('cookies', '/cookies', 'Zásady používání cookies
 <ul>
 <li><strong>Mapa výdejních míst</strong> Zásilkovny nebo Balíkovny se načte až po vašem kliknutí v košíku. Dopravce může použít vlastní technická úložiště. Polohu mapa použije jen s vaším souhlasem v prohlížeči.</li>
 <li><strong>Platba kartou</strong> (po aktivaci) probíhá na stránce platební brány s jejími nezbytnými cookies.</li>
-<li>Instagram a TikTok jsou jen odkazy, na našem webu se nenačítají.</li>
+<li>Instagram, TikTok a Facebook jsou jen odkazy, na našem webu se nenačítají.</li>
 </ul>
 <h2>Správa souhlasů</h2>
 <p>V <strong>Nastavení cookies</strong> (odkaz v patičce každé stránky) můžete kdykoli udělit nebo odvolat souhlas s nepovinnými kategoriemi (analytické, marketingové). Dokud je nepoužíváme, zůstávají vypnuté. Pokud bychom je v budoucnu zavedli, nespustí se bez vašeho souhlasu.</p>`);

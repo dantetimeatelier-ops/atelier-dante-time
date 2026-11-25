@@ -1,6 +1,6 @@
 # Právní dokumenty – kontrola před zveřejněním
 
-**Stav:** ⚖️ NÁVRH 3.1 – rejstřík, DPH a punc ověřeny 25. 11. 2026, čeká na schválení majitele (část 2a)
+**Stav:** ⚖️ NÁVRH 3.2 – závěrečná kontrola 25. 11. 2026 (část 2b), živnostenské oprávnění rozebráno (část 2c), čeká na schválení majitele
 **Připraveno:** 25. 11. 2026
 **Zdroj textů:** `src/legal/cs.mjs` (česky), `src/legal/en.mjs` (anglicky), společné údaje
 `src/legal/common.mjs` a `src/site.mjs` (objekt `OPERATOR`).
@@ -70,17 +70,69 @@ Přehled hlídá obrat neplátce (limit 2 000 000 Kč) a prodej spotřebitelům 
 
 | # | Bod | Riziko | Můj návrh |
 |---|---|---|---|
-| 1 | 🔴 **Chybí řemeslná živnost Hodinářství.** Ta podle živnostenského zákona (příloha 1) zahrnuje výrobu, sestavování, seřizování a opravy hodinek. Web nabízí servis, renovace, přestavby a zakázkové sestavy a e-shop prodává hodinky renovované a sestavené v ateliéru. Volná živnost (maloobchod) kryje **jen prodej**. | podnikání bez oprávnění (pokuta od živnostenského úřadu) | ohlásit Hodinářství na Magistrátu Kladno (doklad: výuční list „hodinář“, nebo jiný doklad o způsobilosti, nebo odpovědný zástupce). Do té doby ověřit na živnostenském úřadu, co smíte nabízet. |
+| 1 | 🔴 **Chybí řemeslná živnost Hodinářství** (řešení v části 2c). Ta podle živnostenského zákona (příloha 1) zahrnuje výrobu, sestavování, seřizování a opravy hodinek. Web nabízí servis, renovace, přestavby a zakázkové sestavy a e-shop prodává hodinky renovované a sestavené v ateliéru. Volná živnost (maloobchod) kryje **jen prodej**. | podnikání bez oprávnění (pokuta od živnostenského úřadu) | ohlásit Hodinářství na Magistrátu Kladno (doklad: výuční list „hodinář“, nebo jiný doklad o způsobilosti, nebo odpovědný zástupce). Do té doby ověřit na živnostenském úřadu, co smíte nabízet. |
 | 2 | **Limit 10 000 € pro prodej do EU (OSS).** Neplátce, který překročí limit u prodeje spotřebitelům do jiných zemí EU, řeší DPH v zemi zákazníka. | doměření DPH | ověřit s účetní; administrace na blížící se limit upozorní |
 | 3 | **Limit obratu 2 000 000 Kč** pro povinnou registraci k DPH | registrace k DPH | administrace upozorní při 80 % |
 | 4 | Text „pozlacené“ / „gold-plated“ – Puncovní úřad toleruje zavedený výraz „pozlacené“; anglické „gold-plated“ je analogie | výklad úřadu | doporučuji krátký dotaz Puncovnímu úřadu (zdarma) |
 | 5 | Funkce „Odstoupit od smlouvy“ (§ 1830a OZ od 1. 1. 2027) – číslo zákona 159/2026 Sb. jen ze sekundárních zdrojů | – | ověřit v e-Sbírce před spuštěním |
 | 6 | Novela „právo na opravu“ (sněmovní tisk 53) | – | po účinnosti upravit reklamační řád |
-| 7 | Platební brána a e-mailová služba – doplnit do GDPR po aktivaci | – | až po vašem výběru |
+| 7 | Platební brána – doplnit do GDPR po aktivaci (Resend už doplněn ve verzi 3.2) | – | až po vašem výběru |
 | 8 | GPSR (bezpečnost výrobků) – u sestav z ateliéru jste výrobce | – | údaje o výrobci vyplňovat u každého kusu |
 | 9 | Pojištění odpovědnosti / převzatých hodinek – nikde neuvádím | – | uvedu po doložení |
 | 10 | Datum účinnosti = den spuštění | – | doplním v den spuštění |
 | 11 | Kontrola dokumentů advokátem (CZ + EN) | – | doporučeno |
+
+## 2b. Závěrečná kontrola 25. 11. 2026 (verze 3.2)
+
+Prošel jsem všech 11 dokumentů v obou jazycích: lhůty, ceny, čísla a odkazy si odpovídají
+(14 dnů, 24 měsíců, 3 dny splatnost, ±30 s/den, záloha 50 %, 30 dnů vyřízení reklamace,
+Zásilkovna 99 Kč, Balíkovna 79 Kč, dobírka 49 Kč). Opravy:
+
+| Dokument | Změna | Důvod |
+|---|---|---|
+| GDPR (CZ + EN) | doplněn **Resend** (odesílání e-mailů) a předání do USA | služba je od 25. 11. 2026 zapojená |
+| GDPR (CZ + EN) | odstraněn GitHub („hosting současné verze webu“) | po spuštění starý web nepoběží; GitHub neobsahuje zákaznická data |
+| GDPR (CZ + EN) | doplněn **spolupracující hodinář** jako příjemce (jen údaje nutné k zakázce) | model s externím hodinářem |
+| Zakázková výroba (CZ + EN) | práce může provést spolupracující hodinář s oprávněním, ateliér za ni odpovídá jako za vlastní (§ 2589 OZ) | zákazník musí vědět, kdo odpovídá |
+| Cookies (CZ + EN) | doplněn Facebook mezi odkazy, které se nenačítají | nová ikona v patičce |
+
+**Ve dni spuštění** se nastaví datum účinnosti a číslo verze `1.0` místo `2026-12-navrh-3`
+(soubor `src/legal/common.mjs`). Bez data účinnosti ostrý web nejde sestavit.
+
+## 2c. Živnostenské oprávnění – rozbor (25. 11. 2026)
+
+**Zdroje:** zákon č. 455/1991 Sb. (§ 2, § 7 odst. 4, § 11, § 21, § 22, příloha 1),
+nařízení vlády č. 278/2008 Sb. (obsahové náplně), zákon č. 634/2004 Sb. (položka 24).
+
+1. **Hodinářství** je řemeslná živnost. Zahrnuje „výrobu, sestavování, seřizování,
+   diagnostiku a opravy … časoměrných přístrojů, montáž, demontáž, údržbu, čištění, mazání…“.
+   Servis, renovace, přestavby i sestavy hodinek do ní spadají.
+2. **Živnost provozuje ten, kdo činnost nabízí a provádí vlastním jménem a na vlastní
+   odpovědnost (§ 2).** Pokud zákazník uzavírá smlouvu s Dante Time, potřebuje oprávnění
+   Dante Time, i když práci fyzicky provede externí hodinář. Jeho vlastní živnostenský list
+   oprávnění Dante Time nenahrazuje.
+3. **Prodej použitého zboží** (vintage hodinky, originální strojky) obor „Velkoobchod a
+   maloobchod“ výslovně **nezahrnuje**. Patří do oboru č. 49 **„Zastavárenská činnost a
+   maloobchod s použitým zbožím“**. Ten v rejstříku také chybí. Doplnění oboru volné
+   živnosti je **bez poplatku**.
+
+**Možná řešení:**
+
+| | Řešení | Co je potřeba | Poplatek | Hodnocení |
+|---|---|---|---|---|
+| **A** | **Ohlásit Hodinářství s externím hodinářem jako odpovědným zástupcem** (§ 11) | hodinář má výuční list hodinář nebo jiný doklad podle § 21/22; písemná smlouva s ním; jeho souhlas a doklady; může být zástupcem nejvýše 4 podnikatelů | 500 Kč (další ohlášení živnosti) | ✅ **doporučuji**: celý web a nabídka zůstávají, jak jsou |
+| B | Ohlásit Hodinářství na vlastní odbornou způsobilost | výuční list, profesní kvalifikace, rekvalifikace + 1 rok praxe, nebo 6 let praxe. Praxe se počítá jen legální: jako OSVČ s oprávněním nebo v zaměstnání (§ 7 odst. 4) | 500 Kč | dlouhodobé řešení, pokud doklady máte |
+| C | Zprostředkování: zákazník uzavírá smlouvu přímo s externím hodinářem, Dante Time zprostředkuje (obor „Zprostředkování obchodu a služeb“ již máte) | přepsat stránky služeb a podmínky zakázek: zhotovitelem, odpovědným za vady, je hodinář; faktura od hodináře | 0 Kč | legální hned, ale oslabuje značku ateliéru |
+| D | Dočasně jen prodej hotových hodinek nakoupených od hodináře; servis a zakázky skrýt | doplnit obor č. 49; skrýt nabídku servisu a zakázek | 0 Kč | nouzové řešení do vyřízení A/B |
+
+**Doporučený postup:** A + doplnit obor č. 49, obojí jedním podáním na Magistrátu města
+Kladna (živnostenský úřad) nebo elektronicky přes Portál občana / Portál podnikatele.
+Oprávnění vzniká **už dnem ohlášení**, jsou-li splněny podmínky (§ 10 odst. 1 písm. a)).
+Úřad provede zápis do 5 pracovních dnů (§ 47 odst. 1). Do ohlášení nespouštět nabídku
+servisu a zakázek jménem Dante Time a prodej použitých hodinek.
+
+> Toto je rozbor podle znění zákonů, ne právní služba. Konkrétní postup doporučuji
+> potvrdit telefonicky na živnostenském úřadě Magistrátu města Kladna.
 
 ## 3. Upozornění
 

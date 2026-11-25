@@ -174,7 +174,7 @@ export const custom = doc('custom', '/en/custom-work', 'Custom Work, Service and
 <tr><td><strong>Rebuild</strong></td><td>modification of the customer’s watch to their specification</td><td>contract for work</td></tr>
 <tr><td><strong>Custom build</strong></td><td>assembly of a watch from the Atelier’s parts to the customer’s specification</td><td>purchase contract for goods to be made</td></tr>
 </tbody></table>
-<p>Jobs are carried out by ${seller(L)} (the “Atelier”).</p>
+<p>Jobs are carried out by ${seller(L)} (the “Atelier”). The Atelier may have specialised watchmaking work performed by a partner watchmaker holding the relevant trade licence. The Atelier is liable for such work as if it had performed it itself.</p>
 <h2>2. Price and approval of work</h2>
 <ol><li>The Atelier sends an offer with the scope of work, price and indicative timing. The contract is concluded by written (e-mail) acceptance.</li><li><strong>The customer must approve the price and any additional work in advance.</strong> The Atelier does not carry out work beyond the approved offer without consent.</li><li>For custom builds and rebuilds, a <strong>50% deposit</strong> is payable before work starts and is credited to the price. The balance is payable before handover.</li><li>${vatText(L)}</li></ol>
 <h2>3. Timing</h2>
@@ -228,9 +228,9 @@ export const privacy = doc('privacy', '/en/privacy', 'Privacy Policy',
 </tbody></table>
 <p>No profiling, automated decision-making or marketing messages.</p>
 <h2>3. Recipients and processors</h2>
-<ul><li><strong>Cloudflare, Inc.</strong> – hosting, database (stored in the EU) and photos,</li><li><strong>Google</strong> – Gmail mailbox,</li><li><strong>GitHub, Inc.</strong> – hosting of the current website version (technical logs),</li><li><strong>Packeta (Zásilkovna s.r.o.)</strong>, <strong>Czech Post (Česká pošta, s.p.)</strong> and other carriers depending on the destination – delivery,</li><li><strong>Česká spořitelna, a.s.</strong> – receipt of payments (as an independent controller),</li><li>the payment gateway and e-mail delivery provider – only once activated (their names will be added here),</li><li>public authorities where required by law.</li></ul>
+<ul><li><strong>Cloudflare, Inc.</strong> – hosting, database (stored in the EU) and photos,</li><li><strong>Google</strong> – Gmail mailbox,</li><li><strong>Resend</strong> – sending e-mails from the website (order confirmations, invoices, replies to enquiries),</li><li><strong>partner watchmaker</strong> – carrying out specialised work on a job (only data necessary for the job),</li><li><strong>Packeta (Zásilkovna s.r.o.)</strong>, <strong>Czech Post (Česká pošta, s.p.)</strong> and other carriers depending on the destination – delivery,</li><li><strong>Česká spořitelna, a.s.</strong> – receipt of payments (as an independent controller),</li><li>the payment gateway provider – only once activated (its name will be added here),</li><li>public authorities where required by law.</li></ul>
 <h2>4. Transfers outside the EU</h2>
-<p>Cloudflare, Google and GitHub may process data in the USA based on the Commission’s adequacy decision (EU–US Data Privacy Framework) or standard contractual clauses.</p>
+<p>Cloudflare, Google and Resend may process data in the USA based on the Commission’s adequacy decision (EU–US Data Privacy Framework) or standard contractual clauses.</p>
 <h2>5. Your rights</h2>
 <p>You have the right of access, rectification, erasure, restriction, portability and to object to processing based on legitimate interest. Contact ${email}; we reply within one month. You may lodge a complaint with the Czech Office for Personal Data Protection (Pplk. Sochora 27, 170 00 Prague 7, <a href="https://uoou.gov.cz" rel="noopener noreferrer">uoou.gov.cz</a>) or the supervisory authority of your country of residence.</p>
 <h2>6. Security</h2>
@@ -247,7 +247,7 @@ export const cookies = doc('cookies', '/en/cookies', 'Cookie Policy',
 <tr><td><code>__Host-dt_admin</code></td><td>necessary</td><td>admin login (operator only)</td><td>30 days</td></tr>
 </tbody></table>
 <h2>Third-party services</h2>
-<ul><li>The <strong>pickup point map</strong> of Packeta or Balíkovna loads only after you click it in the cart; the carrier may use its own technical storage. The map uses your location only with your browser consent.</li><li><strong>Card payment</strong> (once activated) takes place on the payment gateway page with its necessary cookies.</li><li>Instagram and TikTok are plain links and do not load on our website.</li></ul>
+<ul><li>The <strong>pickup point map</strong> of Packeta or Balíkovna loads only after you click it in the cart; the carrier may use its own technical storage. The map uses your location only with your browser consent.</li><li><strong>Card payment</strong> (once activated) takes place on the payment gateway page with its necessary cookies.</li><li>Instagram, TikTok and Facebook are plain links and do not load on our website.</li></ul>
 <h2>Consent management</h2>
 <p>In <strong>Cookie settings</strong> (link in the footer of every page) you can grant or withdraw consent for optional categories (analytics, marketing) at any time. As long as we do not use them, they remain off; if introduced in future, they will not run without your consent.</p>`);
 
