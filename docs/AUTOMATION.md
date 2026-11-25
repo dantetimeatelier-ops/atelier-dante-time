@@ -1,6 +1,6 @@
 # Návrh: automatická údržba webu Dante Time
 
-**Stav:** 🟡 NÁVRH, čeká na schválení majitele
+**Stav:** 🟢 Krok A připraven (pull request #1) · kroky B–D čekají na schválení
 **Datum:** 25. 11. 2026
 **Automatické publikování:** ❌ NEAKTIVNÍ (zapne se až po výslovném schválení, viz krok C)
 
@@ -83,7 +83,9 @@ všechny, agenty i lidi.
 
 1. **Každá změna jde přes pull request**, takže je vidět kdo, co, kdy a proč.
 2. **Každá publikace dostane značku** (tag) `deploy-2026-11-25-1430`.
-3. **Soubor `CHANGELOG.md`** se automaticky doplní srozumitelným popisem změny.
+3. **Historie verzí** (záložka *Releases* na GitHubu) se automaticky doplní
+   seznamem změn. Nahrazuje ruční `CHANGELOG.md`, protože automatika
+   nemusí zapisovat přímo do `main`.
 4. **Návrat zpět je možný dvěma způsoby:**
    - u konkrétní změny tlačítkem **Revert** v pull requestu,
    - celého webu k libovolnému datu ručním spuštěním akce
@@ -136,7 +138,7 @@ Volitelné 💰 (nezapíná se bez souhlasu):
 
 | Krok | Co | Riziko | Schválení |
 |---|---|---|---|
-| **A** | Automatické testy u pull requestů, týdenní přehled, hlídání dostupnosti, `CHANGELOG.md`, akce „Návrat k verzi“ | žádné, nic nepublikuje | 🟡 pull request |
+| **A** ✅ | Automatické testy u pull requestů, týdenní přehled, hlídání dostupnosti, historie verzí, akce „Návrat k verzi“ | žádné, nic nepublikuje | schváleno 25. 11. 2026, PR #1 |
 | **B** | Ochrana větve `main`, `CODEOWNERS`, Strážce úrovní jako povinná kontrola | žádné, jen zpřísní pravidla | 🟡 pull request + **majitel klikne nastavení** (návod připravím) |
 | **C** | **Zapnutí automatického publikování úrovně 1** (`AUTO_MERGE_TIER1=true`) | nízké, chrání ho testy | 🔴 **výslovný souhlas majitele** |
 | **D** | Publikace přes GitHub Actions s testem ostrého webu a automatickým návratem | nízké | 🟡 majitel přepne zdroj Pages v nastavení |
@@ -154,3 +156,37 @@ majitel si v týdenních přehledech ověří, že rozhoduje správně.
 4. V *Settings → Notifications* nechat zapnuté e-maily pro issues,
    aby týdenní přehled chodil e-mailem.
 5. Krok C: schválit zapnutí automatického publikování.
+
+---
+
+## 10. Krok A: co je připraveno (technický přehled)
+
+| Soubor | Co dělá | Kdy běží |
+|---|---|---|
+| `.github/workflows/testy.yml` | kód HTML, nefunkční odkazy, stránky na 3 šířkách, Lighthouse, hesla a klíče | každý pull request, každá změna v `main`, ručně |
+| `.github/workflows/publikace.yml` | značka `deploy-RRRR-MM-DD-HHMM` a záznam v *Releases*; při prvním běhu i značka `v0-puvodni-web` | každá změna v `main` |
+| `.github/workflows/dostupnost.yml` | kontrola webu, při výpadku issue `výpadek`, po obnovení ho uzavře | každou hodinu (:17) |
+| `.github/workflows/tydenni-prehled.yml` | issue „Týdenní přehled“ (změny, čekající PR, dostupnost, Lighthouse, odkazy, doporučení) | pondělí 8:07 (zimní čas) |
+| `.github/workflows/navrat-k-verzi.yml` | připraví pull request s návratem webu ke zvolené verzi | ručně |
+| `.github/dependabot.yml` | týdenní kontrola nových verzí nástrojů (14denní odklad kvůli bezpečnosti) | úterý |
+| `tests/smoke.mjs` | test stránek v prohlížeči (seznam stránek bere ze `sitemap.xml`) | v rámci Testů |
+| `lighthouserc.json`, `.htmlvalidate.json` | limity a pravidla testů | – |
+
+Místní spuštění testů: `npm ci && npm test` (Lighthouse: `npx lhci autorun`).
+
+### Limity testů
+- Výkon ≥ 85 (cíl 90, rezerva kvůli kolísání měření na serverech GitHubu),
+  přístupnost ≥ 95, správné postupy ≥ 90, SEO ≥ 95, stránka ≤ 500 kB.
+
+### Nastavení, které musí udělat majitel (krok A)
+1. **Settings → Actions → General → Workflow permissions:** zaškrtnout
+   *„Allow GitHub Actions to create and approve pull requests“*. Je to
+   potřeba jen pro akci „Návrat k verzi“, která připravuje pull request.
+2. Nic dalšího. Plánované úlohy (dostupnost, týdenní přehled) se spustí
+   samy po sloučení do `main`.
+
+### Známá omezení
+- GitHub **pozastaví plánované úlohy**, když v repozitáři 60 dní nebyl
+  žádný commit. Pak stačí v záložce *Actions* kliknout na *Enable workflow*.
+- Pull requesty vytvořené automatikou (návrat k verzi) nespouští testy
+  samy, proto je akce spouští ručně.

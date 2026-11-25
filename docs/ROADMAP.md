@@ -19,8 +19,8 @@ výslovného souhlasu majitele se neaktivují.
       Add rule → Require a pull request before merging*)
 - [ ] Ověřit, že GitHub Pages publikuje jen z větve `main` a má zapnuté
       „Enforce HTTPS“
-- [ ] Vytvořit tag `v0-puvodni-web`, zálohu současného stavu, ke které
-      se lze kdykoli vrátit
+- [x] Vytvořit tag `v0-puvodni-web`, zálohu současného stavu, ke které
+      se lze kdykoli vrátit (vytvoří ho automaticky akce „Záznam verze“ při sloučení PR #1)
 
 ## Fáze 0b: Automatická údržba *(návrh čeká na schválení)*
 
@@ -28,7 +28,7 @@ Podrobnosti: [`docs/AUTOMATION.md`](AUTOMATION.md)
 
 - [x] Návrh řešení, nákladů a bezpečnosti
 - [x] Tři úrovně oprávnění zapsané v `AGENTS.md`
-- [ ] Krok A: automatické testy, týdenní přehled, hlídání dostupnosti, návrat k verzi
+- [x] Krok A: automatické testy, týdenní přehled, hlídání dostupnosti, návrat k verzi (PR #1)
 - [ ] Krok B: ochrana `main`, `CODEOWNERS`, Strážce úrovní
 - [ ] Krok C 🔴: zapnutí automatického publikování úrovně 1 (**výslovný souhlas majitele**)
 - [ ] Krok D: publikace přes Actions s automatickým návratem
