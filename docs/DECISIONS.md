@@ -109,3 +109,6 @@ a produkty zůstávají beze změny.
 **Technicky:** přepínač `SERVICES_OFFERED` v `src/site.mjs` (false). Po zápisu oprávnění
 ho agent na pokyn majitele přepne na true a stránka Služby, poptávka servisu a podmínky
 zakázkové výroby se vrátí.
+**Změna týž den (majitel):** „Ne, vše nech, vše nabízíme.“ Web nabízí i servis, renovace
+a zakázky (`SERVICES_OFFERED = true`). Odpovědnost za živnostenské oprávnění nese majitel,
+bod L1 zůstává otevřený.

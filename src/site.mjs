@@ -14,10 +14,10 @@ export const SITE = {
 };
 
 // Nabídka servisu, renovací a zakázek pro zákazníky (otevřený právní bod L1, docs/LEGAL-REVIEW.md 2e).
-// false = web nabízí jen prodej hotových hodinek (pokryto současným živnostenským oprávněním).
+// true = majitel rozhodl nabízet vše (R15, doplněno 25. 11. 2026); false = jen prodej hotových hodinek.
 // Po zápisu živnosti Hodinářství majitel řekne a agent přepne na true: vrátí se stránka Služby,
 // poptávka servisu a podmínky zakázkové výroby (texty zůstávají připravené v kódu).
-export const SERVICES_OFFERED = false;
+export const SERVICES_OFFERED = true;
 
 // Údaje provozovatele (sdělil majitel 25. 11. 2026).
 // Hodnota null = zatím neověřeno → na webu „[DOPLNIT/OVĚŘIT: …]“ a ostrý režim nejde sestavit.

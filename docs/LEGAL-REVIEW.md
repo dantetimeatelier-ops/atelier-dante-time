@@ -183,10 +183,10 @@ proto je vždy zprostředkovat.
 | **Stav** | otevřeno, **na odpovědnosti majitele** (R15, 25. 11. 2026) |
 | **Co chybí** | živnost Hodinářství (servis, opravy, sestavování hodinek) a obor č. 49 „maloobchod s použitým zbožím“ (prodej vintage hodinek a originálních strojků) |
 | **Řeší** | majitel osobně (absolvovaný hodinářský kurz; doklady posoudí živnostenský úřad) |
-| **Dočasné nastavení webu** | `SERVICES_OFFERED = false`: web nabízí jen prodej hotových hodinek. Stránka Služby, poptávka servisu a podmínky zakázkové výroby nejsou zveřejněné, staré adresy se dočasně přesměrují (302) |
+| **Nastavení webu** | majitel rozhodl **nabízet vše** (`SERVICES_OFFERED = true`): prodej, servis, renovace i zakázky. Riziko nese majitel. Přepínačem lze služby kdykoli skrýt |
 | **Dokumenty** | bez zmínek o externích hodinářích; zakázky, servis a renovace v dokumentech jen při `SERVICES_OFFERED = true` |
 | **Upozornění agenta** | prodej použitých hodinek pokrývá až obor č. 49 (doplnění zdarma). Popisy hodinek uvádějí, že strojek prošel servisem v ateliéru: to je pravdivé, ale odpovídá to činnosti Hodinářství |
-| **Uzavření** | majitel pošle výpis z rejstříku → agent ověří v RŽP, přepne `SERVICES_OFFERED` a zapíše uzavření |
+| **Uzavření** | majitel pošle výpis z rejstříku → agent ověří v RŽP a zapíše uzavření |
 
 Části 2c a 2d (odpovědný zástupce, § 34) jsou rozbor možností. Majitel je **neuplatnil**.
 

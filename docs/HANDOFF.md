@@ -9,7 +9,7 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 a podmínek zakázek; přesměrování starých adres (302); dokumenty bez zmínek o externích
 hodinářích; testy hlídají, že se služby nenabízejí. Otevřený právní bod L1 (LEGAL-REVIEW 2e).
 **Další krok:** schválení dokumentů, doména etapy A–C, spuštění. Pak Dante Time OS.
-**Pozor na:** služby zapnout jen na výslovný pokyn majitele po zápisu oprávnění.
+**Změna:** majitel týž den rozhodl nabízet vše → `SERVICES_OFFERED = true` (riziko L1 nese majitel).
 
 ---
 
