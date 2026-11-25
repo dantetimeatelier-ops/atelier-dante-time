@@ -1,0 +1,28 @@
+# Každý týden zkontroluje nové verze nástrojů a připraví pull request.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: tuesday
+    labels: [závislosti]
+    commit-message:
+      prefix: "Aktualizace akcí"
+    groups:
+      akce:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: tuesday
+    labels: [závislosti]
+    commit-message:
+      prefix: "Aktualizace nástrojů"
+    groups:
+      testovaci-nastroje:
+        patterns: ["*"]
+    cooldown:
+      default-days: 14
