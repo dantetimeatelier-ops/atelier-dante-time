@@ -26,8 +26,8 @@ výslovného souhlasu majitele se neaktivují.
 
 Cíl: rychlejší a lépe dohledatelný web, beze změny vzhledu a textů podmínek.
 
-- [ ] Optimalizace obrázků (WebP, správné rozměry, `loading="lazy"`)
-- [ ] Skutečný favicon a ikony pro mobil
+- [x] Optimalizace obrázků (WebP, správné rozměry, `loading="lazy"`)
+- [x] Skutečný favicon a ikony pro mobil
 - [ ] `robots.txt`, `sitemap.xml`, `canonical`, OG značky všude
 - [ ] Stránka 404 ve stylu značky
 - [ ] Propojení `privacy.html` a `reklamace.html` z patičky a sjednocení vzhledu
