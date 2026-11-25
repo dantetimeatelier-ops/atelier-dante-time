@@ -16,8 +16,8 @@ porovnáním). Lighthouse viz `docs/ROADMAP.md`.
 **Další krok:** čeká se na schválení majitele a pull request do `main`.
 Pak fáze 2 (Astro) po rozhodnutí R1.
 **Pozor na:** `about.html` nemá patičku vůbec (původní stav, neměněno).
-`privacy.html` a `reklamace.html` obsahují veřejně viditelné interní
-poznámky („Poznámka: Až budeš řešit e-shop…“). Úprava je ⚖️ a čeká na majitele.
+Interní poznámky z `privacy.html` a `reklamace.html` byly se souhlasem
+majitele odstraněny. Úkoly z nich jsou ve fázi 5 v `docs/ROADMAP.md`.
 Při přidání stránky ji doplň do `sitemap.xml`.
 
 ---

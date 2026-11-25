@@ -89,6 +89,7 @@ Cíl: majitel sám přidává hodinky, fotky, ceny a dostupnost.
 - [ ] Potvrzovací e-mail zákazníkovi a upozornění majiteli
 - [ ] Přehled objednávek v administraci
 - [ ] Ochrana proti spamu ve formulářích
+- [ ] ⚖️ Doplnit do `reklamace.html` přesnou reklamační lhůtu a formulace pro prodej hotových kusů (prodej vs. služba), **připraví majitel nebo právník**
 - [ ] Aktualizace `privacy.html` (GDPR) a cookie lišty (**připraví majitel
       nebo právník**, agent jen navrhne strukturu)
 
