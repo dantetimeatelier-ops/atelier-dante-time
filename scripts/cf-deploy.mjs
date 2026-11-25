@@ -38,7 +38,8 @@ for (const k of ['CLOUDFLARE_API_TOKEN', 'ADMIN_SETUP_TOKEN']) process.env[k] = 
   else {
     // Záloha: zjistit Account ID přímo z Cloudflare podle tokenu (token smí jen do jednoho účtu)
     // Bezpečný popis tvaru hodnoty (bez prozrazení obsahu)
-    const shape = raw.replace(/[a-f0-9]/gi, 'x').replace(/[g-z]/gi, 'a').replace(/[^xa\-\/:. ]/g, '?').replace(/(x+|a+)/g, (x) => `${x[0]}{${x.length}}`).slice(0, 80);
+    const shape = [...raw].map((c) => (/[0-9a-f]/i.test(c) ? 'h' : /[a-z]/i.test(c) ? 'p' : /[-/:. _]/.test(c) ? c : '?')).join('').replace(/(h+|p+)/g, (x) => `${x[0]}${x.length}`).slice(0, 80);
+    if (/^cf[a-z]{2}_/i.test(raw)) console.log('Pozor: hodnota v CLOUDFLARE_ACCOUNT_ID vypadá jako API token, ne jako Account ID.');
     console.log(`Uložené Account ID není platné (délka ${raw.length}, tvar ${shape}) – zjišťuji ho z Cloudflare podle tokenu.`);
     const r = await fetch('https://api.cloudflare.com/client/v4/accounts', { headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` } });
     const j = await r.json().catch(() => ({}));
