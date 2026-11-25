@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#070707">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dante Admin">
+<title>Administrace – Dante Time</title>
+<link rel="manifest" href="/admin/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="icon" href="/favicon.ico">
+<link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+<header class="top"><span class="logo">Dante Time</span><span class="mode" id="mode"></span><button class="link" id="logout" hidden>Odhlásit</button></header>
+<main id="app" aria-live="polite"><p class="muted center">Načítám…</p></main>
+<nav class="tabs" id="tabs" hidden>
+  <a href="#/">Přehled</a>
+  <a href="#/hodinky">Hodinky</a>
+  <a href="#/objednavky">Objednávky</a>
+  <a href="#/zakazky">Zakázky</a>
+  <a href="#/vice">Více</a>
+</nav>
+<div class="toast" id="toast" role="status" hidden></div>
+<script src="/admin/admin.js" defer></script>
+</body>
+</html>

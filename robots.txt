@@ -1,7 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /assets/
-Disallow: /tools/
-Disallow: /docs/
-
-Sitemap: https://atelier-dante-time.cz/sitemap.xml
