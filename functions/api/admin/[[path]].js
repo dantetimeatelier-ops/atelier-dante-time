@@ -23,9 +23,10 @@ async function setupAllowed(env, token) {
   if (n > 0) throw new HttpError('Administrace už je nastavena', 403);
   // Instalační kód: buď tajná proměnná Cloudflare, nebo jeho otisk (SHA-256) uložený automatikou v databázi
   const t = String(token || '');
-  const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'admin_setup_hash'").first().catch(() => null);
+  const { results: rows = [] } = await env.DB.prepare("SELECT value FROM settings WHERE key IN ('admin_setup_hash', 'admin_setup_hash_alt') AND value IS NOT NULL").all().catch(() => ({ results: [] }));
   const byEnv = env.ADMIN_SETUP_TOKEN && env.ADMIN_SETUP_TOKEN.length >= 24 && timingSafeEqual(env.ADMIN_SETUP_TOKEN, t);
-  const byHash = row?.value && t.length >= 24 && timingSafeEqual(row.value, await sha256Hex(t));
+  const th = t.length >= 24 ? await sha256Hex(t) : null;
+  const byHash = th != null && rows.some((r) => timingSafeEqual(r.value, th));
   if (!byEnv && !byHash) throw new HttpError('Neplatný instalační kód', 403);
 }
 route('GET', 'setup', async ({ env }) => {

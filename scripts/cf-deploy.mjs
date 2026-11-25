@@ -117,6 +117,13 @@ const hash = createHash('sha256').update(process.env.ADMIN_SETUP_TOKEN).digest('
 const sqlFile = path.join(scratch, 'setup.sql');
 writeFileSync(sqlFile, `UPDATE settings SET value = '${hash}', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE key = 'admin_setup_hash' AND NOT EXISTS (SELECT 1 FROM admin_users);\n`);
 run(['d1', 'execute', names.d1, '--remote', '--file', sqlFile, ...(env ? ['--env', env] : [])], { capture: true });
+// Jen zkušební verze: náhradní instalační kód předaný majiteli (v kódu je jen jeho otisk SHA-256).
+// Platí jen do vytvoření prvního účtu, ostrý web ho nepoužívá.
+if (!production) {
+  const ALT = '543be257db315bd39d06eb137288c0ddf73da0928035d84b58292aefe13aa281';
+  writeFileSync(sqlFile, `INSERT INTO settings (key, value) SELECT 'admin_setup_hash_alt', '${ALT}' WHERE NOT EXISTS (SELECT 1 FROM admin_users) ON CONFLICT(key) DO UPDATE SET value = excluded.value;\n`);
+  run(['d1', 'execute', names.d1, '--remote', '--file', sqlFile, '--env', env], { capture: true });
+}
 console.log('uloženo');
 
 // 7) Ukázková data – jen zkušební verze
