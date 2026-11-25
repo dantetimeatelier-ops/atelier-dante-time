@@ -134,6 +134,18 @@ integraci v testovacím režimu a ostrý provoz zapne až po souhlasu.
 
 ---
 
+## Etapa „Dokončení prodejní platformy“ (zadání majitele 25. 11. 2026)
+Začíná po zveřejnění všech šesti produktových inzerátů. Změny vyžadující podklady
+nebo schválení majitele se nejprve konzultují.
+
+- [ ] 0. Šest skutečných inzerátů hodinek (1/6 hotovo: PRIM – bílý ciferník, nerez a safír)
+- [ ] 1. Nová úvodní fotografie (podklad od majitele), úprava pro počítač, tablet i mobil
+- [ ] 2. Vyčištění e-shopu: odstranit ukázkové produkty, ponechat šest skutečných, kontrola fotek, cen, popisů a dostupnosti
+- [ ] 3. Sociální sítě: elegantní ikony Instagram, TikTok, Facebook v horní liště a patičce, návrh další decentní propagace (podklad: odkaz na Facebook)
+- [ ] 4. Společná kontrola dokumentů: obchodní podmínky, GDPR, reklamační řád, odstoupení, doprava a platba
+- [ ] 5. Faktura ve vizuálním stylu podle vzoru majitele, se zákonnými náležitostmi, maximálně automatické vystavování z objednávek
+- [ ] 6. Závěrečná kontrola webu, e-shopu, objednávek, odkazů a mobilního zobrazení
+
 ## Rozhodnutí, která čekají na majitele
 
 | ID | Otázka | Možnosti | Doporučení agenta |
