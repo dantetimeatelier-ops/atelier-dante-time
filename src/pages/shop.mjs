@@ -20,7 +20,7 @@ export function cart(lang) {
   <form data-cart-form hidden class="split" novalidate>
     <div class="form">
       <div class="cart-items" data-cart-items></div>
-      <fieldset><legend>${L('Země doručení a měna', 'Delivery country & currency')}</legend>
+      <fieldset><legend>${L('Země doručení a měna', 'Delivery country and currency')}</legend>
         <div class="row">
           <label>${L('Země doručení', 'Delivery country')}<select name="country" data-country autocomplete="country">${sortedCountries(lang).map((c) => `<option value="${c}"${c === 'CZ' ? ' selected' : ''}>${countryName(c, lang)}</option>`).join('')}</select></label>
           <label>${L('Měna platby', 'Payment currency')}<select name="currency" data-currency><option value="CZK">CZK (Kč)</option></select></label>

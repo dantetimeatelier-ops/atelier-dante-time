@@ -8,7 +8,7 @@ import { OPERATOR, SITE } from '../src/site.mjs';
 import { SHIPPING, PAYMENT, METAL, formatCzk } from '../src/shop/format.mjs';
 import { isValidIban } from '../src/shop/spd.mjs';
 import { EU_COUNTRIES, countryName, czkToEurCents, formatEur } from '../src/shop/eu.mjs';
-import { terms, withdrawal, LEGAL_VERSION } from '../src/legal/docs.mjs';
+import { legalDoc, LEGAL_VERSION } from '../src/legal/docs.mjs';
 import { productName } from '../src/shop/describe.mjs';
 import { createCardPayment, cardPaymentsAvailable } from './payments.js';
 
@@ -125,11 +125,11 @@ export async function createOrder(env, body, origin) {
     env.DB.prepare(`INSERT INTO orders (id, number, public_token, status, mode, customer_id, email, name, phone,
       billing_street, billing_city, billing_zip, company, company_ico, company_dic, shipping_method, pickup_point_id, pickup_point_name,
       payment_method, items_total, shipping_price, total, variable_symbol, customer_note, terms_version, terms_accepted_at, reserved_until, cod_fee,
-      billing_country, pay_currency, pay_amount_cents, eur_rate)
-      VALUES (?, ?, ?, 'awaiting_payment', ?, (SELECT id FROM customers WHERE email = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      billing_country, pay_currency, pay_amount_cents, eur_rate, lang)
+      VALUES (?, ?, ?, 'awaiting_payment', ?, (SELECT id FROM customers WHERE email = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(orderId, number, token, m, customer.email, customer.email, customer.name, customer.phone, customer.street, customer.city, customer.zip,
         customer.company, customer.ico, customer.dic, ship.id, pickupId, pickupName, pay.id, itemsTotal, ship.price, total, vs, customer.note,
-        s.terms_version || LEGAL_VERSION, t, reservedUntil, codFee, country, currency, payCents, currency === 'EUR' ? cfg.eurRate : null),
+        LEGAL_VERSION, t, reservedUntil, codFee, country, currency, payCents, currency === 'EUR' ? cfg.eurRate : null, lang),
   ];
   for (const p of products) {
     stmts.push(env.DB.prepare(`UPDATE products SET status='reserved', reserved_order_id=?, reserved_until=?, updated_at=? WHERE id=? AND status='available'`).bind(orderId, reservedUntil, t, p.id));
@@ -160,6 +160,18 @@ export async function createOrder(env, body, origin) {
   return { number, token, redirect };
 }
 
+// Obchodní podmínky a poučení o odstoupení v jazyce, ve kterém zákazník objednal (smlouvu lze uzavřít česky i anglicky)
+function legalAttachment(order) {
+  const en = order.lang === 'en';
+  const terms = legalDoc('terms', en ? 'en' : 'cs');
+  const withdrawal = legalDoc('withdrawal', en ? 'en' : 'cs');
+  const h = (t) => `<h2 style="font-family:Georgia,serif;font-weight:normal;font-size:18px">${t}</h2>`;
+  return `${h(en ? `General Terms and Conditions (version ${order.terms_version})` : `Obchodní podmínky (verze ${order.terms_version})`)}
+<div style="font-size:12px;color:#444">${terms.body()}</div>
+${h(en ? 'Withdrawal information and model form' : 'Poučení o odstoupení od smlouvy')}
+<div style="font-size:12px;color:#444">${withdrawal.body()}</div>`;
+}
+
 async function orderEmails(env, order, items, origin) {
   const rows = items.map((i) => `<tr><td style="padding:6px 0">${i.title}</td><td style="text-align:right">${formatCzk(i.price_czk)}</td></tr>`).join('');
   const table = `<table style="width:100%;border-collapse:collapse">${rows}
@@ -179,10 +191,7 @@ ${table}
 <p><a href="${link}" style="display:inline-block;background:#c8a24a;color:#000;padding:10px 18px;border-radius:999px;text-decoration:none">Zobrazit objednávku</a></p>
 <p style="font-size:13px;color:#555">Od kupní smlouvy můžete jako spotřebitel odstoupit do 14 dnů od převzetí hodinek, např. pomocí funkce <a href="${origin}/odstoupeni">Odstoupit od smlouvy</a>.</p>
 <hr style="border:none;border-top:1px solid #ddd;margin:24px 0">
-<h2 style="font-family:Georgia,serif;font-weight:normal;font-size:18px">Obchodní podmínky (verze ${order.terms_version})</h2>
-<div style="font-size:12px;color:#444">${terms.body()}</div>
-<h2 style="font-family:Georgia,serif;font-weight:normal;font-size:18px">Poučení o odstoupení od smlouvy</h2>
-<div style="font-size:12px;color:#444">${withdrawal.body()}</div>`,
+${legalAttachment(order)}`,
   });
   await sendEmail(env, {
     to: ownerEmail(env),

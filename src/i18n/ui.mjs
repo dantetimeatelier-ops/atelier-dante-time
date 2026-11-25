@@ -26,7 +26,6 @@ export const UI = {
     footer_cookies: 'Cookies',
     footer_operator: 'Provozovatel',
     footer_rights: 'Všechna práva vyhrazena.',
-    legal_cz_only: '',
   },
   en: {
     skip: 'Skip to content',
@@ -54,6 +53,5 @@ export const UI = {
     footer_cookies: 'Cookies',
     footer_operator: 'Legal notice',
     footer_rights: 'All rights reserved.',
-    legal_cz_only: ' (CZ)',
   },
 };

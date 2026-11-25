@@ -1,6 +1,6 @@
 // Sdílený vzhled všech stránek: <head>, hlavička, patička.
 // Používá ho generátor statických stránek i serverové funkce (katalog).
-import { SITE, PAGES } from './site.mjs';
+import { SITE, PAGES, INDEPENDENCE } from './site.mjs';
 import { UI } from './i18n/ui.mjs';
 
 export const esc = (s) => String(s ?? '')
@@ -57,7 +57,9 @@ export function layout(o) {
   const switchHref = o.alternate || PAGES.home[other];
   const year = new Date().getFullYear();
   const L = (cs, en) => (lang === 'cs' ? cs : en);
-  const legalHref = (p) => p; // právní dokumenty jsou zatím jen česky
+  // Cesty právních dokumentů v obou jazycích (shodné se src/legal/cs.mjs a en.mjs)
+  const LEGAL = { '/doprava-a-platba': '/en/shipping-payment', '/terms': '/en/terms', '/returns': '/en/withdrawal', '/reklamace': '/en/complaints', '/warranty': '/en/warranty', '/zakazkova-vyroba': '/en/custom-work', '/privacy': '/en/privacy', '/cookies': '/en/cookies', '/provozovatel': '/en/legal-notice', '/reseni-sporu': '/en/dispute-resolution', '/prodej-do-eu': '/en/eu-sales' };
+  const legalHref = (p) => (lang === 'en' ? LEGAL[p] : p);
 
   return tidy(`<!doctype html>
 <html lang="${lang}">
@@ -132,26 +134,30 @@ ${o.body}
     <div>
       <h2>${esc(t.footer_shopping)}</h2>
       <ul>
-        <li><a href="${legalHref('/doprava-a-platba')}">${esc(t.footer_shipping + t.legal_cz_only)}</a></li>
-        <li><a href="${legalHref('/terms')}">${esc(t.footer_terms + t.legal_cz_only)}</a></li>
-        <li><a href="${legalHref('/returns')}">${esc(t.footer_withdrawal + t.legal_cz_only)}</a></li>
-        <li><a href="${legalHref('/reklamace')}">${esc(t.footer_claims + t.legal_cz_only)}</a></li>
-        <li><a href="${legalHref('/warranty')}">${esc(t.footer_warranty + t.legal_cz_only)}</a></li>
-        <li><a href="${legalHref('/zakazkova-vyroba')}">${esc(t.footer_custom + t.legal_cz_only)}</a></li>
+        <li><a href="${legalHref('/doprava-a-platba')}">${esc(t.footer_shipping)}</a></li>
+        <li><a href="${legalHref('/terms')}">${esc(t.footer_terms)}</a></li>
+        <li><a href="${legalHref('/returns')}">${esc(t.footer_withdrawal)}</a></li>
+        <li><a href="${legalHref('/reklamace')}">${esc(t.footer_claims)}</a></li>
+        <li><a href="${legalHref('/warranty')}">${esc(t.footer_warranty)}</a></li>
+        <li><a href="${legalHref('/zakazkova-vyroba')}">${esc(t.footer_custom)}</a></li>
       </ul>
     </div>
     <div>
       <h2>${esc(t.footer_legal)}</h2>
       <ul>
-        <li><a href="${legalHref('/privacy')}">${esc(t.footer_privacy + t.legal_cz_only)}</a></li>
-        <li><a href="${legalHref('/cookies')}">${esc(t.footer_cookies + t.legal_cz_only)}</a></li>
-        <li><a href="${legalHref('/provozovatel')}">${esc(t.footer_operator + t.legal_cz_only)}</a></li>
+        <li><a href="${legalHref('/privacy')}">${esc(t.footer_privacy)}</a></li>
+        <li><a href="${legalHref('/cookies')}">${esc(t.footer_cookies)}</a></li>
+        <li><a href="${legalHref('/provozovatel')}">${esc(t.footer_operator)}</a></li>
+        <li><a href="${legalHref('/reseni-sporu')}">${L('Řešení sporů', 'Dispute resolution')}</a></li>
+        <li><a href="${legalHref('/prodej-do-eu')}">${L('Prodej do zemí EU', 'Sales to EU countries')}</a></li>
+        <li><button type="button" class="linklike" data-consent-open>${L('Nastavení cookies', 'Cookie settings')}</button></li>
       </ul>
     </div>
   </div>
-  <div class="wrap footer-bottom">© ${year} ${SITE.name}. ${esc(t.footer_rights)}</div>
+  <div class="wrap footer-bottom">© ${year} ${SITE.name}. ${esc(t.footer_rights)}<br><span class="footer-note">${esc(INDEPENDENCE[lang])}</span></div>
 </footer>
 <script src="/assets/site.js" defer></script>
+<script src="/assets/consent.js" defer></script>
 ${(o.scripts || []).map((s) => `<script src="${s}" defer></script>`).join('\n')}
 </body>
 </html>

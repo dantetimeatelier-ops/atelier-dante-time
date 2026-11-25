@@ -7,6 +7,9 @@ const join = (parts, sep = ', ') => parts.filter((x) => typeof x === 'string' &&
 
 import { KIND, METAL, PRECIOUS } from './format.mjs';
 
+export const AUTH_PARTS = { strojek: { cs: 'strojek', en: 'movement' }, cifernik: { cs: 'ciferník', en: 'dial' }, rucicky: { cs: 'ručičky', en: 'hands' } };
+export const authenticityParts = (p) => String(p.authenticity_parts || '').split(',').filter((x) => AUTH_PARTS[x]);
+
 const MOVEMENT = {
   manual: { cs: 'ručním nátahem', en: 'manual winding', csAdj: 'ruční nátah', enAdj: 'hand-wound' },
   automatic: { cs: 'automatickým nátahem', en: 'automatic winding', csAdj: 'automatický nátah', enAdj: 'automatic' },
@@ -42,8 +45,10 @@ export function describe(p) {
 
   if (has(p.service_done)) { cs.push(`Provedené práce v ateliéru: ${p.service_done}.`); en.push(`Work carried out in the atelier: ${p.service_done}.`); }
   if (has(p.condition)) { cs.push(`Stav: ${p.condition}.`); en.push(`Condition: ${p.condition}.`); }
-  if (has(p.original_parts)) { cs.push(`Deklarované originální díly: ${p.original_parts}. Na jejich pravost se vztahuje doživotní garance pravosti Atelier Dante Time.`); en.push(`Declared original parts: ${p.original_parts}. Covered by the Atelier Dante Time lifetime authenticity guarantee.`); }
-  if (has(p.replaced_parts)) { cs.push(`Vyměněné nebo neoriginální díly: ${p.replaced_parts}.`); en.push(`Replaced or non-original parts: ${p.replaced_parts}.`); }
+  if (has(p.original_parts)) { cs.push(`Původní originální součásti: ${p.original_parts}.`); en.push(`Original components: ${p.original_parts}.`); }
+  const ap = authenticityParts(p);
+  if (ap.length) { cs.push(`Doživotní garance pravosti se vztahuje na deklarované originální součásti: ${ap.map((x) => AUTH_PARTS[x].cs).join(', ')}.`); en.push(`The lifetime authenticity guarantee covers the declared original ${ap.map((x) => AUTH_PARTS[x].en).join(', ')}.`); }
+  if (has(p.replaced_parts)) { cs.push(`Nové součásti použité při přestavbě Dante Time / vyměněné díly: ${p.replaced_parts}.`); en.push(`New components used in the Dante Time rebuild / replaced parts: ${p.replaced_parts}.`); }
   if (has(p.water_resistance)) { cs.push(`Vodotěsnost: ${p.water_resistance}.`); en.push(`Water resistance: ${p.water_resistance}.`); }
   else { cs.push('Hodinky nejsou určeny ke kontaktu s vodou.'); en.push('The watch is not intended for contact with water.'); }
   if (has(p.accessories)) { cs.push(`Příslušenství: ${p.accessories}.`); en.push(`Accessories: ${p.accessories}.`); }

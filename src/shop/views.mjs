@@ -2,7 +2,8 @@
 import { esc, hero } from '../layout.mjs';
 import { PAGES, SITE } from '../site.mjs';
 import { formatCzk, STATUS, KIND, METAL } from './format.mjs';
-import { productName, productJsonLd } from './describe.mjs';
+import { productName, productJsonLd, authenticityParts, AUTH_PARTS } from './describe.mjs';
+import { INDEPENDENCE } from '../site.mjs';
 import { inquiryForm } from '../pages/marketing.mjs';
 
 const T = (lang, cs, en) => (lang === 'cs' ? cs : en);
@@ -89,8 +90,9 @@ export function productPage({ p, images, lang, mode, origin }) {
       <div style="margin:18px 0">${action}</div>
       <ul class="list-dots" style="font-size:14px">
         <li>${L('Unikátní kus – existuje jen jednou', 'Unique piece – exists only once')}</li>
-        <li>${L('Doživotní garance pravosti deklarovaných originálních dílů', 'Lifetime authenticity guarantee on declared original parts')} (<a href="/warranty">${L('podmínky', 'terms (CZ)')}</a>)</li>
-        <li>${L('Práva z vadného plnění 24 měsíců a 14 dní na odstoupení od smlouvy podle zákona', 'Statutory 24-month liability for defects and 14-day right of withdrawal')}</li>
+        <li>${L('Doživotní garance pravosti deklarovaných originálních strojků, ciferníků a ručiček', 'Lifetime authenticity guarantee on declared original movements, dials and hands')} (<a href="${lang === 'cs' ? '/warranty' : '/en/warranty'}">${L('podmínky', 'terms')}</a>)</li>
+        <li>${L('Záruka 24 měsíců a 14 dní na odstoupení od smlouvy u nákupu na dálku', '24-month warranty and 14-day right of withdrawal for distance purchases')}</li>
+        <li>${L('Doručení do celé EU, platba v CZK nebo EUR', 'Delivery across the EU, payment in CZK or EUR')}</li>
       </ul>
     </div>
   </div>
@@ -107,11 +109,12 @@ export function productPage({ p, images, lang, mode, origin }) {
         ${row(L('Druh', 'Type'), KIND[p.kind || 'original']?.[lang])}${row(L('Pouzdro', 'Case'), METAL[p.case_metal]?.[lang])}${row(L('Ryzost a punc', 'Fineness & hallmark'), p.hallmark)}${row(L('Pozlacení', 'Plating'), p.plating)}${row(L('Materiál pouzdra – detail', 'Case material – detail'), p.case_material)}${row(L('Průměr pouzdra', 'Case diameter'), p.case_diameter_mm && `${p.case_diameter_mm} mm`)}${row(L('Šířka uchycení', 'Lug width'), p.lug_width_mm && `${p.lug_width_mm} mm`)}
         ${row(L('Ciferník', 'Dial'), p.dial)}${row(L('Sklíčko', 'Crystal'), p.crystal)}${row(L('Řemínek', 'Strap'), p.strap)}${row(L('Vodotěsnost', 'Water resistance'), p.water_resistance || L('není určeno do vody', 'not intended for water'))}
         ${row(L('Stav', 'Condition'), p.condition)}${row(L('Provedené práce', 'Work carried out'), p.service_done)}
-        ${row(L('Originální díly (doživotní garance pravosti)', 'Original parts (lifetime authenticity guarantee)'), p.original_parts)}${row(L('Ověření originality', 'Authenticity check'), p.authenticity_note)}${row(L('Vyměněné díly', 'Replaced parts'), p.replaced_parts)}${row(L('Příslušenství', 'Accessories'), p.accessories)}
+        ${row(L('Původní originální součásti', 'Original components'), p.original_parts)}${row(L('Doživotní garance pravosti', 'Lifetime authenticity guarantee'), authenticityParts(p).map((x) => AUTH_PARTS[x][lang]).join(', '))}${row(L('Ověření originality', 'Authenticity check'), p.authenticity_note)}${row(L('Nové součásti z přestavby Dante Time / vyměněné díly', 'New components from the Dante Time rebuild / replaced parts'), p.replaced_parts)}${row(L('Hmotnost drahého kovu', 'Precious metal weight'), p.precious_weight_g && `${p.precious_weight_g} g`)}${row(L('Příslušenství', 'Accessories'), p.accessories)}
       </tbody></table>
       ${p.manufacturer_info || p.safety_info ? `<h3 style="margin-top:20px">${L('Informace o výrobku', 'Product information')}</h3>${p.manufacturer_info ? `<p style="font-size:14px">${L('Výrobce', 'Manufacturer')}: ${esc(p.manufacturer_info)}</p>` : ''}${p.safety_info ? `<p style="font-size:14px">${esc(p.safety_info)}</p>` : ''}` : ''}
     </div>
   </div>
+  <p class="doc-meta" style="margin-top:18px">${INDEPENDENCE[lang]}</p>
   <div class="card" id="zajem" style="margin-top:28px">
     <h2>${L('Dotaz k těmto hodinkám', 'Ask about this watch')}</h2>
     ${inquiryForm(lang, 'product', p.id)}

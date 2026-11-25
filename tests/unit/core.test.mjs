@@ -20,7 +20,7 @@ test('IBAN a QR platba (SPD)', () => {
 });
 
 test('automatický popis nic nevymýšlí', () => {
-  const d = describe({ brand: 'PRIM', model: 'Sport', year: '1968', movement_type: 'manual', original_parts: 'strojek, ciferník' });
+  const d = describe({ brand: 'PRIM', model: 'Sport', year: '1968', movement_type: 'manual', original_parts: 'strojek, ciferník', authenticity_parts: 'strojek,cifernik' });
   assert.match(d.description_cs, /PRIM Sport z roku 1968/);
   assert.match(d.description_cs, /ručním nátahem/);
   assert.match(d.description_cs, /garance pravosti/);
@@ -92,11 +92,23 @@ test('rezervace: kus nelze prodat dvakrát ani při souběhu (SQL na SQLite)', (
   assert.equal(db.prepare("SELECT reserved_order_id AS r FROM products WHERE id='p1'").get().r, 'A');
 });
 
-test('právní dokumenty: obsahují povinné náležitosti', () => {
-  const all = ALL_LEGAL.map((d) => d.body()).join('\n');
-  for (const must of ['14 dnů', '24 měsíců', 'Odstoupit od smlouvy', 'adr.coi.cz', 'Úřad pro ochranu osobních údajů', 'nařízení vlády č. 363/2013 Sb.', '§ 1837', 'garanc', 'Objednávka zavazující k platbě', '§ 89 odst. 3', 'každého dalšího majitele', 'identifikace hodinek', 'vrácení kupní ceny', 'puncovní značk', 'Pozlacená', 'na dobírku', 'nemá vliv na vaše zákonná práva']) {
+test('právní dokumenty: obsahují povinné náležitosti (CZ)', () => {
+  const all = ALL_LEGAL.filter((d) => d.lang === 'cs').map((d) => d.body()).join('\n');
+  for (const must of ['14 dnů', '24 měsíců', 'Odstoupit od smlouvy', 'adr.coi.cz', 'Úřad pro ochranu osobních údajů', '363/2013 Sb.', '§ 1837', 'každého dalšího majitele', 'identifikace hodinek', 'vrácení kupní ceny', '539/1992 Sb.', 'Pozlacen', 'dobírk', 'nemá vliv', 'strojky, ciferníky a ručičky', '±30', '50 %', '30 dnů', 'Skladné se neúčtuje', '3 pracovních dnů', 'IBAN', 'PRIM', 'Evropské spotřebitelské centrum']) {
     assert.ok(all.includes(must), `Chybí: ${must}`);
   }
-  // Zrušená evropská platforma ODR se už nesmí uvádět
-  assert.ok(!/ec\.europa\.eu\/consumers\/odr/.test(all));
+  assert.ok(!/ec\.europa\.eu\/consumers\/odr/.test(all)); // zrušená platforma ODR
+  assert.ok(!all.includes('19/1993')); // chybné číslo puncovního zákona
+});
+
+test('právní dokumenty: anglická verze má stejné dokumenty a náležitosti', () => {
+  const cs = ALL_LEGAL.filter((d) => d.lang === 'cs').map((d) => d.key).sort();
+  const en = ALL_LEGAL.filter((d) => d.lang === 'en');
+  assert.deepEqual(en.map((d) => d.key).sort(), cs);
+  for (const d of en) assert.ok(d.path.startsWith('/en/'), d.path);
+  const all = en.map((d) => d.body()).join('\n');
+  for (const must of ['14 days', '24-month', 'every subsequent owner', 'movements, dials and hands', '539/1992 Coll.', '363/2013 Coll.', 'adr.coi.cz', 'Rome I', '2018/302', 'IBAN', 'Model withdrawal form']) {
+    assert.ok(all.includes(must), `Missing: ${must}`);
+  }
+  assert.equal(new Set(ALL_LEGAL.map((d) => d.path)).size, ALL_LEGAL.length); // unikátní URL
 });

@@ -38,10 +38,11 @@ for (const fn of [M.home, M.about, M.services, M.care, M.contact, S.cart]) {
   }
 }
 
-// Právní dokumenty (česky)
+// Právní dokumenty v obou jazycích (stejné klíče → odkaz na druhou jazykovou verzi)
 for (const d of ALL_LEGAL) {
-  await page(d.path, layout({ ...common, lang: 'cs', title: d.title, description: d.description, path: d.path,
-    body: `${hero({ eyebrow: 'Právní informace', title: d.title, small: true })}<section class="section" style="padding-top:8px"><div class="wrap"><div class="card prose">${d.body()}</div></div></section>` }));
+  const other = ALL_LEGAL.find((x) => x.key === d.key && x.lang !== d.lang);
+  await page(d.path, layout({ ...common, lang: d.lang, title: d.title, description: d.description, path: d.path, alternate: other?.path,
+    body: `${hero({ eyebrow: d.lang === 'cs' ? 'Právní informace' : 'Legal information', title: d.title, small: true })}<section class="section" style="padding-top:8px"><div class="wrap"><div class="card prose">${d.body()}</div></div></section>` }));
 }
 const w = S.withdrawalForm();
 await page('/odstoupeni', layout({ ...common, lang: 'cs', ...w, path: '/odstoupeni' }));

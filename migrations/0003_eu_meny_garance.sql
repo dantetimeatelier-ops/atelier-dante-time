@@ -24,3 +24,14 @@ INSERT INTO settings (key, value) VALUES
 ON CONFLICT(key) DO NOTHING;
 
 UPDATE settings SET value = '1' WHERE key = 'shipping_osobni_enabled';
+
+-- Ceny dopravy a dobírky v ČR podle majitele (25. 11. 2026)
+UPDATE settings SET value = '99' WHERE key = 'shipping_zasilkovna_czk' AND value IS NULL;
+UPDATE settings SET value = '79' WHERE key = 'shipping_balikovna_czk' AND value IS NULL;
+UPDATE settings SET value = '49' WHERE key = 'cod_fee_czk' AND value IS NULL;
+UPDATE settings SET value = '1' WHERE key = 'cod_enabled';
+
+-- Jazyk objednávky (podle něj se posílají obchodní podmínky v e-mailu)
+ALTER TABLE orders ADD COLUMN lang TEXT NOT NULL DEFAULT 'cs';
+-- Verze podmínek se nově bere přímo z kódu (src/legal/common.mjs), stará hodnota v nastavení se nepoužívá
+DELETE FROM settings WHERE key = 'terms_version';

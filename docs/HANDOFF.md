@@ -4,6 +4,25 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-25 – Claude – claude/eshop-platforma (údaje provozovatele, EU, právní v3)
+**Hotovo:** údaje provozovatele a banky v `src/site.mjs`; prodej do 27 zemí EU
+(`src/shop/eu.mjs`, výběr země v košíku, ceny dopravy podle země z administrace);
+platba v EUR (pevný kurz, zaokrouhlení nahoru, SEPA QR „BCD“); pojištěná přeprava
+od nastavené hranice; osobní předání jen po domluvě; dobírka jen ČR + výdejní místo;
+migrace 0003 (EUR, garance strojek/ciferník/ručičky, hmotnost drahého kovu,
+`orders.lang`, smazán nepoužívaný `settings.terms_version`); právní dokumenty
+návrh 3 ve dvou jazycích (`src/legal/cs.mjs`, `en.mjs`, `common.mjs`; `docs.mjs`
+je jen vstupní bod); e-mail s podmínkami v jazyce objednávky; vlastní správa
+souhlasu s cookies (`public/assets/consent.js`, odkaz v patičce); nezávislost
+ateliéru (PRIM, OMEGA, ROLEX) v patičce. Testy: unit 9/9, html, odkazy 1260,
+smoke 141/141, e2e celý proces.
+**Rozpracováno:** nic.
+**Další krok:** majitel ověří body 1–4 v `docs/LEGAL-REVIEW.md` (DPH, živnostenský
+rejstřík, živnosti, Puncovní úřad) a vloží 3 tajné údaje pro Cloudflare
+(`docs/CLOUDFLARE-SETUP.md`); pak nasadit zkušební verzi.
+**Pozor na:** `[OVĚŘIT …]` a `[DOPLNIT …]` blokují ostré sestavení záměrně.
+Ukázkový kurz EUR a ceny dopravy do EU jsou jen v demo datech zkušební verze.
+
 ## 2026-11-25 – Claude – claude/eshop-platforma (pokyny majitele z 25. 11.)
 **Hotovo:** migrace 0002 (druh hodinek, materiál pouzdra, punc, pozlacení,
 identifikace pro garanci, dobírka, tabulka faktur); pojistka punc u drahých kovů;

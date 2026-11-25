@@ -85,7 +85,7 @@ a jazyky.
 - [x] `hreflang` a jazykové sitemapy
 - [ ] Překlady v samostatných souborech (`src/i18n/cs.json`, `en.json`)
 - [x] Přepínač jazyka, který vede na odpovídající stránku
-- [ ] Ceny v Kč, později volitelně v EUR (rozhodnutí R5)
+- [x] Ceny v Kč, platba volitelně v EUR (pevný kurz z administrace, SEPA QR)
 
 ## Fáze 4: Katalog hodinek a administrace
 
@@ -120,9 +120,9 @@ integraci v testovacím režimu a ostrý provoz zapne až po souhlasu.
 
 - [ ] Platební brána (rozhodnutí R3): Comgate / GoPay / Stripe
 - [ ] Zásilkovna: výběrové okno výdejních míst (widget) a API pro zásilky
-- [ ] Balíkovna (Česká pošta): výběr pobočky a podání
+- [x] Balíkovna (Česká pošta): výběr pobočky (podání zatím ručně)
 - [ ] Automatická fakturace (rozhodnutí R4): Fakturoid / iDoklad
-- [ ] Testy celé cesty objednávky v testovacím (sandbox) režimu
+- [x] Testy celé cesty objednávky v testovacím (sandbox) režimu
 
 ## Fáze 7: Provoz a růst
 

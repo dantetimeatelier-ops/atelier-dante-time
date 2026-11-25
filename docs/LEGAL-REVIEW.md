@@ -1,135 +1,102 @@
 # Právní dokumenty – kontrola před zveřejněním
 
-**Stav:** ⚖️ NÁVRH 2 – rozhodnutí majitele zapracována, čeká na doplnění firemních údajů
+**Stav:** ⚖️ NÁVRH 3 – údaje a rozhodnutí majitele zapracovány, CZ i EN, čeká na ověření bodů níže
 **Připraveno:** 25. 11. 2026
-**Dokumenty:** `src/legal/docs.mjs` (na webu `/terms`, `/reklamace`, `/returns`, `/warranty`,
-`/zakazkova-vyroba`, `/doprava-a-platba`, `/privacy`, `/cookies`, `/provozovatel`, `/odstoupeni`)
+**Zdroj textů:** `src/legal/cs.mjs` (česky), `src/legal/en.mjs` (anglicky), společné údaje
+`src/legal/common.mjs` a `src/site.mjs` (objekt `OPERATOR`).
 
-> Dokumenty jsem připravil podle aktuálních předpisů, jak je znám, a ověřil
-> jsem klíčové novinky z let 2023–2026. **Nejsem advokát.** U e-shopu
-> s luxusním zbožím doporučuji jednorázovou kontrolu advokátem se zaměřením
-> na spotřebitelské právo (orientačně několik tisíc Kč). Body označené 🔴
-> považuji za nejdůležitější.
+| Dokument | Česky | Anglicky |
+|---|---|---|
+| Obchodní podmínky | `/terms` | `/en/terms` |
+| Reklamační řád | `/reklamace` | `/en/complaints` |
+| Odstoupení a vrácení (+ vzorový formulář) | `/returns` | `/en/withdrawal` |
+| Záruka a doživotní garance pravosti | `/warranty` | `/en/warranty` |
+| Zakázková výroba, servis a renovace | `/zakazkova-vyroba` | `/en/custom-work` |
+| Doprava a platba | `/doprava-a-platba` | `/en/shipping-payment` |
+| Ochrana osobních údajů (GDPR) | `/privacy` | `/en/privacy` |
+| Cookies + tlačítko „Nastavení cookies“ | `/cookies` | `/en/cookies` |
+| Mimosoudní řešení sporů (ADR) | `/reseni-sporu` | `/en/dispute-resolution` |
+| Prodej do zemí EU | `/prodej-do-eu` | `/en/eu-sales` |
+| Informace o provozovateli | `/provozovatel` | `/en/legal-notice` |
+| Online odstoupení (funkce § 1830a OZ) | `/odstoupeni` | (česky, s anglickým popisem v plánu) |
+
+> **Nejsem advokát.** Dokumenty odpovídají předpisům, jak je znám, a klíčové
+> novinky 2023–2026 jsem ověřil z veřejných zdrojů. U e-shopu s luxusním zbožím
+> a prodejem do celé EU doporučuji jednorázovou kontrolu advokátem.
 
 ---
 
-## 1. Údaje, které musíte doplnit
+## 1. Co je zapracováno (podle zadání majitele z 25. 11. 2026)
 
-Na webu se zobrazují jako zvýrazněné `[DOPLNIT: …]`. **Web nepůjde spustit
-v ostrém režimu, dokud tam nějaké zůstanou** (pojistka v `scripts/build.mjs`).
-Údaje se zapisují do `src/site.mjs` (objekt `OPERATOR`). Stačí mi je poslat
-a doplním je.
-
-| # | Údaj | Kde se používá |
-|---|---|---|
-| 1 | 🔴 Jméno a příjmení podnikatele, nebo obchodní firma | všechny dokumenty, faktura |
-| 2 | 🔴 IČO | všechny dokumenty, faktura |
-| 3 | 🔴 Sídlo / místo podnikání | všechny dokumenty, faktura |
-| 4 | 🔴 Zápis v živnostenském rejstříku (příslušný úřad) | provozovatel, faktura |
-| 5 | 🔴 Plátce / neplátce DPH (případně DIČ) | ceny, faktura |
-| 6 | Číslo účtu a IBAN | QR platba, obchodní podmínky |
-| 7 | Adresa pro vracení zboží (pokud se liší od sídla) | odstoupení, reklamace |
-| 8 | Příslušný živnostenský úřad | dozor |
-| 9 | Datum účinnosti dokumentů | všechny dokumenty |
-| 10 | Splatnost při platbě převodem (návrh: 3 dny = 72 h rezervace) | OP čl. 4 |
-| 11 | Doba odeslání po zaplacení (návrh: 3 pracovní dny) | OP čl. 5, doprava |
-| 12 | Ceny dopravy (Zásilkovna, Balíkovna) | doprava (zadáte v administraci) |
-| 13 | Místo osobního převzetí, nebo tuto možnost zrušit | doprava |
-| 14 | Výše zálohy u zakázkové výroby (návrh: 30–50 %) | zakázková výroba |
-| 15 | Lhůta pro vyzvednutí hotové zakázky a případné skladné | zakázková výroba |
-| 16 | Pojištění odpovědnosti za převzaté hodinky (máte? limit?) | zakázková výroba |
-| 17 | Název platební brány a poskytovatele e-mailů (po aktivaci) | GDPR, doprava a platba |
-| 18 | Účetní / fakturační služba (pokud ji používáte) | GDPR |
-
-## 2. Rozhodnutí
-
-### Zapracováno podle pokynů majitele (25. 11. 2026)
-| Téma | Jak je to v dokumentech |
+| Téma | Stav |
 |---|---|
-| **Garance pravosti** | všechny součásti deklarované jako originální, doživotně, **i pro další majitele**. Podmínkou je identifikace hodinek a ověření, že díly nebyly později vyměněny. Náprava podle volby zákazníka: výměna za originální díl, nebo vrácení kupní ceny proti vrácení hodinek. Zákonná práva nejsou dotčena. |
-| **Druhy hodinek** | originální hodinky / přestavby / sestavy z ateliéru (u každého kusu uvedeno), zvlášť servis, renovace a přestavby hodinek zákazníka |
-| **Pouzdra** | drahé kovy jen s ryzostí a puncem (administrace bez puncu nedovolí zveřejnit), pozlacená pouzdra výslovně označena „není z drahého kovu“ |
-| **Dvouletá záruka** | 24 měsíců u hotových hodinek (i použitých), zakázkové výroby i servisu |
-| **14denní vrácení** | hotové hodinky včetně přestaveb a sestav z e-shopu, **smluvně i pro firmy**. Výjimka: zakázka podle zadání zákazníka. |
-| **Dobírka** | nabízena (příplatek nastavíte v administraci), rezervace do odeslání |
-| **Anglické verze** | připravím po schválení českého znění |
+| Provozovatel | Patrik Hužička, OSVČ, značka Dante Time, IČO 24020885, Buková 1561, 273 51 Unhošť, podnikání od 2. 12. 2025 |
+| Platby | převod CZK (QR platba) i EUR (SEPA QR), účet 2854824133/0800, IBAN, BIC, splatnost 3 dny; zahraničí jen předem; dobírka jen ČR (+49 Kč) |
+| Doprava ČR | Zásilkovna 99 Kč, Balíkovna 79 Kč, výběr výdejního místa na mapě, osobní předání jen po domluvě |
+| Doprava EU | všech 27 států; cena se ukáže po výběru země **před odesláním objednávky** |
+| Drahé hodinky | od nastavené ceny jen pojištěná přeprava nebo osobní předání |
+| Expedice | do 3 pracovních dnů od platby / potvrzení dobírky |
+| Nepřevzatá dobírka | jen skutečné náklady jako náhrada škody, žádná smluvní pokuta |
+| Zakázky | záloha 50 %, převzetí do 30 dnů, bez skladného, termín individuálně, tolerance ±30 s/den, předchozí schválení ceny i víceprací |
+| Záruka | 24 měsíců (hodinky i práce) |
+| Garance pravosti | doživotně, na deklarované originální **strojky, ciferníky a ručičky**, i pro další majitele; podmínka identifikace a ověření; náprava výměna nebo vrácení ceny; zákonná práva nedotčena |
+| Odstoupení | 14 dnů u hotových hodinek (smluvně i pro firmy), výjimka zakázka na míru |
+| Přestavby | vždy rozlišeny originální vs. nové součásti |
+| Nezávislost | „není autorizovaným servisem ani prodejcem PRIM, OMEGA, ROLEX…“ v patičce, u hodinek i v dokumentech |
+| Punc | zákon č. 539/1992 Sb. (dříve chybně uvedeno 19/1993 – opraveno); faktura uvádí druh kovu, ryzost a hmotnost |
+| Cookies | jen nezbytné úložiště; vlastní správa souhlasu bez externích služeb (volitelné kategorie vypnuté) |
+| EU | geoblokační nařízení 2018/302, Řím I čl. 6, Evropské spotřebitelské centrum |
+| Datum účinnosti | = den ostrého spuštění (do té doby se ostrý web nesestaví) |
 
-### Zbývá rozhodnout
-| # | Otázka | Můj návrh |
-|---|---|---|
-| F | Tolerance přesnosti chodu u vintage hodinek | uvádět u každého kusu, obecně ±30 s/den |
-| G | Doručování mimo ČR | zatím jen ČR |
-| J | Náhrada nákladů při nepřevzetí dobírky | ponechat, jak je v návrhu (OP čl. 4) |
+## 2. 🔴 Co je potřeba ověřit před ostrým spuštěním
 
-## 3. Právní rizika a upozornění
+Na zkušebním webu jsou tyto body vidět jako zvýrazněné `[OVĚŘIT: …]` nebo
+`[DOPLNIT: …]`. **Ostrý režim nejde sestavit, dokud tam zůstanou.**
 
-1. 🔴 **Prodej zlatých a stříbrných hodinek – puncovnictví.** Pouzdra z drahých
-   kovů smí být v ČR prodávána jen s platnou puncovní značkou (zákon
-   č. 19/1993 Sb., o puncovnictví). U vintage kusů ze zahraničí to může být
-   problém. Doporučuji konzultaci s Puncovním úřadem, než budete prodávat
-   zlaté nebo stříbrné kusy.
-2. 🔴 **Živnostenské oprávnění.** Hodinářství je řemeslná živnost
-   (vyžaduje odbornou způsobilost), prodej zboží je živnost volná. Ověřte,
-   že máte obojí, ještě před spuštěním e-shopu.
-3. 🔴 **Bezpečnost výrobků (nařízení GPSR 2023/988).** U každého výrobku
-   nabízeného online musí být údaje o výrobci a bezpečnostní upozornění.
-   U zakázkových sestav jste **výrobcem vy** (povinnosti výrobce: posouzení
-   rizik, technická dokumentace, označení výrobku). Administrace má pro tyto
-   údaje pole. Doporučuji si povinnosti nechat potvrdit.
-4. **Tlačítko „Odstoupit od smlouvy“ (§ 1830a OZ, účinnost od 1. 1. 2027)** je
-   na webu připravené na stránce `/odstoupeni` (dvoukrokové potvrzení
-   a okamžité e-mailové potvrzení přijetí). Podle sekundárních zdrojů jde
-   o zákon č. 159/2026 Sb. Číslo zákona a konečné znění je potřeba ověřit
-   v e-Sbírce.
-5. **Připravovaná novela „právo na opravu“** (sněmovní tisk 53, Sněmovna
-   schválila 14. 10. 2026) prodlouží odpovědnost za vadu odstraněnou opravou.
-   Po nabytí účinnosti upravím reklamační řád. Automatika na to v týdenním
-   přehledu neupozorní, je to v plánu jako úkol.
-6. **Neprezentovat zákonná práva jako výhodu.** Zákon zakazuje uvádět
-   zákonná práva spotřebitele (24 měsíců na vady, 14 dní na vrácení) jako
-   zvláštnost nabídky (příloha č. 1 zákona o ochraně spotřebitele). Proto
-   web píše „podle zákona“ a jako skutečnou výhodu zdůrazňuje **garanci
-   pravosti**. Totéž platí pro Instagram a TikTok.
-7. **Evropská platforma ODR byla zrušena 20. 7. 2025** (nařízení (EU)
-   2024/3228). Odkaz na ni se proto neuvádí. Uvádí se jen ČOI.
-8. **Potvrzení objednávky obsahuje celý text obchodních podmínek** a poučení
-   o odstoupení (tzv. trvalý nosič). Zvažte navíc přílohu PDF.
-9. **Ochranné známky (Omega, PRIM…).** Popis pravých hodinek značkou je
-   v pořádku. Nepoužívejte loga značek a nenaznačujte, že jste
-   autorizovaný servis nebo prodejce.
-10. **Ceny a slevy.** Pokud někdy uvedete slevu, musí se zobrazit nejnižší
-    cena za posledních 30 dní (§ 12a zákona o ochraně spotřebitele). Web
-    zatím slevy nezobrazuje.
-11. **Recenze.** Pokud budete zveřejňovat recenze, musí obchodní podmínky
-    uvádět, zda a jak ověřujete, že pocházejí od skutečných zákazníků.
-12. **GDPR – zpracovatelé v USA.** Cloudflare, Google a GitHub jsou podle
-    dostupných informací certifikováni v EU–US Data Privacy Framework.
-    Ověřte aktuální stav na dataprivacyframework.gov. Smlouvy o zpracování
-    se uzavírají přijetím jejich podmínek.
-13. **Přístupnost (zákon č. 424/2023 Sb.).** Mikropodniky poskytující
-    služby (méně než 10 zaměstnanců a obrat nebo bilance do 2 mil. EUR)
-    jsou z povinností vyňaty. Web je přesto navržen přístupně (Lighthouse
-    přístupnost 100).
-14. **Faktura u neplátce DPH.** Formát dokladu odpovídá běžné praxi. Až
-    budete znát režim DPH, nechte si ho potvrdit účetní.
-15. **Riziko přepravy hodinek do ateliéru** nese podle návrhu odesílatel.
-    U spotřebitele zvažte, zda raději neposkytnout svoz nebo pojištění.
+| # | Co ověřit | Kde a jak | Proč |
+|---|---|---|---|
+| 1 | 🔴 **Plátce / neplátce DPH** | daňová přiznání, účetní; ARES (nedostupný z mého prostředí) | věta o DPH v cenách, faktura, OSS |
+| 2 | 🔴 **Zápis v živnostenském rejstříku** a příslušný úřad (pravděpodobně Magistrát města Kladna) | výpis z rzp.gov.cz | provozovatel, faktura, dozor |
+| 3 | 🔴 **Živnosti:** hodinářství (řemeslná, vyžaduje odbornou způsobilost) + výroba, obchod a služby (volná, prodej) | výpis z rejstříku | prodej i servis musí být kryty |
+| 4 | 🔴 **Puncovní úřad:** oznámení zahájení obchodu se zbožím z drahých kovů (do 15 dnů) a provozu e-shopu (nejméně 3 dny předem) | puncovniurad.cz | povinnost dle zákona 539/1992 Sb. před prodejem zlatých/stříbrných pouzder |
+| 5 | **OSS (DPH při prodeji do EU)** – sledovat limit 10 000 EUR ročně | účetní | nad limitem DPH v zemi zákazníka (týká se plátců i neplátců – ověřit s účetní) |
+| 6 | **Ceny dopravy do jednotlivých zemí EU** | administrace → Nastavení | dokud nejsou vyplněné, země nabídne jen osobní předání / poptávku |
+| 7 | **Hranice a cena pojištěné přepravy** (ČR i EU) a konkrétní dopravce | administrace → Nastavení | zkušební web má ukázku 50 000 Kč / 290 Kč / 890 Kč |
+| 8 | **Kurz EUR** (pevný v administraci, aktualizovat ručně) | administrace → Nastavení | zkušební web má ukázku 25 Kč/EUR |
+| 9 | **Adresa pro vracení zboží** – zatím se používá sídlo | potvrďte, nebo pošlete jinou | odstoupení, reklamace |
+| 10 | **Pojištění** odpovědnosti / převzatých hodinek – **nikde se neuvádí**, dokud ho nedoložíte | – | nesmíme tvrdit neověřené |
+| 11 | Funkce „Odstoupit od smlouvy“ (§ 1830a OZ od 1. 1. 2027) – číslo zákona 159/2026 Sb. jen ze sekundárních zdrojů | e-Sbírka | ověřit konečné znění |
+| 12 | Novela „právo na opravu“ (sněmovní tisk 53) | sledovat | po účinnosti upravit reklamační řád |
+| 13 | Platební brána a e-mailová služba – názvy doplnit do GDPR po aktivaci | – | GDPR čl. 3 |
+| 14 | GPSR (bezpečnost výrobků) – u sestav z ateliéru jste výrobce | advokát / ČOI | údaje o výrobci a upozornění |
+| 15 | Kontrola advokátem (CZ + EN) | – | doporučeno |
+
+## 3. Upozornění
+
+1. **Neprezentovat zákonná práva jako výhodu** (24 měsíců na vady, 14 dní na
+   vrácení). Skutečnou výhodou je **garance pravosti** a smluvní vrácení pro firmy.
+2. **Evropská platforma ODR byla zrušena 20. 7. 2025** – neuvádí se.
+3. **Potvrzení objednávky** obsahuje celé obchodní podmínky a poučení
+   o odstoupení **v jazyce objednávky** (trvalý nosič).
+4. **Ochranné známky:** nepoužívat loga značek; text o nezávislosti je všude.
+5. **Slevy:** při zobrazení slevy uvádět nejnižší cenu za 30 dní.
+6. **GDPR:** Cloudflare, Google a GitHub – ověřit certifikaci v EU–US DPF.
+7. **Faktura:** po ověření režimu DPH nechat formát potvrdit účetní.
 
 ## 4. Použité zdroje
 
-- Zákon č. 89/2012 Sb., občanský zákoník, ve znění novely č. 374/2022 Sb.
-  (účinná od 6. 1. 2023) a zákona o funkci pro odstoupení (§ 1830a,
-  účinnost 1. 1. 2027)
+- Zákon č. 89/2012 Sb., občanský zákoník (novela 374/2022 Sb.; § 1830a od 1. 1. 2027)
 - Zákon č. 634/1992 Sb., o ochraně spotřebitele
-- Nařízení vlády č. 363/2013 Sb. (vzorový formulář pro odstoupení)
+- Zákon č. 539/1992 Sb., o puncovnictví a zkoušení drahých kovů
+- Nařízení vlády č. 363/2013 Sb. (vzorový formulář)
 - Nařízení (EU) 2016/679 (GDPR), zákon č. 110/2019 Sb.
-- Zákon č. 127/2005 Sb., o elektronických komunikacích, § 89 odst. 3 (cookies)
-- Nařízení (EU) 2023/988 (GPSR), nařízení (EU) 2024/3228 (zrušení ODR)
+- Směrnice 2002/58/ES, § 89 odst. 3 zákona č. 127/2005 Sb. (cookies)
+- Nařízení (EU) 593/2008 (Řím I), (EU) 2018/302 (geoblokace), (EU) 2023/988 (GPSR), (EU) 2024/3228 (zrušení ODR)
 - Směrnice (EU) 2023/2673 (funkce pro odstoupení), (EU) 2024/1799 (právo na opravu)
 
 ## 5. Jak dokumenty schválit
 
-1. Pošlete mi údaje z části 1 a rozhodnutí z části 2. Stačí v chatu.
-2. Doplním je a připravím finální verzi.
-3. Doporučuji rychlou kontrolu advokátem.
-4. Po vašem „schvaluji“ se dokumenty zveřejní spolu s e-shopem.
+1. Ověřte body 1–4 z části 2 a pošlete mi výsledek (stačí v chatu).
+2. Doplním je, vyplníte ceny dopravy v administraci.
+3. Doporučuji kontrolu advokátem.
+4. Po vašem „schvaluji“ nastavím datum účinnosti = den spuštění a e-shop se zveřejní.

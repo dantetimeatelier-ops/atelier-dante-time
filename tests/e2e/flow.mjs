@@ -67,7 +67,9 @@ try {
   await page.getByLabel('Nátah').selectOption('manual');
   await page.getByLabel('Průměr pouzdra (mm)').fill('34');
   await page.locator('summary', { hasText: 'Stav, práce a originalita' }).click();
-  await page.getByLabel(/Deklarované originální díly/).fill('strojek, ciferník, ručky, korunka');
+  await page.getByLabel('Původní originální součásti (popis)').fill('strojek, ciferník, ručky, korunka');
+  await page.getByRole('checkbox', { name: 'Strojek', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Ciferník', exact: true }).check();
   await page.locator('summary', { hasText: 'Popis a SEO' }).click();
   await page.getByRole('button', { name: /Vygenerovat popis/ }).click();
   await page.locator('.toast', { hasText: 'Popis vygenerován' }).waitFor();
@@ -91,7 +93,7 @@ try {
   const shop = await ctx.newPage();
   shop.on('pageerror', (e) => errors.push(e.message));
   await shop.goto(`${BASE}/kolekce`);
-  await shop.getByRole('link', { name: /Omega Genève/ }).click();
+  await shop.locator('a.product-card[href="/hodinky/omega-geneve-1968"]').click();
   await shop.getByRole('button', { name: 'Vložit do košíku' }).click();
   await shop.getByRole('heading', { name: 'Košík' }).waitFor();
   await shop.locator('[data-cart-items] .cart-item').waitFor();
@@ -190,7 +192,7 @@ try {
     parent.postMessage({ message: 'pickerResult', point: { id: 'B12345', name: 'Balíkovna Praha 7', street: 'Dukelských hrdinů 1', zip: '17000', municipality_name: 'Praha' } }, '*');
   </script></body></html>` }));
   await shop.goto(`${BASE}/kolekce`);
-  await shop.getByRole('link', { name: /PRIM Sport/ }).click();
+  await shop.locator('a.product-card[href="/hodinky/prim-sport"]').click();
   await shop.getByRole('button', { name: 'Vložit do košíku' }).click();
   await shop.locator('[data-cart-items] .cart-item').waitFor();
   await shop.getByLabel(/Balíkovna – výdejní místo/).check();
