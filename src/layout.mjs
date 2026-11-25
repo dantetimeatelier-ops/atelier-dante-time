@@ -2,6 +2,8 @@
 // Používá ho generátor statických stránek i serverové funkce (katalog).
 import { SITE, PAGES, INDEPENDENCE } from './site.mjs';
 import { UI } from './i18n/ui.mjs';
+import { ASSET_V } from './asset-version.mjs';
+const asset = (u) => (u.startsWith('/assets/') ? `${u}?v=${ASSET_V}` : u);
 
 export const esc = (s) => String(s ?? '')
   .replace(/&(?!(?:amp|lt|gt|quot|#39);)/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -75,7 +77,7 @@ ${o.noindex ? '<meta name="robots" content="noindex">' : ''}
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" href="/img/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="${asset('/assets/site.css')}">
 <meta property="og:type" content="${o.ogType || 'website'}">
 <meta property="og:title" content="${esc(o.title || SITE.name)}">
 <meta property="og:description" content="${esc(o.description)}">
@@ -156,9 +158,9 @@ ${o.body}
   </div>
   <div class="wrap footer-bottom">© ${year} ${SITE.name}. ${esc(t.footer_rights)}<br><span class="footer-note">${esc(INDEPENDENCE[lang])}</span></div>
 </footer>
-<script src="/assets/site.js" defer></script>
-<script src="/assets/consent.js" defer></script>
-${(o.scripts || []).map((s) => `<script src="${s}" defer></script>`).join('\n')}
+<script src="${asset('/assets/site.js')}" defer></script>
+<script src="${asset('/assets/consent.js')}" defer></script>
+${(o.scripts || []).map((s) => `<script src="${asset(s)}" defer></script>`).join('\n')}
 </body>
 </html>
 `);

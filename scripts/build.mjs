@@ -2,12 +2,15 @@
 // Spuštění: npm run build   (proměnná SHOP_MODE: preview | test | live)
 import { mkdir, writeFile, cp, rm, readdir } from 'node:fs/promises';
 import path from 'node:path';
-import { layout, hero } from '../src/layout.mjs';
-import { PAGES, SITE } from '../src/site.mjs';
-import * as M from '../src/pages/marketing.mjs';
-import * as S from '../src/pages/shop.mjs';
-import { ALL_LEGAL } from '../src/legal/docs.mjs';
-import { notFoundBody, SHOP_BANNER } from '../src/shop/views.mjs';
+import { writeAssetVersion } from './asset-version.mjs';
+// Otisk stylů musí vzniknout dřív, než se načte vzhled stránek (proto dynamické importy)
+writeAssetVersion();
+const { layout, hero } = await import('../src/layout.mjs');
+const { PAGES, SITE } = await import('../src/site.mjs');
+const M = await import('../src/pages/marketing.mjs');
+const S = await import('../src/pages/shop.mjs');
+const { ALL_LEGAL } = await import('../src/legal/docs.mjs');
+const { notFoundBody, SHOP_BANNER } = await import('../src/shop/views.mjs');
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const DIST = path.join(ROOT, 'dist');

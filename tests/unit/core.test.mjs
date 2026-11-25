@@ -153,3 +153,9 @@ test('katalog hodinek v repozitáři je platný', async () => {
   const { loadCatalog } = await import('../../scripts/catalog.mjs');
   assert.doesNotThrow(() => loadCatalog());
 });
+
+test('otisk stylů v src/asset-version.mjs odpovídá souborům (spusťte npm run build a uložte)', async () => {
+  const { computeAssetVersion } = await import('../../scripts/asset-version.mjs');
+  const { ASSET_V } = await import('../../src/asset-version.mjs');
+  assert.equal(ASSET_V, computeAssetVersion());
+});
