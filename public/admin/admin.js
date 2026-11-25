@@ -425,6 +425,31 @@
     app.innerHTML = `<h1>Historie změn</h1><div class="card"><table>${log.map((l) => `<tr><td class="small muted">${date(l.at)}</td><td class="small">${esc(l.actor)}<br>${esc(l.action)}${l.details ? `<br><span class="muted">${esc(l.details).slice(0, 160)}</span>` : ''}</td></tr>`).join('')}</table></div>`;
   };
 
+  views.zabezpeceni = async () => {
+    const me = await api('GET', 'me');
+    app.innerHTML = `<p><a href="#/vice">← Více</a></p><h1>Zabezpečení účtu</h1>
+      <div class="card"><h2 style="margin-top:0">Nový klíč pro ověřovací kódy</h2>
+      <p class="small">Použijte, když byl klíč nebo QR kód někde vidět, nebo měníte telefon. Starý kód v aplikaci Hesla po výměně přestane platit.</p>
+      <button class="btn primary block" id="tstart">Vytvořit nový klíč</button></div><div id="tbox"></div>`;
+    app.querySelector('#tstart').addEventListener('click', () => run(async () => {
+      const { secret, qr } = await api('POST', 'security/totp/start', {});
+      app.querySelector('#tstart').disabled = true;
+      app.querySelector('#tbox').innerHTML = `<div class="card">
+        <p><b>1.</b> Klepněte na „Přidat do Hesel“ a vyberte svou položku pro tento web (nahradí starý kód). Snímek obrazovky nedělejte.</p>
+        <p class="center"><a class="btn ghost" href="otpauth://totp/${encodeURIComponent('Dante Time:' + me.email)}?secret=${secret}&issuer=Dante%20Time">Přidat do Hesel</a></p>
+        <details><summary class="small muted">QR kód a ruční zadání</summary><div class="qr">${qr}</div><p class="code">${esc(secret)}</p></details></div>
+        <form class="card" id="tfin"><p><b>2.</b> Zadejte heslo a nový 6místný kód.</p>
+        <label>Heslo<input name="password" type="password" required autocomplete="current-password"></label>
+        <label>Nový ověřovací kód<input name="code" inputmode="numeric" maxlength="6" required autocomplete="one-time-code"></label>
+        <button class="btn primary block">Potvrdit výměnu</button></form>`;
+      app.querySelector('#tfin').addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
+        await api('POST', 'security/totp/finish', { secret, ...formData(e.target) });
+        toast('Klíč vyměněn – od teď platí nový kód');
+        location.hash = '#/vice';
+      }); });
+    }));
+  };
+
   views.vice = async () => {
     app.innerHTML = `<h1>Více</h1><div class="list">
       <a class="item" href="#/poptavky"><span class="grow">Poptávky</span></a>
@@ -433,6 +458,7 @@
       <a class="item" href="#/odstoupeni"><span class="grow">Odstoupení od smlouvy</span></a>
       <a class="item" href="#/nastaveni"><span class="grow">Nastavení</span></a>
       <a class="item" href="#/emaily"><span class="grow">E-maily</span></a>
+      <a class="item" href="#/zabezpeceni"><span class="grow">Zabezpečení účtu</span></a>
       <a class="item" href="#/historie"><span class="grow">Historie změn</span></a>
       <a class="item" href="/" target="_blank"><span class="grow">Otevřít web ↗</span></a></div>
       <button class="btn ghost block" id="lall" style="margin-top:20px">Odhlásit všechna zařízení</button>`;

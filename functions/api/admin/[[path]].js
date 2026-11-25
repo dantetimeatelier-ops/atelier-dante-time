@@ -72,6 +72,25 @@ route('POST', 'login', async ({ env, body, request }) => {
 
 route('POST', 'logout', async ({ env, request }) => json({ ok: true }, 200, { 'Set-Cookie': await destroySession(env, request) }), { auth: false });
 route('GET', 'me', async ({ user }) => json({ email: user.email }));
+// Výměna klíče dvoufázového ověření (např. když byl klíč nebo QR kód někde vidět)
+route('POST', 'security/totp/start', async ({ user }) => {
+  const secret = newTotpSecret();
+  return json({ secret, qr: qrSvg(otpauthUrl(secret, user.email), { label: 'Nový kód pro aplikaci ověřování' }) });
+});
+route('POST', 'security/totp/finish', async ({ env, body, user, request }) => {
+  const ip = await checkLoginRate(env, request);
+  const u = await env.DB.prepare('SELECT * FROM admin_users WHERE id = ?').bind(user.id).first();
+  const h = await hashPassword(String(body.password || ''), u.password_salt, u.password_iterations);
+  const okPass = timingSafeEqual(h.hash, u.password_hash);
+  await recordLogin(env, ip, okPass);
+  if (!okPass) throw new HttpError('Nesprávné heslo', 401);
+  if (!/^[A-Z2-7]{32}$/.test(String(body.secret || ''))) throw new HttpError('Neplatný klíč ověřování');
+  const step = await verifyTotp(body.secret, body.code);
+  if (step == null) throw new HttpError('Ověřovací kód nesouhlasí. Použijte kód z NOVÉHO záznamu v aplikaci Hesla.');
+  await env.DB.prepare('UPDATE admin_users SET totp_secret = ?, last_totp_step = ? WHERE id = ?').bind(body.secret, step, user.id).run();
+  await audit(env, user.email, 'klic_2fa_vymenen');
+  return json({ ok: true });
+});
 route('POST', 'logout-all', async ({ env, user }) => {
   await env.DB.prepare('DELETE FROM admin_sessions WHERE user_id = ?').bind(user.id).run();
   await audit(env, user.email, 'odhlaseni_vsude');

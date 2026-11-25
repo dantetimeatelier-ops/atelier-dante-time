@@ -239,6 +239,17 @@ try {
   await page.locator('.item', { hasText: 'Petr Poptávka' }).waitFor();
   step('faktura k zakázce vystavena z administrace');
 
+  // 11) Výměna klíče dvoufázového ověření
+  await page.goto(`${BASE}/admin/#/zabezpeceni`);
+  await page.getByRole('button', { name: 'Vytvořit nový klíč' }).click();
+  await page.locator('#tbox summary').click();
+  const newSecret = (await page.locator('#tbox .code').innerText()).trim();
+  await page.getByLabel('Heslo').fill(PASS);
+  await page.getByLabel('Nový ověřovací kód').fill(totp(newSecret, 1));
+  await page.getByRole('button', { name: 'Potvrdit výměnu' }).click();
+  await page.locator('.toast', { hasText: 'Klíč vyměněn' }).waitFor();
+  step('klíč dvoufázového ověření vyměněn');
+
   assert.deepEqual(errors, [], `Chyby v prohlížeči: ${errors.join(' | ')}`);
   console.log('\n✅ Celý proces funguje.');
 } catch (e) {
