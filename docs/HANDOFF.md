@@ -4,6 +4,17 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-25 (večer) – Claude – claude/eshop-platforma (doména, etapa A rozpracována)
+**Hotovo:** Resend: doména atelier-dante-time.cz přidána (region EU). Ve WEDOS DNS přidány
+a aplikovány 4 záznamy: TXT `resend._domainkey` (DKIM), CNAME `rsend` → rsend-euw1.forge.rmta.net,
+CNAME `send` → send.forge.rmta.net, TXT `_dmarc` = `v=DMARC1; p=none;`. Původní záznamy beze změny.
+Majitel má znovu přístup do WEDOS (obnova hesla; pozor: iCloud Soukromý přenos mění IP).
+**Další krok:** ověřit viditelnost záznamů (dns.google) → Resend „Verify“; Cloudflare Add a domain
+(tarif Free) → etapa B (vypnout DNSSEC u WEDOS, pak NS). Majitel dosud neschválil právní dokumenty.
+**Pozor na:** DNSSEC u WEDOS je zapnutý („DNSSEC WEDOS: ANO“).
+
+---
+
 ## 2026-11-25 – Claude – claude/eshop-platforma (R15: nabídka podle oprávnění)
 **Hotovo:** přepínač `SERVICES_OFFERED` (false): bez stránky Služby, poptávky servisu
 a podmínek zakázek; přesměrování starých adres (302); dokumenty bez zmínek o externích
