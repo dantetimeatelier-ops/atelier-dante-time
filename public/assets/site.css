@@ -254,6 +254,7 @@ legend{padding:0 6px;color:var(--text);font-family:var(--serif);font-size:19px}
 .consent .row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
 .consent input[type=checkbox]{width:20px;height:20px;min-height:0;flex:0 0 20px;margin:2px 0 0;padding:0;accent-color:#c8a24a}
 .consent a{color:#c8a24a}
-.gallery .main video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
+.gallery .main{position:relative}
+.gallery .main video{position:absolute;inset:0;width:100%;height:100%;max-height:100%;object-fit:contain;background:#000;display:block}
 .gallery .thumbs button.is-video{position:relative}
 .gallery .thumbs button.is-video::after{content:"";position:absolute;inset:0;margin:auto;width:28px;height:28px;border-radius:50%;background:rgba(7,7,7,.65) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 7l8 5-8 5z' fill='%23c8a24a'/%3E%3C/svg%3E") center/18px no-repeat;border:1px solid rgba(200,162,74,.6)}
