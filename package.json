@@ -6,7 +6,8 @@
     "test:html": "html-validate \"*.html\"",
     "test:smoke": "node tests/smoke.mjs",
     "test:lighthouse": "lhci autorun",
-    "test": "npm run test:html && npm run test:smoke"
+    "test": "npm run test:html && npm run test:links && npm run test:smoke",
+    "test:links": "node tests/links.mjs"
   },
   "devDependencies": {
     "@lhci/cli": "0.15.1",

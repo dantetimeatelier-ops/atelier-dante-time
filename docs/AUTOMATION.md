@@ -50,7 +50,7 @@ ověří kontrola **„Strážce úrovní“** (`tier-gate`):
 | Test | Nástroj | Co hlídá |
 |---|---|---|
 | Validace HTML | `html-validate` | chyby v kódu stránek |
-| Nefunkční odkazy | `lychee` | odkazy a obrázky, které nikam nevedou |
+| Nefunkční odkazy | vlastní skript `tests/links.mjs` (u PR), `lychee` (týdně na ostrém webu) | odkazy, obrázky a kotvy, které nikam nevedou |
 | Rychlost a SEO | Lighthouse CI | výkon ≥ 90, SEO ≥ 95, přístupnost ≥ 95, velikost stránky ≤ 500 kB |
 | Mobil a desktop | Playwright | stránky se nerozjíždí, nejsou chyby JavaScriptu, obrázky se načtou (375 / 768 / 1280 px) |
 | Vizuální porovnání | Playwright | snímky před a po, jestli se změnil vzhled |
