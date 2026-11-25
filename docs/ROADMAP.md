@@ -22,6 +22,17 @@ výslovného souhlasu majitele se neaktivují.
 - [ ] Vytvořit tag `v0-puvodni-web`, zálohu současného stavu, ke které
       se lze kdykoli vrátit
 
+## Fáze 0b: Automatická údržba *(návrh čeká na schválení)*
+
+Podrobnosti: [`docs/AUTOMATION.md`](AUTOMATION.md)
+
+- [x] Návrh řešení, nákladů a bezpečnosti
+- [x] Tři úrovně oprávnění zapsané v `AGENTS.md`
+- [ ] Krok A: automatické testy, týdenní přehled, hlídání dostupnosti, návrat k verzi
+- [ ] Krok B: ochrana `main`, `CODEOWNERS`, Strážce úrovní
+- [ ] Krok C 🔴: zapnutí automatického publikování úrovně 1 (**výslovný souhlas majitele**)
+- [ ] Krok D: publikace přes Actions s automatickým návratem
+
 ## Fáze 1: Rychlá vylepšení stávajícího webu
 
 Cíl: rychlejší a lépe dohledatelný web, beze změny vzhledu a textů podmínek.

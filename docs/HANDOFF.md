@@ -4,6 +4,17 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-25 – Claude – claude/dante-time-web-management-7g6wuy (návrh automatizace)
+**Hotovo:** návrh automatické údržby `docs/AUTOMATION.md` a tři úrovně
+oprávnění v `AGENTS.md` (sekce 3a). Rozhodnutí R8 v `docs/DECISIONS.md`.
+**Rozpracováno:** nic, nic se neaktivovalo.
+**Další krok:** majitel schválí návrh, pak krok A (workflow v `.github/`, úroveň 3,
+takže jen na výslovný pokyn majitele).
+**Pozor na:** automatické publikování je NEAKTIVNÍ, dokud v DECISIONS.md
+není schválen krok C.
+
+---
+
 ## 2026-11-25 – Claude – claude/dante-time-web-management-7g6wuy (dokončení fáze 1)
 **Hotovo:** `robots.txt`, `sitemap.xml`, `404.html` (absolutní cesty, `noindex`),
 `canonical` + OG/Twitter značky na všech stránkách, lepší `description`
