@@ -1,6 +1,6 @@
 // Prezentační stránky (CZ + EN). Texty vycházejí z původního webu.
 import { SITE, PAGES } from '../site.mjs';
-import { hero, esc } from '../layout.mjs';
+import { hero, esc, socialLinks } from '../layout.mjs';
 
 const T = (lang, cs, en) => (lang === 'cs' ? cs : en);
 const brands = SITE.brands.map((b) => `<strong>${b}</strong>`).join(', ');
@@ -13,14 +13,14 @@ export function home(lang) {
     description: L(
       'Atelier Dante Time – český hodinářský ateliér. Unikátní renovované mechanické hodinky, servis, renovace a zakázkové sestavy s doživotní garancí pravosti originálních dílů.',
       'Atelier Dante Time – Czech watch atelier. Unique restored mechanical watches, service, restoration and custom builds with a lifetime authenticity guarantee on original parts.'),
-    head: `<link rel="preload" as="image" href="/img/hero-dt-m800.webp" media="(max-width: 880px)">
-<link rel="preload" as="image" href="/img/hero-dt-1280.webp" media="(min-width: 881px) and (max-width: 1400px)">
-<link rel="preload" as="image" href="/img/hero-dt-1920.webp" media="(min-width: 1401px)">
+    head: `<link rel="preload" as="image" href="/img/hero-v2-m800.webp" media="(max-width: 880px)">
+<link rel="preload" as="image" href="/img/hero-v2-1280.webp" media="(min-width: 881px) and (max-width: 1400px)">
+<link rel="preload" as="image" href="/img/hero-v2-1920.webp" media="(min-width: 1401px)">
 <script type="application/ld+json">${JSON.stringify({
       '@context': 'https://schema.org', '@type': 'Organization', name: SITE.name, url: SITE.origin + '/',
       logo: SITE.origin + '/img/logo-160.webp', image: SITE.origin + '/img/og-image.jpg', email: 'mailto:' + SITE.email,
       description: 'Český hodinářský atelier zaměřený na renovaci, servis a zakázkové sestavy mechanických hodinek.',
-      sameAs: [SITE.instagram, SITE.tiktok],
+      sameAs: [SITE.instagram, SITE.tiktok, SITE.facebook].filter(Boolean),
     })}</script>`,
     scripts: ['/assets/featured.js'],
     body: `
@@ -81,6 +81,19 @@ export function home(lang) {
         <a class="btn solid" href="${PAGES.services[lang]}#poptavka">${L('Poptat servis', 'Request a service')}</a>
         <a class="btn ghost" href="${SITE.instagram}" rel="noopener noreferrer" target="_blank">Instagram</a>
       </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="follow">
+      <div>
+        <p class="eyebrow">${L('Zákulisí ateliéru', 'Behind the scenes')}</p>
+        <h2>${L('Sledujte, jak vzniká druhý život hodinek', 'Watch a timepiece’s second life take shape')}</h2>
+        <p>${L('Renovace krok za krokem, detaily strojků a nové kusy dřív, než se objeví v kolekci. Sledujte ateliér na sociálních sítích.', 'Restorations step by step, movement details and new pieces before they reach the collection. Follow the atelier on social media.')}</p>
+      </div>
+      <div class="follow-links">${socialLinks('fs')}</div>
     </div>
   </div>
 </section>`,

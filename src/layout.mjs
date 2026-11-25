@@ -11,6 +11,18 @@ export const esc = (s) => String(s ?? '')
 
 const LOGO = '/img/logo-160.webp';
 
+// Ikony sociálních sítí (vlastní SVG, žádné externí skripty ani sledování)
+const ICON = {
+  instagram: '<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor"/></svg>',
+  tiktok: '<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M13.5 3.5v11.2a3.3 3.3 0 1 1-3.3-3.3M13.5 3.5c.4 2.6 2.2 4.3 5 4.6"/></svg>',
+  facebook: '<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M14.5 8.5h2.3V5h-2.6c-2.4 0-3.9 1.6-3.9 4v2.3H8v3.4h2.3V21h3.4v-6.3h2.6l.5-3.4h-3.1V9.6c0-.7.3-1.1.8-1.1Z"/></svg>',
+};
+export function socialLinks(cls = 'social') {
+  return [['instagram', 'Instagram', SITE.instagram], ['tiktok', 'TikTok', SITE.tiktok], ['facebook', 'Facebook', SITE.facebook]]
+    .filter(([, , url]) => url)
+    .map(([k, label, url]) => `<a class="${cls}-link" href="${url}" rel="noopener noreferrer" target="_blank" aria-label="${label}">${ICON[k]}<span>${label}</span></a>`).join('');
+}
+
 function nav(lang, active, shopEnabled) {
   const t = UI[lang];
   const items = [
@@ -99,9 +111,11 @@ ${o.banner ? `<div class="banner" role="note">${o.banner}</div>` : ''}
     </a>
     <nav class="main-nav" id="main-nav" aria-label="${L('Hlavní navigace', 'Main navigation')}">
       ${links}
+      <div class="nav-social">${socialLinks('ns')}</div>
       <a class="lang" href="${switchHref}" hreflang="${other}" lang="${other}" aria-label="${esc(t.lang_switch_label)}">${other.toUpperCase()}</a>
     </nav>
     <div class="header-actions">
+      <div class="header-social">${socialLinks('hs')}</div>
       ${cart}
       <button class="menu-btn" type="button" aria-expanded="false" aria-controls="main-nav" data-menu-btn>
         <span class="menu-icon" aria-hidden="true"></span><span class="sr">${esc(t.menu)}</span>
@@ -118,10 +132,7 @@ ${o.body}
       <img src="${LOGO}" width="160" height="160" alt="" loading="lazy">
       <p>${esc(t.footer_tagline)}</p>
       <p class="footer-contact"><a href="mailto:${SITE.email}">${SITE.email}</a></p>
-      <p class="footer-social">
-        <a href="${SITE.instagram}" rel="noopener noreferrer" target="_blank">Instagram</a>
-        <a href="${SITE.tiktok}" rel="noopener noreferrer" target="_blank">TikTok</a>
-      </p>
+      <p class="footer-social">${socialLinks('fs')}</p>
     </div>
     <div>
       <h2>${esc(t.footer_atelier)}</h2>
