@@ -29,6 +29,13 @@ const names = production
 for (const k of ['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID', 'ADMIN_SETUP_TOKEN']) {
   if (!process.env[k]) throw new Error(`Chybí tajná hodnota ${k} (docs/CLOUDFLARE-SETUP.md)`);
 }
+// Odolnost vůči chybám při kopírování z telefonu: mezery, konce řádků, celá adresa dash.cloudflare.com/<ID>/home
+for (const k of ['CLOUDFLARE_API_TOKEN', 'ADMIN_SETUP_TOKEN']) process.env[k] = process.env[k].trim();
+{
+  const m = process.env.CLOUDFLARE_ACCOUNT_ID.match(/[0-9a-f]{32}/i);
+  if (!m) throw new Error('CLOUDFLARE_ACCOUNT_ID neobsahuje platné Account ID (32 znaků 0–9 a a–f). Zkopírujte ho z dash.cloudflare.com → Workers & Pages → Account details.');
+  process.env.CLOUDFLARE_ACCOUNT_ID = m[0].toLowerCase();
+}
 if (process.env.ADMIN_SETUP_TOKEN.length < 24) throw new Error('ADMIN_SETUP_TOKEN musí mít alespoň 24 znaků');
 
 const scratch = mkdtempSync(path.join(tmpdir(), 'cf-'));
