@@ -15,6 +15,25 @@ přečti celý.
 - **Poslední audit:** [`docs/AUDIT-2026-11.md`](docs/AUDIT-2026-11.md)
 - **Rozhodnutí majitele:** [`docs/DECISIONS.md`](docs/DECISIONS.md)
 - **Automatizace a úrovně oprávnění:** [`docs/AUTOMATION.md`](docs/AUTOMATION.md)
+- **Architektura platformy:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- **Právní dokumenty k ověření:** [`docs/LEGAL-REVIEW.md`](docs/LEGAL-REVIEW.md)
+
+### Jak s kódem pracovat
+
+| Příkaz | Co dělá |
+|---|---|
+| `npm ci` | nainstaluje nástroje |
+| `npm run build` | sestaví web do `dist/` (`SHOP_MODE=preview` výchozí, `test`, `live`) |
+| `npm run db:local && npm run seed:local` | místní databáze s testovacími hodinkami |
+| `npm run dev` | spustí web lokálně na http://localhost:8788 (potřebuje `.dev.vars`) |
+| `npm test` | sestavení + jednotkové testy + kontrola HTML a odkazů |
+| `BASE=http://localhost:8788 npm run test:smoke` | všechny stránky ve 3 šířkách |
+| `BASE=… SETUP_TOKEN=… npm run test:e2e` | celý nákupní proces a administrace |
+
+Texty stránek jsou v `src/pages/`, právní dokumenty v `src/legal/docs.mjs`,
+údaje provozovatele v `src/site.mjs`, serverová logika v `server/`
+a `functions/`, struktura databáze v `migrations/` (nikdy neupravovat
+existující migraci, vždy přidat novou).
 
 ## 2. Komunikace
 

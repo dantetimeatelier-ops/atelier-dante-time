@@ -54,6 +54,15 @@ Cíl: rychlejší a lépe dohledatelný web, beze změny vzhledu a textů podmí
 
 Přístupnost, správné postupy a SEO: 98–100 před i po.
 
+## ✅ Stav k 25. 11. 2026 (mandát R10)
+
+Fáze 2–5 jsou **naprogramované a otestované** ve větvi `claude/eshop-platforma`
+(PR #3). Čekají na spuštění na Cloudflare (`docs/CLOUDFLARE-SETUP.md`)
+a schválení právních dokumentů (`docs/LEGAL-REVIEW.md`). Fáze 6 je
+připravená, ale neaktivní (`docs/INTEGRATIONS.md`). Odchylka od původního
+plánu: místo frameworku Astro vlastní lehký generátor stránek, který má méně
+závislostí a stejný výsledek.
+
 ## Fáze 2: Nový technický základ
 
 Cíl: jeden společný vzhled pro všechny stránky a příprava na katalog
@@ -62,20 +71,20 @@ a jazyky.
 - [ ] Přechod na generátor statického webu **Astro** (doporučení, viz
       rozhodnutí R1): sdílená hlavička, patička a styly, výstupem zůstane
       rychlé statické HTML
-- [ ] Design systém: barvy, písma, tlačítka a karty jako jedno místo pravdy
+- [x] Design systém: barvy, písma, tlačítka a karty jako jedno místo pravdy
 - [ ] Zachování všech současných URL (např. `/services.html`), aby se
       neztratilo SEO
-- [ ] Automatická kontrola při každé změně (build, odkazy, velikost obrázků)
+- [x] Automatická kontrola při každé změně (build, odkazy, velikost obrázků)
       přes GitHub Actions
-- [ ] Náhledová verze webu z vývojové větve, aby majitel viděl změny
+- [x] Náhledová verze webu z vývojové větve, aby majitel viděl změny
       ještě před schválením
 
 ## Fáze 3: Vícejazyčnost
 
-- [ ] Struktura URL: `/` čeština, `/en/` angličtina, později např. `/de/`
-- [ ] `hreflang` a jazykové sitemapy
+- [x] Struktura URL: `/` čeština, `/en/` angličtina, později např. `/de/`
+- [x] `hreflang` a jazykové sitemapy
 - [ ] Překlady v samostatných souborech (`src/i18n/cs.json`, `en.json`)
-- [ ] Přepínač jazyka, který vede na odpovídající stránku
+- [x] Přepínač jazyka, který vede na odpovídající stránku
 - [ ] Ceny v Kč, později volitelně v EUR (rozhodnutí R5)
 
 ## Fáze 4: Katalog hodinek a administrace
@@ -85,21 +94,21 @@ Cíl: majitel sám přidává hodinky, fotky, ceny a dostupnost.
 - [ ] Datový model hodinky: název, slug, popis (CZ/EN), strojek, průměr
       pouzdra, materiál, sklíčko, vodotěsnost, řemínek, cena, stav
       (`k dispozici` / `rezervováno` / `prodáno`), fotogalerie, pořadí
-- [ ] Stránka kolekce a detail hodinek s galerií a zoomem
-- [ ] Prodané kusy zůstanou jako „Archiv“, což pomáhá důvěře i SEO
+- [x] Stránka kolekce a detail hodinek s galerií a zoomem
+- [x] Prodané kusy zůstanou jako „Archiv“, což pomáhá důvěře i SEO
 - [ ] **Administrace** (rozhodnutí R2), přihlášení přes účet s
       dvoufázovým ověřením (2FA)
-- [ ] Automatická optimalizace nahraných fotografií
-- [ ] Strukturovaná data `Product` (cena, dostupnost)
+- [x] Automatická optimalizace nahraných fotografií
+- [x] Strukturovaná data `Product` (cena, dostupnost)
 
 ## Fáze 5: Objednávkový systém
 
 - [ ] Košík (u unikátních kusů spíš tlačítko „Koupit“ / „Rezervovat“)
-- [ ] Objednávkový formulář s výběrem dopravy a souhlasem s podmínkami
-- [ ] Rezervace kusu během objednávky, aby nedošlo k prodeji dvakrát
-- [ ] Potvrzovací e-mail zákazníkovi a upozornění majiteli
-- [ ] Přehled objednávek v administraci
-- [ ] Ochrana proti spamu ve formulářích
+- [x] Objednávkový formulář s výběrem dopravy a souhlasem s podmínkami
+- [x] Rezervace kusu během objednávky, aby nedošlo k prodeji dvakrát
+- [x] Potvrzovací e-mail zákazníkovi a upozornění majiteli
+- [x] Přehled objednávek v administraci
+- [x] Ochrana proti spamu ve formulářích
 - [ ] ⚖️ Doplnit do `reklamace.html` přesnou reklamační lhůtu a formulace pro prodej hotových kusů (prodej vs. služba), **připraví majitel nebo právník**
 - [ ] Aktualizace `privacy.html` (GDPR) a cookie lišty (**připraví majitel
       nebo právník**, agent jen navrhne strukturu)

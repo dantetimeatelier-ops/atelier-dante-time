@@ -4,6 +4,23 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-25 – Claude – claude/eshop-platforma (PR #3, mandát R10)
+**Hotovo:** celá nová platforma: generátor stránek (CZ/EN), Cloudflare Pages
+Functions + D1 + KV, katalog a detail hodinek (SSR), košík a objednávky
+s atomickou rezervací, QR platba, faktura, e-maily (bez poskytovatele jen
+ukládány), online odstoupení (§ 1830a), administrace pro iPhone (heslo + TOTP),
+přepracované právní dokumenty (návrh s [DOPLNIT]), testy (unit, smoke, e2e,
+Lighthouse, gitleaks), nasazení na Cloudflare po testech (neaktivní bez klíčů).
+**Rozpracováno:** integrace Zásilkovna/Balíkovna (podání zásilek), Comgate
+(neověřeno naostro), účetní systém – viz docs/INTEGRATIONS.md.
+**Další krok:** majitel: Cloudflare (docs/CLOUDFLARE-SETUP.md), údaje
+a rozhodnutí do docs/LEGAL-REVIEW.md. Pak nasazení na náhled, test, DNS, merge.
+**Pozor na:** NESLUČOVAT PR #3 před přesměrováním domény na Cloudflare –
+GitHub Pages by přestal web zobrazovat (kořen už nemá index.html).
+Dependabot PR #2 se po sloučení PR #3 musí obnovit (jiný package.json).
+
+---
+
 ## 2026-11-25 – Claude – claude/dante-time-web-management-7g6wuy (krok A automatizace)
 **Hotovo:** workflow v `.github/workflows/` (testy, publikace/značky,
 dostupnost, týdenní přehled, návrat k verzi), Dependabot, `tests/smoke.mjs`,
