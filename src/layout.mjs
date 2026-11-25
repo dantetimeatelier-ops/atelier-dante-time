@@ -1,6 +1,6 @@
 // Sdílený vzhled všech stránek: <head>, hlavička, patička.
 // Používá ho generátor statických stránek i serverové funkce (katalog).
-import { SITE, PAGES, INDEPENDENCE } from './site.mjs';
+import { SITE, PAGES, INDEPENDENCE, OPERATOR } from './site.mjs';
 import { UI } from './i18n/ui.mjs';
 import { ASSET_V } from './asset-version.mjs';
 const asset = (u) => (u.startsWith('/assets/') ? `${u}?v=${ASSET_V}` : u);
@@ -127,47 +127,50 @@ ${o.banner ? `<div class="banner" role="note">${o.banner}</div>` : ''}
 ${o.body}
 </main>
 <footer class="site-footer">
+  <div class="wrap footer-top">
+    <a class="footer-mark" href="${PAGES.home[lang]}" aria-label="${SITE.name}"><img src="${LOGO}" width="160" height="160" alt="" loading="lazy"><span>Dante Time</span></a>
+    <p class="footer-motto">${L('Dáváme času nový život', 'Giving time a new life')}</p>
+  </div>
   <div class="wrap footer-grid">
-    <div class="footer-brand">
-      <img src="${LOGO}" width="160" height="160" alt="" loading="lazy">
-      <p>${esc(t.footer_tagline)}</p>
-      <p class="footer-contact"><a href="mailto:${SITE.email}">${SITE.email}</a></p>
-      <p class="footer-social">${socialLinks('fs')}</p>
-    </div>
-    <div>
-      <h2>${esc(t.footer_atelier)}</h2>
+    <section aria-labelledby="f-atelier">
+      <h2 id="f-atelier">${L('Ateliér', 'Atelier')}</h2>
       <ul>
         <li><a href="${PAGES.collection[lang]}">${esc(t.nav_collection)}</a></li>
         <li><a href="${PAGES.services[lang]}">${esc(t.nav_services)}</a></li>
         <li><a href="${PAGES.about[lang]}">${esc(t.nav_about)}</a></li>
         <li><a href="${PAGES.care[lang]}">${esc(t.footer_care)}</a></li>
-        <li><a href="${PAGES.contact[lang]}">${esc(t.nav_contact)}</a></li>
+        <li><a href="${PAGES.contact[lang]}">${esc(t.nav_contact)}</a> · <a href="mailto:${SITE.email}">${SITE.email}</a></li>
       </ul>
-    </div>
-    <div>
-      <h2>${esc(t.footer_shopping)}</h2>
+    </section>
+    <section aria-labelledby="f-care">
+      <h2 id="f-care">${L('Péče o zákazníky', 'Customer care')}</h2>
       <ul>
-        <li><a href="${legalHref('/doprava-a-platba')}">${esc(t.footer_shipping)}</a></li>
-        <li><a href="${legalHref('/terms')}">${esc(t.footer_terms)}</a></li>
-        <li><a href="${legalHref('/returns')}">${esc(t.footer_withdrawal)}</a></li>
-        <li><a href="${legalHref('/reklamace')}">${esc(t.footer_claims)}</a></li>
-        <li><a href="${legalHref('/warranty')}">${esc(t.footer_warranty)}</a></li>
-        <li><a href="${legalHref('/zakazkova-vyroba')}">${esc(t.footer_custom)}</a></li>
+        <li><a href="${legalHref('/doprava-a-platba')}">${L('Doprava a platba', 'Shipping &amp; payment')}</a></li>
+        <li><a href="${legalHref('/returns')}">${L('Vrácení do 14 dnů', '14-day returns')}</a> · <a href="${lang === 'en' ? '/odstoupeni' : '/odstoupeni'}">${L('odstoupit online', 'withdraw online')}</a></li>
+        <li><a href="${legalHref('/reklamace')}">${L('Reklamace a záruka 24 měsíců', 'Complaints &amp; 24-month warranty')}</a></li>
+        <li><a href="${legalHref('/warranty')}">${L('Doživotní garance pravosti', 'Lifetime authenticity guarantee')}</a></li>
+        <li><a href="${legalHref('/zakazkova-vyroba')}">${L('Servis a zakázky na míru – podmínky', 'Service &amp; commissions – terms')}</a></li>
       </ul>
-    </div>
-    <div>
-      <h2>${esc(t.footer_legal)}</h2>
-      <ul>
-        <li><a href="${legalHref('/privacy')}">${esc(t.footer_privacy)}</a></li>
-        <li><a href="${legalHref('/cookies')}">${esc(t.footer_cookies)}</a></li>
-        <li><a href="${legalHref('/provozovatel')}">${esc(t.footer_operator)}</a></li>
-        <li><a href="${legalHref('/reseni-sporu')}">${L('Řešení sporů', 'Dispute resolution')}</a></li>
-        <li><a href="${legalHref('/prodej-do-eu')}">${L('Prodej do zemí EU', 'Sales to EU countries')}</a></li>
-        <li><button type="button" class="linklike" data-consent-open>${L('Nastavení cookies', 'Cookie settings')}</button></li>
-      </ul>
-    </div>
+    </section>
+    <section aria-labelledby="f-follow">
+      <h2 id="f-follow">${L('Sledujte nás', 'Follow us')}</h2>
+      <p class="footer-follow-text">${L('Renovace krok za krokem a nové kusy dřív, než se objeví v kolekci.', 'Restorations step by step and new pieces before they reach the collection.')}</p>
+      <div class="footer-social">${socialLinks('fs')}</div>
+    </section>
   </div>
-  <div class="wrap footer-bottom">© ${year} ${SITE.name}. ${esc(t.footer_rights)}<br><span class="footer-note">${esc(INDEPENDENCE[lang])}</span></div>
+  <div class="wrap footer-legal">
+    <nav aria-label="${L('Právní informace', 'Legal information')}">
+      <a href="${legalHref('/terms')}">${esc(t.footer_terms)}</a>
+      <a href="${legalHref('/privacy')}">${esc(t.footer_privacy)}</a>
+      <a href="${legalHref('/cookies')}">${esc(t.footer_cookies)}</a>
+      <button type="button" class="linklike" data-consent-open>${L('Nastavení cookies', 'Cookie settings')}</button>
+      <a href="${legalHref('/reseni-sporu')}">${L('Řešení sporů', 'Dispute resolution')}</a>
+      <a href="${legalHref('/prodej-do-eu')}">${L('Prodej do EU', 'EU sales')}</a>
+      <a href="${legalHref('/provozovatel')}">${esc(t.footer_operator)}</a>
+    </nav>
+    <p class="footer-id">© ${year} ${SITE.name} · ${OPERATOR.name} · ${L('IČO', 'Company ID')} ${OPERATOR.ico} · ${esc(lang === 'en' ? OPERATOR.addressEn : OPERATOR.address)}</p>
+    <p class="footer-note">${esc(INDEPENDENCE[lang])}</p>
+  </div>
 </footer>
 <script src="${asset('/assets/site.js')}" defer></script>
 <script src="${asset('/assets/consent.js')}" defer></script>
