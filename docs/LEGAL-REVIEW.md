@@ -31,7 +31,7 @@
 | Téma | Stav |
 |---|---|
 | Provozovatel | Patrik Hužička, OSVČ, značka Dante Time, IČO 24020885, Buková 1561, 273 51 Unhošť, podnikání od 2. 12. 2025 |
-| Platby | převod CZK (QR platba) i EUR (SEPA QR), účet 2854824133/0800, IBAN, BIC, splatnost 3 dny; zahraničí jen předem; dobírka jen ČR (+49 Kč) |
+| Platby | převod CZK (QR platba) i EUR (SEPA QR), podnikatelský účet 7058919329/0800, IBAN, BIC, splatnost 3 dny; zahraničí jen předem; dobírka jen ČR (+49 Kč) |
 | Doprava ČR | Zásilkovna 99 Kč, Balíkovna 79 Kč, výběr výdejního místa na mapě, osobní předání jen po domluvě |
 | Doprava EU | všech 27 států; cena se ukáže po výběru země **před odesláním objednávky** |
 | Drahé hodinky | od nastavené ceny jen pojištěná přeprava nebo osobní předání |

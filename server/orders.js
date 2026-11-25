@@ -4,7 +4,7 @@ import { HttpError } from './http.js';
 import { mode, getSettings, releaseExpired, nextCounter, randomId, randomToken, now, addMinutes, audit } from './db.js';
 import { str, email as vEmail, oneOf } from './validate.js';
 import { sendEmail, ownerEmail } from './email.js';
-import { OPERATOR, SITE } from '../src/site.mjs';
+import { OPERATOR, SITE, bankDetails } from '../src/site.mjs';
 import { SHIPPING, PAYMENT, METAL, formatCzk } from '../src/shop/format.mjs';
 import { isValidIban } from '../src/shop/spd.mjs';
 import { EU_COUNTRIES, countryName, czkToEurCents, formatEur } from '../src/shop/eu.mjs';
@@ -49,7 +49,7 @@ export async function shopConfig(env, lang = 'cs', { country = 'CZ', itemsTotal 
   }
 
   const payment = [];
-  const iban = env.SHOP_IBAN || OPERATOR.iban;
+  const iban = OPERATOR.iban;
   if (iban && isValidIban(iban)) payment.push({ id: 'bank_transfer', label: PAYMENT.bank_transfer[lang], note: L('Platební údaje a QR kód obdržíte hned po objednávce. Splatnost 3 dny.', 'Payment details and a QR code are shown right after ordering. Due within 3 days.') });
   if (cardPaymentsAvailable(env)) payment.push({ id: 'card', label: PAYMENT.card[lang] });
   // Dobírka jen v ČR a jen s výdejním místem; zahraniční objednávky pouze s platbou předem
@@ -127,11 +127,12 @@ export async function createOrder(env, body, origin) {
     env.DB.prepare(`INSERT INTO orders (id, number, public_token, status, mode, customer_id, email, name, phone,
       billing_street, billing_city, billing_zip, company, company_ico, company_dic, shipping_method, pickup_point_id, pickup_point_name,
       payment_method, items_total, shipping_price, total, variable_symbol, customer_note, terms_version, terms_accepted_at, reserved_until, cod_fee,
-      billing_country, pay_currency, pay_amount_cents, eur_rate, lang)
-      VALUES (?, ?, ?, 'awaiting_payment', ?, (SELECT id FROM customers WHERE email = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      billing_country, pay_currency, pay_amount_cents, eur_rate, lang, bank_account, bank_iban, bank_bic)
+      VALUES (?, ?, ?, 'awaiting_payment', ?, (SELECT id FROM customers WHERE email = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(orderId, number, token, m, customer.email, customer.email, customer.name, customer.phone, customer.street, customer.city, customer.zip,
         customer.company, customer.ico, customer.dic, ship.id, pickupId, pickupName, pay.id, itemsTotal, ship.price, total, vs, customer.note,
-        LEGAL_VERSION, t, reservedUntil, codFee, country, currency, payCents, currency === 'EUR' ? cfg.eurRate : null, lang),
+        LEGAL_VERSION, t, reservedUntil, codFee, country, currency, payCents, currency === 'EUR' ? cfg.eurRate : null, lang,
+        ...Object.values(bankDetails())),
   ];
   for (const p of products) {
     stmts.push(env.DB.prepare(`UPDATE products SET status='reserved', reserved_order_id=?, reserved_until=?, updated_at=? WHERE id=? AND status='available'`).bind(orderId, reservedUntil, t, p.id));
@@ -284,6 +285,7 @@ export async function createInvoice(env, d) {
     payment_method: d.payment_method || 'bank_transfer', issued_at: now(), taxable_date: d.taxable_date || now(),
     due_date: d.due_date || null, paid_at: d.paid_at || null, variable_symbol: d.variable_symbol || number, note: d.note || null,
     pay_currency: d.pay_currency || 'CZK', pay_amount_cents: d.pay_amount_cents ?? null, eur_rate: d.eur_rate ?? null,
+    ...bankDetails(), // účet, na který je faktura vystavena (pozdější změna účtu ji neovlivní)
   };
   const keys = Object.keys(inv);
   await env.DB.prepare(`INSERT INTO invoices (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`).bind(...keys.map((k) => inv[k])).run();

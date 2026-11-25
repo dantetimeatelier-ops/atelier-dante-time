@@ -32,10 +32,13 @@ export const OPERATOR = {
   phone: null,          // telefon (nepovinné, na webu zatím není)
   bankName: 'Česká spořitelna, a.s.',
   accountHolder: 'Patrik Hužička',
-  bankAccount: '2854824133/0800',
-  iban: 'CZ6308000000002854824133',
-  ibanPretty: 'CZ63 0800 0000 0028 5482 4133',
+  // ⬇ BANKOVNÍ ÚDAJE – jediné místo v celém systému (od 25. 11. 2026 podnikatelský účet).
+  //   Používají je objednávky, QR platby (CZK i EUR), e-maily, faktury i obchodní podmínky.
+  //   Nové faktury a objednávky si účet uloží; dříve vystavené doklady se změnou nemění.
+  bankAccount: '7058919329/0800',
+  iban: 'CZ7608000000007058919329',
   bic: 'GIBACZPX',
+  get ibanPretty() { return this.iban.replace(/(.{4})/g, '$1 ').trim(); },
   returnAddress: null,  // potvrzeno majitelem: vrácení na adresu sídla v Unhošti (null = sídlo)
 };
 
@@ -60,4 +63,12 @@ export const PAGES = {
   care: { cs: '/care', en: '/en/care' },
   contact: { cs: '/kontakt', en: '/en/contact' },
   cart: { cs: '/kosik', en: '/en/cart' },
+};
+
+// Aktuální bankovní spojení (snímek ukládaný k novým objednávkám a fakturám)
+export const bankDetails = () => ({ bank_account: OPERATOR.bankAccount, bank_iban: OPERATOR.iban, bank_bic: OPERATOR.bic });
+// Bankovní spojení dokladu: uložené u dokladu, jinak aktuální
+export const docBank = (doc = {}) => {
+  const iban = doc.bank_iban || OPERATOR.iban;
+  return { account: doc.bank_account || OPERATOR.bankAccount, iban, ibanPretty: iban.replace(/(.{4})/g, '$1 ').trim(), bic: doc.bank_bic || OPERATOR.bic };
 };

@@ -137,7 +137,7 @@ test('katalog hodinek: zápis do databáze, prodané kusy si stav ponechají, ko
   const list = loadCatalog(dir);
   assert.equal(list.length, 1);
   const db = new DatabaseSync(':memory:');
-  for (const m of ['0001_zaklad', '0002_druhy_kovy_dobirka_faktury', '0003_eu_meny_garance', '0004_punc_pojisteni_eu', '0005_video_v_galerii']) db.exec(readFileSync(new URL(`../../migrations/${m}.sql`, import.meta.url), 'utf8'));
+  for (const m of ['0001_zaklad', '0002_druhy_kovy_dobirka_faktury', '0003_eu_meny_garance', '0004_punc_pojisteni_eu', '0005_video_v_galerii', '0006_bankovni_ucet_na_dokladu']) db.exec(readFileSync(new URL(`../../migrations/${m}.sql`, import.meta.url), 'utf8'));
   db.exec(catalogSql(list));
   assert.equal(db.prepare("SELECT status FROM products WHERE id='kat-prim-test'").get().status, 'available');
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM product_images WHERE product_id='kat-prim-test'").get().n, 1);
@@ -158,4 +158,24 @@ test('otisk stylů v src/asset-version.mjs odpovídá souborům (spusťte npm ru
   const { computeAssetVersion } = await import('../../scripts/asset-version.mjs');
   const { ASSET_V } = await import('../../src/asset-version.mjs');
   assert.equal(ASSET_V, computeAssetVersion());
+});
+
+test('bankovní údaje: podnikatelský účet, platný IBAN odpovídá číslu účtu, QR platby', async () => {
+  const { OPERATOR, docBank } = await import('../../src/site.mjs');
+  const { isValidIban, spdString } = await import('../../src/shop/spd.mjs');
+  const { epcString } = await import('../../src/shop/eu.mjs');
+  assert.equal(OPERATOR.bankAccount, '7058919329/0800');
+  assert.ok(isValidIban(OPERATOR.iban));
+  // CZ IBAN = CZkk + kód banky (4) + předčíslí (6) + číslo účtu (10)
+  const [num, bank] = OPERATOR.bankAccount.split('/');
+  assert.equal(OPERATOR.iban.slice(4, 8), bank);
+  assert.equal(OPERATOR.iban.slice(14), num.padStart(10, '0'));
+  assert.equal(OPERATOR.ibanPretty, 'CZ76 0800 0000 0070 5891 9329');
+  const spd = spdString({ iban: OPERATOR.iban, amount: 9099, vs: '2026000123', message: 'Objednavka 2026-0001', recipient: 'Atelier Dante Time' });
+  assert.match(spd, /ACC:CZ7608000000007058919329\*AM:9099\.00\*CC:CZK\*X-VS:2026000123/);
+  const epc = epcString({ bic: OPERATOR.bic, name: OPERATOR.accountHolder, iban: OPERATOR.iban, cents: 36400, reference: 'VS 2026000123 2026-0001' });
+  assert.match(epc, /GIBACZPX\nPatrik Hu.i.ka\nCZ7608000000007058919329\nEUR364\.00/);
+  // Starý doklad si ponechá svůj účet
+  assert.equal(docBank({ bank_iban: 'CZ6308000000002854824133', bank_account: '2854824133/0800' }).account, '2854824133/0800');
+  assert.equal(docBank({}).account, '7058919329/0800');
 });

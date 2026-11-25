@@ -88,3 +88,11 @@ Druh se označuje „Ateliérová přestavba Dante Time“.
 **Doplněno týž den:** videa se v e-shopu nezobrazují (na iPhonu se nezobrazovala správně),
 majitel je zveřejňuje na Instagramu. Do katalogu se přidávají jen fotografie.
 **Technicky:** `katalog/sablona-prim.json`.
+
+## R14 – Podnikatelský bankovní účet (2026-11-25)
+**Rozhodl:** majitel
+**Rozhodnutí:** Pro všechny platby se používá výhradně podnikatelský účet Patrik Hužička,
+Česká spořitelna, 7058919329/0800, IBAN CZ76 0800 0000 0070 5891 9329, BIC GIBACZPX.
+Původní osobní účet se pro nové objednávky nepoužívá. Dříve vystavené doklady se nemění.
+**Technicky:** jediné místo `src/site.mjs` (OPERATOR); objednávky a faktury si účet ukládají
+(migrace 0006), proto pozdější změna účtu staré doklady neovlivní.

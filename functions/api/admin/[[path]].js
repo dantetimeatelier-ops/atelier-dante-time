@@ -113,7 +113,7 @@ route('GET', 'dashboard', async ({ env }) => {
   const cfg = await shopConfig(env);
   const warnings = [];
   for (const [k, label] of [['name', 'jméno / firma'], ['ico', 'IČO'], ['address', 'adresa'], ['vatPayer', 'plátce DPH'], ['iban', 'IBAN pro QR platbu']]) {
-    if (OPERATOR[k] == null && !(k === 'iban' && env.SHOP_IBAN)) warnings.push(`Chybí údaj provozovatele: ${label}`);
+    if (OPERATOR[k] == null) warnings.push(`Chybí údaj provozovatele: ${label}`);
   }
   if (!cfg.shipping.length) warnings.push('Nejsou nastaveny ceny dopravy (Nastavení)');
   if (!cfg.payment.length) warnings.push('Není dostupný žádný způsob platby');
@@ -424,7 +424,7 @@ route('GET', 'settings', async ({ env }) => {
     settings: s,
     integrations: {
       mode: mode(env), email: env.EMAIL_PROVIDER === 'resend' && Boolean(env.RESEND_API_KEY), card: Boolean(env.COMGATE_MERCHANT && env.COMGATE_SECRET),
-      cardLive: env.PAYMENTS_LIVE === 'true', packeta: Boolean(env.PACKETA_API_KEY), iban: Boolean(env.SHOP_IBAN || OPERATOR.iban),
+      cardLive: env.PAYMENTS_LIVE === 'true', packeta: Boolean(env.PACKETA_API_KEY), iban: Boolean(OPERATOR.iban),
     },
   });
 });

@@ -7,7 +7,7 @@ To nastavuje **jen majitel**.
 
 | Integrace | Stav | Co je potřeba | Náklady |
 |---|---|---|---|
-| **Bankovní převod s QR platbou** | ✅ hotovo, otestováno | IBAN a číslo účtu (`src/site.mjs` nebo `SHOP_IBAN`, `SHOP_ACCOUNT`) | 0 Kč |
+| **Bankovní převod s QR platbou** | ✅ hotovo, otestováno | IBAN a číslo účtu – jediné místo: `src/site.mjs` (OPERATOR); objednávky a faktury si účet ukládají | 0 Kč |
 | **Faktury z administrace** (objednávky automaticky, zakázky a ruční faktury, storno, úhrada; tisk / PDF) | ✅ hotovo, otestováno, bez externího systému | údaje provozovatele, režim DPH | 0 Kč |
 | **Dobírka** (příplatek, rezervace do odeslání, faktura po zaplacení) | ✅ hotovo, otestováno | zapnout v administraci → Nastavení | dle ceníku dopravce |
 | **E-maily** (potvrzení, platba, odeslání, odstoupení, poptávky) | ✅ hotovo, bez poskytovatele se jen ukládají do administrace | účet **Resend** (free 3 000 e-mailů/měsíc), ověření domény v DNS, `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `EMAIL_FROM` | 0 Kč (free) |

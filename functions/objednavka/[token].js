@@ -5,7 +5,7 @@ import { releaseExpired } from '../../server/db.js';
 import { qrSvg } from '../../server/qr.js';
 import { spdString, isValidIban } from '../../src/shop/spd.mjs';
 import { epcString, formatEur } from '../../src/shop/eu.mjs';
-import { OPERATOR, SITE, missing } from '../../src/site.mjs';
+import { OPERATOR, SITE, missing, docBank } from '../../src/site.mjs';
 import { formatCzk, ORDER_STATUS, SHIPPING, PAYMENT } from '../../src/shop/format.mjs';
 import { hero, esc } from '../../src/layout.mjs';
 
@@ -19,20 +19,21 @@ export const onRequestGet = handle(async ({ env, params }) => {
 
   let payment = '';
   if (o.status === 'awaiting_payment' && o.payment_method === 'bank_transfer') {
-    const iban = env.SHOP_IBAN || OPERATOR.iban;
+    const bank = docBank(o); // účet uložený u objednávky
+    const iban = bank.iban;
     const eur = o.pay_currency === 'EUR';
     let qr = '';
     try {
       qr = eur
-        ? qrSvg(epcString({ bic: OPERATOR.bic, name: OPERATOR.accountHolder, iban, cents: o.pay_amount_cents, reference: `VS ${o.variable_symbol} ${o.number}` }), { label: 'SEPA QR' })
+        ? qrSvg(epcString({ bic: bank.bic, name: OPERATOR.accountHolder, iban, cents: o.pay_amount_cents, reference: `VS ${o.variable_symbol} ${o.number}` }), { label: 'SEPA QR' })
         : qrSvg(spdString({ iban, amount: o.total, vs: o.variable_symbol, message: `Objednavka ${o.number}`, recipient: SITE.name }), { label: 'QR platba' });
     } catch { qr = ''; }
     const due = new Date(o.reserved_until).toLocaleString('cs-CZ', { timeZone: 'Europe/Prague', day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     payment = `<div class="card"><h2>Platba převodem / Bank transfer</h2>
 <div class="pay-grid"><table class="specs"><tbody>
 <tr><th>Příjemce / Beneficiary</th><td>${esc(OPERATOR.accountHolder)}</td></tr>
-${eur ? `<tr><th>IBAN</th><td>${esc(OPERATOR.ibanPretty)}</td></tr><tr><th>BIC / SWIFT</th><td>${esc(OPERATOR.bic)}</td></tr>`
-    : `<tr><th>Číslo účtu</th><td>${esc(env.SHOP_ACCOUNT || OPERATOR.bankAccount) || missing('číslo účtu')}</td></tr>`}
+${eur ? `<tr><th>IBAN</th><td>${esc(bank.ibanPretty)}</td></tr><tr><th>BIC / SWIFT</th><td>${esc(bank.bic)}</td></tr>`
+    : `<tr><th>Číslo účtu</th><td>${esc(bank.account)}</td></tr><tr><th>IBAN</th><td>${esc(bank.ibanPretty)}</td></tr>`}
 <tr><th>Částka / Amount</th><td><strong>${eur ? formatEur(o.pay_amount_cents) : formatCzk(o.total)}</strong>${eur ? `<br><span class="doc-meta">${formatCzk(o.total)}, kurz ${esc(o.eur_rate)} Kč/€</span>` : ''}</td></tr>
 <tr><th>${eur ? 'Zpráva pro příjemce / Reference' : 'Variabilní symbol'}</th><td><strong>${eur ? `VS ${esc(o.variable_symbol)} ${esc(o.number)}` : esc(o.variable_symbol)}</strong></td></tr>
 <tr><th>Splatnost / Due</th><td>${due}</td></tr>
