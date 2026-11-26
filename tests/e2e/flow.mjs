@@ -330,6 +330,18 @@ try {
   await page.goto(`${BASE}/admin/#/dily`);
   await page.getByRole('heading', { name: 'Sklad dílů' }).waitFor();
   await page.getByText('Strojek PRIM 66 – eBay test').waitFor();
+
+  // Velké PDF (3,5 MB, např. faktura z Pages s logem) se uloží po částech a vrátí se beze změny
+  const big = await page.evaluate(async () => {
+    const n = 3_500_000; const b = new Uint8Array(n); b.set(new TextEncoder().encode('%PDF-1.4\n'));
+    for (let i = 9; i < n; i++) b[i] = (i * 31 + 7) % 251;
+    const fd = new FormData(); fd.append('file', new Blob([b], { type: 'application/pdf' }), 'velka-faktura.pdf'); fd.append('purpose', 'prodej');
+    const up = await (await fetch('/api/admin/inbox/upload', { method: 'POST', headers: { 'X-DT-Admin': '1' }, body: fd })).json();
+    const back = new Uint8Array(await (await fetch(`/api/admin/documents/${up.id}/file`)).arrayBuffer());
+    let same = back.length === n; for (let i = 0; same && i < n; i += 997) same = back[i] === b[i];
+    return { id: up.id, len: back.length, same };
+  });
+  assert.equal(big.len, 3_500_000); assert.ok(big.same, 'velké PDF se musí vrátit beze změny');
   step('nákup ze screenshotu: kontrola, kurz EUR, naskladnění dílu, duplicita odhalena');
 
   // Prodej mimo systém (např. historická faktura) → tržby a export pro účetní; duplicitní číslo odmítnuto
