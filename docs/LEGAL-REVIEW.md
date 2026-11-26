@@ -1,6 +1,6 @@
 # Právní dokumenty – kontrola před zveřejněním
 
-**Stav:** ⚖️ NÁVRH 3.3 – závěrečná kontrola 25. 11. 2026 (část 2b), otevřený právní bod L1 (část 2e), čeká na schválení majitele
+**Stav:** ✅ SCHVÁLENO majitelem 26. 11. 2026 – verze 1.0, účinnost od 26. 11. 2026. Otevřený právní bod L1 (část 2e) zůstává na odpovědnosti majitele.
 **Připraveno:** 25. 11. 2026
 **Zdroj textů:** `src/legal/cs.mjs` (česky), `src/legal/en.mjs` (anglicky), společné údaje
 `src/legal/common.mjs` a `src/site.mjs` (objekt `OPERATOR`).

@@ -126,3 +126,9 @@ a spuštění webu.
 „Dáváme času nový život“ s linkami a ornamentem, „Tradice. Řemeslo. Čas.“ a jedno zlaté
 orámované tlačítko „Objevte naši tvorbu“; pod ním malý odkaz „Servis a zakázka na míru“.
 Fotografie zůstává. Krátký popis ateliéru z úvodu odebrán.
+
+## R17 – Schválení právních dokumentů a spuštění (2026-11-26)
+**Rozhodl:** majitel („schvaluji dokumenty“)
+**Rozhodnutí:** Právní dokumenty verze 3.2 (CZ + EN) schváleny jako verze 1.0 s účinností
+od 26. 11. 2026. Web se spouští na doméně atelier-dante-time.cz. Otevřený právní bod L1
+(živnostenské oprávnění) zůstává na odpovědnosti majitele (R15).
