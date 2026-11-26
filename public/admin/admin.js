@@ -384,7 +384,7 @@
     const target = x.product_id ? 'hodinky' : x.part_id ? 'sklad' : x.category === 'dil' ? 'sklad' : x.category === 'nakup' ? 'hodinky' : 'provoz';
     return `<form class="card pform" data-id="${x.id || ''}">
       ${x.check_note ? `<p class="small warn" style="padding:8px;border-radius:8px">${esc(x.check_note)}</p>` : ''}
-      ${x.doc_id ? `<p class="small"><a href="/api/admin/documents/${esc(x.doc_id)}/file" target="_blank" rel="noopener">Zobrazit původní doklad ↗</a></p>` : ''}
+      ${x.doc_id ? `<p class="small"><a href="/api/admin/documents/${esc(x.doc_id)}/file" target="_blank" rel="noopener">Zobrazit původní doklad ↗</a>${ctx.ai?.ready && x.id ? ` · <button class="btn" type="button" data-reai="${esc(x.doc_id)}">Přečíst znovu pomocí AI</button>` : ''}</p>` : ''}
       ${field('description', 'Co jste koupil', x, 'required maxlength="300"')}
       <div class="grid"><label>Platforma<select name="platform">${opt(ctx.platforms, x.platform, '–')}</select></label>${field('cost_date', 'Datum', { cost_date: x.cost_date || today() }, 'type="date"')}</div>
       ${moneyFields(x, 'amount_czk')}
@@ -398,7 +398,7 @@
   };
   const saleForm = (x, products, ctx) => `<form class="card sform" data-id="${x.id || ''}">
       ${x.check_note ? `<p class="small warn" style="padding:8px;border-radius:8px">${esc(x.check_note)}</p>` : ''}
-      ${x.doc_id ? `<p class="small"><a href="/api/admin/documents/${esc(x.doc_id)}/file" target="_blank" rel="noopener">Zobrazit fakturu ↗</a></p>` : ''}
+      ${x.doc_id ? `<p class="small"><a href="/api/admin/documents/${esc(x.doc_id)}/file" target="_blank" rel="noopener">Zobrazit fakturu ↗</a>${ctx.ai?.ready && x.id ? ` · <button class="btn" type="button" data-reai="${esc(x.doc_id)}">Přečíst znovu pomocí AI</button>` : ''}</p>` : ''}
       <div class="grid">${field('number', 'Číslo faktury', x)}${field('issued_on', 'Datum', { issued_on: x.issued_on || today() }, 'type="date"')}</div>
       ${field('items', 'Co bylo prodáno', x, 'required maxlength="500"')}
       ${moneyFields(x, 'total_czk')}
@@ -416,7 +416,7 @@
     const t = form.querySelector('[name=target]');
     if (t) { const sync = () => form.querySelectorAll('[data-t]').forEach((el) => { el.hidden = el.dataset.t !== t.value; }); t.addEventListener('change', sync); sync(); }
   }
-  const prepFile = async (file) => (file.type === 'application/pdf' ? { blob: file, name: file.name } : { blob: (await resize(file, 2400)).blob, name: file.name });
+  const prepFile = async (file) => (file.type === 'application/pdf' ? { blob: file, name: file.name } : { blob: (await resize(file, 1600)).blob, name: file.name });
 
   views.doklady = async () => {
     const [d, { products }] = await Promise.all([api('GET', 'inbox'), api('GET', 'products')]);
@@ -448,6 +448,12 @@
       const b = formData(f); if (f.dataset.id) await api('PUT', `sales/${f.dataset.id}`, b); else await api('POST', 'sales', b);
       toast('Prodej uložen'); views.doklady();
     }); }));
+    app.querySelectorAll('[data-reai]').forEach((b) => b.addEventListener('click', () => run(async () => {
+      b.disabled = true; b.textContent = 'AI čte doklad…';
+      const r = await api('POST', `inbox/${b.dataset.reai}/extract`, {});
+      toast(r.status === 'confirmed' ? 'Rozpoznáno a uloženo' : r.status === 'review' ? 'Přečteno – zkontrolujte prosím' : (r.reason || 'AI doklad nepřečetla'), r.status === 'manual');
+      views.doklady();
+    })));
     app.querySelectorAll('[data-delcost]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat tento nákup? Doklad zůstane uložený.')) return; await api('DELETE', `costs/${b.dataset.delcost}`); views.doklady(); })));
     app.querySelectorAll('[data-delsale]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat tento prodej? Faktura zůstane uložená.')) return; await api('DELETE', `sales/${b.dataset.delsale}`); views.doklady(); })));
     for (const purpose of ['nakup', 'prodej']) {
@@ -468,7 +474,7 @@
           } catch (err) { stats.err++; row.textContent = `${file.name} – chyba: ${err.message}`; }
         }
         toast(`Hotovo: ${stats.ok} uloženo, ${stats.review} ke kontrole${stats.dup ? `, ${stats.dup} duplicit` : ''}${stats.err ? `, ${stats.err} chyb` : ''}`, stats.err > 0);
-        setTimeout(() => views.doklady(), 1200);
+        setTimeout(() => views.doklady(), stats.err || stats.review ? 6000 : 2000);
       }));
     }
   };
