@@ -260,8 +260,28 @@ test('nákupy a prodeje: výsledek AI → záznam, nejisté údaje ke kontrole, 
   assert.ok(noRate.uncertain.includes('kurz'));
   const s = saleFromAi({ is_sales_invoice: true, number: '20260012', date: '2026-02-10', buyer_name: 'Jan Novák', buyer_email: 'JAN@EXAMPLE.COM', buyer_address: null, items: [{ title: 'PRIM Sport', price: 12900 }], currency: 'CZK', total: 12900, payment_method: 'prevod', uncertain: [], note: null }, 1);
   assert.deepEqual(s.uncertain, []); assert.equal(s.patch.total_czk, 12900); assert.equal(s.patch.buyer_email, 'jan@example.com');
+  const m = saleFromAi({ is_sales_invoice: true, number: '67890', date: '2026-01-05', watch_model: 'DT: Prim Classic Rose LTD 01', serial: '26-1.5', items: [{ title: 'Prim Classic Rose', price: 7850 }], currency: 'CZK', total: 8000, payment_method: null, uncertain: [] }, 1);
+  assert.equal(m.patch.watch_model, 'Prim Classic Rose LTD 01'); assert.equal(m.patch.serial_ref, '26-1.5'); assert.equal(m.patch.payment_method, null); assert.deepEqual(m.uncertain, []);
   assert.ok(saleFromAi({ is_sales_invoice: false, number: '1', date: '2026-01-01', items: [], currency: 'CZK', total: 1, uncertain: [] }, 1).uncertain.length > 0);
   const products = [{ id: 'a', title: 'PRIM Sport 1968', brand: 'PRIM', model: 'Sport', reference: null }, { id: 'b', title: 'Omega Genève', brand: 'Omega', model: 'Genève', reference: null }];
   assert.equal(matchProduct(products, 'Prodej hodinek PRIM Sport 1968'), 'a');
   assert.equal(matchProduct(products, 'řemínek kožený'), null);
+});
+
+test('AI: klíč vložený s mezerou nebo koncem řádku se očistí', async () => {
+  const { cleanKey } = await import('../../server/ai.js');
+  assert.equal(cleanKey(' sk-ant-abc_DEF-123\n'), 'sk-ant-abc_DEF-123');
+  assert.equal(cleanKey('sk-ant-x​y\r\n'), 'sk-ant-xy');
+  assert.equal(cleanKey(undefined), '');
+});
+
+test('fakturace: číslo DT-RRRR-NNNN, VS, rok podle Prahy, součty se zálohou', async () => {
+  const { invoiceNumber, invoiceVs, pragueYear, invoiceTotals, normalizeItems } = await import('../../src/shop/invoice.mjs');
+  assert.equal(invoiceNumber(2026, 1), 'DT-2026-0001'); assert.equal(invoiceNumber(2026, 12345), 'DT-2026-12345');
+  assert.equal(invoiceVs(2026, 42), '20260042');
+  assert.equal(pragueYear('2026-12-31T23:30:00Z'), 2027); assert.equal(pragueYear('2026-12-31T22:30:00Z'), 2026);
+  const t = invoiceTotals([{ text: 'Prim Classic Soleil LTD.01', qty: 1, price: 9000 }, { text: 'Řemínek', qty: 2, price: 450 }, { text: 'Doprava', price: 150 }], 2000);
+  assert.deepEqual([t.total, t.advance, t.due], [10050, 2000, 8050]);
+  assert.equal(normalizeItems([{ text: '', price: 1 }, { text: 'x', price: 1.5 }, { text: 'Sleva', price: -500 }]).length, 1);
+  assert.equal(invoiceTotals([{ text: 'Dobropis', price: -9000 }]).total, -9000);
 });

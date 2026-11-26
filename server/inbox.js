@@ -12,7 +12,7 @@ export const PLATFORMS = { aukro: 'Aukro', aliexpress: 'AliExpress', ebay: 'eBay
 export const PAY = { prevod: 'Převod', karta: 'Karta', dobirka: 'Dobírka', hotove: 'Hotově', jine: 'Jiné' };
 const ymd = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : null);
 const cur = (v) => (/^[A-Z]{3}$/.test(String(v || '').toUpperCase()) ? String(v).toUpperCase() : 'CZK');
-const N = (t) => ({ type: [t, 'null'] });
+const N = (t) => ({ anyOf: [{ type: t }, { type: 'null' }] }); // nullable – structured outputs podporují anyOf
 
 // ---- Schémata pro AI (strukturovaný výstup) ------------------------------------------------
 const PURCHASE_SCHEMA = {
@@ -31,14 +31,15 @@ const PURCHASE_SCHEMA = {
 };
 const SALE_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['is_sales_invoice', 'number', 'date', 'buyer_name', 'buyer_email', 'buyer_address', 'items', 'currency', 'total', 'payment_method', 'uncertain', 'note'],
+  required: ['is_sales_invoice', 'number', 'date', 'buyer_name', 'buyer_email', 'buyer_address', 'watch_model', 'serial', 'items', 'currency', 'total', 'payment_method', 'uncertain', 'note'],
   properties: {
     is_sales_invoice: { type: 'boolean' }, number: N('string'), date: N('string'),
     buyer_name: N('string'), buyer_email: N('string'), buyer_address: N('string'),
+    watch_model: N('string'), serial: N('string'),
     items: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['title', 'price'], properties: { title: { type: 'string' }, price: N('number') } } },
     currency: N('string'), total: N('number'),
-    payment_method: { type: 'string', enum: ['prevod', 'karta', 'dobirka', 'hotove', 'jine'] },
-    uncertain: { type: 'array', items: { type: 'string', enum: ['number', 'date', 'buyer', 'items', 'currency', 'total', 'payment_method'] } },
+    payment_method: { anyOf: [{ type: 'string', enum: ['prevod', 'karta', 'dobirka', 'hotove', 'jine'] }, { type: 'null' }] },
+    uncertain: { type: 'array', items: { type: 'string', enum: ['number', 'date', 'buyer', 'watch_model', 'serial', 'items', 'currency', 'total', 'payment_method'] } },
     note: N('string'),
   },
 };
@@ -53,7 +54,8 @@ Vyčti: datum nákupu, platformu, prodávajícího, číslo objednávky/aukce, p
 Kategorie: "nakup" = celé hodinky, "dil" = strojek/ciferník/ručičky/pouzdro/sklo/řemínek/korunka a jiné díly hodinek, "material" = spotřební materiál a nářadí, "doprava" = jen poštovné, jinak podle smyslu. is_watch = true, pokud jde o celé hodinky.`;
 const SALE_PROMPT = `Toto by měla být faktura VYDANÁ ateliérem Atelier Dante Time (prodávající = ateliér, Patrik Hužička) zákazníkovi.
 Pokud to vydaná faktura ateliéru není, nastav is_sales_invoice = false.
-Vyčti: číslo faktury, datum vystavení, odběratele (jméno, e-mail, adresa, pokud jsou uvedeny), položky, měnu, celkovou částku k úhradě a způsob platby.`;
+Vyčti: číslo faktury, datum vystavení, odběratele (jméno, e-mail, adresa, pokud jsou uvedeny), položky, měnu, celkovou částku k úhradě a způsob platby.
+Model hodinek (watch_model) a výrobní číslo (serial) bývají v řádcích „Model:“ a „Serial no:“ / „Výrobní číslo:“ – opiš je přesně (u modelu bez předpony „DT:“). Způsob platby uveď jen, je-li na faktuře výslovně (převod, karta, dobírka, hotově); „Uhrazeno“ samo o sobě způsob platby není → null.`;
 
 // ---- Nahrání dokladu → koncept ke kontrole ----------------------------------------------------
 const sniff = (b) => {
@@ -76,9 +78,28 @@ export async function upload(env, form, actor) {
   if (!mime) throw new HttpError(`${f.name || 'Soubor'}: podporované jsou obrázky (JPEG, PNG, WebP) a PDF`);
   const hash = hex(await crypto.subtle.digest('SHA-256', buf));
   const dup = await env.DB.prepare('SELECT id, cost_id, sale_id FROM documents WHERE sha256 = ?').bind(hash).first();
-  if (dup) return { id: dup.id, duplicate: true, cost_id: dup.cost_id, sale_id: dup.sale_id };
-  const id = randomId();
   const name = str(f.name, { max: 200 });
+  if (dup) {
+    // Soubor už v systému je. Patří-li stále k nákupu/prodeji, je to opravdová duplicita.
+    const linked = (dup.cost_id && await env.DB.prepare('SELECT id FROM costs WHERE id = ?').bind(dup.cost_id).first())
+      || (dup.sale_id && await env.DB.prepare('SELECT id FROM sales WHERE id = ?').bind(dup.sale_id).first());
+    if (linked) return { id: dup.id, duplicate: true, cost_id: dup.cost_id, sale_id: dup.sale_id };
+    // Záznam byl dříve smazán → soubor se použije znovu a vznikne nový koncept
+    const draft = await createDraft(env, purpose, name, actor);
+    await env.DB.prepare("UPDATE documents SET cost_id = ?, sale_id = ?, purpose = ?, ai_status = ? WHERE id = ?")
+      .bind(draft.costId, draft.saleId, purpose, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai', dup.id).run();
+    await audit(env, actor, 'doklad_znovu_pouzit', 'document', dup.id, { purpose });
+    return { id: dup.id, cost_id: draft.costId, sale_id: draft.saleId, reused: true };
+  }
+  const id = randomId();
+  const { costId, saleId } = await createDraft(env, purpose, name, actor);
+  await env.DB.prepare("INSERT INTO documents (id, cost_id, sale_id, kind, purpose, filename, mime, size, sha256, data, created_by, ai_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(id, costId, saleId, purpose === 'prodej' ? 'faktura' : 'jiny', purpose, name, mime, buf.length, hash, buf, actor, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai').run();
+  await audit(env, actor, 'doklad_nahran', 'document', id, { purpose, size: buf.length });
+  return { id, cost_id: costId, sale_id: saleId };
+}
+
+async function createDraft(env, purpose, name, actor) {
   let costId = null; let saleId = null;
   if (purpose === 'nakup') {
     costId = randomId();
@@ -89,10 +110,7 @@ export async function upload(env, form, actor) {
     await env.DB.prepare("INSERT INTO sales (id, issued_on, items, status, source, check_note, created_by) VALUES (?, ?, ?, 'ke_kontrole', 'import', ?, ?)")
       .bind(saleId, now().slice(0, 10), name || 'Prodej', 'Doplňte údaje z faktury', actor).run();
   }
-  await env.DB.prepare("INSERT INTO documents (id, cost_id, sale_id, kind, purpose, filename, mime, size, sha256, data, created_by, ai_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .bind(id, costId, saleId, purpose === 'prodej' ? 'faktura' : 'jiny', purpose, name, mime, buf.length, hash, buf, actor, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai').run();
-  await audit(env, actor, 'doklad_nahran', 'document', id, { purpose, size: buf.length });
-  return { id, cost_id: costId, sale_id: saleId };
+  return { costId, saleId };
 }
 
 // ---- Vytěžení pomocí AI ---------------------------------------------------------------------
@@ -146,13 +164,14 @@ export function saleFromAi(a, rate) {
     patch: {
       number: a.number ? String(a.number).slice(0, 60) : null, issued_on: date, buyer_name: a.buyer_name || null, buyer_email: a.buyer_email && /@/.test(a.buyer_email) ? String(a.buyer_email).toLowerCase().slice(0, 200) : null,
       buyer_address: a.buyer_address || null, items: (a.items || []).map((i) => i.title).join(', ').slice(0, 500) || null,
+      watch_model: a.watch_model ? String(a.watch_model).replace(/^DT:\s*/i, '').slice(0, 200) : null, serial_ref: a.serial ? String(a.serial).slice(0, 120) : null,
       currency: currency || 'CZK', amount_orig: a.total, fx_rate: currency === 'CZK' ? 1 : rate,
       total_czk: currency === 'CZK' ? (a.total != null ? Math.round(a.total) : null) : toCzk(a.total, rate), payment_method: a.payment_method || null,
     },
     uncertain: [...unc],
   };
 }
-const UNC_CS = { date: 'datum', platform: 'platforma', items: 'položky', currency: 'měna', total: 'částka', shipping: 'doprava', category: 'druh', order_ref: 'číslo objednávky', number: 'číslo faktury', buyer: 'odběratel', payment_method: 'způsob platby', kurz: 'kurz ČNB' };
+const UNC_CS = { watch_model: 'model hodinek', serial: 'výrobní číslo', date: 'datum', platform: 'platforma', items: 'položky', currency: 'měna', total: 'částka', shipping: 'doprava', category: 'druh', order_ref: 'číslo objednávky', number: 'číslo faktury', buyer: 'odběratel', payment_method: 'způsob platby', kurz: 'kurz ČNB' };
 const uncText = (u) => u.map((x) => UNC_CS[x] || x).join(', ');
 
 /** Vytěží jeden doklad. Spolehlivý výsledek bez duplicity potvrdí sám, jinak nechá ke kontrole. */
@@ -197,7 +216,8 @@ export async function extract(env, docId, actor, deps = {}) {
       if (dup) notes.push(`Faktura ${patch.number} už v evidenci je`);
       if (a.note) notes.push(String(a.note).slice(0, 200));
       const ok = !uncertain.length && !dup;
-      const pid = matchProduct(await productsForMatch(env), patch.items);
+      const bySerial = patch.serial_ref ? await env.DB.prepare('SELECT id FROM products WHERE serial_ref = ? LIMIT 1').bind(patch.serial_ref).first() : null;
+      const pid = bySerial?.id || matchProduct(await productsForMatch(env), [patch.watch_model, patch.items].filter(Boolean).join(' '));
       const set = { ...Object.fromEntries(Object.entries(patch).filter(([, v]) => v != null)), product_id: pid, status: ok ? 'potvrzeno' : 'ke_kontrole', source: 'ai', check_note: notes.join(' · ') || null };
       if (dup) delete set.number; // číslo musí být unikátní – duplicitu vyřeší majitel
       const k = Object.keys(set);
@@ -209,8 +229,11 @@ export async function extract(env, docId, actor, deps = {}) {
     return { summary: result.status === 'confirmed' ? 'potvrzeno automaticky' : 'ke kontrole' };
   });
   if (run.status === 'error') {
+    const reason = `AI doklad nepřečetla (${String(run.summary || '').slice(0, 200)}) – vyplňte ručně nebo zkuste znovu`;
     await env.DB.prepare("UPDATE documents SET ai_status = 'chyba' WHERE id = ?").bind(docId).run();
-    return { status: 'manual', reason: run.summary };
+    if (d.cost_id) await env.DB.prepare("UPDATE costs SET check_note = ? WHERE id = ? AND status = 'ke_kontrole'").bind(reason, d.cost_id).run();
+    if (d.sale_id) await env.DB.prepare("UPDATE sales SET check_note = ? WHERE id = ? AND status = 'ke_kontrole'").bind(reason, d.sale_id).run();
+    return { status: 'manual', reason };
   }
   if (run.skipped) return { status: 'manual', reason: 'Role DT Doklady je pozastavená' };
   return result;
@@ -286,6 +309,7 @@ export async function saveSale(env, id, b, actor, { confirm = true } = {}) {
     number, issued_on: ymd(b.issued_on) || now().slice(0, 10),
     buyer_name: str(b.buyer_name, { max: 200 }), buyer_email: b.buyer_email ? String(b.buyer_email).trim().toLowerCase().slice(0, 200) : null,
     buyer_address: str(b.buyer_address, { max: 300 }), items: str(b.items, { max: 500, required: true, name: 'co bylo prodáno' }),
+    watch_model: str(b.watch_model, { max: 200 }), serial_ref: str(b.serial_ref, { max: 120 }),
     currency: c.currency, amount_orig: c.amount_orig, fx_rate: c.fx_rate, total_czk: c.czk,
     payment_method: b.payment_method ? oneOf(b.payment_method, Object.keys(PAY), 'platba') : null,
     product_id: b.product_id ? str(b.product_id, { max: 40 }) : null,
@@ -306,8 +330,8 @@ export async function overview(env) {
   const { results: review } = await env.DB.prepare(`SELECT c.*, p.title AS product_title, ${docs} FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE c.status = 'ke_kontrole' ORDER BY c.created_at`).all();
   const { results: saleReview } = await env.DB.prepare("SELECT s.*, (SELECT id FROM documents d WHERE d.sale_id = s.id LIMIT 1) AS doc_id FROM sales s WHERE s.status = 'ke_kontrole' ORDER BY s.created_at").all();
   const { results: purchases } = await env.DB.prepare(`SELECT c.*, p.title AS product_title, ${docs} FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE c.status = 'potvrzeno' ORDER BY c.cost_date DESC, c.created_at DESC LIMIT 100`).all();
-  const { results: sales } = await env.DB.prepare(`SELECT 'import' AS kind, s.id, s.number, s.issued_on AS day, s.buyer_name, s.items, s.total_czk AS total, (SELECT id FROM documents d WHERE d.sale_id = s.id LIMIT 1) AS doc_id FROM sales s WHERE s.status = 'potvrzeno'
-    UNION ALL SELECT 'faktura' AS kind, i.id, i.number, substr(i.issued_at,1,10) AS day, i.buyer_name, NULL AS items, i.total, NULL AS doc_id FROM invoices i WHERE i.mode = 'live' AND i.cancelled_at IS NULL
+  const { results: sales } = await env.DB.prepare(`SELECT 'import' AS kind, s.id, s.number, s.issued_on AS day, s.buyer_name, s.watch_model, s.items, s.total_czk AS total, (SELECT id FROM documents d WHERE d.sale_id = s.id LIMIT 1) AS doc_id FROM sales s WHERE s.status = 'potvrzeno'
+    UNION ALL SELECT 'faktura' AS kind, i.id, i.number, substr(i.issued_at,1,10) AS day, i.buyer_name, i.watch_model, NULL AS items, i.total, NULL AS doc_id FROM invoices i WHERE i.mode = 'live' AND i.cancelled_at IS NULL AND i.kind <> 'zalohova'
     ORDER BY day DESC LIMIT 100`).all();
   return { review, saleReview, purchases, sales, ai: await aiStatus(env), platforms: PLATFORMS, pay: PAY, categories: COST_CATS };
 }

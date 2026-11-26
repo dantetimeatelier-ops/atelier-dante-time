@@ -4,6 +4,18 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-26 – Claude – claude/fakturace (centrální fakturační systém)
+**Hotovo:** fakturace nezávislá na e-shopu: řada DT-RRRR-NNNN (čítač po letech, UNIQUE), zdroj prodeje
+(eshop/vinted/aukro/instagram/facebook/osobne/zakazka/jine), druhy faktura / zálohová / dobropis, vyúčtování zálohy
+(advance_deducted, záloha nejde odečíst dvakrát), hodinky ze skladu → prodáno + pas + garanční prohlídka, model a
+výrobní číslo, nový vzhled podle vzoru majitele (zlaté logo, poděkování, útulek, slogan), QR u neuhrazených převodů,
+e-mail zákazníkovi, filtrování, export s druhem a kanálem, storno vrací hodinky na sklad. Tržby = faktury + dobropisy
+(bez záloh) + import (bez duplicit). Migrace 0014. E2E test pokrývá prodej Vinted, zálohu, dobropis, unikátní čísla.
+**PDF:** z prohlížeče (Tisk → Uložit jako PDF), serverové PDF není (limit CPU Cloudflare zdarma).
+**Pozor na:** staré faktury mají číslo RRRRNNNN – zůstávají beze změny.
+
+---
+
 ## 2026-11-26 – Claude – claude/os-e3b-nakupy-prodeje (E3b v2 podle majitele)
 **Hotovo:** univerzální evidence nákupů a prodejů: nahrání screenshotů/PDF/fotek (i hromadně), DT Doklady (Claude API,
 strukturovaný výstup, effort low, limit 300 Kč), automatické potvrzení spolehlivých, „Ke kontrole“ pro nejisté,

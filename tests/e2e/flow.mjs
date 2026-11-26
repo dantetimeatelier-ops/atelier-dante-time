@@ -145,10 +145,12 @@ try {
   await page.getByRole('button', { name: /Platba přijata/ }).click();
   await page.locator('.chip.paid').waitFor();
   step('platba označena, hodinky prodány');
-  const inv = await page.locator('a', { hasText: /^\d{8}$/ }).getAttribute('href');
+  const inv = await page.locator('a', { hasText: /^DT-\d{4}-\d{4}$/ }).getAttribute('href');
   const invPage = await ctx.newPage();
   await invPage.goto(`${BASE}${inv}`);
-  await invPage.getByText('Uhrazeno – neplaťte.').waitFor();
+  await invPage.getByText('Stav platby').waitFor();
+  assert.match(await invPage.content(), /Uhrazeno/);
+  assert.match(await invPage.content(), /Dante Time – druhý život času/);
   await shot(invPage, '5-faktura');
   step('faktura vystavena');
   await page.getByLabel(/Číslo zásilky/).fill('Z1234567890');
@@ -262,7 +264,7 @@ try {
   await page.locator('.chip.shipped').waitFor();
   await page.getByRole('button', { name: /Dobírka zaplacena/ }).click();
   await page.locator('.chip.completed').waitFor();
-  await page.locator('a', { hasText: /^\d{8}$/ }).waitFor();
+  await page.locator('a', { hasText: /^DT-\d{4}-\d{4}$/ }).waitFor();
   step('dobírka: odesláno → zaplaceno → faktura');
 
   // 10) Faktura k zakázce z administrace
@@ -326,6 +328,7 @@ try {
   await page.locator('#up-nakup').setInputFiles(path.join(ROOT, 'assets/originals/service-watch-box-2.jpg'));
   await page.getByText('už nahráno dříve, přeskočeno').waitFor();
   await page.goto(`${BASE}/admin/#/dily`);
+  await page.getByRole('heading', { name: 'Sklad dílů' }).waitFor();
   await page.getByText('Strojek PRIM 66 – eBay test').waitFor();
   step('nákup ze screenshotu: kontrola, kurz EUR, naskladnění dílu, duplicita odhalena');
 
@@ -350,6 +353,50 @@ try {
   const csv = await page.evaluate(async (b) => (await fetch(`${b}/api/admin/finance/export?kind=naklady&from=2000-01-01&to=2100-01-01`)).text(), BASE);
   assert.match(csv, /Nákup hodinek – test/);
   step('ekonomika: náklad zapsán, marže spočítána, export pro účetní');
+
+  // Centrální fakturace: prodej hodinek ze skladu mimo e-shop (Vinted) → sklad, pas, tržba, marže; záloha; dobropis
+  const api = (method, p, body) => page.evaluate(async ([m, u, b]) => { const r = await fetch(`/api/admin/${u}`, { method: m, headers: { 'Content-Type': 'application/json', 'X-DT-Admin': '1' }, body: b ? JSON.stringify(b) : undefined }); return { s: r.status, j: await r.json().catch(() => ({})) }; }, [method, p, body]);
+  const np = await api('POST', 'products', { title: 'Prim Classic Test LTD.01', brand: 'PRIM', serial_ref: '26-9.9', price_czk: 5000 });
+  assert.equal(np.s, 201, JSON.stringify(np.j));
+  const stockId = np.j.id;
+  await page.goto(`${BASE}/admin/#/faktury/nova`);
+  await page.getByRole('heading', { name: 'Nová faktura' }).waitFor();
+  await page.locator('select[name=product_id]').selectOption(stockId);
+  await page.locator('select[name=channel]').selectOption('vinted');
+  await page.getByLabel('Prodejní cena hodinek (Kč)').fill('5000');
+  await page.getByLabel('Doprava (Kč)').fill('150');
+  await page.locator('input[name=buyer_name]').fill('Vinted Kupující');
+  await page.locator('input[name=buyer_email]').fill('vinted@example.com');
+  await page.locator('input[name=paid]').check();
+  await page.getByRole('button', { name: 'Vystavit fakturu' }).click();
+  await page.getByRole('heading', { name: 'Faktury' }).waitFor();
+  const list = (await api('GET', 'invoices?channel=vinted')).j.invoices;
+  assert.equal(list.length, 1); assert.match(list[0].number, /^DT-\d{4}-\d{4}$/); assert.equal(list[0].total, 5150);
+  assert.equal((await api('GET', `products/${stockId}`)).j.product.status, 'sold', 'hodinky musí být prodané');
+  assert.ok((await api('GET', 'passports')).j.passports.some((x) => x.product_id === stockId), 'pas hodinek musí vzniknout');
+  const econ = (await api('GET', `finance/products/${stockId}`)).j;
+  assert.equal(econ.sold, true); assert.equal(econ.revenue, 5000, 'tržba hodinek bez dopravy');
+  const vp = await ctx.newPage(); await vp.goto(`${BASE}/faktura/${list[0].public_token}`);
+  const vh = await vp.content(); await vp.close();
+  assert.match(vh, /Neplátce DPH/); assert.match(vh, /Model: Prim Classic Test LTD.01/); assert.match(vh, /Serial no: 26-9.9/); assert.match(vh, /Děkujeme za nákup/); assert.match(vh, /útulku pro zvířata/);
+  // Záloha 2 000 Kč → vyúčtování 9 000 Kč (zbývá 7 000), záloha se nezapočítá do tržeb dvakrát
+  const adv = await api('POST', 'invoices', { kind: 'zalohova', channel: 'zakazka', buyer_name: 'Zálohový Zákazník', items: [{ text: 'Záloha na zakázkovou sestavu', qty: 1, price: 2000 }], paid: true, payment_method: 'bank_transfer' });
+  assert.equal(adv.s, 201);
+  const fin = await api('POST', 'invoices', { kind: 'faktura', channel: 'zakazka', buyer_name: 'Zálohový Zákazník', items: [{ text: 'Zakázková sestava', qty: 1, price: 9000 }], advance_id: adv.j.id, payment_method: 'bank_transfer' });
+  assert.equal(fin.s, 201);
+  const twice = await api('POST', 'invoices', { kind: 'faktura', buyer_name: 'X', items: [{ text: 'Y', qty: 1, price: 9000 }], advance_id: adv.j.id });
+  assert.equal(twice.s, 400, 'záloha nesmí jít vyúčtovat dvakrát');
+  const fp = await ctx.newPage(); await fp.goto(`${BASE}/faktura/${fin.j.token}`); const fh = await fp.content(); await fp.close();
+  assert.match(fh, /Zbývá uhradit/); assert.match(fh, /7(\s|&nbsp;)000/); assert.match(fh, /QR platba/);
+  // Dobropis celé faktury → hodinky zpět na sklad, číslování bez duplicit
+  const cr = await api('POST', `invoices/${list[0].id}/credit`, { reason: 'vrácení hodinek', restock: true });
+  assert.equal(cr.s, 201);
+  assert.equal((await api('GET', `products/${stockId}`)).j.product.status, 'available');
+  const all = (await api('GET', 'invoices')).j.invoices.map((x) => x.number);
+  assert.equal(new Set(all).size, all.length, 'čísla dokladů musí být unikátní');
+  const sums = (await api('GET', 'invoices?kind=zalohova')).j;
+  assert.equal(sums.revenue, 0, 'záloha není tržba');
+  step('fakturace: prodej ze skladu (Vinted), pas, marže, záloha a vyúčtování, dobropis, unikátní čísla');
 
   // Dante Time OS: přehled rolí, Guardian, záloha
   await page.goto(`${BASE}/admin/#/system`);
