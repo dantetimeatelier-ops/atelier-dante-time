@@ -1,2 +1,2 @@
 // Vytváří scripts/build.mjs – neupravovat ručně.
-export const ASSET_V = 'a5eb43ed94';
+export const ASSET_V = '6ecd12ebdf';

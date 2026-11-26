@@ -31,13 +31,13 @@ export function home(lang) {
     <div class="hero-copy">
       <img class="mark" src="/img/logo-160.webp" width="160" height="160" alt="">
       <h1>Dante Time</h1>
-      <p class="subtitle">${L('Dáváme času nový život', 'Giving time a new life')}</p>
+      <p class="subtitle"><span>${L('Dáváme času nový život', 'Giving time a new life')}</span></p>
+      <svg class="hero-orn" aria-hidden="true" viewBox="0 0 400 24" width="400" height="24"><path d="M0 12H160M240 12H400" stroke="currentColor" stroke-width="1"/><path d="M200 12c-8-9-22-9-26 0 4 6 14 6 16 0-3-4-9-3-9 0M200 12c8-9 22-9 26 0-4 6-14 6-16 0 3-4 9-3 9 0M200 12c-6 6-14 9-22 6M200 12c6 6 14 9 22 6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="200" cy="12" r="2.2" fill="currentColor"/></svg>
       <p class="motto">${L('Tradice. Řemeslo. Čas.', 'Tradition. Craft. Time.')}</p>
-      <p class="tagline">${L('Český hodinářský ateliér. Renovace a ateliérové přestavby mechanických hodinek s důrazem na řemeslo a detail.', 'A Czech watch atelier. Restoration and atelier rebuilds of mechanical watches with craftsmanship and attention to detail.')}</p>
       <div class="cta-row">
-        <a class="btn solid" href="${PAGES.collection[lang]}">${L('Objevte naši tvorbu', 'Discover our work')}</a>
-        ${SVC ? `<a class="btn" href="${PAGES.services[lang]}#poptavka">${L('Servis a zakázka na míru', 'Service &amp; custom commission')}</a>` : `<a class="btn" href="${PAGES.about[lang]}">${L('Příběh ateliéru', 'Our story')}</a>`}
+        <a class="btn hero-cta" href="${PAGES.collection[lang]}">${L('Objevte naši tvorbu', 'Discover our work')} <span aria-hidden="true">›</span></a>
       </div>
+      ${SVC ? `<p class="hero-sub-link"><a href="${PAGES.services[lang]}#poptavka">${L('Servis a zakázka na míru', 'Service &amp; custom commission')}</a></p>` : ''}
     </div>
   </div>
 </section>
