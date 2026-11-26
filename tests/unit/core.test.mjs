@@ -285,3 +285,17 @@ test('fakturace: číslo DT-RRRR-NNNN, VS, rok podle Prahy, součty se zálohou'
   assert.equal(normalizeItems([{ text: '', price: 1 }, { text: 'x', price: 1.5 }, { text: 'Sleva', price: -500 }]).length, 1);
   assert.equal(invoiceTotals([{ text: 'Dobropis', price: -9000 }]).total, -9000);
 });
+
+test('doklady: uložení jako text base64 tam i zpět beze změny', async () => {
+  const { toB64, fromB64, b64Len, splitDoc } = await import('../../server/docstore.js');
+  for (const n of [0, 1, 2, 3, 100, 70_000, 3_500_001]) {
+    const b = new Uint8Array(n); for (let i = 0; i < n; i++) b[i] = (i * 31 + 7) % 256;
+    const t = toB64(b); assert.equal(t.length, b64Len(n));
+    assert.deepEqual(fromB64(t), b);
+  }
+  const stmts = []; const env = { DB: { prepare: () => ({ bind: (...a) => { stmts.push(a); return {}; } }) } };
+  const big = new Uint8Array(3_500_001);
+  const r = splitDoc(env, 'x', big);
+  assert.equal(r.enc, 'b64'); assert.equal(stmts.length, Math.ceil(b64Len(big.length) / 1_500_000));
+  assert.equal(stmts.map((s) => s[2]).join(''), toB64(big));
+});
