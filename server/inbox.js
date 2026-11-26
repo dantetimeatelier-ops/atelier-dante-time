@@ -331,7 +331,7 @@ export async function overview(env) {
   const { results: saleReview } = await env.DB.prepare("SELECT s.*, (SELECT id FROM documents d WHERE d.sale_id = s.id LIMIT 1) AS doc_id FROM sales s WHERE s.status = 'ke_kontrole' ORDER BY s.created_at").all();
   const { results: purchases } = await env.DB.prepare(`SELECT c.*, p.title AS product_title, ${docs} FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE c.status = 'potvrzeno' ORDER BY c.cost_date DESC, c.created_at DESC LIMIT 100`).all();
   const { results: sales } = await env.DB.prepare(`SELECT 'import' AS kind, s.id, s.number, s.issued_on AS day, s.buyer_name, s.watch_model, s.items, s.total_czk AS total, (SELECT id FROM documents d WHERE d.sale_id = s.id LIMIT 1) AS doc_id FROM sales s WHERE s.status = 'potvrzeno'
-    UNION ALL SELECT 'faktura' AS kind, i.id, i.number, substr(i.issued_at,1,10) AS day, i.buyer_name, NULL AS watch_model, NULL AS items, i.total, NULL AS doc_id FROM invoices i WHERE i.mode = 'live' AND i.cancelled_at IS NULL
+    UNION ALL SELECT 'faktura' AS kind, i.id, i.number, substr(i.issued_at,1,10) AS day, i.buyer_name, i.watch_model, NULL AS items, i.total, NULL AS doc_id FROM invoices i WHERE i.mode = 'live' AND i.cancelled_at IS NULL AND i.kind <> 'zalohova'
     ORDER BY day DESC LIMIT 100`).all();
   return { review, saleReview, purchases, sales, ai: await aiStatus(env), platforms: PLATFORMS, pay: PAY, categories: COST_CATS };
 }

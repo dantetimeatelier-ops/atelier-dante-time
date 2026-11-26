@@ -1,6 +1,7 @@
 // Administrace Dante Time – jednoduchá aplikace pro iPhone
 (() => {
   const app = document.getElementById('app');
+  let navSeq = 0; // zvyšuje se při každém přechodu – data a zpožděné akce staré obrazovky se pak zahodí
   const tabs = document.getElementById('tabs');
   const toastEl = document.getElementById('toast');
   const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -25,13 +26,16 @@
     const opts = { method, headers: { 'X-DT-Admin': '1' }, credentials: 'same-origin' };
     if (body instanceof FormData) opts.body = body;
     else if (body !== undefined) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+    const seq = navSeq;
     const res = await fetch(`/api/admin/${path}`, opts);
     const out = await res.json().catch(() => ({}));
+    // Načítání pro obrazovku, ze které uživatel mezitím odešel → nevykreslovat přes novou obrazovku
+    if (method === 'GET' && seq !== navSeq) { const e = new Error('stale'); e.stale = true; throw e; }
     if (res.status === 401 && !path.startsWith('login') && !path.startsWith('setup')) { showLogin(); throw new Error('Přihlaste se prosím'); }
     if (!res.ok) throw new Error(out.error || `Chyba ${res.status}`);
     return out;
   }
-  const run = async (fn) => { try { await fn(); } catch (e) { toast(e.message, true); } };
+  const run = async (fn) => { try { await fn(); } catch (e) { if (!e.stale) toast(e.message, true); } };
   const formData = (form) => Object.fromEntries(new FormData(form));
 
   // --- Přihlášení a první nastavení -----------------------------------------------
@@ -459,6 +463,7 @@
     app.querySelectorAll('[data-delsale]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat tento prodej? Faktura zůstane uložená.')) return; await api('DELETE', `sales/${b.dataset.delsale}`); views.doklady(); })));
     for (const purpose of ['nakup', 'prodej']) {
       app.querySelector(`#up-${purpose}`).addEventListener('change', (e) => run(async () => {
+        const seq = navSeq;
         const files = [...e.target.files]; const prog = app.querySelector('#prog');
         const stats = { ok: 0, review: 0, dup: 0, err: 0 };
         for (const [i, file] of files.entries()) {
@@ -475,7 +480,7 @@
           } catch (err) { stats.err++; row.textContent = `${file.name} – chyba: ${err.message}`; }
         }
         toast(`Hotovo: ${stats.ok} uloženo, ${stats.review} ke kontrole${stats.dup ? `, ${stats.dup} duplicit` : ''}${stats.err ? `, ${stats.err} chyb` : ''}`, stats.err > 0);
-        setTimeout(() => views.doklady(), stats.err || stats.review ? 6000 : 2000);
+        setTimeout(() => { if (seq === navSeq) views.doklady(); }, stats.err || stats.review ? 6000 : 2000);
       }));
     }
   };
@@ -684,40 +689,84 @@
     app.querySelector('#cf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `customers/${id}`, formData(e.target)); toast('Uloženo'); }); });
   };
 
-  views.faktury = async () => {
-    const { invoices } = await api('GET', 'invoices');
+  views.faktury = async (_, q) => {
+    const params = new URLSearchParams();
+    for (const k of ['q', 'year', 'channel', 'kind', 'status']) if (q.get(k)) params.set(k, q.get(k));
+    const d = await api('GET', `invoices?${params}`);
+    const opts = (map, v, all) => `<option value="">${all}</option>${Object.entries(map).map(([k, t]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${esc(t)}</option>`).join('')}`;
+    const y = new Date().getFullYear();
+    const st = (v) => (v.cancelled_at ? 'storno' : v.kind === 'dobropis' ? 'dobropis' : v.paid_at ? 'uhrazeno' : 'neuhrazeno');
     app.innerHTML = `<div class="row" style="justify-content:space-between"><h1>Faktury</h1><a class="btn primary" href="#/faktury/nova">+ Nová</a></div>
-      <p class="small muted">Faktury k objednávkám se vystavují samy po zaplacení. Zde vystavíte fakturu k zakázce nebo ručně.</p>
-      <div class="list">${invoices.map((v) => `<div class="item"><span class="grow"><span class="t">${esc(v.number)} · ${esc(v.buyer_company || v.buyer_name)}</span><br><span class="small muted">${czk(v.total)} · ${date(v.issued_at)} · ${v.cancelled_at ? 'storno' : v.paid_at ? 'uhrazeno' : 'neuhrazeno'}${v.mode === 'test' ? ' · test' : ''}</span></span>
-        <span class="row" style="gap:4px"><a class="btn ghost" style="min-height:38px;padding:8px 12px" href="/faktura/${esc(v.public_token)}" target="_blank">Zobrazit</a>
-        ${!v.paid_at && !v.cancelled_at ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-paid="${v.id}">Uhrazeno</button>` : ''}
-        ${!v.cancelled_at && !v.order_id ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-storno="${v.id}">Storno</button>` : ''}</span></div>`).join('') || '<p class="muted">Zatím žádné faktury.</p>'}</div>`;
-    app.querySelectorAll('[data-paid]').forEach((b) => b.addEventListener('click', () => run(async () => { await api('POST', `invoices/${b.dataset.paid}/paid`, {}); views.faktury(); })));
-    app.querySelectorAll('[data-storno]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Stornovat fakturu?')) return; await api('POST', `invoices/${b.dataset.storno}/cancel`, {}); views.faktury(); })));
+      <p class="small muted">Faktury z e-shopu se vystavují samy po zaplacení. Zde vystavíte fakturu k prodeji na Vinted, Aukru, Instagramu, osobně nebo k zakázce. Čísla jdou automaticky: DT-${y}-0001, DT-${y}-0002…</p>
+      <form id="ff" class="card" style="margin-bottom:12px"><input name="q" placeholder="Hledat: číslo, zákazník, model, výrobní číslo" value="${esc(q.get('q') || '')}">
+        <div class="grid" style="margin-top:8px"><select name="year">${opts(Object.fromEntries([y, y - 1].map((x) => [String(x), String(x)])), q.get('year') || '', 'Všechny roky')}</select>
+        <select name="status">${opts({ neuhrazeno: 'Neuhrazené', uhrazeno: 'Uhrazené', storno: 'Stornované' }, q.get('status') || '', 'Všechny stavy')}</select></div>
+        <div class="grid"><select name="channel">${opts(d.channels, q.get('channel') || '', 'Všechny kanály')}</select><select name="kind">${opts(d.kinds, q.get('kind') || '', 'Všechny doklady')}</select></div>
+        <button class="btn block">Filtrovat</button></form>
+      <div class="grid"><div class="stat"><b>${czk(d.revenue)}</b>tržby (výběr)</div><div class="stat"><b>${czk(d.unpaid)}</b>neuhrazeno</div></div>
+      <div class="list" style="margin-top:12px">${d.invoices.map((v) => `<div class="item"><span class="grow"><span class="t">${esc(v.number)} · ${esc(v.buyer_company || v.buyer_name)}</span><br>
+        <span class="small muted">${esc(d.kinds[v.kind] || 'Faktura')} · ${esc(d.channels[v.channel] || '')} · ${czk(v.total - (v.advance_deducted || 0))} · ${date(v.issued_at)} · <b>${st(v)}</b>${v.watch_model ? ` · ${esc(v.watch_model)}` : ''}${v.sent_at ? ' · odesláno' : ''}${v.mode === 'test' ? ' · test' : ''}</span><br>
+        <span class="row" style="gap:4px;flex-wrap:wrap;margin-top:6px"><a class="btn ghost" style="min-height:38px;padding:8px 12px" href="/faktura/${esc(v.public_token)}" target="_blank">Zobrazit / PDF</a>
+        ${!v.paid_at && !v.cancelled_at && v.kind !== 'dobropis' ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-paid="${v.id}">Uhrazeno</button>` : ''}
+        ${v.buyer_email && !v.cancelled_at ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-send="${v.id}">${v.sent_at ? 'Poslat znovu' : 'Poslat e-mailem'}</button>` : ''}
+        ${v.kind === 'faktura' && !v.cancelled_at ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-credit="${v.id}" data-total="${v.total}">Dobropis</button>` : ''}
+        ${!v.cancelled_at && !(v.order_id && v.kind === 'faktura') ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-storno="${v.id}">Storno</button>` : ''}</span></span></div>`).join('') || '<p class="muted">Žádné doklady.</p>'}</div>`;
+    app.querySelector('#ff').addEventListener('submit', (e) => { e.preventDefault(); const p = new URLSearchParams(Object.entries(formData(e.target)).filter(([, v]) => v)); location.hash = `#/faktury?${p}`; });
+    app.querySelectorAll('[data-paid]').forEach((b) => b.addEventListener('click', () => run(async () => { await api('POST', `invoices/${b.dataset.paid}/paid`, {}); views.faktury(_, q); })));
+    app.querySelectorAll('[data-send]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Poslat doklad zákazníkovi e-mailem?')) return; await api('POST', `invoices/${b.dataset.send}/send`, {}); toast('Odesláno'); views.faktury(_, q); })));
+    app.querySelectorAll('[data-storno]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Stornovat doklad? Použijte jen u chybně vystaveného dokladu. Hodinky prodané touto fakturou se vrátí na sklad.')) return; await api('POST', `invoices/${b.dataset.storno}/cancel`, {}); views.faktury(_, q); })));
+    app.querySelectorAll('[data-credit]').forEach((b) => b.addEventListener('click', () => run(async () => {
+      const reason = prompt('Důvod opravy (např. vrácení hodinek, sleva):'); if (!reason) return;
+      const amount = prompt(`Částka dobropisu v Kč (prázdné = celá faktura ${b.dataset.total} Kč):`, '');
+      const restock = !amount || Number(amount) === Number(b.dataset.total) ? confirm('Vracejí se hodinky na sklad?') : false;
+      const r = await api('POST', `invoices/${b.dataset.credit}/credit`, { reason, amount: amount || null, restock }); toast(`Dobropis ${r.number} vystaven`); window.open(`/faktura/${r.token}`, '_blank'); views.faktury(_, q);
+    })));
   };
 
   views['faktury/nova'] = async (_, q) => {
     const pre = q.get('z') ? JSON.parse(decodeURIComponent(q.get('z'))) : {};
-    const lines = pre.items?.length ? pre.items : [{ text: '', price: '' }];
-    const lineHtml = (l = {}) => `<div class="grid line"><input name="text" placeholder="Položka (např. Servis Omega Seamaster)" value="${esc(l.text)}"><input name="price" inputmode="numeric" placeholder="Cena Kč" value="${esc(l.price)}"></div>`;
+    const f = await api('GET', 'invoices/form');
+    const lines = pre.items?.length ? pre.items : [];
+    const lineHtml = (l = {}) => `<div class="grid line" style="grid-template-columns:1fr 70px 110px"><input name="text" placeholder="Položka (např. Servis, řemínek)" value="${esc(l.text)}"><input name="qty" inputmode="numeric" placeholder="Ks" value="${esc(l.qty || 1)}"><input name="price" inputmode="numeric" placeholder="Cena/ks Kč" value="${esc(l.price)}"></div>`;
+    const sel = (name, label, map, v) => `<label>${label}<select name="${name}">${Object.entries(map).map(([k, t]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
     app.innerHTML = `<p><a href="#/faktury">← Faktury</a></p><h1>Nová faktura</h1><form id="if">
+      <div class="grid">${sel('kind', 'Doklad', { faktura: 'Faktura', zalohova: 'Zálohová faktura' }, 'faktura')}${sel('channel', 'Zdroj prodeje', f.channels, pre.commission_id ? 'zakazka' : 'osobne')}</div>
+      <details open><summary>Hodinky ze skladu</summary>
+        <label>Hodinky<select name="product_id"><option value="">– bez hodinek ze skladu –</option>${f.products.map((p) => `<option value="${p.id}" data-price="${p.price_czk ?? ''}">${esc(p.title)}${p.price_czk ? ` · ${czk(p.price_czk)}` : ''}</option>`).join('')}</select></label>
+        <div class="grid">${field('product_price', 'Prodejní cena hodinek (Kč)', {}, 'inputmode="numeric"')}${field('shipping_czk', 'Doprava (Kč)', {}, 'inputmode="numeric"')}</div>
+        <div class="grid">${field('watch_model', 'Model (jinak z karty hodinek)', pre)}${field('serial_ref', 'Výrobní číslo (jinak z karty)', pre)}</div>
+        <label class="row"><input type="checkbox" name="inspection" checked style="width:22px;min-height:22px"> Naplánovat garanční prohlídku (je-li vyplněn e-mail)</label>
+        <p class="small muted">Po vystavení faktury se hodinky označí jako prodané, zapíše se tržba a marže a připraví se pas hodinek.</p></details>
       <details open><summary>Odběratel</summary>${field('buyer_name', 'Jméno', pre, 'required')}${field('buyer_email', 'E-mail', pre, 'type="email"')}${field('buyer_street', 'Ulice', pre)}
         <div class="grid">${field('buyer_city', 'Město', pre)}${field('buyer_zip', 'PSČ', pre)}</div>
         <div class="grid">${field('buyer_company', 'Firma', pre)}${field('buyer_ico', 'IČO', pre)}</div></details>
-      <details open><summary>Položky</summary><div id="lines" style="display:grid;gap:8px">${lines.map(lineHtml).join('')}</div>
+      <details open><summary>Další položky</summary><div id="lines" style="display:grid;gap:8px">${(lines.length ? lines : [{}]).map(lineHtml).join('')}</div>
         <button class="btn ghost block" type="button" id="addl" style="margin-top:8px">+ Další položka</button></details>
       <details open><summary>Platba</summary>
-        <label>Způsob úhrady<select name="payment_method"><option value="bank_transfer">Bankovní převod</option><option value="cash">Hotově</option><option value="card">Kartou</option><option value="cod">Dobírka</option></select></label>
-        <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="paid" style="width:22px;min-height:22px"> Již uhrazeno</label>
-        <label>Splatnost (dní)<input name="due_days" inputmode="numeric" value="14"></label>
-        ${field('note', 'Poznámka na faktuře', pre)}</details>
+        ${sel('payment_method', 'Způsob úhrady', f.pay, 'bank_transfer')}
+        <label class="row"><input type="checkbox" name="paid" style="width:22px;min-height:22px"> Již uhrazeno</label>
+        <div class="grid"><label>Splatnost (dní)<input name="due_days" inputmode="numeric" value="14"></label>${field('taxable_date', 'Datum prodeje (DUZP)', { taxable_date: today() }, 'type="date"')}</div>
+        ${f.advances.length ? `<label>Odečíst uhrazenou zálohu<select name="advance_id"><option value="">–</option>${f.advances.map((a) => `<option value="${a.id}">${esc(a.number)} · ${esc(a.buyer_name)} · ${czk(a.total)}</option>`).join('')}</select></label>` : ''}
+        ${field('note', 'Poznámka na faktuře', pre)}
+        <label class="row"><input type="checkbox" name="send" style="width:22px;min-height:22px"> Po vystavení poslat zákazníkovi e-mailem</label></details>
+      <p class="small" id="sum"></p>
       <div class="sticky-save"><button class="btn primary block">Vystavit fakturu</button></div></form>`;
+    const form = app.querySelector('#if');
+    const recalc = () => {
+      const items = [...form.querySelectorAll('.line')].map((l) => (Number(l.querySelector('[name=qty]').value) || 1) * (Number(l.querySelector('[name=price]').value) || 0));
+      const total = (Number(form.product_price.value) || 0) + (Number(form.shipping_czk.value) || 0) + items.reduce((a, b) => a + b, 0);
+      app.querySelector('#sum').textContent = total ? `Celkem: ${czk(total)}` : '';
+    };
+    form.product_id.addEventListener('change', () => { const o = form.product_id.selectedOptions[0]; if (o?.dataset.price && !form.product_price.value) form.product_price.value = o.dataset.price; recalc(); });
+    form.addEventListener('input', recalc);
     app.querySelector('#addl').addEventListener('click', () => app.querySelector('#lines').insertAdjacentHTML('beforeend', lineHtml()));
-    app.querySelector('#if').addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
-      const f = e.target; const d = formData(f);
-      d.items = [...f.querySelectorAll('.line')].map((l) => ({ text: l.querySelector('[name=text]').value, price: l.querySelector('[name=price]').value })).filter((i) => i.text.trim());
-      d.paid = f.paid.checked; d.commission_id = pre.commission_id;
-      const r = await api('POST', 'invoices', d); toast(`Faktura ${r.number} vystavena`); window.open(`/faktura/${r.token}`, '_blank'); location.hash = '#/faktury';
+    form.addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
+      const d = formData(form);
+      d.items = [...form.querySelectorAll('.line')].map((l) => ({ text: l.querySelector('[name=text]').value, qty: l.querySelector('[name=qty]').value || 1, price: l.querySelector('[name=price]').value })).filter((i) => i.text.trim());
+      delete d.text; delete d.qty; delete d.price;
+      d.paid = form.paid.checked; d.send = form.send.checked; d.inspection = form.inspection.checked; d.commission_id = pre.commission_id;
+      const r = await api('POST', 'invoices', d);
+      toast(`Faktura ${r.number} vystavena${r.done?.length ? ` – ${r.done.join(', ')}` : ''}`); window.open(`/faktura/${r.token}`, '_blank'); location.hash = '#/faktury';
     }); });
   };
 
@@ -832,6 +881,7 @@
 
   // --- Směrovač -------------------------------------------------------------------------
   async function router() {
+    navSeq++;
     const [rawPath, qs] = location.hash.replace(/^#\/?/, '').split('?');
     const q = new URLSearchParams(qs || '');
     const parts = rawPath.split('/').filter(Boolean);

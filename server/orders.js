@@ -12,6 +12,7 @@ import { legalDoc, LEGAL_VERSION } from '../src/legal/docs.mjs';
 import { TERMS } from '../src/terms.mjs';
 import { createForOrder } from './warranty.js';
 import { onDelivered } from './passport.js';
+import { createInvoice } from './invoicing.js';
 
 // Texty e-mailů v jazyce objednávky (zákazníci z EU objednávají i anglicky)
 const tr = (o, cs, en) => (o?.lang === 'en' ? en : cs);
@@ -283,7 +284,7 @@ export async function issueInvoice(env, orderId) {
   const existing = await env.DB.prepare('SELECT * FROM invoices WHERE order_id = ? AND cancelled_at IS NULL').bind(orderId).first();
   if (existing) return existing;
   const o = await env.DB.prepare('SELECT * FROM orders WHERE id=?').bind(orderId).first();
-  const { results: items } = await env.DB.prepare('SELECT i.title, i.price_czk, p.serial_ref, p.case_metal, p.hallmark, p.precious_weight_g FROM order_items i LEFT JOIN products p ON p.id = i.product_id WHERE i.order_id = ?').bind(orderId).all();
+  const { results: items } = await env.DB.prepare('SELECT i.title, i.price_czk, i.product_id, p.serial_ref, p.case_metal, p.hallmark, p.precious_weight_g FROM order_items i LEFT JOIN products p ON p.id = i.product_id WHERE i.order_id = ?').bind(orderId).all();
   // Zákon o puncovnictví: u zboží z drahých kovů uvést druh, hmotnost a ryzost
   const metalText = (i) => (['zlato', 'stribro', 'platina'].includes(i.case_metal)
     ? `; pouzdro: ${METAL[i.case_metal].cs}${i.hallmark ? `, ${i.hallmark}` : ''}${i.precious_weight_g ? `, hmotnost drahého kovu ${i.precious_weight_g} g` : ''}` : '');
@@ -291,7 +292,8 @@ export async function issueInvoice(env, orderId) {
   lines.push({ text: `Doprava – ${SHIPPING[o.shipping_method]?.cs || o.shipping_method}`, price: o.shipping_price });
   if (o.cod_fee) lines.push({ text: 'Dobírka', price: o.cod_fee });
   const inv = await createInvoice(env, {
-    source: 'order', order_id: orderId, mode: o.mode,
+    source: 'order', order_id: orderId, mode: o.mode, channel: 'eshop',
+    product_id: items[0]?.product_id || null, watch_model: items[0]?.title || null, serial_ref: items[0]?.serial_ref || null,
     buyer_name: o.name, buyer_company: o.company, buyer_ico: o.company_ico, buyer_dic: o.company_dic,
     buyer_street: o.billing_street, buyer_city: o.billing_city, buyer_zip: o.billing_zip, buyer_email: o.email,
     items: lines, payment_method: o.payment_method, taxable_date: o.paid_at || now(), paid_at: o.paid_at || now(), variable_symbol: o.variable_symbol,
@@ -302,28 +304,8 @@ export async function issueInvoice(env, orderId) {
   return inv;
 }
 
-/** Obecné vystavení faktury (objednávka, zakázka, ruční). */
-export async function createInvoice(env, d) {
-  const items = (d.items || []).filter((i) => i && String(i.text || '').trim() && Number.isInteger(Number(i.price)));
-  if (!items.length) throw new HttpError('Faktura musí mít alespoň jednu položku');
-  const total = items.reduce((sum, i) => sum + Number(i.price), 0);
-  const seq = await nextCounter(env, 'invoice');
-  const number = `${new Date().getFullYear()}${String(seq).padStart(4, '0')}`;
-  const inv = {
-    id: randomId(), number, public_token: randomToken(24), source: d.source, order_id: d.order_id || null, commission_id: d.commission_id || null,
-    mode: d.mode || (mode(env) === 'live' ? 'live' : 'test'),
-    buyer_name: d.buyer_name, buyer_company: d.buyer_company || null, buyer_ico: d.buyer_ico || null, buyer_dic: d.buyer_dic || null,
-    buyer_street: d.buyer_street || null, buyer_city: d.buyer_city || null, buyer_zip: d.buyer_zip || null, buyer_email: d.buyer_email || null,
-    items: JSON.stringify(items.map((i) => ({ text: String(i.text).slice(0, 300), price: Number(i.price) }))), total,
-    payment_method: d.payment_method || 'bank_transfer', issued_at: now(), taxable_date: d.taxable_date || now(),
-    due_date: d.due_date || null, paid_at: d.paid_at || null, variable_symbol: d.variable_symbol || number, note: d.note || null,
-    pay_currency: d.pay_currency || 'CZK', pay_amount_cents: d.pay_amount_cents ?? null, eur_rate: d.eur_rate ?? null,
-    ...bankDetails(), // účet, na který je faktura vystavena (pozdější změna účtu ji neovlivní)
-  };
-  const keys = Object.keys(inv);
-  await env.DB.prepare(`INSERT INTO invoices (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`).bind(...keys.map((k) => inv[k])).run();
-  return inv;
-}
+// Obecné vystavení faktury je v server/invoicing.js (centrální fakturace).
+export { createInvoice } from './invoicing.js';
 
 export async function markShipped(env, orderId, tracking, actor) {
   const order = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();

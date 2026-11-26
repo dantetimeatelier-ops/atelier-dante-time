@@ -27,13 +27,13 @@ export async function createForOrder(env, order, handover = today()) {
 }
 
 /** Ručně zadaná prohlídka (hodinky prodané mimo e-shop). */
-export async function createManual(env, { watch_title, customer_name, customer_email, lang, handover_date }, actor) {
+export async function createManual(env, { watch_title, customer_name, customer_email, lang, handover_date, product_id = null }, actor) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(handover_date || '')) throw new HttpError('Zadejte datum převzetí');
   const s = schedule(handover_date);
   const id = randomId();
-  await env.DB.prepare(`INSERT INTO warranty_inspections (id, watch_title, customer_name, customer_email, lang, terms_version, handover_date, due_date, window_from, window_to, remind_on, price_czk, warranty_until, liability_until, presumption_until)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(id, watch_title, customer_name, customer_email, lang === 'en' ? 'en' : 'cs', 'rucne', s.handover_date, s.due_date, s.window_from, s.window_to, s.remind_on, I.priceCzk, s.due_date, s.liability_until, s.presumption_until).run();
+  await env.DB.prepare(`INSERT INTO warranty_inspections (id, product_id, watch_title, customer_name, customer_email, lang, terms_version, handover_date, due_date, window_from, window_to, remind_on, price_czk, warranty_until, liability_until, presumption_until)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(id, product_id, watch_title, customer_name, customer_email, lang === 'en' ? 'en' : 'cs', 'rucne', s.handover_date, s.due_date, s.window_from, s.window_to, s.remind_on, I.priceCzk, s.due_date, s.liability_until, s.presumption_until).run();
   await audit(env, actor, 'prohlidka_zalozena', 'warranty_inspection', id, { watch_title });
   return id;
 }

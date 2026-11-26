@@ -15,6 +15,8 @@ import * as OS from '../../../server/os.js';
 import * as FIN from '../../../server/finance.js';
 import * as PAS from '../../../server/passport.js';
 import * as DOC from '../../../server/documents.js';
+import * as INV from '../../../server/invoicing.js';
+import { INVOICE_KINDS, SALE_CHANNELS, INVOICE_PAY } from '../../../src/shop/invoice.mjs';
 import * as INB from '../../../server/inbox.js';
 import { html } from '../../../server/http.js';
 
@@ -130,8 +132,8 @@ route('GET', 'dashboard', async ({ env }) => {
   // Hlídání limitů DPH u neplátce: obrat za kalendářní rok (vystavené faktury) a prodej spotřebitelům do jiných zemí EU
   const yearStart = `${new Date().getUTCFullYear()}-01-01`;
   const live = mode(env) === 'live' ? "mode = 'live'" : '1=1';
-  const turnover = (await q(`SELECT COALESCE(SUM(total),0) AS s FROM invoices WHERE cancelled_at IS NULL AND issued_at >= ? AND ${live}`, yearStart)).s;
-  const euSales = (await q(`SELECT COALESCE(SUM(i.total),0) AS s FROM invoices i JOIN orders o ON o.id = i.order_id WHERE i.cancelled_at IS NULL AND i.issued_at >= ? AND o.billing_country <> 'CZ' AND (o.company_ico IS NULL OR o.company_ico = '') AND ${live.replace('mode', 'i.mode')}`, yearStart)).s;
+  const turnover = (await q(`SELECT COALESCE(SUM(total),0) AS s FROM invoices WHERE cancelled_at IS NULL AND kind <> 'zalohova' AND issued_at >= ? AND ${live}`, yearStart)).s;
+  const euSales = (await q(`SELECT COALESCE(SUM(i.total),0) AS s FROM invoices i JOIN orders o ON o.id = i.order_id WHERE i.cancelled_at IS NULL AND i.kind <> 'zalohova' AND i.issued_at >= ? AND o.billing_country <> 'CZ' AND (o.company_ico IS NULL OR o.company_ico = '') AND ${live.replace('mode', 'i.mode')}`, yearStart)).s;
   const eurRate = Number(cfg.eurRate) || 25;
   const vatLimit = 2000000;
   const euLimitCzk = Math.round(10000 * eurRate);
@@ -438,38 +440,29 @@ route('GET', 'withdrawals', async ({ env }) => {
 });
 
 // --- Faktury ----------------------------------------------------------------------------
-route('GET', 'invoices', async ({ env }) => {
-  const { results } = await env.DB.prepare('SELECT id, number, public_token, source, buyer_name, buyer_company, total, issued_at, paid_at, cancelled_at, mode, order_id, commission_id FROM invoices ORDER BY issued_at DESC LIMIT 300').all();
-  return json({ invoices: results });
+route('GET', 'invoices', async ({ env, request }) => {
+  const u = new URL(request.url).searchParams;
+  return json(await INV.listInvoices(env, { q: u.get('q'), year: u.get('year'), channel: u.get('channel'), kind: u.get('kind'), status: u.get('status') }));
 });
-route('POST', 'invoices', async ({ env, body, user }) => {
-  const items = Array.isArray(body.items) ? body.items.slice(0, 30).map((i) => ({ text: str(i.text, { max: 300, required: true, name: 'položku' }), price: int(i.price, { max: 50000000, nullable: false, name: 'cenu položky' }) })) : [];
+route('GET', 'invoices/form', async ({ env }) => {
+  const { results: products } = await env.DB.prepare("SELECT id, title, price_czk, serial_ref, status FROM products WHERE status IN ('available','in_progress','draft') OR (status = 'reserved' AND reserved_order_id IS NULL) ORDER BY title").all();
+  const { results: advances } = await env.DB.prepare("SELECT a.id, a.number, a.buyer_name, a.total FROM invoices a WHERE a.kind = 'zalohova' AND a.cancelled_at IS NULL AND a.paid_at IS NOT NULL AND NOT EXISTS (SELECT 1 FROM invoices f WHERE f.related_invoice_id = a.id AND f.kind = 'faktura' AND f.cancelled_at IS NULL) ORDER BY a.issued_at DESC").all();
+  return json({ products, advances, kinds: INVOICE_KINDS, channels: SALE_CHANNELS, pay: INVOICE_PAY });
+});
+route('POST', 'invoices', async ({ env, body, user, request }) => {
   let commission = null;
-  if (body.commission_id) commission = await env.DB.prepare('SELECT k.*, c.name, c.email FROM commissions k LEFT JOIN customers c ON c.id = k.customer_id WHERE k.id = ?').bind(body.commission_id).first();
-  const paid = Boolean(body.paid);
-  const dueDays = int(body.due_days, { max: 90 }) ?? 14;
-  const inv = await createInvoice(env, {
-    source: commission ? 'commission' : 'manual', commission_id: commission?.id || null,
-    buyer_name: str(body.buyer_name, { max: 200, required: true, name: 'odběratele' }), buyer_company: str(body.buyer_company, { max: 200 }),
-    buyer_ico: str(body.buyer_ico, { max: 20 }), buyer_dic: str(body.buyer_dic, { max: 20 }), buyer_street: str(body.buyer_street, { max: 200 }),
-    buyer_city: str(body.buyer_city, { max: 120 }), buyer_zip: str(body.buyer_zip, { max: 12 }), buyer_email: body.buyer_email ? vEmail(body.buyer_email) : null,
-    items, payment_method: oneOf(body.payment_method || 'bank_transfer', ['bank_transfer', 'card', 'cod', 'cash'], 'způsob úhrady'),
-    taxable_date: str(body.taxable_date, { max: 30 }) || now(), paid_at: paid ? now() : null,
-    due_date: paid ? null : new Date(Date.now() + dueDays * 86400000).toISOString(), note: str(body.note, { max: 500 }) || (commission ? `Zakázka ${commission.number}` : null),
-  });
-  await audit(env, user.email, 'faktura_vystavena', 'invoice', inv.id, { number: inv.number, total: inv.total });
-  return json({ id: inv.id, number: inv.number, token: inv.public_token }, 201);
+  if (body.commission_id) commission = await env.DB.prepare('SELECT number FROM commissions WHERE id = ?').bind(body.commission_id).first();
+  const inv = await INV.issueManual(env, { ...body, channel: body.channel || (commission ? 'zakazka' : 'osobne'), note: body.note || (commission ? `Zakázka ${commission.number}` : null) }, user.email, new URL(request.url).origin);
+  return json({ id: inv.id, number: inv.number, token: inv.public_token, done: inv.done }, 201);
 });
 route('POST', 'invoices/:id/paid', async ({ env, params, user }) => {
   await env.DB.prepare('UPDATE invoices SET paid_at = ? WHERE id = ? AND paid_at IS NULL').bind(now(), params.id).run();
   await audit(env, user.email, 'faktura_uhrazena', 'invoice', params.id);
   return json({ ok: true });
 });
-route('POST', 'invoices/:id/cancel', async ({ env, params, user }) => {
-  await env.DB.prepare('UPDATE invoices SET cancelled_at = ? WHERE id = ? AND cancelled_at IS NULL').bind(now(), params.id).run();
-  await audit(env, user.email, 'faktura_stornovana', 'invoice', params.id);
-  return json({ ok: true });
-});
+route('POST', 'invoices/:id/cancel', async ({ env, params, user }) => { await INV.cancelInvoice(env, params.id, user.email); return json({ ok: true }); });
+route('POST', 'invoices/:id/credit', async ({ env, params, body, user }) => { const inv = await INV.creditNote(env, params.id, body, user.email); return json({ id: inv.id, number: inv.number, token: inv.public_token }, 201); });
+route('POST', 'invoices/:id/send', async ({ env, params, user, request }) => { await INV.sendInvoice(env, params.id, user.email, new URL(request.url).origin); return json({ ok: true }); });
 
 // --- Nastavení, e-maily, historie ------------------------------------------------------
 const SETTINGS = { shipping_zasilkovna_czk: 'int', shipping_balikovna_czk: 'int', shipping_osobni_enabled: 'bool', reservation_hours_bank: 'int', reservation_minutes_card: 'int', cod_enabled: 'bool', cod_fee_czk: 'int',

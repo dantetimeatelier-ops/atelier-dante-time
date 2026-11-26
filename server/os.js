@@ -177,8 +177,8 @@ export async function directorSummary(env) {
   const q = (sql, ...b) => env.DB.prepare(sql).bind(...b).first();
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
   const year = `${new Date().getUTCFullYear()}-01-01`;
-  const wk = await q("SELECT COUNT(*) AS n, COALESCE(SUM(total),0) AS s FROM invoices WHERE cancelled_at IS NULL AND issued_at > ? AND mode = 'live'", weekAgo);
-  const yr = await q("SELECT COALESCE(SUM(total),0) AS s FROM invoices WHERE cancelled_at IS NULL AND issued_at >= ? AND mode = 'live'", year);
+  const wk = await q("SELECT COUNT(*) AS n, COALESCE(SUM(total),0) AS s FROM invoices WHERE cancelled_at IS NULL AND kind <> 'zalohova' AND issued_at > ? AND mode = 'live'", weekAgo);
+  const yr = await q("SELECT COALESCE(SUM(total),0) AS s FROM invoices WHERE cancelled_at IS NULL AND kind <> 'zalohova' AND issued_at >= ? AND mode = 'live'", year);
   const orders = await q('SELECT COUNT(*) AS n FROM orders WHERE created_at > ?', weekAgo);
   const toShip = await q("SELECT COUNT(*) AS n FROM orders WHERE status='paid'");
   const inq = await q("SELECT COUNT(*) AS n FROM inquiries WHERE status='nova'");
