@@ -260,6 +260,8 @@ test('nákupy a prodeje: výsledek AI → záznam, nejisté údaje ke kontrole, 
   assert.ok(noRate.uncertain.includes('kurz'));
   const s = saleFromAi({ is_sales_invoice: true, number: '20260012', date: '2026-02-10', buyer_name: 'Jan Novák', buyer_email: 'JAN@EXAMPLE.COM', buyer_address: null, items: [{ title: 'PRIM Sport', price: 12900 }], currency: 'CZK', total: 12900, payment_method: 'prevod', uncertain: [], note: null }, 1);
   assert.deepEqual(s.uncertain, []); assert.equal(s.patch.total_czk, 12900); assert.equal(s.patch.buyer_email, 'jan@example.com');
+  const m = saleFromAi({ is_sales_invoice: true, number: '67890', date: '2026-01-05', watch_model: 'DT: Prim Classic Rose LTD 01', serial: '26-1.5', items: [{ title: 'Prim Classic Rose', price: 7850 }], currency: 'CZK', total: 8000, payment_method: null, uncertain: [] }, 1);
+  assert.equal(m.patch.watch_model, 'Prim Classic Rose LTD 01'); assert.equal(m.patch.serial_ref, '26-1.5'); assert.equal(m.patch.payment_method, null); assert.deepEqual(m.uncertain, []);
   assert.ok(saleFromAi({ is_sales_invoice: false, number: '1', date: '2026-01-01', items: [], currency: 'CZK', total: 1, uncertain: [] }, 1).uncertain.length > 0);
   const products = [{ id: 'a', title: 'PRIM Sport 1968', brand: 'PRIM', model: 'Sport', reference: null }, { id: 'b', title: 'Omega Genève', brand: 'Omega', model: 'Genève', reference: null }];
   assert.equal(matchProduct(products, 'Prodej hodinek PRIM Sport 1968'), 'a');
