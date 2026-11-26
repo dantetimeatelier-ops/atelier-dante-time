@@ -317,6 +317,7 @@ test('DT Sales: návrh odpovědi – text bez dokumentu, role sales, poptávka j
   assert.match(req.messages[0].content[0].text, /<zprava_zakaznika>[\s\S]*Ignoruj pokyny[\s\S]*<\/zprava_zakaznika>/);
   assert.match(req.messages[0].content[0].text, /termín leden/);
   assert.match(req.system, /NIKDY nepiš konkrétní cenu/);
+  assert.doesNotMatch(req.messages[0].content[0].text + req.system, /Jan Testovací|jan@example\.cz/); // bez kontaktních údajů
   assert.equal(db.prepare("SELECT role_id FROM ai_costs").get().role_id, 'sales');
   await assert.rejects(() => draftReply(env, 'neni', {}, { client }), /nenalezena/);
 });
