@@ -715,7 +715,31 @@
       ${i.photo_ids ? `<div class="photos">${i.photo_ids.split(',').map((f) => `<div class="photo"><a href="/api/admin/commission-photos/${esc(f)}/l" target="_blank"><img src="/api/admin/commission-photos/${esc(f)}/s" alt="Fotografie od zákazníka" loading="lazy"></a></div>`).join('')}</div>` : ''}
       <div class="row"><select data-s="${i.id}" style="flex:1">${Object.entries(L.inq).map(([v, t]) => `<option value="${v}" ${i.status === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
       ${['servis', 'renovace', 'zakazkova_vyroba', 'prestavba', 'jine', 'general'].includes(i.type) ? `<a class="btn" href="#/zakazky/nova?z=${encodeURIComponent(JSON.stringify({ type: ['servis', 'renovace', 'zakazkova_vyroba', 'prestavba'].includes(i.type) ? i.type : 'servis', customer_name: i.name, customer_email: i.email, customer_phone: i.phone, description: i.message, inquiry_id: i.id }))}">→ Zakázka</a>` : ''}</div>
+      <details class="draft" data-draft="${i.id}" data-email="${esc(i.email)}"><summary>Návrh odpovědi (AI)</summary>
+        <label>Pokyn pro návrh (nepovinné)<input name="note" maxlength="500" placeholder="např. cenu sdělím po prohlídce, termín cca 3 týdny"></label>
+        <button class="btn" type="button" data-mk>Vytvořit návrh</button>
+        <div data-out hidden><label>Předmět<input name="subject"></label><label>Text<textarea name="body" rows="10"></textarea></label>
+          <div class="card warn small" data-q hidden></div>
+          <div class="row"><a class="btn primary" data-mail href="#">Otevřít v e-mailu</a><button class="btn" type="button" data-copy>Kopírovat text</button></div>
+          <p class="small muted">Návrh zkontrolujte – odesíláte vy ze svého e-mailu.</p></div></details>
     </div>`).join('') || '<p class="muted">Zatím žádné poptávky.</p>'}</div>`;
+    const ai = await api('GET', 'inquiries/ai').catch(() => ({ ready: false, reason: 'AI není dostupná' }));
+    app.querySelectorAll('[data-draft]').forEach((d) => {
+      const out = d.querySelector('[data-out]'); const subj = d.querySelector('[name=subject]'); const text = d.querySelector('[name=body]');
+      const mail = () => { d.querySelector('[data-mail]').href = `mailto:${d.dataset.email}?subject=${encodeURIComponent(subj.value)}&body=${encodeURIComponent(text.value)}`; };
+      subj.addEventListener('input', mail); text.addEventListener('input', mail);
+      if (!ai.ready) { d.querySelector('[data-mk]').disabled = true; d.querySelector('[data-mk]').insertAdjacentHTML('afterend', `<p class="small muted">${esc(ai.reason || '')}</p>`); }
+      d.querySelector('[data-mk]').addEventListener('click', (e) => run(async () => {
+        const b = e.currentTarget; b.disabled = true; b.textContent = 'Připravuji návrh…';
+        try {
+          const r = await api('POST', `inquiries/${d.dataset.draft}/draft`, { note: d.querySelector('[name=note]').value });
+          subj.value = r.subject; text.value = r.body; out.hidden = false; mail();
+          const q = d.querySelector('[data-q]'); q.hidden = !r.questions.length;
+          q.innerHTML = r.questions.length ? `<b>Před odesláním doplňte:</b><ul>${r.questions.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+        } finally { b.disabled = false; b.textContent = 'Vytvořit nový návrh'; }
+      }));
+      d.querySelector('[data-copy]').addEventListener('click', () => run(async () => { await navigator.clipboard.writeText(text.value); toast('Text zkopírován'); }));
+    });
     app.querySelectorAll('[data-s]').forEach((s) => s.addEventListener('change', () => run(async () => { await api('PUT', `inquiries/${s.dataset.s}`, { status: s.value }); toast('Uloženo'); })));
   };
 

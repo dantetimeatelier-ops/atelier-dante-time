@@ -19,6 +19,8 @@ import * as INV from '../../../server/invoicing.js';
 import { INVOICE_KINDS, SALE_CHANNELS, INVOICE_PAY } from '../../../src/shop/invoice.mjs';
 import * as INB from '../../../server/inbox.js';
 import * as CPH from '../../../server/commission-photos.js';
+import { draftReply } from '../../../server/sales.js';
+import { aiStatus } from '../../../server/ai.js';
 import { html } from '../../../server/http.js';
 
 const STATUSES = ['draft', 'available', 'reserved', 'sold', 'in_progress', 'archived'];
@@ -453,6 +455,13 @@ route('GET', 'inquiries', async ({ env }) => {
 route('PUT', 'inquiries/:id', async ({ env, params, body }) => {
   await env.DB.prepare('UPDATE inquiries SET status = ? WHERE id = ?').bind(oneOf(body.status, ['nova', 'vyrizuje_se', 'vyrizena', 'spam'], 'stav'), params.id).run();
   return json({ ok: true });
+});
+// DT Sales: návrh odpovědi (odesílá majitel sám ze svého e-mailu)
+route('GET', 'inquiries/ai', async ({ env }) => { const st = await aiStatus(env, 'sales'); return json({ ready: st.ready, reason: st.reason }); });
+route('POST', 'inquiries/:id/draft', async ({ env, params, body, user }) => {
+  const d = await draftReply(env, params.id, { note: str(body.note, { max: 500 }) || '' });
+  await audit(env, user.email, 'navrh_odpovedi', 'inquiry', params.id);
+  return json(d);
 });
 route('GET', 'withdrawals', async ({ env }) => {
   const { results } = await env.DB.prepare('SELECT * FROM withdrawals ORDER BY created_at DESC LIMIT 200').all();
