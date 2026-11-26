@@ -2,9 +2,10 @@
 import { HttpError, SECURITY_HEADERS } from './http.js';
 import { randomId, audit } from './db.js';
 import { str, oneOf } from './validate.js';
+import { DOC_MAX, splitDoc, docBytes, removeChunks } from './docstore.js';
 
 export const DOC_KINDS = { uctenka: 'Účtenka', faktura: 'Faktura od dodavatele', smlouva: 'Kupní smlouva', jiny: 'Jiný doklad' };
-const MAX = 1_800_000; // limit řádku D1 je 2 MB
+const MAX = DOC_MAX;
 const sniff = (b) => {
   if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
   if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45) return 'image/webp';
@@ -17,7 +18,7 @@ const hex = (buf) => [...new Uint8Array(buf)].map((x) => x.toString(16).padStart
 export async function upload(env, form, actor) {
   const f = form.get('file');
   if (!f || typeof f === 'string') throw new HttpError('Vyberte soubor dokladu');
-  if (f.size > MAX) throw new HttpError('Soubor je větší než 1,8 MB – vyfoťte doklad znovu nebo zmenšete PDF');
+  if (f.size > MAX) throw new HttpError('Soubor je větší než 10 MB – vyfoťte doklad znovu nebo zmenšete PDF');
   const buf = new Uint8Array(await f.arrayBuffer());
   const mime = sniff(buf);
   if (!mime) throw new HttpError('Podporované jsou fotky (JPEG, WebP, PNG) a PDF');
@@ -27,8 +28,10 @@ export async function upload(env, form, actor) {
   const costId = form.get('cost_id') ? str(form.get('cost_id'), { max: 40 }) : null;
   if (costId && !(await env.DB.prepare('SELECT id FROM costs WHERE id = ?').bind(costId).first())) throw new HttpError('Náklad nenalezen', 404);
   const id = randomId();
+  const store = splitDoc(env, id, buf);
   await env.DB.prepare('INSERT INTO documents (id, cost_id, kind, filename, mime, size, sha256, data, note, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .bind(id, costId, oneOf(form.get('kind') || 'uctenka', Object.keys(DOC_KINDS), 'druh dokladu'), str(f.name, { max: 200 }), mime, buf.length, hash, buf, str(form.get('note'), { max: 500 }), actor).run();
+    .bind(id, costId, oneOf(form.get('kind') || 'uctenka', Object.keys(DOC_KINDS), 'druh dokladu'), str(f.name, { max: 200 }), mime, buf.length, hash, store.data, str(form.get('note'), { max: 500 }), actor).run();
+  for (const st of store.stmts) await st.run();
   await audit(env, actor, 'doklad_nahran', 'document', id, { cost: costId, size: buf.length });
   return id;
 }
@@ -46,14 +49,15 @@ export async function assign(env, id, costId, actor) {
 }
 
 export async function file(env, id, actor) {
-  const d = await env.DB.prepare('SELECT mime, filename, data FROM documents WHERE id = ?').bind(id).first();
+  const d = await env.DB.prepare('SELECT id, mime, filename, data FROM documents WHERE id = ?').bind(id).first();
   if (!d) throw new HttpError('Doklad nenalezen', 404);
   await audit(env, actor, 'doklad_zobrazen', 'document', id);
   const name = (d.filename || `doklad-${id}`).replace(/[^\w.-]+/g, '_');
-  return new Response(new Uint8Array(d.data), { headers: { ...SECURITY_HEADERS, 'Content-Type': d.mime, 'Content-Disposition': `inline; filename="${name}"`, 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' } });
+  return new Response(await docBytes(env, d), { headers: { ...SECURITY_HEADERS, 'Content-Type': d.mime, 'Content-Disposition': `inline; filename="${name}"`, 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' } });
 }
 
 export async function remove(env, id, actor) {
   await env.DB.prepare('DELETE FROM documents WHERE id = ?').bind(id).run();
+  await removeChunks(env, id);
   await audit(env, actor, 'doklad_smazan', 'document', id);
 }

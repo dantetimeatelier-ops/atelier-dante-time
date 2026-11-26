@@ -7,6 +7,7 @@ import { COST_CATS } from './finance.js';
 import { cnbRate, toCzk } from './fx.js';
 import { extractJson, aiStatus } from './ai.js';
 import { runRole } from './os.js';
+import { DOC_MAX, splitDoc, docBytes } from './docstore.js';
 
 export const PLATFORMS = { aukro: 'Aukro', aliexpress: 'AliExpress', ebay: 'eBay', vinted: 'Vinted', bazos: 'Bazoš', sbazar: 'Sbazar', etsy: 'Etsy', chrono24: 'Chrono24', amazon: 'Amazon', temu: 'Temu', soukrome: 'Soukromá osoba', obchod: 'Obchod / dodavatel', jine: 'Jiné' };
 export const PAY = { prevod: 'Převod', karta: 'Karta', dobirka: 'Dobírka', hotove: 'Hotově', jine: 'Jiné' };
@@ -71,7 +72,7 @@ const hex = (buf) => [...new Uint8Array(buf)].map((x) => x.toString(16).padStart
 export async function upload(env, form, actor) {
   const f = form.get('file');
   if (!f || typeof f === 'string') throw new HttpError('Vyberte soubor');
-  if (f.size > 1_800_000) throw new HttpError(`${f.name || 'Soubor'}: větší než 1,8 MB – zmenšete PDF nebo vyfoťte znovu`);
+  if (f.size > DOC_MAX) throw new HttpError(`${f.name || 'Soubor'}: větší než 10 MB – zmenšete PDF (v Pages: Exportovat → PDF → Kvalita obrázků: Dobrá)`);
   const purpose = oneOf(form.get('purpose') || 'nakup', ['nakup', 'prodej'], 'účel');
   const buf = new Uint8Array(await f.arrayBuffer());
   const mime = sniff(buf);
@@ -93,8 +94,10 @@ export async function upload(env, form, actor) {
   }
   const id = randomId();
   const { costId, saleId } = await createDraft(env, purpose, name, actor);
+  const store = splitDoc(env, id, buf);
   await env.DB.prepare("INSERT INTO documents (id, cost_id, sale_id, kind, purpose, filename, mime, size, sha256, data, created_by, ai_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .bind(id, costId, saleId, purpose === 'prodej' ? 'faktura' : 'jiny', purpose, name, mime, buf.length, hash, buf, actor, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai').run();
+    .bind(id, costId, saleId, purpose === 'prodej' ? 'faktura' : 'jiny', purpose, name, mime, buf.length, hash, store.data, actor, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai').run();
+  for (const st of store.stmts) await st.run();
   await audit(env, actor, 'doklad_nahran', 'document', id, { purpose, size: buf.length });
   return { id, cost_id: costId, sale_id: saleId };
 }
@@ -185,7 +188,7 @@ export async function extract(env, docId, actor, deps = {}) {
   }
   let result = { status: 'manual' };
   const run = await runRole(env, 'office', `vytěžení ${d.purpose === 'prodej' ? 'faktury' : 'nákupu'}`, async () => {
-    const bytes = new Uint8Array(d.data);
+    const bytes = await docBytes(env, d);
     if (d.purpose === 'nakup') {
       const a = await extractJson(env, { bytes, mime: d.mime, system: SYSTEM, prompt: PURCHASE_PROMPT, schema: PURCHASE_SCHEMA }, deps);
       const rate = a.currency && cur(a.currency) !== 'CZK' ? await cnbRate(env, cur(a.currency), ymd(a.date)) : 1;
