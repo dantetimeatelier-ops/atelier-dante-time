@@ -12,7 +12,7 @@ export const PLATFORMS = { aukro: 'Aukro', aliexpress: 'AliExpress', ebay: 'eBay
 export const PAY = { prevod: 'Převod', karta: 'Karta', dobirka: 'Dobírka', hotove: 'Hotově', jine: 'Jiné' };
 const ymd = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : null);
 const cur = (v) => (/^[A-Z]{3}$/.test(String(v || '').toUpperCase()) ? String(v).toUpperCase() : 'CZK');
-const N = (t) => ({ type: [t, 'null'] });
+const N = (t) => ({ anyOf: [{ type: t }, { type: 'null' }] }); // nullable – structured outputs podporují anyOf
 
 // ---- Schémata pro AI (strukturovaný výstup) ------------------------------------------------
 const PURCHASE_SCHEMA = {
@@ -209,8 +209,11 @@ export async function extract(env, docId, actor, deps = {}) {
     return { summary: result.status === 'confirmed' ? 'potvrzeno automaticky' : 'ke kontrole' };
   });
   if (run.status === 'error') {
+    const reason = `AI doklad nepřečetla (${String(run.summary || '').slice(0, 200)}) – vyplňte ručně nebo zkuste znovu`;
     await env.DB.prepare("UPDATE documents SET ai_status = 'chyba' WHERE id = ?").bind(docId).run();
-    return { status: 'manual', reason: run.summary };
+    if (d.cost_id) await env.DB.prepare("UPDATE costs SET check_note = ? WHERE id = ? AND status = 'ke_kontrole'").bind(reason, d.cost_id).run();
+    if (d.sale_id) await env.DB.prepare("UPDATE sales SET check_note = ? WHERE id = ? AND status = 'ke_kontrole'").bind(reason, d.sale_id).run();
+    return { status: 'manual', reason };
   }
   if (run.skipped) return { status: 'manual', reason: 'Role DT Doklady je pozastavená' };
   return result;
