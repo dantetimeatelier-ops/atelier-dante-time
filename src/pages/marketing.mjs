@@ -165,7 +165,7 @@ export function services(lang) {
 </div></section>
 <section class="section" id="poptavka"><div class="wrap"><div class="card">
   <h2>${L('Nezávazná poptávka', 'Free enquiry')}</h2>
-  <p>${L('Odpovím co nejdříve e-mailem. Fotografie hodinek pak můžete poslat v odpovědi.', 'I will reply by e-mail as soon as possible. You can then send photos of the watch in your reply.')}</p>
+  <p>${L('Odpovím co nejdříve e-mailem. Rovnou můžete přiložit fotografie hodinek – ciferník, zadní víčko, strojek, případné poškození.', 'I will reply by e-mail as soon as possible. You can attach photos of the watch right away – dial, caseback, movement, any damage.')}</p>
   ${inquiryForm(lang, 'service')}
 </div></div></section>`,
   };
@@ -192,6 +192,8 @@ export function inquiryForm(lang, type, productId = '') {
   </div>
   <label>${L('Telefon (nepovinné)', 'Phone (optional)')}<input name="phone" type="tel" autocomplete="tel" maxlength="40"></label>
   <label>${L('Zpráva', 'Message')}<textarea name="message" required maxlength="4000" placeholder="${L('Značka, model, stav, co od hodinek očekáváte…', 'Brand, model, condition, what you expect…')}"></textarea></label>
+  ${type === 'service' ? `<label>${L('Fotografie hodinek (nepovinné, nejvýše 5)', 'Photos of the watch (optional, up to 5)')}<input type="file" name="photos" accept="image/*" multiple data-photos></label>
+  <p class="doc-meta" data-photos-info>${L('Fotky se před odesláním zmenší a odstraní se z nich údaje o poloze.', 'Photos are resized and location data is removed before sending.')}</p>` : ''}
   <label class="hp" aria-hidden="true">Web<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
   <p class="doc-meta">${L('Údaje použiji jen k vyřízení vaší poptávky. Více v <a href="/privacy" style="color:var(--gold-2)">ochraně osobních údajů</a>.', 'I will only use your details to handle your enquiry. See the <a href="/en/privacy" style="color:var(--gold-2)">privacy policy</a>.')}</p>
   <button class="btn solid" type="submit">${L('Odeslat poptávku', 'Send enquiry')}</button>
