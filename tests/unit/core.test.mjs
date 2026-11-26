@@ -274,3 +274,14 @@ test('AI: klíč vložený s mezerou nebo koncem řádku se očistí', async () 
   assert.equal(cleanKey('sk-ant-x​y\r\n'), 'sk-ant-xy');
   assert.equal(cleanKey(undefined), '');
 });
+
+test('fakturace: číslo DT-RRRR-NNNN, VS, rok podle Prahy, součty se zálohou', async () => {
+  const { invoiceNumber, invoiceVs, pragueYear, invoiceTotals, normalizeItems } = await import('../../src/shop/invoice.mjs');
+  assert.equal(invoiceNumber(2026, 1), 'DT-2026-0001'); assert.equal(invoiceNumber(2026, 12345), 'DT-2026-12345');
+  assert.equal(invoiceVs(2026, 42), '20260042');
+  assert.equal(pragueYear('2026-12-31T23:30:00Z'), 2027); assert.equal(pragueYear('2026-12-31T22:30:00Z'), 2026);
+  const t = invoiceTotals([{ text: 'Prim Classic Soleil LTD.01', qty: 1, price: 9000 }, { text: 'Řemínek', qty: 2, price: 450 }, { text: 'Doprava', price: 150 }], 2000);
+  assert.deepEqual([t.total, t.advance, t.due], [10050, 2000, 8050]);
+  assert.equal(normalizeItems([{ text: '', price: 1 }, { text: 'x', price: 1.5 }, { text: 'Sleva', price: -500 }]).length, 1);
+  assert.equal(invoiceTotals([{ text: 'Dobropis', price: -9000 }]).total, -9000);
+});
