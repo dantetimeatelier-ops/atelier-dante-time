@@ -267,6 +267,22 @@ try {
   await page.locator('.toast', { hasText: 'Klíč vyměněn' }).waitFor();
   step('klíč dvoufázového ověření vyměněn');
 
+  // Ekonomika (E2): nákupní cena u hodinek, marže, přehled a export pro účetní
+  await page.goto(`${BASE}/admin/#/hodinky`);
+  await page.locator('.list a.item').first().click();
+  await page.getByRole('link', { name: 'Náklady a marže' }).click();
+  await page.getByText('Interní údaje').waitFor();
+  await page.getByLabel('Popis').fill('Nákup hodinek – test');
+  await page.getByLabel('Částka (Kč)').fill('3000');
+  await page.getByRole('button', { name: 'Přidat náklad' }).click();
+  await page.getByText('Nákup hodinek – test').waitFor();
+  await page.goto(`${BASE}/admin/#/ekonomika`);
+  await page.getByText('Marže hodinek').waitFor();
+  await page.locator('a.item', { hasText: 'marže' }).first().waitFor();
+  const csv = await page.evaluate(async (b) => (await fetch(`${b}/api/admin/finance/export?kind=naklady&from=2000-01-01&to=2100-01-01`)).text(), BASE);
+  assert.match(csv, /Nákup hodinek – test/);
+  step('ekonomika: náklad zapsán, marže spočítána, export pro účetní');
+
   // Dante Time OS: přehled rolí, Guardian, záloha
   await page.goto(`${BASE}/admin/#/system`);
   await page.getByRole('button', { name: 'Spustit kontroly teď' }).click();

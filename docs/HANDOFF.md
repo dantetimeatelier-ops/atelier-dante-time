@@ -4,6 +4,17 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-26 – Claude – main (Dante Time OS E1 nasazeno)
+**Hotovo:** E1 (PR #7): role a oprávnění, DT Guardian (kontroly bez AI, pozastavení rolí), DT Logistics
+(automatické připomínky prohlídek), DT Director (týdenní souhrn), přehled Systém, šifrované zálohy,
+prohlídky od skutečného převzetí, zákonná práva odděleně. Záruční texty sloučeny (CZ/EN), oprava ${…}.
+**Čeká na majitele:** token Cloudflare + „Workers Scripts: Edit“ (časovač), GitHub Secret BACKUP_KEY (zálohy).
+**Další krok:** E2 sklad a ekonomika (nákupní ceny, náklady, marže, přehledy) – větev claude/os-e2-ekonomika.
+**Pozor na:** limit AI 300 Kč (R20); v repozitáři je historicky jen 5 inzerátů (4 PRIM + zrušený Chopard),
+„6 inzerátů“ v produkční databázi neověřeno – zeptat se majitele.
+
+---
+
 ## 2026-11-26 – Claude – main (SPUŠTĚNO)
 **Hotovo:** web běží na https://atelier-dante-time.cz (Cloudflare Pages, doména přes Cloudflare DNS,
 WEDOS jen registrátor). Objednávky zapnuté (`SHOP_MODE = "live"` ve wrangler.toml, jediný zdroj).

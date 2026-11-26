@@ -201,3 +201,16 @@ webu a vytvoří bezpečný základ, na kterém budou všichni agenti stát.
 2. `BACKUP_KEY=… node scripts/backup-decrypt.mjs zaloha.enc > zaloha.json` (klíč zadá majitel, nikam se neukládá).
 3. Obnovu do D1 provést jen po souhlasu majitele, nejdřív do zkušební databáze. Pro nedávné chyby
    použít `wrangler d1 time-travel restore` (až 7 dní zpět).
+
+### E2 – Sklad a ekonomika (26. 11. 2026)
+| Část | Stav |
+|---|---|
+| Náklady (`costs`): nákup hodinek, díly, materiál, práce (hodiny × sazba), doprava, poplatky, reklama, provoz | ✅ migrace 0009 |
+| Interní údaje odděleně od veřejné tabulky hodinek (test hlídá) | ✅ |
+| Sklad dílů (`parts`): druh, originál, kalibr, cena, dodavatel, stav, použití v hodinkách | ✅ |
+| Náklady a marže u každých hodinek (Hodinky → detail → Náklady a marže) | ✅ |
+| Přehled Ekonomika: tržby, náklady, zisk po měsících, cíl 2 mil. Kč, hodnota skladu, marže kusů | ✅ |
+| Export pro účetní (CSV pro Excel): náklady a vydané faktury za období | ✅ |
+| DT Guardian: prodané hodinky bez nákupní ceny, záporná marže | ✅ |
+| Hodinová sazba práce – nastaví majitel (Ekonomika → Hodinová sazba) | ⏳ majitel |
+

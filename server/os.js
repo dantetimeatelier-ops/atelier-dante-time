@@ -105,6 +105,14 @@ async function guardian(env) {
   for (const o of await q("SELECT o.id, o.number, o.total, o.shipping_price, o.cod_fee, (SELECT COALESCE(SUM(price_czk),0) FROM order_items i WHERE i.order_id = o.id) AS items FROM orders o WHERE o.created_at > ?", new Date(Date.now() - 30 * 86400000).toISOString())) {
     if (o.items + (o.shipping_price || 0) + (o.cod_fee || 0) !== o.total) await f(`soucet:${o.id}`, 'critical', `Objednávka ${o.number}: celková částka nesedí se součtem položek`, `položky ${o.items} + doprava ${o.shipping_price} + dobírka ${o.cod_fee} ≠ ${o.total}`);
   }
+  // Ekonomika (E2): prodané hodinky bez nákupní ceny, záporná marže
+  try {
+    const noCost = (await q("SELECT COUNT(*) AS n FROM products p WHERE p.status = 'sold' AND NOT EXISTS (SELECT 1 FROM costs c WHERE c.product_id = p.id AND c.category = 'nakup')"))[0].n;
+    if (noCost) await f('ekonomika-nakup', 'info', `${noCost} prodaných hodinek nemá zapsanou nákupní cenu`, 'Bez ní nelze spočítat skutečný zisk. Hodinky → Náklady a marže.');
+    for (const x of await q("SELECT p.id, p.title, (SELECT i.price_czk FROM order_items i JOIN orders o ON o.id = i.order_id WHERE i.product_id = p.id AND o.status IN ('paid','shipped','completed') LIMIT 1) AS sale, (SELECT COALESCE(SUM(amount_czk),0) FROM costs c WHERE c.product_id = p.id) AS cost FROM products p WHERE p.status = 'sold'")) {
+      if (x.sale != null && x.cost > x.sale) await f(`marze:${x.id}`, 'warning', `Záporná marže: ${x.title}`, `prodej ${x.sale} Kč, náklady ${x.cost} Kč`);
+    }
+  } catch { /* tabulka costs v této verzi není */ }
   // E-maily, které se nepodařilo odeslat
   const failed = (await q("SELECT COUNT(*) AS n FROM emails WHERE status='failed' AND created_at > ?", dayAgo))[0].n;
   if (failed) await f('emaily-chyby', 'warning', `${failed} e-mailů za 24 h se nepodařilo odeslat`, 'Administrace → Více → E-maily');
