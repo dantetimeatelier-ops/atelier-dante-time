@@ -11,3 +11,15 @@ Rezervované a prodané kusy si stav ponechají, katalog je nepřepíše.
 
 Fotografie se připravují příkazem `python3 scripts/foto-katalog.py <slug> <fotky…>`,
 který je zmenší a odstraní z nich metadata (včetně polohy).
+
+## Jména modelů (rozhodnutí R22)
+
+Když majitel pošle fotografie nových hodinek, agent **vždy navrhne jméno modelu** a předloží ho ke schválení:
+
+- tvar `Prim <řada> <název> LTD.<číslo>` (u jiné značky obdobně), řady **Classic** (elegantní, kůže),
+  **Sport** (tah, robustní), **Heritage** (patina, zlato, historický kalibr),
+- název vychází z charakteru kusu (ciferník, pouzdro, barva, detail), krátký a výstižný (Soleil, Diamant, Blanc, Date…),
+- číslo LTD roste v rámci stejného názvu (LTD.01, LTD.02…),
+- jméno se zapíše do `title` i `model`, SEO titulek = jméno + klíčová slova,
+- jméno se nesmí opakovat (katalog to při nasazení kontroluje).
+

@@ -170,5 +170,6 @@ Upřesnění majitele:
   jméno je hlavní název na webu, na fakturách i v pasu. Jména se nesmí opakovat (kontrola v katalogu).
 - Schválená jména: Prim Classic Soleil LTD.01, Prim Classic Diamant LTD.01, Prim Sport Blanc LTD.01,
   Prim Heritage Date LTD.01. Adresy stránek beze změny.
+- U každého nového inzerátu z fotografií navrhne agent jméno modelu automaticky (postup v `katalog/README.md`).
 - Upozornění předáno majiteli: „Prim“ je ochranná známka jiného výrobce; majitel zvolil variantu A (na vlastní odpovědnost).
 
