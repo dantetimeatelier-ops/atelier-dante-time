@@ -148,3 +148,19 @@ záruční list nechce. Záruční list v textové podobě (§ 2174a OZ) jde e-m
 **Rozhodnutí:** Podmínky 1.1 (reklamace s prodloužením jen po dohodě, garanční prohlídka varianta A,
 zálohy jen po dohodě 20–30 %, záruční list v potvrzení objednávky) platí od 26. 11. 2026.
 Ostrý web přijímá objednávky (`SHOP_MODE = "live"` ve `wrangler.toml`).
+
+## R20 – Schválení Dante Time OS (2026-11-26)
+**Rozhodl:** majitel
+**Rozhodnutí:** Návrh `docs/DANTE-TIME-OS.md` schválen: stávající infrastruktura, jedno jádro s rolemi, etapy E1–E6.
+Upřesnění majitele:
+- DT Guardian už v E1, nezávisle kontroluje všechny role včetně Directora.
+- Garanční prohlídky od **skutečného převzetí** hodinek; připomínky **automatické**; dobrovolná záruka evidovaná odděleně od zákonných práv.
+- DT Scout smí kromě e-mailových upozornění využívat oficiální API a další povolené zdroje.
+- DT Innovation alespoň jednou týdně aktivně hledá zlepšení (podnikání, web, marketing, automatizace, konkurenceschopnost).
+- DT Director posílá e-mailem stručné souhrny výsledků, problémů a požadavků na schválení.
+- **Limit AI: 300 Kč měsíčně** (poslední pokyn majitele; navýšení jen se souhlasem). Vyčerpání nesmí zastavit e-shop.
+- Před aktivací placené služby: přesný přehled nákladů, účel a bezplatná alternativa. Preferovat klasickou automatizaci bez AI.
+- Soukromé ukládání dokladů, ochrana zákaznických údajů, pravidelné zálohy a obnova.
+- Významné změny nejdřív mimo ostrý web. Centrální přehled rolí (aktivita, výsledky, náklady, oprávnění, pozastavení).
+- Souhlas s rozšířením oprávnění Cloudflare v nezbytném rozsahu (minimální oprávnění, bezpečné uložení klíčů).
+- Majitel schvaluje jen zásadní rozhodnutí, nové výdaje a rizikové zásahy, ne drobné technické změny.
