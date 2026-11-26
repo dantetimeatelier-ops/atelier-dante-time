@@ -214,3 +214,21 @@ webu a vytvoří bezpečný základ, na kterém budou všichni agenti stát.
 | DT Guardian: prodané hodinky bez nákupní ceny, záporná marže | ✅ |
 | Hodinová sazba práce – nastaví majitel (Ekonomika → Hodinová sazba) | ⏳ majitel |
 
+
+### E3a – Digitální pas hodinek a certifikát pravosti (26. 11. 2026, bez AI, 0 Kč)
+| Část | Stav |
+|---|---|
+| Pas hodinek (`watch_passports`, `passport_events`, migrace 0010): identifikace hodinek, součásti s garancí pravosti, historie | ✅ |
+| **Bez osobních údajů:** pas neobsahuje jméno, kontakt ani cenu; výrobní číslo veřejně jen zkráceně (••••1234) | ✅ test hlídá |
+| Veřejné ověření přes QR: `/pas/<kód>` a `/en/passport/<kód>`, kód 12 znaků (nelze uhodnout), noindex, ochrana proti hádání | ✅ |
+| Pas vzniká sám při zápisu převzetí (i u dobírky), záznam o předání; garanční prohlídka se zapíše do historie sama | ✅ |
+| Administrace: Více → Pasy hodinek; u hodinek tlačítko „Pas hodinek“; ruční pas pro hodinky mimo katalog; zrušení pasu (ztráta, podvrh) | ✅ |
+| Certifikát pravosti k tisku / PDF s QR kódem (A4) | ✅ |
+| Záruční list: text ze schválených podmínek 1.1 se posílá v potvrzení objednávky (§ 2174a) – beze změny | ✅ |
+
+### E3b – Doklady (připraveno k rozhodnutí)
+- **Bez AI (0 Kč):** fotka účtenky z iPhonu → šifrovaně uložená, ručně vyplníte částku a druh; přiřadí se k nákladu.
+- **💰 S AI (vyžaduje souhlas):** Claude API účtenku přečte a vyplní sama. Odhad při 30–50 dokladech měsíčně
+  **cca 20–50 Kč/měsíc** (nejschopnější model, ~1 Kč za doklad), s nejlevnějším modelem Haiku pod 5 Kč; obojí se vejde do limitu 300 Kč. Vyžaduje účet Anthropic API s platební kartou a klíč
+  (uloží majitel do Cloudflare, ne do repozitáře).
+- Doklady z e-mailu (doklady@…) vyžadují Cloudflare Email Routing (zdarma) a rozšíření oprávnění tokenu.

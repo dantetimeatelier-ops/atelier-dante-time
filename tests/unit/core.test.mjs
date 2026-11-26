@@ -220,3 +220,17 @@ test('ekonomika: nákupní ceny a náklady nejsou ve veřejných tabulkách', ()
   const m = readFileSync(new URL('../../migrations/0009_ekonomika.sql', import.meta.url), 'utf8');
   assert.ok(!/ALTER TABLE products/i.test(m), 'interní ekonomické údaje nesmí být ve sloupcích tabulky products (veřejný web ji čte)');
 });
+
+test('digitální pas: kód bez zaměnitelných znaků, zkrácené výrobní číslo, žádné osobní údaje v tabulce', async () => {
+  const { newCode, maskSerial, publicBody } = await import('../../server/passport.js');
+  const codes = new Set(Array.from({ length: 500 }, () => newCode()));
+  assert.equal(codes.size, 500);
+  for (const c of codes) assert.match(c, /^[2-9A-HJKMNP-Z]{12}$/);
+  assert.equal(maskSerial('AB 123 4567'), '••••4567');
+  assert.equal(maskSerial('12'), '••••');
+  assert.equal(maskSerial(null), '');
+  const m = readFileSync(new URL('../../migrations/0010_pas_hodinek.sql', import.meta.url), 'utf8');
+  assert.ok(!/customer|email|name\b|price/i.test(m.replace(/--.*$/gm, '')), 'pas nesmí ukládat zákazníka ani cenu');
+  const html = publicBody({ p: { code: 'ABCDEFGHJKMN', title: 'PRIM <test>', status: 'platny', issued_on: '2026-11-26', serial_ref: 'X99887766', authenticity_parts: 'strojek,cifernik' }, events: [] }, 'cs');
+  assert.ok(html.includes('&lt;test&gt;') && !html.includes('X99887766') && html.includes('••••7766') && html.includes('strojek, ciferník'));
+});

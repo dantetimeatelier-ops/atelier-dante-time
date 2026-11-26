@@ -4,6 +4,7 @@ import { randomId, now, audit } from './db.js';
 import { sendEmail } from './email.js';
 import { SITE, OPERATOR } from '../src/site.mjs';
 import { TERMS, priceCs, priceEn } from '../src/terms.mjs';
+import { onInspection } from './passport.js';
 import { schedule, inspectionApplies, warrantyUntilAfter, phase, today } from '../src/shop/warranty.mjs';
 
 const I = TERMS.inspection;
@@ -102,6 +103,7 @@ export async function recordProtocol(env, id, p, actor) {
   await env.DB.prepare(`UPDATE warranty_inspections SET status='hotova', done_on=?, rate_s_day=?, amplitude_deg=?, beat_error_ms=?, result=?, findings=?, paid=?, warranty_until=?, updated_at=? WHERE id=?`)
     .bind(doneOn, p.rate_s_day, p.amplitude_deg, p.beat_error_ms, p.result, p.findings, p.paid ? 1 : 0, until, now(), id).run();
   await audit(env, actor, 'prohlidka_provedena', 'warranty_inspection', id, { doneOn, until, result: p.result });
+  try { await onInspection(env, r, doneOn, p.result); } catch (e) { console.error('Pas: záznam prohlídky selhal', e?.message); }
   const ok = until > r.due_date;
   const row = (l, v) => (v == null || v === '' ? '' : `<tr><td style="padding:4px 12px 4px 0;color:#555">${l}</td><td><strong>${v}</strong></td></tr>`);
   const table = `<table style="border-collapse:collapse">${row(tr(r, 'Hodinky', 'Watch'), r.watch_title)}${row(tr(r, 'Datum prohlídky', 'Inspection date'), d(r, doneOn))}

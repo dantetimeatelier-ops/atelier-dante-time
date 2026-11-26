@@ -13,6 +13,8 @@ import { OPERATOR } from '../../../src/site.mjs';
 import * as W from '../../../server/warranty.js';
 import * as OS from '../../../server/os.js';
 import * as FIN from '../../../server/finance.js';
+import * as PAS from '../../../server/passport.js';
+import { html } from '../../../server/http.js';
 
 const STATUSES = ['draft', 'available', 'reserved', 'sold', 'in_progress', 'archived'];
 const PRODUCT_TEXT = { title: 200, brand: 80, model: 120, reference: 80, year: 20, movement: 120, case_material: 120, crystal: 80, water_resistance: 80, dial: 200, strap: 200, condition: 1000, service_done: 1000, original_parts: 1000, replaced_parts: 1000, accessories: 500, manufacturer_info: 500, safety_info: 500, hallmark: 200, plating: 200, authenticity_note: 1000, serial_ref: 120, description_cs: 5000, description_en: 5000, seo_title: 80, seo_description: 200 };
@@ -402,6 +404,22 @@ route('POST', 'warranty/:id/protocol', async ({ env, params, body, user }) => js
   rate_s_day: num(body.rate_s_day, { min: -999, max: 999, name: 'odchylka chodu' }), amplitude_deg: int(body.amplitude_deg, { min: 0, max: 360, name: 'amplituda' }),
   beat_error_ms: num(body.beat_error_ms, { min: 0, max: 99, name: 'odchylka kroku' }), findings: str(body.findings, { max: 2000, required: false }), paid: !!body.paid,
 }, user.email)));
+
+// --- Digitální pas hodinek a certifikát pravosti (E3) -----------------------------------
+route('GET', 'passports', async ({ env }) => json({ passports: await PAS.list(env), kinds: PAS.EVENT_KINDS }));
+route('POST', 'passports', async ({ env, body, user }) => {
+  const id = body.product_id ? await PAS.createFromProduct(env, str(body.product_id, { max: 40, required: true }), user.email) : await PAS.createManual(env, body, user.email);
+  return json({ id });
+});
+route('GET', 'passports/:id', async ({ env, params }) => { const d = await PAS.get(env, params.id); return json({ ...d, kinds: PAS.EVENT_KINDS }); });
+route('PUT', 'passports/:id', async ({ env, params, body, user }) => { await PAS.get(env, params.id); await PAS.update(env, params.id, body, user.email); return json({ ok: true }); });
+route('POST', 'passports/:id/events', async ({ env, params, body, user }) => { await PAS.get(env, params.id); await PAS.addEvent(env, params.id, { ...body, ref: null }, user.email); return json({ ok: true }); });
+route('DELETE', 'passports/:id/events/:eid', async ({ env, params, user }) => {
+  await env.DB.prepare('DELETE FROM passport_events WHERE id = ? AND passport_id = ?').bind(params.eid, params.id).run();
+  await audit(env, user.email, 'pas_zaznam_smazan', 'passport', params.id, { event: params.eid });
+  return json({ ok: true });
+});
+route('GET', 'passports/:id/certificate', async ({ env, params }) => html(PAS.certificateHtml(await PAS.get(env, params.id)), 200, { 'Cache-Control': 'no-store' }));
 
 // --- Poptávky a odstoupení -----------------------------------------------------------
 route('GET', 'inquiries', async ({ env }) => {

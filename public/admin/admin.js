@@ -136,7 +136,7 @@
     const pub = `/hodinky/${p.slug}`;
     app.innerHTML = `<p><a href="#/hodinky">← Hodinky</a></p>
       <h1>${esc(p.title)}</h1>
-      <div class="row" style="margin-bottom:12px">${chip('product', p.status)} ${p.status !== 'draft' ? `<a class="small" href="${pub}" target="_blank">Zobrazit na webu ↗</a>` : '<span class="small muted">Koncept – na webu není vidět</span>'} <a class="btn" href="#/marze/${p.id}">Náklady a marže</a></div>
+      <div class="row" style="margin-bottom:12px">${chip('product', p.status)} ${p.status !== 'draft' ? `<a class="small" href="${pub}" target="_blank">Zobrazit na webu ↗</a>` : '<span class="small muted">Koncept – na webu není vidět</span>'} <a class="btn" href="#/marze/${p.id}">Náklady a marže</a> <button class="btn" type="button" id="mkpas">Pas hodinek</button></div>
       ${q.get('nove') ? '<div class="card warn small">Začněte fotografiemi, pak vyplňte základní údaje a cenu. Popis a SEO vygenerujete tlačítkem.</div>' : ''}
       <h2>Fotografie</h2>
       <div class="photos" id="photos">${p.images.map((i, n) => `<div class="photo">${n === 0 ? '<span class="first">Hlavní</span>' : ''}<img src="/media/${esc(i.key_small)}" alt="">
@@ -189,6 +189,7 @@
       await api('PUT', `products/${id}`, d); toast('Uloženo');
     };
     form.addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await save(); views['hodinky/:id']({ id }, new URLSearchParams()); }); });
+    app.querySelector('#mkpas')?.addEventListener('click', () => run(async () => { const r = await api('POST', 'passports', { product_id: id }); location.hash = `#/pasy/${r.id}`; }));
     app.querySelector('#gen').addEventListener('click', () => run(async () => {
       await save();
       const g = await api('POST', `products/${id}/describe`);
@@ -375,6 +376,60 @@
       if (edit) await api('PUT', `parts/${edit.id}`, d); else await api('POST', 'parts', d);
       toast('Uloženo'); location.hash = '#/dily';
     }); });
+  };
+
+  // --- Digitální pas hodinek a certifikát pravosti (E3) ---------------------------------
+  const AP = { strojek: 'strojek', cifernik: 'ciferník', rucicky: 'ručičky' };
+  views.pasy = async () => {
+    const { passports } = await api('GET', 'passports');
+    app.innerHTML = `<h1>Pasy hodinek</h1><p class="small muted">Každé hodinky dostanou digitální pas s QR kódem: zákazník i každý další majitel si ověří pravost a historii. Pas neobsahuje jméno ani cenu. Pas se založí sám při zápisu převzetí, nebo tlačítkem „Pas hodinek“ u hodinek.</p>
+      <div class="list" style="margin-top:12px">${passports.map((x) => `<a class="item" href="#/pasy/${x.id}"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${esc(x.code)} · vystaven ${esc(x.issued_on)} · záznamů ${x.events}${x.status === 'zruseny' ? ' · ZRUŠEN' : ''}</span></span></a>`).join('') || '<p class="muted">Zatím žádné pasy.</p>'}</div>
+      <details style="margin-top:16px"><summary>Založit pas ručně (hodinky mimo katalog)</summary><form class="card" id="nf">
+        <label>Název hodinek<input name="title" required maxlength="200"></label>
+        <div class="grid"><label>Značka<input name="brand" maxlength="80"></label><label>Model<input name="model" maxlength="120"></label></div>
+        <div class="grid"><label>Reference<input name="reference" maxlength="80"></label><label>Rok<input name="year" maxlength="20"></label></div>
+        <label>Strojek<input name="movement" maxlength="120"></label>
+        <label>Identifikace (číslo pouzdra / strojku)<input name="serial_ref" maxlength="120"></label>
+        <label>Datum vystavení<input name="issued_on" type="date"></label>
+        <button class="btn primary block">Založit pas</button></form></details>`;
+    app.querySelector('#nf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { const r = await api('POST', 'passports', formData(e.target)); location.hash = `#/pasy/${r.id}`; }); });
+  };
+  views['pasy/:id'] = async ({ id }) => {
+    const { passport: p, events, url, url_en, qr, kinds } = await api('GET', `passports/${id}`);
+    const ap = String(p.authenticity_parts || '').split(',');
+    const f = (n, l, max = 200) => `<label>${l}<input name="${n}" value="${esc(p[n])}" maxlength="${max}"></label>`;
+    app.innerHTML = `<p><a href="#/pasy">← Pasy hodinek</a></p><h1 style="font-size:22px">${esc(p.title)}</h1>
+      ${p.status === 'zruseny' ? '<div class="card warn small">Pas je zrušený – stránka pasu ukazuje, že neplatí.</div>' : ''}
+      <div class="card center"><div class="qr">${qr}</div><p class="code">${esc(p.code)}</p>
+        <p><a class="btn" href="${esc(url)}" target="_blank" rel="noopener">Otevřít pas ↗</a> <a class="btn" href="${esc(url_en)}" target="_blank" rel="noopener">EN ↗</a> <a class="btn primary" href="/api/admin/passports/${esc(id)}/certificate" target="_blank" rel="noopener">Certifikát k tisku</a></p>
+        <p class="small muted">QR kód vytiskněte na certifikát nebo kartičku do krabičky. Na stránce pasu je výrobní číslo jen zkráceně.</p></div>
+      <h2 style="margin-top:16px">Historie</h2><div class="list">${events.map((e) => `<div class="item"><span class="grow"><span class="t">${esc(kinds[e.kind])} · ${esc(e.event_date)}</span><br><span class="small muted">${esc(e.text_cs)}${e.public ? '' : ' · jen interně'}</span></span><button class="btn" data-del="${e.id}" aria-label="Smazat záznam">✕</button></div>`).join('') || '<p class="muted">Zatím žádné záznamy.</p>'}</div>
+      <details style="margin-top:12px"><summary>Přidat záznam do historie</summary><form class="card" id="ef">
+        <div class="grid"><label>Druh<select name="kind">${Object.entries(kinds).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label><label>Datum<input name="event_date" type="date"></label></div>
+        <label>Popis (česky)<textarea name="text_cs" rows="2" maxlength="1000" required></textarea></label>
+        <label>Popis anglicky (nepovinné)<textarea name="text_en" rows="2" maxlength="1000"></textarea></label>
+        <label class="row"><input type="checkbox" name="public" checked> Zobrazit na stránce pasu</label>
+        <button class="btn primary block">Přidat</button></form></details>
+      <details style="margin-top:12px"><summary>Upravit údaje pasu</summary><form class="card" id="pf">
+        ${f('title', 'Název hodinek')}<div class="grid">${f('brand', 'Značka', 80)}${f('model', 'Model', 120)}</div><div class="grid">${f('reference', 'Reference', 80)}${f('year', 'Rok', 20)}</div>
+        ${f('movement', 'Strojek', 120)}${f('case_material', 'Pouzdro', 120)}${f('hallmark', 'Punc a ryzost')}${f('serial_ref', 'Identifikace (číslo pouzdra / strojku)', 120)}
+        <fieldset><legend class="small">Součásti s doživotní garancí pravosti</legend>${Object.entries(AP).map(([k, v]) => `<label class="row"><input type="checkbox" name="ap" value="${k}"${ap.includes(k) ? ' checked' : ''}> ${v}</label>`).join('')}</fieldset>
+        <label>Originální díly – popis<textarea name="original_parts" rows="2" maxlength="1000">${esc(p.original_parts)}</textarea></label>
+        <label>Vyměněné díly<textarea name="replaced_parts" rows="2" maxlength="1000">${esc(p.replaced_parts)}</textarea></label>
+        <label>Datum vystavení<input name="issued_on" type="date" value="${esc(p.issued_on)}"></label>
+        <button class="btn primary block">Uložit</button></form></details>
+      <button class="btn ghost block" id="st" style="margin-top:16px">${p.status === 'zruseny' ? 'Obnovit platnost pasu' : 'Zrušit pas (např. ztráta, podvrh)'}</button>`;
+    app.querySelector('#ef').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => { const d = formData(ev.target); d.public = ev.target.public.checked; await api('POST', `passports/${id}/events`, d); toast('Přidáno'); views['pasy/:id']({ id }); }); });
+    app.querySelector('#pf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => {
+      const d = formData(ev.target); delete d.ap; d.authenticity_parts = [...ev.target.querySelectorAll('[name=ap]:checked')].map((x) => x.value);
+      await api('PUT', `passports/${id}`, d); toast('Uloženo'); views['pasy/:id']({ id });
+    }); });
+    app.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat záznam z historie?')) return; await api('DELETE', `passports/${id}/events/${b.dataset.del}`); views['pasy/:id']({ id }); })));
+    app.querySelector('#st').addEventListener('click', () => run(async () => {
+      const cancel = p.status !== 'zruseny';
+      if (!confirm(cancel ? 'Zrušit pas? Stránka pasu pak ukáže, že neplatí.' : 'Obnovit platnost pasu?')) return;
+      await api('PUT', `passports/${id}`, { status: cancel ? 'zruseny' : 'platny' }); views['pasy/:id']({ id });
+    }));
   };
 
   // --- Dante Time OS: centrální přehled rolí ---------------------------------------------
@@ -635,6 +690,7 @@
       <a class="item" href="#/dily"><span class="grow">Sklad dílů</span></a>
       <a class="item" href="#/system"><span class="grow">Systém Dante Time OS (role, kontroly, zálohy)</span></a>
       <a class="item" href="#/prohlidky"><span class="grow">Garanční prohlídky</span></a>
+      <a class="item" href="#/pasy"><span class="grow">Pasy hodinek a certifikáty pravosti</span></a>
       <a class="item" href="#/poptavky"><span class="grow">Poptávky</span></a>
       <a class="item" href="#/faktury"><span class="grow">Faktury</span></a>
       <a class="item" href="#/zakaznici"><span class="grow">Zákazníci</span></a>
