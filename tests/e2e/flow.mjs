@@ -155,6 +155,19 @@ try {
   await page.getByRole('button', { name: /Odesláno/ }).click();
   await page.locator('.chip.shipped').waitFor();
   step('odeslání označeno');
+  const orderUrl = page.url();
+
+  // 5b) Garanční prohlídka vznikla automaticky (podmínky 1.1) a jde zapsat protokol
+  await page.goto(`${BASE}/admin/#/prohlidky`);
+  await page.locator('.list a.item').first().click();
+  await page.getByText('Termín prohlídky').waitFor();
+  await page.getByLabel(/Odchylka chodu/).fill('+4');
+  await page.getByLabel(/Amplituda/).fill('285');
+  page.once('dialog', (d) => d.accept());
+  await page.getByRole('button', { name: /Uložit protokol/ }).click();
+  await page.getByText('Záruka do').waitFor();
+  step('garanční prohlídka založena při odeslání a zapsán protokol');
+  await page.goto(orderUrl);
 
   // 6) Online odstoupení od smlouvy (dva kroky)
   const orderNumber = (await page.locator('h1').textContent()).trim();

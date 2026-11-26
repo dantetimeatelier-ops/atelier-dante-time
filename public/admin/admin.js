@@ -12,6 +12,7 @@
     ctype: { servis: 'Servis', renovace: 'Renovace', zakazkova_vyroba: 'Zakázková výroba', prestavba: 'Přestavba' },
     cstatus: { poptavka: 'Poptávka', nabidka: 'Nabídka odeslána', prijato: 'Přijato', v_praci: 'V práci', ceka_na_dily: 'Čeká na díly', hotovo: 'Hotovo', predano: 'Předáno', zruseno: 'Zrušeno' },
     inq: { nova: 'Nová', vyrizuje_se: 'Vyřizuje se', vyrizena: 'Vyřízená', spam: 'Spam' },
+    wphase: { pripomenout: 'Poslat připomínku', v_okne: 'V termínu prohlídky', planovana: 'Naplánováno', zmeskana: 'Termín propásnut', hotova: 'Hotovo', zrusena: 'Zrušeno' },
     itype: { servis: 'Servis', renovace: 'Renovace', zakazkova_vyroba: 'Zakázková sestava', prestavba: 'Přestavba', jine: 'Jiný dotaz', product: 'Zájem o hodinky', general: 'Dotaz' },
     ship: { zasilkovna: 'Zásilkovna', balikovna: 'Balíkovna', osobni: 'Osobně' },
     pay: { bank_transfer: 'Převod', card: 'Karta', cod: 'Dobírka', cash: 'Hotově' },
@@ -101,6 +102,8 @@
         <a class="stat" href="#/zakazky"><b>${d.commissionsActive}</b>zakázek v běhu</a>
         <a class="stat" href="#/hodinky"><b>${p.available || 0}</b>skladem</a>
         <a class="stat" href="#/hodinky"><b>${(p.draft || 0) + (p.in_progress || 0)}</b>v přípravě</a>
+        <a class="stat" href="#/prohlidky"><b>${d.warranty?.remind || 0}</b>připomenout prohlídku</a>
+        <a class="stat" href="#/prohlidky"><b>${d.warranty?.window || 0}</b>prohlídek v termínu</a>
       </div>
       <div class="card" style="margin-top:12px"><b>Limity DPH (neplátce)</b><p class="small" style="margin:6px 0 0">Obrat letos (vystavené faktury): <b>${d.turnover.toLocaleString('cs-CZ')} Kč</b> z 2 000 000 Kč<br>Prodej spotřebitelům do jiných zemí EU: <b>${d.euSales.toLocaleString('cs-CZ')} Kč</b> z ${d.euLimitCzk.toLocaleString('cs-CZ')} Kč (10 000 €)</p><p class="small muted" style="margin:6px 0 0">Orientační přehled. Rozhodující je evidence vaší účetní.</p></div>
       ${d.withdrawals ? `<a class="card err" style="display:block;margin-top:12px" href="#/odstoupeni">⚠ ${d.withdrawals} odstoupení od smlouvy za 30 dní</a>` : ''}
@@ -296,6 +299,67 @@
     app.querySelector('#kf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `commissions/${id}`, formData(e.target)); toast('Uloženo'); }); });
   };
 
+  // --- Garanční prohlídky ------------------------------------------------------------
+  const dd = (s) => (s ? new Date(`${s}T12:00:00Z`).toLocaleDateString('cs-CZ') : '–');
+  views.prohlidky = async (_, q) => {
+    const { inspections } = await api('GET', 'warranty');
+    const f = q.get('f') || 'open';
+    const groups = { open: (x) => !['hotova', 'zrusena'].includes(x.phase), done: (x) => x.phase === 'hotova', all: () => true };
+    const list = inspections.filter(groups[f] || groups.open);
+    const due = inspections.filter((x) => x.phase === 'pripomenout').length;
+    app.innerHTML = `<div class="row" style="justify-content:space-between"><h1>Garanční prohlídky</h1><a class="btn" href="#/prohlidky/nova">+ Ručně</a></div>
+      <p class="small muted">Po ${12} měsících od převzetí (±30 dnů). Vznikají samy při odeslání objednávky. Připomínka se posílá 2 týdny před otevřením termínu.</p>
+      ${due ? `<button class="btn primary block" id="rall" style="margin-bottom:12px">Poslat ${due} ${due === 1 ? 'připomínku' : 'připomínky'} zákazníkům</button>` : ''}
+      <div class="filters">${[['open', 'Otevřené'], ['done', 'Hotové'], ['all', 'Vše']].map(([k, t]) => `<button data-f="${k}" aria-pressed="${f === k}">${t}</button>`).join('')}</div>
+      <div class="list">${list.map((x) => `<a class="item" href="#/prohlidky/${x.id}"><span class="grow"><span class="t">${esc(x.watch_title)}</span><br>
+        <span class="chip ${esc(x.phase)}">${esc(L.wphase[x.phase] || x.phase)}</span> <span class="small muted">${esc(x.customer_name)} · termín ${dd(x.window_from)} – ${dd(x.window_to)}</span></span></a>`).join('') || '<p class="muted">Zatím žádné prohlídky. Vzniknou samy, jakmile odešlete první objednávku podle podmínek 1.1.</p>'}</div>`;
+    app.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', () => { location.hash = `#/prohlidky?f=${b.dataset.f}`; }));
+    app.querySelector('#rall')?.addEventListener('click', () => run(async () => { if (!confirm(`Odeslat ${due} připomínek e-mailem?`)) return; const r = await api('POST', 'warranty/remind-due', {}); toast(`Odesláno: ${r.sent}`); views.prohlidky(_, q); }));
+  };
+  views['prohlidky/nova'] = async () => {
+    app.innerHTML = `<p><a href="#/prohlidky">← Prohlídky</a></p><h1>Nová prohlídka</h1><p class="small muted">Pro hodinky prodané mimo e-shop (osobně, na Instagramu…).</p>
+      <form id="wf">${field('watch_title', 'Hodinky', {}, 'required')}${field('customer_name', 'Zákazník', {}, 'required')}${field('customer_email', 'E-mail', {}, 'type="email" required')}
+      ${field('handover_date', 'Datum převzetí hodinek', {}, 'type="date" required')}<label>Jazyk e-mailů<select name="lang"><option value="cs">čeština</option><option value="en">angličtina</option></select></label>
+      <div class="sticky-save"><button class="btn primary block">Uložit</button></div></form>`;
+    app.querySelector('#wf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { const { id } = await api('POST', 'warranty', formData(e.target)); toast('Uloženo'); location.hash = `#/prohlidky/${id}`; }); });
+  };
+  views['prohlidky/:id'] = async ({ id }) => {
+    const { inspections } = await api('GET', 'warranty');
+    const x = inspections.find((i) => i.id === id);
+    if (!x) { app.innerHTML = '<p>Prohlídka nenalezena.</p>'; return; }
+    const done = x.status === 'hotova';
+    app.innerHTML = `<p><a href="#/prohlidky">← Prohlídky</a></p><h1 style="font-size:22px">${esc(x.watch_title)}</h1>
+      <p><span class="chip ${esc(x.phase)}">${esc(L.wphase[x.phase])}</span></p>
+      <div class="card"><table class="kv">
+        <tr><th>Zákazník</th><td>${esc(x.customer_name)}<br><a href="mailto:${esc(x.customer_email)}">${esc(x.customer_email)}</a></td></tr>
+        <tr><th>Převzetí</th><td>${dd(x.handover_date)}</td></tr>
+        <tr><th>Termín prohlídky</th><td>${dd(x.window_from)} – ${dd(x.window_to)}<br><span class="small muted">(12 měsíců: ${dd(x.due_date)})</span></td></tr>
+        <tr><th>Připomínka</th><td>${x.reminder_sent_at ? `odeslána ${date(x.reminder_sent_at)}` : `naplánována na ${dd(x.remind_on)}`}</td></tr>
+        <tr><th>Cena</th><td>${czk(x.price_czk)}</td></tr>
+        ${done ? `<tr><th>Provedeno</th><td>${dd(x.done_on)} · ${x.result === 'zavada' ? 'zjištěna vada' : 'v pořádku'}</td></tr><tr><th>Záruka do</th><td><b>${dd(x.warranty_until)}</b></td></tr>
+          <tr><th>Měření</th><td>${x.rate_s_day ?? '–'} s/den · ${x.amplitude_deg ?? '–'}° · ${x.beat_error_ms ?? '–'} ms</td></tr>` : ''}
+      </table>${x.order_id ? `<p class="small"><a href="#/objednavky/${esc(x.order_id)}">Objednávka</a></p>` : ''}</div>
+      ${done ? '' : `<div class="row" style="margin:12px 0"><button class="btn" id="rem">${x.reminder_sent_at ? 'Poslat připomínku znovu' : 'Poslat připomínku'}</button></div>
+      <details><summary>Upravit termín / stav</summary><form id="ef">${field('handover_date', 'Datum převzetí (přepočítá termíny)', x, 'type="date"')}
+        <label>Stav<select name="status">${[['planovana', 'Naplánováno'], ['objednana', 'Termín domluven'], ['zrusena', 'Zrušeno']].map(([v, t]) => `<option value="${v}" ${x.status === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        ${field('booked_for', 'Domluvený termín', x, 'type="date"')}${area('note', 'Poznámka', x)}<button class="btn block">Uložit</button></form></details>
+      <details open><summary>Zapsat protokol prohlídky</summary><form id="pf">
+        ${field('done_on', 'Datum prohlídky', { done_on: new Date().toISOString().slice(0, 10) }, 'type="date" required')}
+        <div class="grid">${field('rate_s_day', 'Odchylka chodu (s/den)', {}, 'inputmode="decimal"')}${field('amplitude_deg', 'Amplituda (°)', {}, 'inputmode="numeric"')}</div>
+        ${field('beat_error_ms', 'Odchylka kroku (ms)', {}, 'inputmode="decimal"')}
+        <label>Výsledek<select name="result"><option value="ok">V pořádku</option><option value="zavada">Zjištěna vada</option></select></label>
+        ${area('findings', 'Zjištění a provedené úkony (uvidí zákazník)', {})}
+        <label class="check"><input type="checkbox" name="paid"> Zaplaceno (${czk(x.price_czk)})</label>
+        <div class="sticky-save"><button class="btn primary block">Uložit protokol a poslat zákazníkovi</button></div></form></details>`}`;
+    app.querySelector('#rem')?.addEventListener('click', () => run(async () => { if (!confirm('Poslat zákazníkovi připomínku e-mailem?')) return; await api('POST', `warranty/${id}/remind`, {}); toast('Připomínka odeslána'); views['prohlidky/:id']({ id }); }));
+    app.querySelector('#ef')?.addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `warranty/${id}`, formData(e.target)); toast('Uloženo'); views['prohlidky/:id']({ id }); }); });
+    app.querySelector('#pf')?.addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
+      if (!confirm('Uložit protokol a poslat ho zákazníkovi?')) return;
+      const d = formData(e.target); d.paid = e.target.paid.checked;
+      const r = await api('POST', `warranty/${id}/protocol`, d); toast(r.extended ? 'Hotovo – záruka prodloužena' : 'Hotovo – mimo termín, záruka neprodloužena'); views['prohlidky/:id']({ id });
+    }); });
+  };
+
   views.poptavky = async () => {
     const { inquiries } = await api('GET', 'inquiries');
     app.innerHTML = `<h1>Poptávky</h1><div class="list">${inquiries.map((i) => `<div class="card">
@@ -452,6 +516,7 @@
 
   views.vice = async () => {
     app.innerHTML = `<h1>Více</h1><div class="list">
+      <a class="item" href="#/prohlidky"><span class="grow">Garanční prohlídky</span></a>
       <a class="item" href="#/poptavky"><span class="grow">Poptávky</span></a>
       <a class="item" href="#/faktury"><span class="grow">Faktury</span></a>
       <a class="item" href="#/zakaznici"><span class="grow">Zákazníci</span></a>

@@ -10,6 +10,7 @@ import { describe, productName } from '../../../src/shop/describe.mjs';
 import { puncCheck } from '../../../src/shop/punc.mjs';
 import { slugify } from '../../../src/shop/format.mjs';
 import { OPERATOR } from '../../../src/site.mjs';
+import * as W from '../../../server/warranty.js';
 
 const STATUSES = ['draft', 'available', 'reserved', 'sold', 'in_progress', 'archived'];
 const PRODUCT_TEXT = { title: 200, brand: 80, model: 120, reference: 80, year: 20, movement: 120, case_material: 120, crystal: 80, water_resistance: 80, dial: 200, strap: 200, condition: 1000, service_done: 1000, original_parts: 1000, replaced_parts: 1000, accessories: 500, manufacturer_info: 500, safety_info: 500, hallmark: 200, plating: 200, authenticity_note: 1000, serial_ref: 120, description_cs: 5000, description_en: 5000, seo_title: 80, seo_description: 200 };
@@ -136,6 +137,7 @@ route('GET', 'dashboard', async ({ env }) => {
     ordersToShip: (await q("SELECT COUNT(*) AS n FROM orders WHERE status='paid'")).n,
     commissionsActive: (await q("SELECT COUNT(*) AS n FROM commissions WHERE status IN ('prijato','v_praci','ceka_na_dily','hotovo')")).n,
     withdrawals: (await q('SELECT COUNT(*) AS n FROM withdrawals WHERE created_at > ?', new Date(Date.now() - 30 * 86400000).toISOString())).n,
+    warranty: await (async () => { try { const l = await W.list(env); return { remind: l.filter((x) => x.phase === 'pripomenout').length, window: l.filter((x) => x.phase === 'v_okne').length }; } catch { return { remind: 0, window: 0 }; } })(),
   });
 });
 
@@ -366,6 +368,35 @@ route('PUT', 'commissions/:id', async ({ env, params, body, user }) => {
   await audit(env, user.email, 'zakazka_upravena', 'commission', params.id, { status: d.status });
   return json({ ok: true });
 });
+
+// --- Garanční prohlídky (Dante Time OS E1) -------------------------------------------
+route('GET', 'warranty', async ({ env }) => json({ inspections: await W.list(env) }));
+route('POST', 'warranty', async ({ env, body, user }) => {
+  const id = await W.createManual(env, {
+    watch_title: str(body.watch_title, { max: 200, required: true, name: 'hodinky' }), customer_name: str(body.customer_name, { max: 120, required: true, name: 'jméno' }),
+    customer_email: vEmail(body.customer_email), lang: body.lang, handover_date: body.handover_date,
+  }, user.email);
+  return json({ id }, 201);
+});
+route('PUT', 'warranty/:id', async ({ env, params, body, user }) => {
+  if (body.handover_date) await W.setHandover(env, params.id, String(body.handover_date).slice(0, 10), user.email);
+  const set = []; const vals = [];
+  if ('status' in body) { set.push('status = ?'); vals.push(oneOf(body.status, ['planovana', 'objednana', 'zrusena'], 'stav')); }
+  if ('booked_for' in body) { set.push('booked_for = ?'); vals.push(body.booked_for ? String(body.booked_for).slice(0, 10) : null); }
+  if ('note' in body) { set.push('note = ?'); vals.push(str(body.note, { max: 2000, required: false })); }
+  if (set.length) {
+    await env.DB.prepare(`UPDATE warranty_inspections SET ${set.join(', ')}, updated_at = ? WHERE id = ? AND status <> 'hotova'`).bind(...vals, now(), params.id).run();
+    await audit(env, user.email, 'prohlidka_upravena', 'warranty_inspection', params.id, { status: body.status });
+  }
+  return json({ ok: true });
+});
+route('POST', 'warranty/:id/remind', async ({ env, params, user }) => { await W.sendReminder(env, params.id, user.email); return json({ ok: true }); });
+route('POST', 'warranty/remind-due', async ({ env, user }) => json({ sent: await W.sendDueReminders(env, user.email) }));
+route('POST', 'warranty/:id/protocol', async ({ env, params, body, user }) => json(await W.recordProtocol(env, params.id, {
+  done_on: body.done_on, result: oneOf(body.result || 'ok', ['ok', 'zavada'], 'výsledek'),
+  rate_s_day: num(body.rate_s_day, { min: -999, max: 999, name: 'odchylka chodu' }), amplitude_deg: int(body.amplitude_deg, { min: 0, max: 360, name: 'amplituda' }),
+  beat_error_ms: num(body.beat_error_ms, { min: 0, max: 99, name: 'odchylka kroku' }), findings: str(body.findings, { max: 2000, required: false }), paid: !!body.paid,
+}, user.email)));
 
 // --- Poptávky a odstoupení -----------------------------------------------------------
 route('GET', 'inquiries', async ({ env }) => {

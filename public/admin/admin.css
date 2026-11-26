@@ -58,3 +58,7 @@ summary{font:400 18px Georgia,serif;cursor:pointer}
 table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:var(--muted);font-weight:400;width:42%}
 .qr svg{max-width:220px;display:block;margin:10px auto}
 .code{font-family:ui-monospace,Menlo,monospace;word-break:break-all;background:#0b0b0b;padding:8px;border-radius:8px}
+/* Garanční prohlídky */
+.chip.pripomenout,.chip.zmeskana{color:var(--warn);border-color:rgba(224,178,90,.5)}
+.chip.v_okne,.chip.hotova{color:var(--ok);border-color:rgba(127,191,138,.5)}
+.chip.planovana,.chip.zrusena{color:var(--muted)}
