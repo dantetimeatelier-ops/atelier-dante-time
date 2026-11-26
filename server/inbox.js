@@ -31,14 +31,15 @@ const PURCHASE_SCHEMA = {
 };
 const SALE_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['is_sales_invoice', 'number', 'date', 'buyer_name', 'buyer_email', 'buyer_address', 'items', 'currency', 'total', 'payment_method', 'uncertain', 'note'],
+  required: ['is_sales_invoice', 'number', 'date', 'buyer_name', 'buyer_email', 'buyer_address', 'watch_model', 'serial', 'items', 'currency', 'total', 'payment_method', 'uncertain', 'note'],
   properties: {
     is_sales_invoice: { type: 'boolean' }, number: N('string'), date: N('string'),
     buyer_name: N('string'), buyer_email: N('string'), buyer_address: N('string'),
+    watch_model: N('string'), serial: N('string'),
     items: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['title', 'price'], properties: { title: { type: 'string' }, price: N('number') } } },
     currency: N('string'), total: N('number'),
-    payment_method: { type: 'string', enum: ['prevod', 'karta', 'dobirka', 'hotove', 'jine'] },
-    uncertain: { type: 'array', items: { type: 'string', enum: ['number', 'date', 'buyer', 'items', 'currency', 'total', 'payment_method'] } },
+    payment_method: { anyOf: [{ type: 'string', enum: ['prevod', 'karta', 'dobirka', 'hotove', 'jine'] }, { type: 'null' }] },
+    uncertain: { type: 'array', items: { type: 'string', enum: ['number', 'date', 'buyer', 'watch_model', 'serial', 'items', 'currency', 'total', 'payment_method'] } },
     note: N('string'),
   },
 };
@@ -53,7 +54,8 @@ Vyčti: datum nákupu, platformu, prodávajícího, číslo objednávky/aukce, p
 Kategorie: "nakup" = celé hodinky, "dil" = strojek/ciferník/ručičky/pouzdro/sklo/řemínek/korunka a jiné díly hodinek, "material" = spotřební materiál a nářadí, "doprava" = jen poštovné, jinak podle smyslu. is_watch = true, pokud jde o celé hodinky.`;
 const SALE_PROMPT = `Toto by měla být faktura VYDANÁ ateliérem Atelier Dante Time (prodávající = ateliér, Patrik Hužička) zákazníkovi.
 Pokud to vydaná faktura ateliéru není, nastav is_sales_invoice = false.
-Vyčti: číslo faktury, datum vystavení, odběratele (jméno, e-mail, adresa, pokud jsou uvedeny), položky, měnu, celkovou částku k úhradě a způsob platby.`;
+Vyčti: číslo faktury, datum vystavení, odběratele (jméno, e-mail, adresa, pokud jsou uvedeny), položky, měnu, celkovou částku k úhradě a způsob platby.
+Model hodinek (watch_model) a výrobní číslo (serial) bývají v řádcích „Model:“ a „Serial no:“ / „Výrobní číslo:“ – opiš je přesně (u modelu bez předpony „DT:“). Způsob platby uveď jen, je-li na faktuře výslovně (převod, karta, dobírka, hotově); „Uhrazeno“ samo o sobě způsob platby není → null.`;
 
 // ---- Nahrání dokladu → koncept ke kontrole ----------------------------------------------------
 const sniff = (b) => {
@@ -162,13 +164,14 @@ export function saleFromAi(a, rate) {
     patch: {
       number: a.number ? String(a.number).slice(0, 60) : null, issued_on: date, buyer_name: a.buyer_name || null, buyer_email: a.buyer_email && /@/.test(a.buyer_email) ? String(a.buyer_email).toLowerCase().slice(0, 200) : null,
       buyer_address: a.buyer_address || null, items: (a.items || []).map((i) => i.title).join(', ').slice(0, 500) || null,
+      watch_model: a.watch_model ? String(a.watch_model).replace(/^DT:\s*/i, '').slice(0, 200) : null, serial_ref: a.serial ? String(a.serial).slice(0, 120) : null,
       currency: currency || 'CZK', amount_orig: a.total, fx_rate: currency === 'CZK' ? 1 : rate,
       total_czk: currency === 'CZK' ? (a.total != null ? Math.round(a.total) : null) : toCzk(a.total, rate), payment_method: a.payment_method || null,
     },
     uncertain: [...unc],
   };
 }
-const UNC_CS = { date: 'datum', platform: 'platforma', items: 'položky', currency: 'měna', total: 'částka', shipping: 'doprava', category: 'druh', order_ref: 'číslo objednávky', number: 'číslo faktury', buyer: 'odběratel', payment_method: 'způsob platby', kurz: 'kurz ČNB' };
+const UNC_CS = { watch_model: 'model hodinek', serial: 'výrobní číslo', date: 'datum', platform: 'platforma', items: 'položky', currency: 'měna', total: 'částka', shipping: 'doprava', category: 'druh', order_ref: 'číslo objednávky', number: 'číslo faktury', buyer: 'odběratel', payment_method: 'způsob platby', kurz: 'kurz ČNB' };
 const uncText = (u) => u.map((x) => UNC_CS[x] || x).join(', ');
 
 /** Vytěží jeden doklad. Spolehlivý výsledek bez duplicity potvrdí sám, jinak nechá ke kontrole. */
@@ -213,7 +216,8 @@ export async function extract(env, docId, actor, deps = {}) {
       if (dup) notes.push(`Faktura ${patch.number} už v evidenci je`);
       if (a.note) notes.push(String(a.note).slice(0, 200));
       const ok = !uncertain.length && !dup;
-      const pid = matchProduct(await productsForMatch(env), patch.items);
+      const bySerial = patch.serial_ref ? await env.DB.prepare('SELECT id FROM products WHERE serial_ref = ? LIMIT 1').bind(patch.serial_ref).first() : null;
+      const pid = bySerial?.id || matchProduct(await productsForMatch(env), [patch.watch_model, patch.items].filter(Boolean).join(' '));
       const set = { ...Object.fromEntries(Object.entries(patch).filter(([, v]) => v != null)), product_id: pid, status: ok ? 'potvrzeno' : 'ke_kontrole', source: 'ai', check_note: notes.join(' · ') || null };
       if (dup) delete set.number; // číslo musí být unikátní – duplicitu vyřeší majitel
       const k = Object.keys(set);
@@ -305,6 +309,7 @@ export async function saveSale(env, id, b, actor, { confirm = true } = {}) {
     number, issued_on: ymd(b.issued_on) || now().slice(0, 10),
     buyer_name: str(b.buyer_name, { max: 200 }), buyer_email: b.buyer_email ? String(b.buyer_email).trim().toLowerCase().slice(0, 200) : null,
     buyer_address: str(b.buyer_address, { max: 300 }), items: str(b.items, { max: 500, required: true, name: 'co bylo prodáno' }),
+    watch_model: str(b.watch_model, { max: 200 }), serial_ref: str(b.serial_ref, { max: 120 }),
     currency: c.currency, amount_orig: c.amount_orig, fx_rate: c.fx_rate, total_czk: c.czk,
     payment_method: b.payment_method ? oneOf(b.payment_method, Object.keys(PAY), 'platba') : null,
     product_id: b.product_id ? str(b.product_id, { max: 40 }) : null,
@@ -325,8 +330,8 @@ export async function overview(env) {
   const { results: review } = await env.DB.prepare(`SELECT c.*, p.title AS product_title, ${docs} FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE c.status = 'ke_kontrole' ORDER BY c.created_at`).all();
   const { results: saleReview } = await env.DB.prepare("SELECT s.*, (SELECT id FROM documents d WHERE d.sale_id = s.id LIMIT 1) AS doc_id FROM sales s WHERE s.status = 'ke_kontrole' ORDER BY s.created_at").all();
   const { results: purchases } = await env.DB.prepare(`SELECT c.*, p.title AS product_title, ${docs} FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE c.status = 'potvrzeno' ORDER BY c.cost_date DESC, c.created_at DESC LIMIT 100`).all();
-  const { results: sales } = await env.DB.prepare(`SELECT 'import' AS kind, s.id, s.number, s.issued_on AS day, s.buyer_name, s.items, s.total_czk AS total, (SELECT id FROM documents d WHERE d.sale_id = s.id LIMIT 1) AS doc_id FROM sales s WHERE s.status = 'potvrzeno'
-    UNION ALL SELECT 'faktura' AS kind, i.id, i.number, substr(i.issued_at,1,10) AS day, i.buyer_name, NULL AS items, i.total, NULL AS doc_id FROM invoices i WHERE i.mode = 'live' AND i.cancelled_at IS NULL
+  const { results: sales } = await env.DB.prepare(`SELECT 'import' AS kind, s.id, s.number, s.issued_on AS day, s.buyer_name, s.watch_model, s.items, s.total_czk AS total, (SELECT id FROM documents d WHERE d.sale_id = s.id LIMIT 1) AS doc_id FROM sales s WHERE s.status = 'potvrzeno'
+    UNION ALL SELECT 'faktura' AS kind, i.id, i.number, substr(i.issued_at,1,10) AS day, i.buyer_name, NULL AS watch_model, NULL AS items, i.total, NULL AS doc_id FROM invoices i WHERE i.mode = 'live' AND i.cancelled_at IS NULL
     ORDER BY day DESC LIMIT 100`).all();
   return { review, saleReview, purchases, sales, ai: await aiStatus(env), platforms: PLATFORMS, pay: PAY, categories: COST_CATS };
 }
