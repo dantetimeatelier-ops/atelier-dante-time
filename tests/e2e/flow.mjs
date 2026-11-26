@@ -328,6 +328,7 @@ try {
   await page.locator('#up-nakup').setInputFiles(path.join(ROOT, 'assets/originals/service-watch-box-2.jpg'));
   await page.getByText('už nahráno dříve, přeskočeno').waitFor();
   await page.goto(`${BASE}/admin/#/dily`);
+  await page.getByRole('heading', { name: 'Sklad dílů' }).waitFor();
   await page.getByText('Strojek PRIM 66 – eBay test').waitFor();
   step('nákup ze screenshotu: kontrola, kurz EUR, naskladnění dílu, duplicita odhalena');
 

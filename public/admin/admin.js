@@ -1,6 +1,7 @@
 // Administrace Dante Time – jednoduchá aplikace pro iPhone
 (() => {
   const app = document.getElementById('app');
+  let navSeq = 0; // zvyšuje se při každém přechodu – data a zpožděné akce staré obrazovky se pak zahodí
   const tabs = document.getElementById('tabs');
   const toastEl = document.getElementById('toast');
   const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -25,13 +26,16 @@
     const opts = { method, headers: { 'X-DT-Admin': '1' }, credentials: 'same-origin' };
     if (body instanceof FormData) opts.body = body;
     else if (body !== undefined) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+    const seq = navSeq;
     const res = await fetch(`/api/admin/${path}`, opts);
     const out = await res.json().catch(() => ({}));
+    // Načítání pro obrazovku, ze které uživatel mezitím odešel → nevykreslovat přes novou obrazovku
+    if (method === 'GET' && seq !== navSeq) { const e = new Error('stale'); e.stale = true; throw e; }
     if (res.status === 401 && !path.startsWith('login') && !path.startsWith('setup')) { showLogin(); throw new Error('Přihlaste se prosím'); }
     if (!res.ok) throw new Error(out.error || `Chyba ${res.status}`);
     return out;
   }
-  const run = async (fn) => { try { await fn(); } catch (e) { toast(e.message, true); } };
+  const run = async (fn) => { try { await fn(); } catch (e) { if (!e.stale) toast(e.message, true); } };
   const formData = (form) => Object.fromEntries(new FormData(form));
 
   // --- Přihlášení a první nastavení -----------------------------------------------
@@ -876,7 +880,6 @@
   };
 
   // --- Směrovač -------------------------------------------------------------------------
-  let navSeq = 0; // zvyšuje se při každém přechodu – zpožděné akce staré obrazovky se pak nespustí
   async function router() {
     navSeq++;
     const [rawPath, qs] = location.hash.replace(/^#\/?/, '').split('?');
