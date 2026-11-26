@@ -218,7 +218,7 @@ patička, košík, stránky hodinek, stránka objednávky a e-maily).
    placená služba, jejímž absolvováním se záruka **prodlouží o dalších 12 měsíců** (na 36 měsíců).
    Pozitivní motivace, žádné omezení.
 
-## 2g. ⚖️ Dante Time OS – doklady a pas hodinek (26. 11. 2026) – návrh, text neměněn
+## 2g. ⚖️ Dante Time OS – doklady a pas hodinek (26. 11. 2026) – ✅ schváleno a doplněno (R21)
 - **Doklady od dodavatelů (E3b):** administrace ukládá účtenky a faktury k nákladům. Pokud je dodavatel
   fyzická osoba (např. nákup hodinek od soukromé osoby), obsahuje doklad její osobní údaje. Právní titul:
   plnění právní povinnosti (archivace účetních dokladů, zákon o účetnictví / daňové předpisy).

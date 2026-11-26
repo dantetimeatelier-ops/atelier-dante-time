@@ -164,3 +164,12 @@ Upřesnění majitele:
 - Významné změny nejdřív mimo ostrý web. Centrální přehled rolí (aktivita, výsledky, náklady, oprávnění, pozastavení).
 - Souhlas s rozšířením oprávnění Cloudflare v nezbytném rozsahu (minimální oprávnění, bezpečné uložení klíčů).
 - Majitel schvaluje jen zásadní rozhodnutí, nové výdaje a rizikové zásahy, ne drobné technické změny.
+
+## R21 – AI pro doklady a doplnění Zásad ochrany osobních údajů (2026-11-26)
+- Majitel zvolil **vyčítání dokladů pomocí AI** (Claude API, Anthropic) včetně importu cca 40 vydaných faktur 2026
+  (odhad cca 40 Kč jednorázově, běžně 30–50 Kč/měsíc, v limitu 300 Kč z R20). Klíč uloží majitel do Cloudflare.
+- Majitel **schválil doplnění Zásad ochrany osobních údajů** (CZ i EN): účel „Evidence prodejů a nákupů“
+  (čl. 6 odst. 1 písm. c) a f), po dobu archivace dokladů), příjemce Anthropic PBC (USA), předání na základě
+  standardních smluvních doložek, údaje se nepoužívají k trénování modelů.
+- Faktury vede majitel v Apple Pages → export do PDF → import v administraci (Nákupy a prodeje).
+

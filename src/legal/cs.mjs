@@ -324,6 +324,7 @@ export const privacy = doc('privacy', '/privacy', 'Zásady ochrany osobních úd
 <tr><td>Poptávky a komunikace</td><td>jméno, e-mail, telefon, zpráva, fotografie</td><td>čl. 6 odst. 1 písm. b) GDPR</td><td>po dobu komunikace a 1 rok poté, nevznikne-li smlouva</td></tr>
 <tr><td>Uzavření a plnění smlouvy (objednávky, zakázky)</td><td>jméno, e-mail, telefon, adresa, země, výdejní místo, platby; u firem IČO a DIČ</td><td>čl. 6 odst. 1 písm. b)</td><td>po dobu plnění smlouvy</td></tr>
 <tr><td>Účetnictví a daně</td><td>údaje na dokladech</td><td>čl. 6 odst. 1 písm. c)</td><td>po dobu stanovenou daňovými a účetními předpisy (zpravidla 10 let)</td></tr>
+<tr><td>Evidence prodejů a nákupů (včetně dokladů od dodavatelů a soukromých prodávajících)</td><td>údaje na fakturách a dokladech: jméno, adresa, e-mail, položky, částky</td><td>čl. 6 odst. 1 písm. c) a f)</td><td>po dobu archivace účetních dokladů</td></tr>
 <tr><td>Reklamace, nároky, garance pravosti</td><td>údaje o smlouvě, identifikace hodinek</td><td>čl. 6 odst. 1 písm. f) – oprávněný zájem</td><td>4 roky od skončení smlouvy; identifikace hodinek po dobu trvání garance pravosti</td></tr>
 <tr><td>Odstoupení od smlouvy online</td><td>jméno, e-mail, číslo objednávky, prohlášení</td><td>čl. 6 odst. 1 písm. c)</td><td>4 roky</td></tr>
 <tr><td>Zabezpečení webu a administrace</td><td>IP adresa, čas požadavku</td><td>čl. 6 odst. 1 písm. f)</td><td>nejvýše 30 dnů</td></tr>
@@ -334,6 +335,7 @@ export const privacy = doc('privacy', '/privacy', 'Zásady ochrany osobních úd
 <li><strong>Cloudflare, Inc.</strong> – hosting, databáze (uložená v EU) a fotografie,</li>
 <li><strong>Google</strong> – e-mailová schránka Gmail,</li>
 <li><strong>Resend</strong> – odesílání e-mailů z webu (potvrzení objednávek, faktury, odpovědi na poptávky),</li>
+<li><strong>Anthropic PBC</strong> (USA) – zpracování dokladů pomocí umělé inteligence při vedení evidence prodejů a nákupů,</li>
 <li><strong>Zásilkovna s.r.o.</strong>, <strong>Česká pošta, s.p.</strong> a další dopravci podle cílové země – doručení zásilky,</li>
 <li><strong>Česká spořitelna, a.s.</strong> – příjem plateb (jako samostatný správce),</li>
 <li>poskytovatel platební brány – až po její aktivaci (doplníme sem jeho název),</li>
@@ -341,6 +343,7 @@ export const privacy = doc('privacy', '/privacy', 'Zásady ochrany osobních úd
 </ul>
 <h2>4. Předání mimo EU</h2>
 <p>Cloudflare, Google a Resend mohou údaje zpracovávat v USA na základě rozhodnutí Komise o odpovídající ochraně (EU–US Data Privacy Framework) nebo standardních smluvních doložek.</p>
+<p>Anthropic PBC zpracovává doklady v USA na základě standardních smluvních doložek. Údaje nejsou využívány k trénování modelů.</p>
 <h2>5. Vaše práva</h2>
 <p>Máte právo na přístup, opravu, výmaz, omezení zpracování, přenositelnost a námitku proti zpracování na základě oprávněného zájmu. Uplatněte je na ${email}, odpovíme do měsíce. Stížnost můžete podat u Úřadu pro ochranu osobních údajů (Pplk. Sochora 27, 170 00 Praha 7, <a href="https://uoou.gov.cz" rel="noopener noreferrer">uoou.gov.cz</a>) nebo u dozorového úřadu ve státě vašeho bydliště.</p>
 <h2>6. Zabezpečení</h2>
