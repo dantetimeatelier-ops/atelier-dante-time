@@ -111,7 +111,7 @@ test('právní dokumenty: anglická verze má stejné dokumenty a náležitosti'
   assert.deepEqual(en.map((d) => d.key).sort(), cs);
   for (const d of en) assert.ok(d.path.startsWith('/en/'), d.path);
   const all = en.map((d) => d.body()).join('\n');
-  for (const must of ['14 days', '24-month', 'every subsequent owner', 'movements, dials and hands', '539/1992 Coll.', '363/2013 Coll.', 'adr.coi.cz', 'Rome I', '2018/302', 'IBAN', 'Model withdrawal form']) {
+  for (const must of ['14 days', 'up to 24 months', 'every subsequent owner', 'movements, dials and hands', '539/1992 Coll.', '363/2013 Coll.', 'adr.coi.cz', 'Rome I', '2018/302', 'IBAN', 'Model withdrawal form']) {
     assert.ok(all.includes(must), `Missing: ${must}`);
   }
   assert.equal(new Set(ALL_LEGAL.map((d) => d.path)).size, ALL_LEGAL.length); // unikátní URL
@@ -210,4 +210,8 @@ test('garanční prohlídky: termíny 12 měsíců ±30 dnů a prodloužení zá
   assert.equal(W.inspectionApplies('1.1'), true);
   assert.equal(W.inspectionApplies('1.0'), false);                          // ne zpětně
   assert.equal(W.inspectionApplies('2026-12-navrh-3'), false);
+});
+
+test('právní dokumenty: žádná nevyplněná proměnná ${…} v textu', () => {
+  for (const d of ALL_LEGAL) assert.ok(!/\$\{/.test(d.body()), `${d.path} obsahuje nevyplněnou proměnnou`);
 });
