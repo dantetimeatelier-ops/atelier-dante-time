@@ -1,6 +1,7 @@
 // Statické stránky e-shopu: košík s objednávkou a online odstoupení od smlouvy
 import { hero } from '../layout.mjs';
 import { PAGES } from '../site.mjs';
+import { TERMS } from '../terms.mjs';
 import { sortedCountries, countryName } from '../shop/eu.mjs';
 
 const T = (lang, cs, en) => (lang === 'cs' ? cs : en);
@@ -58,8 +59,8 @@ export function cart(lang) {
     <aside class="card buybox">
       <h2 style="font-size:26px">${L('Souhrn', 'Summary')}</h2>
       <div class="summary" data-summary></div>
-      <label class="check" style="margin-top:16px"><input type="checkbox" name="terms" required> <span>${L('Souhlasím s <a href="/terms" target="_blank" style="color:var(--gold-2)">obchodními podmínkami</a> a beru na vědomí <a href="/privacy" target="_blank" style="color:var(--gold-2)">zásady ochrany osobních údajů</a>.', 'I agree to the <a href="/terms" target="_blank" style="color:var(--gold-2)">terms and conditions (CZ)</a> and acknowledge the <a href="/privacy" target="_blank" style="color:var(--gold-2)">privacy policy (CZ)</a>.')}</span></label>
-      <p class="doc-meta" style="margin-top:10px">${L('Hotové hodinky můžete jako spotřebitel vrátit do 14 dnů od převzetí. <a href="/returns" style="color:var(--gold-2)">Podmínky</a>', 'As a consumer you can return finished watches within 14 days of receipt. <a href="/returns" style="color:var(--gold-2)">Details (CZ)</a>')}</p>
+      <label class="check" style="margin-top:16px"><input type="checkbox" name="terms" required> <span>${L('Souhlasím s <a href="/terms" target="_blank" style="color:var(--gold-2)">obchodními podmínkami</a> a beru na vědomí <a href="/privacy" target="_blank" style="color:var(--gold-2)">zásady ochrany osobních údajů</a>.', 'I agree to the <a href="/en/terms" target="_blank" style="color:var(--gold-2)">terms and conditions</a> and acknowledge the <a href="/en/privacy" target="_blank" style="color:var(--gold-2)">privacy policy</a>.')}</span></label>
+      <p class="doc-meta" style="margin-top:10px">${L(`Hotové hodinky můžete jako spotřebitel vrátit do ${TERMS.withdrawalDays} dnů od převzetí. <a href="/returns" style="color:var(--gold-2)">Podmínky</a>`, `As a consumer you can return finished watches within ${TERMS.withdrawalDays} days of receipt. <a href="/en/withdrawal" style="color:var(--gold-2)">Details</a>`)}</p>
       <button class="btn solid block" type="submit" style="margin-top:12px">${L('Objednávka zavazující k platbě', 'Order with obligation to pay')}</button>
       <div class="notice" data-status hidden role="alert" style="margin-top:12px"></div>
     </aside>

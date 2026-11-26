@@ -5,6 +5,7 @@ import { rateLimit, randomId, now, audit } from '../../server/db.js';
 import { str, email as vEmail, isBot } from '../../server/validate.js';
 import { sendEmail, ownerEmail } from '../../server/email.js';
 import { esc } from '../../src/layout.mjs';
+import { TERMS } from '../../src/terms.mjs';
 
 export const onRequestPost = handle(async ({ env, request }) => {
   assertSameOrigin(request);
@@ -29,7 +30,7 @@ export const onRequestPost = handle(async ({ env, request }) => {
   await sendEmail(env, {
     to: d.email, subject: `Potvrzení přijetí odstoupení od smlouvy ${d.orderNumber}`, related: `withdrawal:${id}`,
     body: `<p>Dobrý den, ${esc(d.name)},</p><p>potvrzujeme, že jsme <strong>${when}</strong> přijali vaše odstoupení od smlouvy:</p><blockquote>${esc(statement)}</blockquote>
-<p>Hodinky nám prosím zašlete do 14 dnů. Peníze vrátíme do 14 dnů od odstoupení, nejdříve však po obdržení hodinek nebo dokladu o jejich odeslání. Podrobnosti: <a href="${new URL(request.url).origin}/returns">Odstoupení od smlouvy a vrácení zboží</a>.</p>`,
+<p>Hodinky nám prosím zašlete do ${TERMS.withdrawalDays} dnů. Peníze vrátíme do ${TERMS.refundDays} dnů od odstoupení, nejdříve však po obdržení hodinek nebo dokladu o jejich odeslání. Podrobnosti: <a href="${new URL(request.url).origin}/returns">Odstoupení od smlouvy a vrácení zboží</a>.</p>`,
   });
   await env.DB.prepare('UPDATE withdrawals SET confirmation_sent_at=? WHERE id=?').bind(now(), id).run();
   await sendEmail(env, { to: ownerEmail(env), subject: `Odstoupení od smlouvy ${d.orderNumber}`, related: `withdrawal:${id}`, body: `<p>${esc(d.name)} (${esc(d.email)})${order ? '' : ' – <strong>objednávka s tímto číslem a e-mailem nenalezena, ověřte ručně</strong>'}</p><p>${esc(statement)}</p>` });

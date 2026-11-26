@@ -4,6 +4,9 @@ import { PAGES, SITE } from '../site.mjs';
 import { formatCzk, STATUS, KIND, METAL, PRECIOUS } from './format.mjs';
 import { productName, productJsonLd, authenticityParts, AUTH_PARTS, describe } from './describe.mjs';
 import { INDEPENDENCE } from '../site.mjs';
+import { TERMS } from '../terms.mjs';
+import { warrantyShortCs } from '../legal/cs.mjs';
+import { warrantyShortEn } from '../legal/en.mjs';
 import { inquiryForm } from '../pages/marketing.mjs';
 
 const T = (lang, cs, en) => (lang === 'cs' ? cs : en);
@@ -95,7 +98,7 @@ export function productPage({ p, images, lang, mode, origin }) {
       <ul class="list-dots" style="font-size:14px">
         <li>${L('Unikátní kus – existuje jen jednou', 'Unique piece – exists only once')}</li>
         <li>${L('Doživotní garance pravosti deklarovaných originálních strojků, ciferníků a ručiček', 'Lifetime authenticity guarantee on declared original movements, dials and hands')} (<a href="${lang === 'cs' ? '/warranty' : '/en/warranty'}">${L('podmínky', 'terms')}</a>)</li>
-        <li>${L('Záruka 24 měsíců a 14 dní na odstoupení od smlouvy u nákupu na dálku', '24-month warranty and 14-day right of withdrawal for distance purchases')}</li>
+        <li>${L(`${warrantyShortCs().replace(/^z/, 'Z')} (<a href="/warranty">podmínky</a>) a ${TERMS.withdrawalDays} dní na odstoupení od smlouvy u nákupu na dálku`, `${warrantyShortEn()} (<a href="/en/warranty">terms</a>) and ${TERMS.withdrawalDays}-day right of withdrawal for distance purchases`)}</li>
         <li>${L('Doručení do celé EU, platba v CZK nebo EUR', 'Delivery across the EU, payment in CZK or EUR')}</li>
       </ul>
     </div>

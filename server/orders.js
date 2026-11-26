@@ -9,6 +9,11 @@ import { SHIPPING, PAYMENT, METAL, formatCzk } from '../src/shop/format.mjs';
 import { isValidIban } from '../src/shop/spd.mjs';
 import { EU_COUNTRIES, countryName, czkToEurCents, formatEur } from '../src/shop/eu.mjs';
 import { legalDoc, LEGAL_VERSION } from '../src/legal/docs.mjs';
+import { TERMS } from '../src/terms.mjs';
+
+// Texty e-mailů v jazyce objednávky (zákazníci z EU objednávají i anglicky)
+const tr = (o, cs, en) => (o?.lang === 'en' ? en : cs);
+const dt = (o, iso) => new Date(iso).toLocaleString(o?.lang === 'en' ? 'en-GB' : 'cs-CZ', { timeZone: 'Europe/Prague', day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 import { productName } from '../src/shop/describe.mjs';
 import { createCardPayment, cardPaymentsAvailable } from './payments.js';
 
@@ -168,31 +173,35 @@ function legalAttachment(order) {
   const en = order.lang === 'en';
   const terms = legalDoc('terms', en ? 'en' : 'cs');
   const withdrawal = legalDoc('withdrawal', en ? 'en' : 'cs');
+  const warranty = legalDoc('warranty', en ? 'en' : 'cs');
   const h = (t) => `<h2 style="font-family:Georgia,serif;font-weight:normal;font-size:18px">${t}</h2>`;
+  // Záruční list v textové podobě (§ 2174a OZ) je součástí potvrzení objednávky
   return `${h(en ? `General Terms and Conditions (version ${order.terms_version})` : `Obchodní podmínky (verze ${order.terms_version})`)}
 <div style="font-size:12px;color:#444">${terms.body()}</div>
 ${h(en ? 'Withdrawal information and model form' : 'Poučení o odstoupení od smlouvy')}
-<div style="font-size:12px;color:#444">${withdrawal.body()}</div>`;
+<div style="font-size:12px;color:#444">${withdrawal.body()}</div>
+${h(en ? 'Warranty statement and authenticity guarantee (warranty card)' : 'Prohlášení o záruce a garance pravosti (záruční list)')}
+<div style="font-size:12px;color:#444">${warranty.body()}</div>`;
 }
 
 async function orderEmails(env, order, items, origin) {
   const rows = items.map((i) => `<tr><td style="padding:6px 0">${i.title}</td><td style="text-align:right">${formatCzk(i.price_czk)}</td></tr>`).join('');
   const table = `<table style="width:100%;border-collapse:collapse">${rows}
-<tr><td style="padding:6px 0">Doprava: ${SHIPPING[order.shipping_method]?.cs || order.shipping_method}${order.pickup_point_name ? ` (${order.pickup_point_name})` : ''}</td><td style="text-align:right">${formatCzk(order.shipping_price)}</td></tr>
+<tr><td style="padding:6px 0">${tr(order, 'Doprava', 'Shipping')}: ${SHIPPING[order.shipping_method]?.[order.lang === 'en' ? 'en' : 'cs'] || SHIPPING[order.shipping_method]?.cs || order.shipping_method}${order.pickup_point_name ? ` (${order.pickup_point_name})` : ''}</td><td style="text-align:right">${formatCzk(order.shipping_price)}</td></tr>
 ${order.cod_fee ? `<tr><td style="padding:6px 0">Dobírka</td><td style="text-align:right">${formatCzk(order.cod_fee)}</td></tr>` : ''}
 <tr><td style="padding:8px 0;border-top:1px solid #ddd"><strong>Celkem</strong></td><td style="text-align:right;border-top:1px solid #ddd"><strong>${formatCzk(order.total)}</strong>${order.pay_currency === 'EUR' ? `<br>k úhradě ${formatEur(order.pay_amount_cents)}` : ''}</td></tr></table>`;
   const link = `${origin}/objednavka/${order.public_token}`;
   await sendEmail(env, {
     to: order.email,
-    subject: `Potvrzení objednávky ${order.number}`,
+    subject: tr(order, `Potvrzení objednávky ${order.number}`, `Order confirmation ${order.number}`),
     related: `order:${order.id}`,
-    body: `<h1 style="font-family:Georgia,serif;font-weight:normal">Děkujeme za objednávku</h1>
-<p>Dobrý den, ${order.name},</p>
-<p>potvrzujeme přijetí vaší objednávky <strong>${order.number}</strong>. Tímto potvrzením je kupní smlouva uzavřena.</p>
+    body: `<h1 style="font-family:Georgia,serif;font-weight:normal">${tr(order, 'Děkujeme za objednávku', 'Thank you for your order')}</h1>
+<p>${tr(order, 'Dobrý den', 'Dear')} ${order.name},</p>
+<p>${tr(order, `potvrzujeme přijetí vaší objednávky <strong>${order.number}</strong>. Tímto potvrzením je kupní smlouva uzavřena.`, `we confirm receipt of your order <strong>${order.number}</strong>. With this confirmation the purchase contract is concluded.`)}</p>
 ${table}
-<p>Platba: ${PAYMENT[order.payment_method]?.cs}. ${order.payment_method === 'cod' ? 'Částku zaplatíte při převzetí zásilky. Hodinky jsou pro vás rezervovány.' : ''} ${order.payment_method === 'bank_transfer' ? `Platební údaje a QR kód najdete na stránce objednávky. Hodinky jsou pro vás rezervovány do ${new Date(order.reserved_until).toLocaleString('cs-CZ', { timeZone: 'Europe/Prague', day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}.` : ''}</p>
-<p><a href="${link}" style="display:inline-block;background:#c8a24a;color:#000;padding:10px 18px;border-radius:999px;text-decoration:none">Zobrazit objednávku</a></p>
-<p style="font-size:13px;color:#555">Od kupní smlouvy můžete jako spotřebitel odstoupit do 14 dnů od převzetí hodinek, např. pomocí funkce <a href="${origin}/odstoupeni">Odstoupit od smlouvy</a>.</p>
+<p>${tr(order, 'Platba', 'Payment')}: ${PAYMENT[order.payment_method]?.[order.lang === 'en' ? 'en' : 'cs'] || PAYMENT[order.payment_method]?.cs}. ${order.payment_method === 'cod' ? tr(order, 'Částku zaplatíte při převzetí zásilky. Hodinky jsou pro vás rezervovány.', 'You pay on delivery. The watch is reserved for you.') : ''} ${order.payment_method === 'bank_transfer' ? tr(order, `Platební údaje a QR kód najdete na stránce objednávky. Hodinky jsou pro vás rezervovány do ${dt(order, order.reserved_until)}.`, `Payment details and a QR code are on the order page. The watch is reserved for you until ${dt(order, order.reserved_until)}.`) : ''}</p>
+<p><a href="${link}" style="display:inline-block;background:#c8a24a;color:#000;padding:10px 18px;border-radius:999px;text-decoration:none">${tr(order, 'Zobrazit objednávku', 'View order')}</a></p>
+<p style="font-size:13px;color:#555">${tr(order, `Od kupní smlouvy můžete jako spotřebitel odstoupit do ${TERMS.withdrawalDays} dnů od převzetí hodinek, např. pomocí funkce <a href="${origin}/odstoupeni">Odstoupit od smlouvy</a>.`, `As a consumer you may withdraw from the purchase contract within ${TERMS.withdrawalDays} days of receiving the watch, e.g. using the <a href="${origin}/odstoupeni">withdrawal function</a>.`)}</p>
 <hr style="border:none;border-top:1px solid #ddd;margin:24px 0">
 ${legalAttachment(order)}`,
   });
@@ -230,9 +239,10 @@ export async function markPaid(env, orderId, actor, origin) {
   await audit(env, actor, 'objednavka_zaplacena', 'order', orderId);
   const fresh = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();
   await sendEmail(env, {
-    to: fresh.email, subject: `Platba přijata – objednávka ${fresh.number}`, related: `order:${orderId}`,
-    body: `<p>Dobrý den, ${fresh.name},</p><p>děkujeme, platbu za objednávku <strong>${fresh.number}</strong> jsme přijali. Hodinky pečlivě zabalíme a odešleme. O odeslání vás budeme informovat.</p>
-<p>Fakturu najdete zde: <a href="${origin}/faktura/${inv.public_token}">faktura ${inv.number}</a></p>`,
+    to: fresh.email, subject: tr(fresh, `Platba přijata – objednávka ${fresh.number}`, `Payment received – order ${fresh.number}`), related: `order:${orderId}`,
+    body: tr(fresh, `<p>Dobrý den, ${fresh.name},</p><p>děkujeme, platbu za objednávku <strong>${fresh.number}</strong> jsme přijali. Hodinky pečlivě zabalíme a odešleme. O odeslání vás budeme informovat.</p>
+<p>Fakturu najdete zde: <a href="${origin}/faktura/${inv.public_token}">faktura ${inv.number}</a></p>`, `<p>Dear ${fresh.name},</p><p>thank you, we have received the payment for order <strong>${fresh.number}</strong>. We will pack and ship your watch with care and let you know when it is on its way.</p>
+<p>Your invoice: <a href="${origin}/faktura/${inv.public_token}">invoice ${inv.number}</a></p>`),
   });
   return fresh;
 }
@@ -240,8 +250,8 @@ export async function markPaid(env, orderId, actor, origin) {
 async function invoiceEmail(env, orderId, inv, origin) {
   const o = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();
   await sendEmail(env, {
-    to: o.email, subject: `Faktura k objednávce ${o.number}`, related: `order:${orderId}`,
-    body: `<p>Dobrý den, ${o.name},</p><p>děkujeme za zaplacení objednávky <strong>${o.number}</strong>. Fakturu najdete zde: <a href="${origin}/faktura/${inv.public_token}">faktura ${inv.number}</a>.</p>`,
+    to: o.email, subject: tr(o, `Faktura k objednávce ${o.number}`, `Invoice for order ${o.number}`), related: `order:${orderId}`,
+    body: tr(o, `<p>Dobrý den, ${o.name},</p><p>děkujeme za zaplacení objednávky <strong>${o.number}</strong>. Fakturu najdete zde: <a href="${origin}/faktura/${inv.public_token}">faktura ${inv.number}</a>.</p>`, `<p>Dear ${o.name},</p><p>thank you for paying for order <strong>${o.number}</strong>. Your invoice: <a href="${origin}/faktura/${inv.public_token}">invoice ${inv.number}</a>.</p>`),
   });
 }
 
@@ -304,8 +314,9 @@ export async function markShipped(env, orderId, tracking, actor) {
   await env.DB.batch(stmts);
   await audit(env, actor, 'objednavka_odeslana', 'order', orderId, { tracking });
   await sendEmail(env, {
-    to: order.email, subject: `Objednávka ${order.number} je na cestě`, related: `order:${orderId}`,
-    body: `<p>Dobrý den, ${order.name},</p>${cod ? `<p>Při převzetí zaplatíte <strong>${formatCzk(order.total)}</strong>.</p>` : ''}<p>vaše hodinky jsou na cestě${order.pickup_point_name ? ` na výdejní místo ${order.pickup_point_name}` : ''}.${tracking ? ` Číslo zásilky: <strong>${tracking}</strong>.` : ''}</p><p>Po převzetí doporučujeme nechat hodinky několik hodin v klidu při pokojové teplotě. Rady k péči: <a href="${SITE.origin}/care">Péče o hodinky</a>.</p>`,
+    to: order.email, subject: tr(order, `Objednávka ${order.number} je na cestě`, `Order ${order.number} is on its way`), related: `order:${orderId}`,
+    body: tr(order, `<p>Dobrý den, ${order.name},</p>${cod ? `<p>Při převzetí zaplatíte <strong>${formatCzk(order.total)}</strong>.</p>` : ''}<p>vaše hodinky jsou na cestě${order.pickup_point_name ? ` na výdejní místo ${order.pickup_point_name}` : ''}.${tracking ? ` Číslo zásilky: <strong>${tracking}</strong>.` : ''}</p><p>Po převzetí doporučujeme nechat hodinky několik hodin v klidu při pokojové teplotě. Rady k péči: <a href="${SITE.origin}/care">Péče o hodinky</a>.</p>${TERMS.inspection.enabled ? `<p style="font-size:13px;color:#555">Záruka za jakost: ${TERMS.warrantyMonths} měsíců, ve druhém roce po garanční prohlídce ${TERMS.inspection.afterMonths} měsíců od převzetí. Podrobnosti: <a href="${SITE.origin}/warranty">Záruka a garance pravosti</a>.</p>` : ''}`,
+      `<p>Dear ${order.name},</p>${cod ? `<p>You pay <strong>${formatCzk(order.total)}</strong> on delivery.</p>` : ''}<p>your watch is on its way${order.pickup_point_name ? ` to the pickup point ${order.pickup_point_name}` : ''}.${tracking ? ` Tracking number: <strong>${tracking}</strong>.` : ''}</p><p>After receipt we recommend letting the watch rest for a few hours at room temperature. Care tips: <a href="${SITE.origin}/en/care">Watch care</a>.</p>${TERMS.inspection.enabled ? `<p style="font-size:13px;color:#555">Quality warranty: ${TERMS.warrantyMonths} months, in the second year after a warranty inspection ${TERMS.inspection.afterMonths} months after receipt. Details: <a href="${SITE.origin}/en/warranty">Warranty and authenticity guarantee</a>.</p>` : ''}`),
   });
 }
 

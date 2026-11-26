@@ -8,6 +8,7 @@ import { epcString, formatEur } from '../../src/shop/eu.mjs';
 import { OPERATOR, SITE, missing, docBank } from '../../src/site.mjs';
 import { formatCzk, ORDER_STATUS, SHIPPING, PAYMENT } from '../../src/shop/format.mjs';
 import { hero, esc } from '../../src/layout.mjs';
+import { TERMS } from '../../src/terms.mjs';
 
 export const onRequestGet = handle(async ({ env, params }) => {
   await releaseExpired(env);
@@ -55,7 +56,7 @@ ${eur ? `<tr><th>IBAN</th><td>${esc(bank.ibanPretty)}</td></tr><tr><th>BIC / SWI
     ${o.payment_method === 'cod' && o.status === 'awaiting_payment' ? '<p class="notice" style="margin-top:14px">Platíte dobírkou při převzetí. Hodinky jsou pro vás rezervovány, o odeslání vás budeme informovat.</p>' : ''}</div>
   </div>
   <aside class="card"><h2 style="font-size:24px">Potřebujete pomoc?</h2><p>Napište na <a href="mailto:${SITE.email}">${SITE.email}</a> a uveďte číslo objednávky ${esc(o.number)}.</p>
-    <p class="doc-meta">Hotové hodinky můžete jako spotřebitel vrátit do 14 dnů od převzetí.</p>
+    <p class="doc-meta">Hotové hodinky můžete jako spotřebitel vrátit do ${TERMS.withdrawalDays} dnů od převzetí.</p>
     <a class="btn ghost block" href="/odstoupeni">Odstoupit od smlouvy</a></aside>
 </div></section>`;
   return page(env, { lang: 'cs', title: `Objednávka ${o.number}`, description: 'Stav objednávky', path: `/objednavka/${token}`, noindex: true, body }, 200, 'no-store');

@@ -1,6 +1,6 @@
 # Právní dokumenty – kontrola před zveřejněním
 
-**Stav:** ✅ SCHVÁLENO majitelem 26. 11. 2026 – verze 1.0, účinnost od 26. 11. 2026. Otevřený právní bod L1 (část 2e) zůstává na odpovědnosti majitele.
+**Stav:** verze 1.0 schválena 26. 11. 2026. ⚖️ **NÁVRH 1.1** (reklamace, garanční prohlídka, zálohy – část 2f) čeká na schválení majitele. Otevřený právní bod L1 (část 2e) zůstává na odpovědnosti majitele.
 **Připraveno:** 25. 11. 2026
 **Zdroj textů:** `src/legal/cs.mjs` (česky), `src/legal/en.mjs` (anglicky), společné údaje
 `src/legal/common.mjs` a `src/site.mjs` (objekt `OPERATOR`).
@@ -189,6 +189,34 @@ proto je vždy zprostředkovat.
 | **Uzavření** | majitel pošle výpis z rejstříku → agent ověří v RŽP a zapíše uzavření |
 
 Části 2c a 2d (odpovědný zástupce, § 34) jsou rozbor možností. Majitel je **neuplatnil**.
+
+## 2f. ⚖️ Návrh verze 1.1 (26. 11. 2026) – ke schválení
+
+Centrální zdroj lhůt, záruky, prohlídky a záloh: `src/terms.mjs` (používají ho dokumenty CZ+EN,
+patička, košík, stránky hodinek, stránka objednávky a e-maily).
+
+| Téma | Změna | Právní posouzení |
+|---|---|---|
+| Reklamace | lhůta 30 dnů zachována; prodloužení **jen po vzájemné dohodě potvrzené e-mailem**, nikdy jednostranně; bez dohody platí 30 dnů a následky podle § 19 odst. 3 ZOS | v souladu (prodloužení dohodou je přípustné) |
+| Záruka + garanční prohlídka | 24 měsíců; 1. rok bez podmínek; 2. rok jen po prohlídce po 12 měsících (±30 dnů), 690 Kč, protokol; bez prohlídky smluvní záruka končí po 12 měsících; zákonná práva 24 měsíců a domněnka 12 měsíců výslovně zachovány; jen pro nákupy od verze 1.1; garance pravosti nezávislá | viz rizika níže |
+| Zálohy | povinná záloha 50 % zrušena; závaznost potvrzením nabídky; záloha jen po dohodě, zpravidla 20–30 %, jinak individuálně; plně se započte; podmínky známy před zahájením prací | v souladu |
+| Záruční list | prohlášení o záruce se nově posílá v textové podobě v potvrzení objednávky (§ 2174a OZ) | odstraňuje dřívější nedostatek |
+| Reklama záruky | všude, kde se záruka zmiňuje (patička, stránka hodinek, popisy hodinek), je uvedena i podmínka prohlídky – reklama by jinak měla přednost (§ 2113 odst. 2 OZ) | nutné |
+
+**Rizika garanční prohlídky (model „jako u aut“):**
+1. Smluvní záruka je dobrovolná a její podmínky určuje poskytovatel (§ 2113 OZ), podmínka prohlídky je
+   proto v zásadě přípustná, pokud je **jasně uvedena předem** (záruční list, § 2174a) a **neomezuje
+   zákonná práva** (§ 2174 OZ). Obojí je v návrhu splněno.
+2. **Přiměřenost u zákazníků z EU:** prohlídka jen v ateliéru a doprava na náklady zákazníka může být
+   vnímána jako nepřiměřená (zákazník z Portugalska zaplatí dopravu tam i zpět + 690 Kč).
+   *Doporučená úprava:* uznat i prohlídku u jiného odborného hodináře s písemným protokolem
+   (přesnost, amplituda, odchylka kroku).
+3. **Klamavost:** formulace „záruka 24 měsíců“ bez podmínky by byla klamavá a podle § 2113 odst. 2 by
+   platila bez podmínky. Řešeno: podmínka je uvedena u každé zmínky.
+4. **Živnostenské oprávnění (bod L1):** placená prohlídka je hodinářská služba.
+5. **Alternativa bez rizika (B):** záruka 24 měsíců bez podmínky; garanční prohlídka jako doporučená
+   placená služba, jejímž absolvováním se záruka **prodlouží o dalších 12 měsíců** (na 36 měsíců).
+   Pozitivní motivace, žádné omezení.
 
 ## 3. Upozornění
 
