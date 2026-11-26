@@ -538,6 +538,10 @@ route('DELETE', 'documents/:id', async ({ env, params, user }) => { await DOC.re
 // --- Nákupy a prodeje (E3b v2): nahrání, AI vytěžení, kontrola, ruční zadání ------------------
 route('GET', 'inbox', async ({ env }) => json(await INB.overview(env)));
 route('POST', 'inbox/upload', async ({ env, request, user }) => json(await INB.upload(env, await request.formData(), user.email), 201));
+route('POST', 'inbox/reset-sales', async ({ env, body, user }) => {
+  if (body.confirm !== 'SMAZAT') throw new HttpError('Pro potvrzení napište SMAZAT');
+  return json(await INB.resetSalesImport(env, user.email));
+});
 route('POST', 'inbox/cleanup', async ({ env, user }) => json({ removed: await INB.cleanupDrafts(env, user.email) }));
 route('POST', 'inbox/:id/extract', async ({ env, params, user }) => json(await INB.extract(env, params.id, user.email)));
 route('POST', 'purchases', async ({ env, body, user }) => json({ id: await INB.savePurchase(env, null, body, user.email) }, 201));

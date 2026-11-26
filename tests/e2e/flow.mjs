@@ -359,6 +359,21 @@ try {
   const fcsv = await page.evaluate(async (b) => (await fetch(`${b}/api/admin/finance/export?kind=faktury&from=2000-01-01&to=2100-01-01`)).text(), BASE);
   assert.match(fcsv, /2026-IMPORT-1;.*15000/);
   step('prodej mimo systém: uložen, v exportu pro účetní, duplicitní číslo odmítnuto');
+  // Stejné velké PDF podruhé → duplicita (bez načítání souboru); import faktur lze smazat a začít znovu
+  const bigAgain = await page.evaluate(async () => {
+    const n = 3_500_000; const b = new Uint8Array(n); b.set(new TextEncoder().encode('%PDF-1.4\n'));
+    for (let i = 9; i < n; i++) b[i] = (i * 31 + 7) % 251;
+    const fd = new FormData(); fd.append('file', new Blob([b], { type: 'application/pdf' }), 'velka-faktura.pdf'); fd.append('purpose', 'prodej');
+    return (await fetch('/api/admin/inbox/upload', { method: 'POST', headers: { 'X-DT-Admin': '1' }, body: fd })).json();
+  });
+  assert.equal(bigAgain.duplicate, true);
+  const post = (u, b) => page.evaluate(async ([u2, b2]) => { const r = await fetch(`/api/admin/${u2}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-DT-Admin': '1' }, body: JSON.stringify(b2) }); return { s: r.status, j: await r.json().catch(() => ({})) }; }, [u, b]);
+  assert.equal((await post('inbox/reset-sales', { confirm: 'ne' })).s, 400);
+  const reset = await post('inbox/reset-sales', { confirm: 'SMAZAT' });
+  assert.equal(reset.s, 200, JSON.stringify(reset.j)); assert.ok(reset.j.files >= 1 && reset.j.sales >= 1);
+  assert.equal(await page.evaluate(async (id) => (await fetch(`/api/admin/documents/${id}/file`)).status, big.id), 404);
+  assert.match(await page.evaluate(async (b) => (await fetch(`${b}/api/admin/finance/export?kind=faktury&from=2000-01-01&to=2100-01-01`)).text(), BASE), /2026-IMPORT-1/);
+  step('import faktur: duplicita velkého PDF, smazání importu (ručně zadané prodeje zůstanou)');
   await page.goto(`${BASE}/admin/#/ekonomika`);
   await page.getByText('Marže hodinek').waitFor();
   await page.locator('a.item', { hasText: 'marže' }).first().waitFor();
