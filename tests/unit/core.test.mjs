@@ -265,3 +265,10 @@ test('nákupy a prodeje: výsledek AI → záznam, nejisté údaje ke kontrole, 
   assert.equal(matchProduct(products, 'Prodej hodinek PRIM Sport 1968'), 'a');
   assert.equal(matchProduct(products, 'řemínek kožený'), null);
 });
+
+test('AI: klíč vložený s mezerou nebo koncem řádku se očistí', async () => {
+  const { cleanKey } = await import('../../server/ai.js');
+  assert.equal(cleanKey(' sk-ant-abc_DEF-123\n'), 'sk-ant-abc_DEF-123');
+  assert.equal(cleanKey('sk-ant-x​y\r\n'), 'sk-ant-xy');
+  assert.equal(cleanKey(undefined), '');
+});
