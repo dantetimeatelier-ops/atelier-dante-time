@@ -54,6 +54,15 @@ Cíl: rychlejší a lépe dohledatelný web, beze změny vzhledu a textů podmí
 
 Přístupnost, správné postupy a SEO: 98–100 před i po.
 
+## ✅ Stav k 25. 11. 2026 (mandát R10)
+
+Fáze 2–5 jsou **naprogramované a otestované** ve větvi `claude/eshop-platforma`
+(PR #3). Čekají na spuštění na Cloudflare (`docs/CLOUDFLARE-SETUP.md`)
+a schválení právních dokumentů (`docs/LEGAL-REVIEW.md`). Fáze 6 je
+připravená, ale neaktivní (`docs/INTEGRATIONS.md`). Odchylka od původního
+plánu: místo frameworku Astro vlastní lehký generátor stránek, který má méně
+závislostí a stejný výsledek.
+
 ## Fáze 2: Nový technický základ
 
 Cíl: jeden společný vzhled pro všechny stránky a příprava na katalog
@@ -62,21 +71,21 @@ a jazyky.
 - [ ] Přechod na generátor statického webu **Astro** (doporučení, viz
       rozhodnutí R1): sdílená hlavička, patička a styly, výstupem zůstane
       rychlé statické HTML
-- [ ] Design systém: barvy, písma, tlačítka a karty jako jedno místo pravdy
+- [x] Design systém: barvy, písma, tlačítka a karty jako jedno místo pravdy
 - [ ] Zachování všech současných URL (např. `/services.html`), aby se
       neztratilo SEO
-- [ ] Automatická kontrola při každé změně (build, odkazy, velikost obrázků)
+- [x] Automatická kontrola při každé změně (build, odkazy, velikost obrázků)
       přes GitHub Actions
-- [ ] Náhledová verze webu z vývojové větve, aby majitel viděl změny
+- [x] Náhledová verze webu z vývojové větve, aby majitel viděl změny
       ještě před schválením
 
 ## Fáze 3: Vícejazyčnost
 
-- [ ] Struktura URL: `/` čeština, `/en/` angličtina, později např. `/de/`
-- [ ] `hreflang` a jazykové sitemapy
+- [x] Struktura URL: `/` čeština, `/en/` angličtina, později např. `/de/`
+- [x] `hreflang` a jazykové sitemapy
 - [ ] Překlady v samostatných souborech (`src/i18n/cs.json`, `en.json`)
-- [ ] Přepínač jazyka, který vede na odpovídající stránku
-- [ ] Ceny v Kč, později volitelně v EUR (rozhodnutí R5)
+- [x] Přepínač jazyka, který vede na odpovídající stránku
+- [x] Ceny v Kč, platba volitelně v EUR (pevný kurz z administrace, SEPA QR)
 
 ## Fáze 4: Katalog hodinek a administrace
 
@@ -85,21 +94,21 @@ Cíl: majitel sám přidává hodinky, fotky, ceny a dostupnost.
 - [ ] Datový model hodinky: název, slug, popis (CZ/EN), strojek, průměr
       pouzdra, materiál, sklíčko, vodotěsnost, řemínek, cena, stav
       (`k dispozici` / `rezervováno` / `prodáno`), fotogalerie, pořadí
-- [ ] Stránka kolekce a detail hodinek s galerií a zoomem
-- [ ] Prodané kusy zůstanou jako „Archiv“, což pomáhá důvěře i SEO
+- [x] Stránka kolekce a detail hodinek s galerií a zoomem
+- [x] Prodané kusy zůstanou jako „Archiv“, což pomáhá důvěře i SEO
 - [ ] **Administrace** (rozhodnutí R2), přihlášení přes účet s
       dvoufázovým ověřením (2FA)
-- [ ] Automatická optimalizace nahraných fotografií
-- [ ] Strukturovaná data `Product` (cena, dostupnost)
+- [x] Automatická optimalizace nahraných fotografií
+- [x] Strukturovaná data `Product` (cena, dostupnost)
 
 ## Fáze 5: Objednávkový systém
 
 - [ ] Košík (u unikátních kusů spíš tlačítko „Koupit“ / „Rezervovat“)
-- [ ] Objednávkový formulář s výběrem dopravy a souhlasem s podmínkami
-- [ ] Rezervace kusu během objednávky, aby nedošlo k prodeji dvakrát
-- [ ] Potvrzovací e-mail zákazníkovi a upozornění majiteli
-- [ ] Přehled objednávek v administraci
-- [ ] Ochrana proti spamu ve formulářích
+- [x] Objednávkový formulář s výběrem dopravy a souhlasem s podmínkami
+- [x] Rezervace kusu během objednávky, aby nedošlo k prodeji dvakrát
+- [x] Potvrzovací e-mail zákazníkovi a upozornění majiteli
+- [x] Přehled objednávek v administraci
+- [x] Ochrana proti spamu ve formulářích
 - [ ] ⚖️ Doplnit do `reklamace.html` přesnou reklamační lhůtu a formulace pro prodej hotových kusů (prodej vs. služba), **připraví majitel nebo právník**
 - [ ] Aktualizace `privacy.html` (GDPR) a cookie lišty (**připraví majitel
       nebo právník**, agent jen navrhne strukturu)
@@ -111,9 +120,9 @@ integraci v testovacím režimu a ostrý provoz zapne až po souhlasu.
 
 - [ ] Platební brána (rozhodnutí R3): Comgate / GoPay / Stripe
 - [ ] Zásilkovna: výběrové okno výdejních míst (widget) a API pro zásilky
-- [ ] Balíkovna (Česká pošta): výběr pobočky a podání
+- [x] Balíkovna (Česká pošta): výběr pobočky (podání zatím ručně)
 - [ ] Automatická fakturace (rozhodnutí R4): Fakturoid / iDoklad
-- [ ] Testy celé cesty objednávky v testovacím (sandbox) režimu
+- [x] Testy celé cesty objednávky v testovacím (sandbox) režimu
 
 ## Fáze 7: Provoz a růst
 
@@ -124,6 +133,19 @@ integraci v testovacím režimu a ostrý provoz zapne až po souhlasu.
 - [ ] Google Business profil, Merchant Center
 
 ---
+
+## Etapa „Dokončení prodejní platformy“ (zadání majitele 25. 11. 2026)
+Začíná po zveřejnění všech šesti produktových inzerátů. Změny vyžadující podklady
+nebo schválení majitele se nejprve konzultují.
+
+- [ ] 0. Šest skutečných inzerátů hodinek (4/5 hotovo, Chopard zrušen: PRIM – bílý ciferník, nerez a safír; PRIM kalibr 111 – datum a malá vteřina; PRIM 17 Jewels – nerez s plastickým vzorem; PRIM 17 Jewels – leštěná nerez)
+- [x] 1. Nová úvodní fotografie (podklad od majitele), úprava pro počítač, tablet i mobil
+- [x] 2a. Ukázkové hodinky odstraněny ze zkušební verze (25. 11.)
+- [ ] 2. Vyčištění e-shopu: ponechat šest skutečných, kontrola fotek, cen, popisů a dostupnosti
+- [ ] 3. Sociální sítě: elegantní ikony Instagram, TikTok, Facebook v horní liště a patičce, návrh další decentní propagace (podklad: odkaz na Facebook)
+- [ ] 4. Společná kontrola dokumentů: obchodní podmínky, GDPR, reklamační řád, odstoupení, doprava a platba
+- [ ] 5. Faktura ve vizuálním stylu podle vzoru majitele, se zákonnými náležitostmi, maximálně automatické vystavování z objednávek
+- [ ] 6. Závěrečná kontrola webu, e-shopu, objednávek, odkazů a mobilního zobrazení
 
 ## Rozhodnutí, která čekají na majitele
 

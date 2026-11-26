@@ -31,11 +31,11 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p prehled
-          for page in "" "services.html"; do
-            name="${page:-index.html}"
+          for page in "" "services"; do
+            name="${page:-index}"
             npx lighthouse "https://atelier-dante-time.cz/${page}" --quiet \
               --chrome-flags="--headless=new --no-sandbox" \
-              --output=json --output-path="prehled/lh-${name%.html}.json" || true
+              --output=json --output-path="prehled/lh-${name}.json" || true
           done
 
       - name: Seznam stránek ze sitemap.xml

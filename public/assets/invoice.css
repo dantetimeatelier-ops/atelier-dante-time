@@ -1,0 +1,15 @@
+body{margin:0;background:#f4f1ea;font:14px/1.5 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111}
+.inv{max-width:800px;margin:24px auto;background:#fff;padding:40px;border-radius:8px}
+header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #c8a24a;padding-bottom:16px;margin-bottom:24px}
+h1{margin:0;font:400 28px Georgia,serif}.brand{font:400 18px Georgia,serif;letter-spacing:.12em;text-transform:uppercase;color:#8a6d2a}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:#8a6d2a;margin:0 0 6px}
+.parties{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
+table{width:100%;border-collapse:collapse;margin-bottom:20px}th,td{text-align:left;padding:8px;border-bottom:1px solid #eee}
+.items td:last-child,.items th:last-child{text-align:right}tfoot th{font-size:17px}
+mark.todo{background:#ffe3dd;border:1px dashed #d55;padding:0 4px}.note{font-size:12px}
+.print{text-align:right}button{font:inherit;padding:8px 16px;border-radius:999px;border:1px solid #c8a24a;background:#fff;cursor:pointer}
+@media print{body{background:#fff}.inv{margin:0;padding:0}.print{display:none}}
+@media (max-width:600px){.inv{padding:20px}.parties{grid-template-columns:1fr}}
+.qr-pay{display:flex;align-items:center;gap:16px;margin:18px 0;padding:12px;border:1px solid #ddd;border-radius:10px}
+.qr-pay svg{width:130px;height:130px;flex:0 0 130px}
+.qr-pay p{margin:0;font-size:13px;color:#444}

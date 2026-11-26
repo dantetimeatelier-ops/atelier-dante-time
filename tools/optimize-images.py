@@ -12,7 +12,7 @@ from PIL import Image, ImageOps
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "assets" / "originals"
-OUT = ROOT / "img"
+OUT = ROOT / "public" / "img"
 OUT.mkdir(exist_ok=True)
 
 
@@ -43,7 +43,7 @@ resized(logo, 32).save(OUT / "favicon-32.png", optimize=True)
 apple = Image.new("RGB", (180, 180), (7, 7, 7))
 apple.paste(resized(logo, 180), (0, 0), resized(logo, 180))
 apple.save(OUT / "apple-touch-icon.png", optimize=True)
-logo.save(ROOT / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
+logo.save(ROOT / "public" / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
 
 # Úvodní fotka (pozadí hlavní stránky)
 hero = load("hero-bg.jpg")
@@ -64,6 +64,6 @@ box = load("service-watch-box-2.jpg")
 save_webp(resized(box, 400), "watch-box-400.webp")
 save_webp(resized(box, 720), "watch-box-720.webp")
 
-for f in sorted(list(OUT.iterdir()) + [ROOT / "favicon.ico"]):
+for f in sorted(list(OUT.iterdir()) + [ROOT / "public" / "favicon.ico"]):
     w, h = Image.open(f).size
     print(f"{f.relative_to(ROOT)}: {w}x{h}, {f.stat().st_size // 1024} kB")

@@ -1,0 +1,6 @@
+# Prověřené falešné nálezy nástroje gitleaks (nejde o skutečná tajemství).
+# Každý řádek = otisk (fingerprint) konkrétního nálezu v historii.
+#
+# Smyšlené heslo testovacího účtu v automatickém testu (commit d1d0747, 25. 11. 2026).
+# Test od té doby heslo generuje náhodně, v historii ale zůstává.
+d1d0747e3b9b730c879ce41646cdce46e4b738c8:tests/e2e/flow.mjs:generic-api-key:43

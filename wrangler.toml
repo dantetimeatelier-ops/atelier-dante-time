@@ -1,0 +1,43 @@
+# Konfigurace Cloudflare Pages (hosting, databáze D1, úložiště fotografií KV).
+# Tajné hodnoty (klíče, hesla) sem NEPATŘÍ.
+# ID databází a úložišť doplní automatické nasazení (scripts/cf-deploy.mjs),
+# zástupné hodnoty níže slouží jen pro místní vývoj.
+name = "atelier-dante-time"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-11-01"
+
+# --- Ostrý web (větev main) ---
+[vars]
+# preview = katalog bez nákupu (výchozí) · test = zkušební nákupy · live = ostrý provoz (jen se souhlasem majitele)
+SHOP_MODE = "preview"
+# E-maily: odesílají se přes Resend, jakmile je v Cloudflare tajný klíč RESEND_API_KEY (jinak se jen ukládají)
+EMAIL_PROVIDER = "resend"
+# Odesílatel: po ověření domény v Resend. Odpovědi zákazníků chodí na SITE.email (reply-to).
+EMAIL_FROM = "Atelier Dante Time <objednavky@atelier-dante-time.cz>"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dante-time"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[[kv_namespaces]]
+binding = "MEDIA_KV"
+id = "11111111111111111111111111111111"
+
+# --- Zkušební verze (ostatní větve) – oddělená databáze s ukázkovými daty ---
+[env.preview.vars]
+SHOP_MODE = "test"
+EMAIL_PROVIDER = "resend"
+# Zkušební verze: do ověření domény lze z adresy resend.dev posílat jen na e-mail účtu Resend (majitel)
+EMAIL_FROM = "Atelier Dante Time <objednavky@atelier-dante-time.cz>"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "dante-time-preview"
+database_id = "22222222-2222-2222-2222-222222222222"
+migrations_dir = "migrations"
+
+[[env.preview.kv_namespaces]]
+binding = "MEDIA_KV"
+id = "33333333333333333333333333333333"

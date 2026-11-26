@@ -1,0 +1,38 @@
+{
+ "cs": {
+  "nav_home": "Domů",
+  "nav_about": "O nás",
+  "nav_services": "Služby",
+  "nav_contact": "Kontakt",
+  "back_home": "Zpět na hlavní stránku",
+  "page_title": "O nás",
+  "page_subtitle": "Atelier Dante Time • Czech Watch Atelier",
+  "story_1": "Každé hodinky mají svůj příběh. Některé ale skončí odložené, zastavené, zapomenuté. Právě takové mě zajímají.",
+  "story_2": "<strong>Dante Time</strong> vzniklo z úcty k hodinářskému řemeslu a z přesvědčení, že i zdánlivě odepsané věci si zaslouží péči.",
+  "story_3": "Každý kus prochází trpělivou renovací, kde se spojuje technická přesnost s citem pro detail. Nejde jen o opravu. Jde o návrat života.",
+  "story_4": "Výsledkem nejsou jen opravené hodinky. Jsou to hodinky, které znovu žijí.",
+  "story_5": "Značka nese jméno <strong>Dante</strong> — zachráněného kocoura, který dostal druhou šanci. Stejně jako on dostávají i hodinky v tomto ateliéru nový začátek.",
+  "quote": "„Druhý život pro čas.“",
+  "caption": "<span>Dante</span> • symbol druhé šance",
+  "title_tag": "O nás – Atelier Dante Time",
+  "meta_desc": "Příběh Atelier Dante Time – českého hodinářského atelieru zaměřeného na renovaci a zakázkové sestavy mechanických hodinek."
+ },
+ "en": {
+  "nav_home": "Home",
+  "nav_about": "About",
+  "nav_services": "Services",
+  "nav_contact": "Contact",
+  "back_home": "Back to homepage",
+  "page_title": "About",
+  "page_subtitle": "Atelier Dante Time • Czech Watch Atelier",
+  "story_1": "Every watch has its own story. Some, however, end up set aside, stopped, and forgotten. Those are exactly the ones that interest me.",
+  "story_2": "<strong>Dante Time</strong> was created out of respect for the craft of watchmaking and the belief that even seemingly lost things deserve care.",
+  "story_3": "Each piece undergoes patient restoration where technical precision is combined with a sense for detail. It is not just a repair. It is a return to life.",
+  "story_4": "The result is not only repaired watches. They are watches that live again.",
+  "story_5": "The brand bears the name <strong>Dante</strong> — a rescued cat who was given a second chance. Just like him, watches in this atelier receive a new beginning.",
+  "quote": "“A second life for time.”",
+  "caption": "<span>Dante</span> • symbol of a second chance",
+  "title_tag": "About – Atelier Dante Time",
+  "meta_desc": "The story of Atelier Dante Time – a Czech watch atelier focused on restoration and custom assembly of mechanical watches."
+ }
+}

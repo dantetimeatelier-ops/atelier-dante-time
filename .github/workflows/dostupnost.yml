@@ -26,11 +26,11 @@ jobs:
         run: |
           set +e
           failed=""
-          for path in "/" "/services.html" "/about.html" "/sitemap.xml"; do
+          for path in "/" "/services" "/about" "/sitemap.xml"; do
             url="https://atelier-dante-time.cz${path}"
             ok=0
             for attempt in 1 2 3; do
-              code=$(curl -s -o /tmp/page -w '%{http_code}' --max-time 20 "$url")
+              code=$(curl -sL -o /tmp/page -w '%{http_code}' --max-time 20 "$url")
               if [ "$code" = "200" ] && grep -q "atelier-dante-time\|Atelier Dante Time" /tmp/page; then ok=1; break; fi
               sleep 20
             done

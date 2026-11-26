@@ -16,8 +16,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  html:
-    name: Kód HTML
+  zaklad:
+    name: Sestavení, jednotkové testy, HTML a odkazy
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -29,22 +29,20 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - name: Sestavení (náhled i testovací režim)
+        run: |
+          SHOP_MODE=test npm run build
+          SHOP_MODE=preview npm run build
+      - run: npm run test:unit
       - run: npm run test:html
+      - run: npm run test:links
 
-  odkazy:
-    name: Nefunkční odkazy
+  proces:
+    name: Stránky a celý nákupní proces (prohlížeč)
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - run: node tests/links.mjs
-
-  stranky:
-    name: Stránky na mobilu a počítači
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      WRANGLER_SEND_METRICS: 'false'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -55,7 +53,27 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:smoke
+      - name: Spuštění webu s testovací databází
+        run: |
+          SHOP_MODE=test npm run build
+          npx wrangler d1 migrations apply DB --local
+          TOKEN="ci-$(openssl rand -hex 16)"
+          echo "SETUP_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+          printf 'SHOP_MODE=test\nSHOP_IBAN=CZ6508000000192000145399\nSHOP_ACCOUNT=testovaci-ucet\nADMIN_SETUP_TOKEN=%s\n' "$TOKEN" > .dev.vars
+          nohup npx wrangler pages dev dist --port 8788 > wrangler.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:8788/ && exit 0; sleep 2; done
+          cat wrangler.log; exit 1
+      - name: Všechny stránky na mobilu, tabletu a počítači
+        run: npm run test:smoke
+        env:
+          BASE: http://localhost:8788
+      - name: Celý nákupní proces a administrace
+        run: npm run test:e2e
+        env:
+          BASE: http://localhost:8788
+      - name: Záznam serveru při chybě
+        if: failure()
+        run: tail -100 wrangler.log
 
   rychlost:
     name: Rychlost a SEO (Lighthouse)
@@ -70,6 +88,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - run: SHOP_MODE=preview npm run build
       - run: npx lhci autorun
       - name: Shrnutí výsledků
         if: always()
@@ -96,3 +115,46 @@ jobs:
           tar -xzf "$RUNNER_TEMP/$file" -C "$RUNNER_TEMP" gitleaks
       - name: Hledání hesel a klíčů v celé historii
         run: '"$RUNNER_TEMP/gitleaks" git --redact --no-banner --verbose .'
+
+  nasazeni:
+    name: Nasazení na Cloudflare (jen po úspěšných testech)
+    needs: [zaklad, proces, rychlost, tajne-udaje]
+    # Pull requesty z cizích repozitářů nemají přístup k tajným klíčům
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: nasazeni-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      ADMIN_SETUP_TOKEN: ${{ secrets.ADMIN_SETUP_TOKEN }}
+      # Nepovinné: klíč pro odesílání e-mailů (Resend), viz docs/INTEGRATIONS.md
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      SHOP_MODE_PRODUCTION: ${{ vars.SHOP_MODE || 'preview' }}
+    steps:
+      - name: Je Cloudflare nastaven?
+        id: ready
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && [ -n "$ADMIN_SETUP_TOKEN" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Nasazení přeskočeno – Cloudflare zatím není nastaven (docs/CLOUDFLARE-SETUP.md)."
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.ready.outputs.ok == 'true'
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.ready.outputs.ok == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.ready.outputs.ok == 'true'
+        run: npm ci --no-audit --no-fund
+      - name: Příprava Cloudflare a nasazení (main = ostrý web, ostatní větve = zkušební verze)
+        if: steps.ready.outputs.ok == 'true'
+        run: node scripts/cf-deploy.mjs "${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
