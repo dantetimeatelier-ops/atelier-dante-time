@@ -7,7 +7,7 @@ import { COST_CATS } from './finance.js';
 import { cnbRate, toCzk } from './fx.js';
 import { extractJson, aiStatus } from './ai.js';
 import { runRole } from './os.js';
-import { DOC_MAX, splitDoc, docBytes } from './docstore.js';
+import { DOC_MAX, splitDoc, docBytes, removeChunks } from './docstore.js';
 
 export const PLATFORMS = { aukro: 'Aukro', aliexpress: 'AliExpress', ebay: 'eBay', vinted: 'Vinted', bazos: 'Bazoš', sbazar: 'Sbazar', etsy: 'Etsy', chrono24: 'Chrono24', amazon: 'Amazon', temu: 'Temu', soukrome: 'Soukromá osoba', obchod: 'Obchod / dodavatel', jine: 'Jiné' };
 export const PAY = { prevod: 'Převod', karta: 'Karta', dobirka: 'Dobírka', hotove: 'Hotově', jine: 'Jiné' };
@@ -80,6 +80,11 @@ export async function upload(env, form, actor) {
   const hash = hex(await crypto.subtle.digest('SHA-256', buf));
   const dup = await env.DB.prepare('SELECT id, cost_id, sale_id FROM documents WHERE sha256 = ?').bind(hash).first();
   const name = str(f.name, { max: 200 });
+  if (dup && (await docBytes(env, { id: dup.id, data: (await env.DB.prepare('SELECT data FROM documents WHERE id = ?').bind(dup.id).first()).data })).length !== buf.length) {
+    // Dříve se soubor neuložil celý → smazat a uložit znovu
+    await env.DB.prepare('DELETE FROM documents WHERE id = ?').bind(dup.id).run(); await removeChunks(env, dup.id);
+    return upload(env, form, actor);
+  }
   if (dup) {
     // Soubor už v systému je. Patří-li stále k nákupu/prodeji, je to opravdová duplicita.
     const linked = (dup.cost_id && await env.DB.prepare('SELECT id FROM costs WHERE id = ?').bind(dup.cost_id).first())
@@ -93,11 +98,16 @@ export async function upload(env, form, actor) {
     return { id: dup.id, cost_id: draft.costId, sale_id: draft.saleId, reused: true };
   }
   const id = randomId();
-  const { costId, saleId } = await createDraft(env, purpose, name, actor);
+  // Nejdřív se uloží celý soubor; koncept vznikne až potom (při chybě nezůstane prázdný koncept ani půlka souboru)
   const store = splitDoc(env, id, buf);
-  await env.DB.prepare("INSERT INTO documents (id, cost_id, sale_id, kind, purpose, filename, mime, size, sha256, data, created_by, ai_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .bind(id, costId, saleId, purpose === 'prodej' ? 'faktura' : 'jiny', purpose, name, mime, buf.length, hash, store.data, actor, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai').run();
-  for (const st of store.stmts) await st.run();
+  await env.DB.prepare("INSERT INTO documents (id, kind, purpose, filename, mime, size, sha256, data, created_by, ai_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(id, purpose === 'prodej' ? 'faktura' : 'jiny', purpose, name, mime, buf.length, hash, store.data, actor, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai').run();
+  try { for (const st of store.stmts) await st.run(); } catch (e) {
+    await env.DB.prepare('DELETE FROM documents WHERE id = ?').bind(id).run(); await removeChunks(env, id);
+    throw new HttpError(`${name || 'Soubor'}: nepodařilo se uložit celý – zkuste ho nahrát znovu`, 503);
+  }
+  const { costId, saleId } = await createDraft(env, purpose, name, actor);
+  await env.DB.prepare('UPDATE documents SET cost_id = ?, sale_id = ? WHERE id = ?').bind(costId, saleId, id).run();
   await audit(env, actor, 'doklad_nahran', 'document', id, { purpose, size: buf.length });
   return { id, cost_id: costId, sale_id: saleId };
 }
@@ -336,5 +346,15 @@ export async function overview(env) {
   const { results: sales } = await env.DB.prepare(`SELECT 'import' AS kind, s.id, s.number, s.issued_on AS day, s.buyer_name, s.watch_model, s.items, s.total_czk AS total, (SELECT id FROM documents d WHERE d.sale_id = s.id LIMIT 1) AS doc_id FROM sales s WHERE s.status = 'potvrzeno'
     UNION ALL SELECT 'faktura' AS kind, i.id, i.number, substr(i.issued_at,1,10) AS day, i.buyer_name, i.watch_model, NULL AS items, i.total, NULL AS doc_id FROM invoices i WHERE i.mode = 'live' AND i.cancelled_at IS NULL AND i.kind <> 'zalohova'
     ORDER BY day DESC LIMIT 100`).all();
-  return { review, saleReview, purchases, sales, ai: await aiStatus(env), platforms: PLATFORMS, pay: PAY, categories: COST_CATS };
+  const empty = (await env.DB.prepare("SELECT (SELECT COUNT(*) FROM sales s WHERE s.status = 'ke_kontrole' AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.sale_id = s.id)) + (SELECT COUNT(*) FROM costs c WHERE c.status = 'ke_kontrole' AND c.source = 'rucne' AND c.amount_czk = 0 AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.cost_id = c.id)) AS n").first()).n;
+  return { empty, review, saleReview, purchases, sales, ai: await aiStatus(env), platforms: PLATFORMS, pay: PAY, categories: COST_CATS };
+}
+
+/** Úklid: smaže koncepty ke kontrole, ke kterým není žádný soubor (vznikly při přerušeném nahrávání). */
+export async function cleanupDrafts(env, actor) {
+  const s = await env.DB.prepare("DELETE FROM sales WHERE status = 'ke_kontrole' AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.sale_id = sales.id)").run();
+  const c = await env.DB.prepare("DELETE FROM costs WHERE status = 'ke_kontrole' AND source = 'rucne' AND amount_czk = 0 AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.cost_id = costs.id)").run();
+  const n = (s.meta?.changes || 0) + (c.meta?.changes || 0);
+  await audit(env, actor, 'koncepty_uklizeny', 'inbox', null, { n });
+  return n;
 }
