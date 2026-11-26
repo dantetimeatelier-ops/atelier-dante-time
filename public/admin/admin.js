@@ -357,9 +357,11 @@
         ${d.months.filter((m) => m.revenue || m.costs).map((m) => `<tr><th>${m.month.slice(5)}/${m.month.slice(0, 4)}</th><td>${czk(m.revenue)}</td><td>${czk(m.costs)}</td><td>${czk(m.profit)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Zatím žádné údaje.</td></tr>'}</table>
         <p class="small muted">Tržby = vystavené faktury (ostrý provoz). Náklady = zapsané náklady včetně nákupu hodinek a dílů${d.rate ? ` a práce (${czk(d.rate)}/h)` : ''}. Orientační přehled, rozhodující je účetnictví.</p></div>
       <div class="card" style="margin-top:12px"><b>Marže hodinek</b>${d.pieces.length ? `<div class="list" style="margin-top:8px">${d.pieces.map((x) => `<a class="item" href="#/marze/${x.id}"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${x.sold ? 'prodáno' : 'skladem'} · náklady ${czk(x.cost)} · cena ${czk(x.price)} · marže <b>${czk(x.margin)}</b>${x.marginPct != null ? ` (${x.marginPct} %)` : ''}${x.hasPurchase ? '' : ' · ⚠ chybí nákupní cena'}</span></span></a>`).join('')}</div>` : '<p class="small muted">Zapište u hodinek nákupní cenu a náklady (Hodinky → detail → Náklady a marže).</p>'}</div>
+      <a class="card" style="display:block;margin-top:12px" href="#/rekonstrukce"><b>Rekonstrukce nákladů 2026</b><br><span class="small muted">Souhrnná PDF AliExpress a Temu${d.recon ? ` · započteno ${czk(d.recon)}` : ''} · průměrné ceny dílů, zásoby, odhad ziskovosti hodinek</span></a>
       <div class="card" style="margin-top:12px"><b>Podklady pro účetní (CSV pro Excel)</b>
         <div class="grid">${field('from', 'Od', { from: `${y}-01-01` }, 'type="date" id="ef"')}${field('to', 'Do', { to: `${y}-12-31` }, 'type="date" id="et"')}</div>
-        <div class="row"><button class="btn" data-x="naklady">Náklady</button><button class="btn" data-x="faktury">Vydané faktury</button></div></div>
+        <div class="row"><button class="btn" data-x="naklady">Náklady</button><button class="btn" data-x="faktury">Vydané faktury</button><button class="btn" data-x="nezahrnuto">Nezahrnuté položky</button></div>
+        <p class="small muted">Náklady obsahují i potvrzené položky rekonstrukce 2026 (bez soukromých a nevyřešených – ty jsou v „Nezahrnuté položky“).</p></div>
       <details style="margin-top:12px"><summary>Hodinová sazba práce</summary><form id="rf">${field('labor_rate_czk', 'Kč za hodinu (pro výpočet nákladů na vlastní práci)', { labor_rate_czk: d.rate || '' }, 'inputmode="numeric"')}<button class="btn block">Uložit</button></form></details>`;
     app.querySelectorAll('[data-x]').forEach((b) => b.addEventListener('click', () => { location.href = `/api/admin/finance/export?kind=${b.dataset.x}&from=${app.querySelector('[name=from]').value}&to=${app.querySelector('[name=to]').value}`; }));
     app.querySelector('#rf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', 'finance/settings', formData(e.target)); toast('Uloženo'); views.ekonomika(_, q); }); });
@@ -877,11 +879,210 @@
     }));
   };
 
+  // --- Rekonstrukce nákladů 2026: souhrnná PDF AliExpress / Temu → skutečné výdaje + odhad materiálu na hodinky ----
+  const RT = { souhrn: 'Souhrn', kontrola: 'Ke kontrole', polozky: 'Položky', sklad: 'Ceny a sklad', hodinky: 'Hodinky', import: 'Import PDF' };
+  const tagReal = '<span class="tag real">skutečné</span>'; const tagEst = '<span class="tag est">odhad</span>';
+  const kc = (n) => (n == null ? '–' : czk(Math.round(n)));
+  const reconOpts = (map, v, empty) => `${empty != null ? `<option value="">${esc(empty)}</option>` : ''}${Object.entries(map).map(([k, t]) => `<option value="${esc(k)}" ${v === k ? 'selected' : ''}>${esc(t)}</option>`).join('')}`;
+  const famMap = (L) => Object.fromEntries(L.families.map((f) => [f, f]));
+  const POOL_P = ['komponent', 'obaly'];
+  const compFor = (L, purpose) => Object.fromEntries(Object.entries(L.components).filter(([k]) => (purpose === 'obaly' ? ['krabicka', 'obal'].includes(k) : !['krabicka', 'obal'].includes(k))));
+  const lineMeta = (l, L) => `${esc(l.order_date || 'bez data')} · ${esc(L.platforms[l.platform] || l.platform)}${l.order_ref ? ` · obj. ${esc(l.order_ref)}` : ''} · ${l.qty} ks${l.refund_qty ? ` (vráceno ${l.refund_qty})` : ''}${l.currency !== 'CZK' && l.price_orig != null ? ` · ${l.price_orig} ${esc(l.currency)}` : ''}${l.document_id ? ` · <a href="/api/admin/documents/${esc(l.document_id)}/file" target="_blank" rel="noopener">PDF</a>` : ' · ručně'}`;
+
+  async function reconBatches(docId, from, prog, label) {
+    let step = 6; let start = from; let total = null;
+    for (let guard = 0; guard < 60; guard++) {
+      const row = document.createElement('div'); row.className = 'item small'; row.textContent = `${label}: AI čte strany ${start}–${start + step - 1}…`; prog.append(row);
+      const r = await retry(() => api('POST', `recon/imports/${docId}/extract`, { from: start, to: start + step - 1 }), row, label);
+      if (r.status === 'error' && r.tooLong && step > 1) { step = Math.max(1, Math.floor(step / 2)); row.textContent = `${label}: strany jsou moc dlouhé, zkouším po ${step}`; continue; }
+      if (r.status !== 'ok') { row.textContent = `${label}: ${r.reason || 'AI nečte'}`; return false; }
+      total = r.page_count ?? total;
+      row.textContent = `${label}: strany ${start}–${r.pages_done}${total ? ` z ${total}` : ''} · ${r.added} položek${r.review ? `, ${r.review} ke kontrole` : ''}${r.duplicates ? `, ${r.duplicates} duplicit přeskočeno` : ''}`;
+      if (r.finished || (total == null && !r.orders)) return true;
+      start = r.pages_done + 1;
+    }
+    return true;
+  }
+
+  views.rekonstrukce = async (_, q) => {
+    const y = q.get('y') || '2026'; const t = RT[q.get('t')] ? q.get('t') : 'souhrn';
+    const d = await api('GET', `recon?year=${y}`);
+    const L = d.labels; const R = d.real; const E = d.estimate;
+    const nav = `<div class="subnav">${Object.entries(RT).map(([k, v]) => `<a href="#/rekonstrukce?t=${k}" ${k === t ? 'aria-current="page"' : ''}>${esc(v)}${k === 'kontrola' && d.review.lines + d.review.salesWithoutFamily ? ` (${d.review.lines + d.review.salesWithoutFamily})` : ''}</a>`).join('')}</div>`;
+    const warn = [];
+    if (d.review.lines) warn.push(`<a href="#/rekonstrukce?t=kontrola">${d.review.lines} položek ke kontrole (${kc(d.review.amount)}${d.review.unknownAmount ? `, ${d.review.unknownAmount} bez částky` : ''}) – zatím nejsou ve výdajích</a>`);
+    if (d.review.salesWithoutFamily) warn.push(`<a href="#/rekonstrukce?t=kontrola">${d.review.salesWithoutFamily} faktur bez určeného typu hodinek</a>`);
+    if (d.doubleCount.lines) warn.push(`${d.doubleCount.lines} potvrzených položek (${kc(d.doubleCount.amount)}) má stejné číslo objednávky jako nákup v Nákupech a prodejích – možné dvojí započtení`);
+    if (!d.recipesConfirmed) warn.push('<a href="#/rekonstrukce?t=sklad">Kusovníky PRIM / OMEGA / ROLEX jsou výchozí odhad (pouzdro, řemínek, krabička) – zkontrolujte je</a>');
+    let body = '';
+    if (t === 'souhrn') {
+      body = `${warn.length ? `<div class="card warn small"><b>Co je potřeba vyřešit</b><ul>${warn.map((w) => `<li>${w}</li>`).join('')}</ul></div>` : ''}
+        <div class="card" style="margin-top:12px"><b>Skutečné ${tagReal}</b> <span class="small muted">– podklad pro daňového poradce</span><table>
+          <tr><th>Tržby (faktury ${esc(d.year)})</th><td>${kc(R.revenue)}</td></tr>
+          <tr><th>Výdaje z evidence nákupů</th><td>${kc(R.expensesLedger)}</td></tr>
+          <tr><th>Výdaje z rekonstrukce (AliExpress, Temu)</th><td>${kc(R.expensesRecon)}</td></tr>
+          <tr><th><b>Výsledek (příjmy − výdaje)</b></th><td><b>${kc(R.result)}</b></td></tr>
+          <tr><th class="muted">Soukromé nákupy (nezapočteny)</th><td class="muted">${kc(R.privateExcluded)}</td></tr></table></div>
+        <div class="card" style="margin-top:12px"><b>Odhad ${tagEst}</b> <span class="small muted">– jen interně</span><table>
+          <tr><th>Hodnota zbývajících zásob</th><td>${kc(E.stockValue)}</td></tr>
+          <tr><th>Poškozené součástky a odpad</th><td>${kc(E.lossValue)}</td></tr>
+          <tr><th><b>Hospodářský výsledek po zohlednění zásob</b></th><td><b>${kc(E.resultWithStock)}</b></td></tr>
+          <tr><th>Podíl režie na 1 prodané hodinky</th><td>${kc(E.overheadShare)}</td></tr>
+          ${E.labor ? `<tr><th class="muted">Vlastní práce (hodiny × sazba, není výdaj)</th><td class="muted">${kc(E.labor)}</td></tr>` : ''}</table>
+          <p class="small muted">Zásoby = nakoupené kusy − odhad spotřeby podle kusovníku − poškozené − odpad (nebo počet z inventury).</p></div>
+        <div class="card" style="margin-top:12px"><b>Rekonstrukce podle účelu</b> ${tagReal}<table>${Object.entries(L.purposes).filter(([k]) => d.byPurpose[k]).map(([k, v]) => `<tr><th>${esc(v)}</th><td>${kc(d.byPurpose[k])}</td></tr>`).join('') || '<tr><td class="muted">Zatím nic potvrzeného.</td></tr>'}</table></div>
+        <div class="card" style="margin-top:12px"><b>Export pro daňového poradce</b> ${tagReal}
+          <p class="small muted">Jen skutečně zaplacené výdaje a vystavené faktury. Soukromé a nevyřešené položky jsou v samostatném souboru. Bez odhadů.</p>
+          <div class="row"><a class="btn" href="/api/admin/finance/export?kind=naklady&from=${y}-01-01&to=${y}-12-31">Výdaje</a><a class="btn" href="/api/admin/finance/export?kind=faktury&from=${y}-01-01&to=${y}-12-31">Příjmy (faktury)</a><a class="btn" href="/api/admin/finance/export?kind=nezahrnuto&from=${y}-01-01&to=${y}-12-31">Nezahrnuté položky</a></div>
+          <b style="display:block;margin-top:12px">Interní přehledy</b> ${tagEst}
+          <div class="row"><a class="btn" href="/api/admin/recon/export?kind=polozky&year=${y}">Všechny položky</a><a class="btn" href="/api/admin/recon/export?kind=zasoby&year=${y}">Zásoby (odhad)</a><a class="btn" href="/api/admin/recon/export?kind=ziskovost&year=${y}">Ziskovost hodinek (odhad)</a></div></div>`;
+    } else if (t === 'kontrola') {
+      const rev = d.lines.filter((l) => l.status === 'ke_kontrole');
+      const noFam = d.pieces.filter((p) => p.is_watch !== 0 && !p.family);
+      body = `<p class="small muted">Nic se nemaže ani nedomýšlí. Vyberte účel a potvrďte, nebo položku nechte čekat. „Nezapočítat“ použijte jen pro duplicity a zrušené objednávky.</p>
+        ${rev.length ? `<div class="row"><button class="btn" type="button" id="selall">Vybrat vše</button><button class="btn primary" type="button" id="bulk">Potvrdit vybrané návrhy</button></div>` : '<p class="muted">Žádné položky ke kontrole.</p>'}
+        ${rev.map((l) => `<form class="card rline" data-id="${esc(l.id)}" style="margin-top:10px">
+          <label class="check"><input type="checkbox" class="pick" value="${esc(l.id)}"> <b>${esc(l.title)}</b>${l.variant ? ` <span class="small muted">${esc(l.variant)}</span>` : ''}</label>
+          <p class="small muted" style="margin:4px 0">${lineMeta(l, L)} · <b>${kc(l.amount_czk)}</b></p>
+          ${l.check_note ? `<p class="small warn" style="padding:6px 8px;border-radius:8px">${esc(l.check_note)}</p>` : ''}
+          <div class="grid"><label>Účel<select name="purpose">${reconOpts(L.purposes, l.purpose)}</select></label>
+            <label>Druh dílu<select name="component">${reconOpts(L.components, l.component, '–')}</select></label></div>
+          <div class="grid"><label>Typ hodinek<select name="family">${reconOpts(famMap(L), l.family, 'univerzální / neurčeno')}</select></label>
+            ${l.amount_czk == null ? field('amount_czk', 'Částka v Kč', { amount_czk: '' }, 'inputmode="numeric" required') : '<span></span>'}</div>
+          <label class="check small"><input type="checkbox" name="apply_same" value="1"> Stejně zařadit i další položky se stejným názvem</label>
+          <div class="row"><button class="btn primary" name="act" value="potvrzeno">Potvrdit</button><button class="btn" type="button" data-excl="${esc(l.id)}">Nezapočítat</button><a class="btn ghost" href="#/rekon/${esc(l.id)}">Upravit vše</a></div></form>`).join('')}
+        ${noFam.length ? `<h2 style="margin-top:18px">Faktury bez typu hodinek (${noFam.length})</h2><p class="small muted">Typ se nepodařilo poznat z modelu ani položek faktury.</p>
+          ${noFam.map((p) => `<form class="card rsale" data-kind="${esc(p.kind)}" data-id="${esc(p.id)}" style="margin-top:8px"><b>${esc(p.number || 'bez čísla')}</b> <span class="small muted">${esc(p.day)} · ${kc(p.revenue)}</span><p class="small" style="margin:4px 0">${esc(p.text || '–')}</p>
+            <div class="grid"><label>Typ<select name="family">${reconOpts({ ...famMap(L), none: 'Nejde o prodej hodinek' }, '', '– vyberte –')}</select></label><button class="btn primary">Uložit</button></div></form>`).join('')}` : ''}`;
+    } else if (t === 'polozky') {
+      const f = q.get('f') || 'vse';
+      const F = { vse: 'Vše', potvrzeno: 'Potvrzené', ke_kontrole: 'Ke kontrole', nezapocitano: 'Nezapočítané', ...Object.fromEntries(Object.entries(L.purposes).map(([k, v]) => [`p:${k}`, v])) };
+      const list = d.lines.filter((l) => f === 'vse' || l.status === f || `p:${l.purpose}` === f);
+      body = `<div class="row"><label style="flex:1">Zobrazit<select id="lf">${reconOpts(F, f)}</select></label><a class="btn" href="#/rekon/nova">+ Přidat ručně</a></div>
+        <p class="small muted">${list.length} položek · ${kc(list.reduce((a, l) => a + (l.amount_czk || 0), 0))}</p>
+        <div class="list">${list.map((l) => `<a class="item" href="#/rekon/${esc(l.id)}"><span class="grow"><span class="t">${esc(l.title)}</span><br><span class="small muted">${esc(L.purposes[l.purpose])}${l.component ? ` · ${esc(L.components[l.component])}` : ''}${POOL_P.includes(l.purpose) ? ` · ${esc(l.family || 'univerzální')}` : ''} · ${esc(l.order_date || '')}${l.status !== 'potvrzeno' ? ` · <b>${l.status === 'ke_kontrole' ? 'ke kontrole' : 'nezapočteno'}</b>` : ''}${l.edited ? ' · opraveno' : ''}</span></span><b>${kc(l.amount_czk)}</b></a>`).join('') || '<p class="muted">Nic.</p>'}</div>`;
+    } else if (t === 'sklad') {
+      const comps = L.components;
+      body = `<p class="small muted">Průměrná pořizovací cena = zaplaceno celkem (vč. dopravy, po slevách a vratkách) ÷ nakoupené kusy. Počítají se jen potvrzené položky. ${tagEst} u spotřeby a zásob.</p>
+        <div class="card" style="overflow-x:auto"><table><tr><th>Díl</th><td><b>Typ</b></td><td><b>Ks</b></td><td><b>Ø Kč/ks</b></td><td><b>Spotř.</b></td><td><b>Ztráty</b></td><td><b>Zbývá</b></td><td><b>Hodnota</b></td></tr>
+          ${d.pools.map((p) => `<tr><th>${esc(comps[p.component] || p.component)}</th><td>${esc(p.family || 'univ.')}</td><td>${p.bought}</td><td>${kc(p.avg)}</td><td>${p.consumed}</td><td>${p.damaged + p.waste || ''}</td><td>${p.remaining}${p.counted != null ? ' <span class="small muted">(inventura)</span>' : ''}${p.overused ? ' <span class="small warn">⚠ spotřeba > nákup</span>' : ''}${p.difference ? ` <span class="small muted">rozdíl ${p.difference}</span>` : ''}</td><td>${kc(p.value)}</td></tr>`).join('') || '<tr><td colspan="8" class="muted">Zatím žádné potvrzené komponenty.</td></tr>'}</table></div>
+        <h2 style="margin-top:16px">Kusovníky ${d.recipesConfirmed ? '' : '<span class="tag est">výchozí – zkontrolujte</span>'}</h2>
+        <p class="small muted">Kolik kterých dílů spotřebuje jeden prodaný kus. Podle toho se odhaduje materiál a spotřeba ze skladu.</p>
+        ${L.families.map((f) => `<form class="card recipe" data-f="${esc(f)}" style="margin-top:8px"><b>${esc(f)}</b><div class="grid">${Object.entries(comps).map(([c, v]) => field(`r_${c}`, esc(v), { [`r_${c}`]: d.recipes[f]?.[c] ?? '' }, 'inputmode="decimal" placeholder="0"')).join('')}</div><button class="btn block">Uložit kusovník ${esc(f)}</button></form>`).join('')}
+        <h2 style="margin-top:16px">Poškozené, odpad, inventura</h2>
+        <form class="card" id="adj"><div class="grid"><label>Druh<select name="kind"><option value="poskozeno">Poškozeno</option><option value="odpad">Odpad / nevyužitelné</option><option value="inventura">Inventura (spočítáno zbývá)</option></select></label>
+          <label>Díl<select name="component">${reconOpts(comps, 'pouzdro')}</select></label></div>
+          <div class="grid"><label>Typ<select name="family">${reconOpts(famMap(L), '', 'univerzální')}</select></label>${field('qty', 'Počet kusů', {}, 'inputmode="decimal" required')}</div>
+          <div class="grid">${field('adj_date', 'Datum', { adj_date: today() }, 'type="date"')}${field('note', 'Poznámka', {})}</div><button class="btn primary block">Zapsat</button></form>
+        <div class="list" style="margin-top:8px">${d.adjustments.map((a) => `<div class="item"><span class="grow">${esc({ poskozeno: 'Poškozeno', odpad: 'Odpad', inventura: 'Inventura' }[a.kind])}: ${esc(comps[a.component])} ${esc(a.family || 'univ.')} · ${a.qty} ks<br><span class="small muted">${esc(a.adj_date)}${a.note ? ` · ${esc(a.note)}` : ''}</span></span><button class="btn" data-deladj="${esc(a.id)}" aria-label="Smazat">✕</button></div>`).join('')}</div>`;
+    } else if (t === 'hodinky') {
+      body = `<p class="small muted">Tržba a náklady propojené s kartou hodinek jsou ${tagReal}, materiál z kusovníku a podíl režie jsou ${tagEst}.</p>
+        <div class="list">${d.pieces.map((p) => `<form class="item rsale" data-kind="${esc(p.kind)}" data-id="${esc(p.id)}" style="display:block"><span class="t">${esc(p.number || 'bez čísla')} · ${esc(p.day)}</span> <span class="small muted">${esc((p.text || '').slice(0, 80))}</span>
+          <div class="small" style="margin:6px 0">tržba ${kc(p.revenue)}${p.real_cost ? ` · náklady kusu ${kc(p.real_cost)}` : ''}${p.is_watch !== 0 && p.family ? ` · materiál ~${kc(p.material)} · režie ~${kc(p.overheadShare)} · <b>zisk ~${kc(p.profit)}</b>` : ''}${p.missing.length ? ` · <span class="warn">chybí: ${esc(p.missing.join(', '))}</span>` : ''}</div>
+          <div class="grid"><label>Typ<select name="family">${reconOpts({ ...famMap(L), none: 'Nejde o prodej hodinek' }, p.is_watch === 0 ? 'none' : p.family || '', '– neurčeno –')}</select></label><button class="btn">Uložit${p.family_source ? ` <span class="small muted">(${esc(p.family_source)})</span>` : ''}</button></div></form>`).join('') || `<p class="muted">Žádné faktury za ${esc(d.year)}.</p>`}</div>`;
+    } else {
+      const ai = d.ai;
+      body = `<div class="card ${ai.ready ? '' : 'warn'} small">${ai.ready ? `AI ${esc(ai.modelName)} · tento měsíc ${ai.budget.spent} / ${ai.budget.limit} Kč. Velké PDF se čte po 6 stranách; každé čtení stojí jednotky Kč.` : `${esc(ai.reason)}. Položky lze zadat ručně v záložce Položky.`}</div>
+        <form class="card" id="rup" style="margin-top:12px"><label>Platforma<select name="platform">${reconOpts(L.platforms, 'aliexpress')}</select></label>
+          <label class="btn primary block filebtn">Nahrát souhrnná PDF<input type="file" id="rfile" accept="application/pdf,image/*" multiple></label>
+          <p class="small muted">Původní PDF zůstane uložené jako podklad. Stejný soubor ani stejnou položku nelze započítat dvakrát. Soubor nad 10 MB rozdělte (např. po měsících).</p></form>
+        <div id="rprog" class="list"></div>
+        <h2 style="margin-top:16px">Nahraná PDF</h2><div class="list">${d.imports.map((i) => `<div class="item"><span class="grow"><span class="t"><a href="/api/admin/documents/${esc(i.document_id)}/file" target="_blank" rel="noopener">${esc(i.filename || 'PDF')}</a></span><br><span class="small muted">${esc(L.platforms[i.platform] || i.platform)} · ${{ ceka: 'čeká na čtení', cte_se: 'čte se', hotovo: 'přečteno', chyba: 'chyba', rucne: 'ručně' }[i.status] || esc(i.status)} · strany ${i.pages_done}${i.page_count ? `/${i.page_count}` : ''} · ${i.lines_added} položek${i.lines_dup ? `, ${i.lines_dup} duplicit` : ''}${i.error ? ` · ${esc(i.error.slice(0, 80))}` : ''}</span></span>
+          ${ai.ready && i.status !== 'hotovo' ? `<button class="btn" data-cont="${esc(i.document_id)}" data-from="${i.pages_done + 1}">Číst dál</button>` : ''}<button class="btn ghost" data-reset="${esc(i.document_id)}" title="Smazat položky a číst znovu">↺</button></div>`).join('') || '<p class="muted">Zatím nic.</p>'}</div>`;
+    }
+    app.innerHTML = `<div class="row" style="justify-content:space-between"><h1>Rekonstrukce ${esc(d.year)}</h1><a class="small" href="#/ekonomika">Ekonomika ›</a></div>
+      <p class="small muted" style="margin-top:-6px">Zaplacené částky ${tagReal} · přiřazení k hodinkám, zásoby a ziskovost ${tagEst}. Nové nákupy evidujte v <a href="#/doklady">Nákupech a prodejích</a>.</p>${nav}${body}`;
+    const reload = () => views.rekonstrukce(_, q);
+    app.querySelector('#lf')?.addEventListener('change', (e) => { location.hash = `#/rekonstrukce?t=polozky&f=${encodeURIComponent(e.target.value)}`; });
+    app.querySelectorAll('form.rline').forEach((form) => {
+      const p = form.querySelector('[name=purpose]'); const c = form.querySelector('[name=component]');
+      const sync = () => { c.disabled = !POOL_P.includes(p.value); }; p.addEventListener('change', sync); sync();
+      form.addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
+        const b = formData(form); b.status = 'potvrzeno'; if (!POOL_P.includes(b.purpose)) b.component = null;
+        const r = await api('PUT', `recon/lines/${form.dataset.id}`, b); toast(r.same ? `Potvrzeno, stejně zařazeno ${r.same} dalších` : 'Potvrzeno'); reload();
+      }); });
+    });
+    app.querySelectorAll('[data-excl]').forEach((b) => b.addEventListener('click', () => run(async () => {
+      const why = prompt('Proč se položka nezapočítává? (např. duplicita, zrušená objednávka)'); if (!why) return;
+      await api('PUT', `recon/lines/${b.dataset.excl}`, { status: 'nezapocitano', excluded_reason: why }); toast('Nezapočteno (položka zůstává v evidenci)'); reload();
+    })));
+    app.querySelector('#selall')?.addEventListener('click', () => app.querySelectorAll('.pick').forEach((x) => { x.checked = true; }));
+    app.querySelector('#bulk')?.addEventListener('click', () => run(async () => {
+      const ids = [...app.querySelectorAll('.pick:checked')].map((x) => x.value); if (!ids.length) { toast('Nic není vybráno', true); return; }
+      if (!confirm(`Potvrdit ${ids.length} návrhů tak, jak je navrhla AI? Nejasné a neúplné položky zůstanou ke kontrole.`)) return;
+      const r = await api('POST', 'recon/lines/confirm', { ids }); toast(`Potvrzeno ${r.confirmed}${r.skipped ? `, ${r.skipped} zůstává ke kontrole` : ''}`); reload();
+    }));
+    app.querySelectorAll('form.rsale').forEach((form) => form.addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
+      const v = formData(form).family; if (!v) { toast('Vyberte typ', true); return; }
+      await api('PUT', `recon/sales/${form.dataset.kind}/${form.dataset.id}`, v === 'none' ? { is_watch: 0 } : { family: v }); toast('Uloženo'); reload();
+    }); }));
+    app.querySelectorAll('form.recipe').forEach((form) => form.addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
+      const rows = Object.fromEntries(Object.entries(formData(form)).map(([k, v]) => [k.slice(2), v]));
+      await api('PUT', `recon/recipes/${form.dataset.f}`, { rows }); toast(`Kusovník ${form.dataset.f} uložen`); reload();
+    }); }));
+    app.querySelector('#adj')?.addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('POST', 'recon/adjustments', formData(e.target)); toast('Zapsáno'); reload(); }); });
+    app.querySelectorAll('[data-deladj]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat záznam?')) return; await api('DELETE', `recon/adjustments/${b.dataset.deladj}`); reload(); })));
+    app.querySelectorAll('[data-cont]').forEach((b) => b.addEventListener('click', () => run(async () => { b.disabled = true; await reconBatches(b.dataset.cont, Number(b.dataset.from) || 1, app.querySelector('#rprog'), 'PDF'); reload(); })));
+    app.querySelectorAll('[data-reset]').forEach((b) => b.addEventListener('click', () => run(async () => {
+      const c = prompt('Smazat všechny položky načtené z tohoto PDF (i ručně opravené) a číst ho znovu? Soubor PDF zůstane. Pro potvrzení napište SMAZAT'); if (c == null) return;
+      const r = await api('POST', `recon/imports/${b.dataset.reset}/reset`, { confirm: c }); toast(`Smazáno ${r.removed} položek`); reload();
+    })));
+    app.querySelector('#rfile')?.addEventListener('change', (e) => run(async () => {
+      const seq = navSeq; const prog = app.querySelector('#rprog'); const platform = app.querySelector('#rup [name=platform]').value;
+      for (const file of [...e.target.files]) {
+        const row = document.createElement('div'); row.className = 'item small'; row.textContent = `${file.name} – nahrávám…`; prog.append(row);
+        try {
+          const fd = new FormData(); fd.append('file', file, file.name); fd.append('platform', platform);
+          const up = await retry(() => api('POST', 'recon/upload', fd), row, file.name);
+          if (up.duplicate) { row.textContent = `${file.name} – tento soubor už byl nahrán, přeskočeno`; continue; }
+          row.textContent = `${file.name} – uloženo`;
+          if (d.ai.ready) await reconBatches(up.id, 1, prog, file.name);
+        } catch (err) { row.textContent = `${file.name} – chyba: ${err.message}`; }
+      }
+      setTimeout(() => { if (seq === navSeq) location.hash = '#/rekonstrukce?t=kontrola'; }, 2500);
+    }));
+  };
+
+  views['rekon/:id'] = async ({ id }) => {
+    const d = await api('GET', 'recon');
+    const L = d.labels;
+    const l = id === 'nova' ? { platform: 'aliexpress', currency: 'CZK', qty: 1, purpose: 'nejasne', status: 'potvrzeno' } : d.lines.find((x) => x.id === id);
+    if (!l) { app.innerHTML = '<p>Položka nenalezena (je možná z jiného roku).</p><a href="#/rekonstrukce?t=polozky">← Položky</a>'; return; }
+    let sug = null; try { sug = l.ai_suggestion ? JSON.parse(l.ai_suggestion) : null; } catch { /* starý formát */ }
+    app.innerHTML = `<p><a href="#/rekonstrukce?t=polozky">← Položky</a></p><h1 style="font-size:22px">${id === 'nova' ? 'Nová položka' : 'Úprava položky'}</h1>
+      ${l.check_note ? `<p class="small warn" style="padding:8px;border-radius:8px">${esc(l.check_note)}</p>` : ''}
+      ${sug ? `<p class="small muted">Návrh AI: ${esc(L.purposes[sug.purpose] || sug.purpose)}${sug.component ? ` · ${esc(L.components[sug.component] || sug.component)}` : ''}${sug.family ? ` · ${esc(sug.family)}` : ''}${sug.confident ? '' : ' · nejistý'}</p>` : ''}
+      ${l.document_id ? `<p class="small"><a href="/api/admin/documents/${esc(l.document_id)}/file" target="_blank" rel="noopener">Otevřít původní PDF ↗</a> ${esc(l.filename || '')}</p>` : ''}
+      <form class="card" id="rl">${field('title', 'Položka', l, 'required maxlength="300"')}${field('variant', 'Provedení (barva, velikost)', l)}
+        <div class="grid"><label>Platforma<select name="platform">${reconOpts(L.platforms, l.platform)}</select></label>${field('order_date', 'Datum objednávky', l, 'type="date"')}</div>
+        <div class="grid">${field('order_ref', 'Číslo objednávky', l)}${field('seller', 'Prodejce', l)}</div>
+        <div class="grid">${field('qty', 'Kusů', l, 'inputmode="decimal"')}${field('refund_qty', 'Z toho vráceno ks', { refund_qty: l.refund_qty || '' }, 'inputmode="decimal"')}</div>
+        <div class="grid">${curSel(l.currency)}${field('price_orig', 'Cena řádku (v měně)', l, 'inputmode="decimal"')}</div>
+        <div class="grid">${field('shipping_orig', 'Podíl dopravy', l, 'inputmode="decimal"')}${field('discount_orig', 'Podíl slevy', l, 'inputmode="decimal"')}</div>
+        <div class="grid">${field('refund_orig', 'Vráceno penězi', l, 'inputmode="decimal"')}${field('fx_rate', 'Kurz ČNB', { fx_rate: l.currency !== 'CZK' ? l.fx_rate ?? '' : '' }, 'inputmode="decimal" placeholder="automaticky"')}</div>
+        ${field('amount_czk', 'Skutečně zaplaceno v Kč', { amount_czk: l.amount_czk ?? '' }, 'inputmode="numeric" placeholder="dopočítá se"')}
+        <div class="grid"><label>Účel<select name="purpose">${reconOpts(L.purposes, l.purpose)}</select></label><label>Druh dílu<select name="component">${reconOpts(L.components, l.component, '–')}</select></label></div>
+        <div class="grid"><label>Typ hodinek<select name="family">${reconOpts(famMap(L), l.family, 'univerzální / neurčeno')}</select></label>
+          <label>Stav<select name="status">${reconOpts({ potvrzeno: 'Potvrzeno', ke_kontrole: 'Nechat ke kontrole', nezapocitano: 'Nezapočítávat' }, l.status)}</select></label></div>
+        ${field('excluded_reason', 'Důvod nezapočtení', l)}${field('check_note', 'Poznámka ke kontrole', l)}
+        ${id === 'nova' ? '' : '<label class="check small"><input type="checkbox" name="apply_same" value="1"> Stejně zařadit i další položky se stejným názvem (ke kontrole)</label>'}
+        <button class="btn primary block">Uložit</button></form>`;
+    const f = app.querySelector('#rl');
+    const p = f.querySelector('[name=purpose]'); const c = f.querySelector('[name=component]');
+    const sync = () => { c.disabled = !POOL_P.includes(p.value); }; p.addEventListener('change', sync); sync();
+    f.addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
+      const b = formData(f); if (!POOL_P.includes(b.purpose)) b.component = null;
+      if (id === 'nova') await api('POST', 'recon/lines', b); else await api('PUT', `recon/lines/${id}`, b);
+      toast('Uloženo'); location.hash = '#/rekonstrukce?t=polozky';
+    }); });
+  };
+
   views.vice = async () => {
     app.innerHTML = `<h1>Více</h1><div class="list">
       <a class="item" href="#/ekonomika"><span class="grow">Ekonomika – tržby, náklady, zisk, export pro účetní</span></a>
       <a class="item" href="#/naklady"><span class="grow">Náklady a provozní výdaje</span></a>
       <a class="item" href="#/doklady"><span class="grow">Nákupy a prodeje (nahrát doklady, import faktur)</span></a>
+      <a class="item" href="#/rekonstrukce"><span class="grow">Rekonstrukce nákladů 2026 (souhrnná PDF AliExpress, Temu)</span></a>
       <a class="item" href="#/dily"><span class="grow">Sklad dílů</span></a>
       <a class="item" href="#/system"><span class="grow">Systém Dante Time OS (role, kontroly, zálohy)</span></a>
       <a class="item" href="#/prohlidky"><span class="grow">Garanční prohlídky</span></a>
@@ -911,7 +1112,7 @@
     const top = parts[0] || '';
     tabs.querySelectorAll('a').forEach((a) => {
       const t = a.getAttribute('href').replace('#/', '');
-      a.toggleAttribute('aria-current', t === top || (t === 'vice' && ['poptavky', 'zakaznici', 'nastaveni', 'emaily', 'historie', 'odstoupeni', 'faktury'].includes(top)));
+      a.toggleAttribute('aria-current', t === top || (t === 'vice' && ['poptavky', 'zakaznici', 'nastaveni', 'emaily', 'historie', 'odstoupeni', 'faktury', 'rekonstrukce', 'rekon'].includes(top)));
       if (a.hasAttribute('aria-current')) a.setAttribute('aria-current', 'page');
     });
     window.scrollTo(0, 0);

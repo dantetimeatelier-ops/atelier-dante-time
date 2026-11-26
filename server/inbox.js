@@ -7,7 +7,7 @@ import { COST_CATS } from './finance.js';
 import { cnbRate, toCzk } from './fx.js';
 import { extractJson, aiStatus, deleteAiFile } from './ai.js';
 import { runRole } from './os.js';
-import { DOC_MAX, splitDoc, docB64, docComplete, removeChunks } from './docstore.js';
+import { DOC_MAX, splitDoc, docB64, docComplete, removeChunks, sniff } from './docstore.js';
 
 export const PLATFORMS = { aukro: 'Aukro', aliexpress: 'AliExpress', ebay: 'eBay', vinted: 'Vinted', bazos: 'Bazoš', sbazar: 'Sbazar', etsy: 'Etsy', chrono24: 'Chrono24', amazon: 'Amazon', temu: 'Temu', soukrome: 'Soukromá osoba', obchod: 'Obchod / dodavatel', jine: 'Jiné' };
 export const PAY = { prevod: 'Převod', karta: 'Karta', dobirka: 'Dobírka', hotove: 'Hotově', jine: 'Jiné' };
@@ -59,13 +59,7 @@ Vyčti: číslo faktury, datum vystavení, odběratele (jméno, e-mail, adresa, 
 Model hodinek (watch_model) a výrobní číslo (serial) bývají v řádcích „Model:“ a „Serial no:“ / „Výrobní číslo:“ – opiš je přesně (u modelu bez předpony „DT:“). Způsob platby uveď jen, je-li na faktuře výslovně (převod, karta, dobírka, hotově); „Uhrazeno“ samo o sobě způsob platby není → null.`;
 
 // ---- Nahrání dokladu → koncept ke kontrole ----------------------------------------------------
-const sniff = (b) => {
-  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
-  if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45) return 'image/webp';
-  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return 'image/png';
-  if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) return 'application/pdf';
-  return null;
-};
+
 const hex = (buf) => [...new Uint8Array(buf)].map((x) => x.toString(16).padStart(2, '0')).join('');
 
 /** Uloží soubor a založí koncept nákupu nebo prodeje. Duplicitní soubor nevytvoří nic nového. */

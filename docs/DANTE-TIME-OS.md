@@ -251,3 +251,19 @@ Cloudflare → Workers & Pages → projekt → Settings → Variables and Secret
 ⚖️ Před importem faktur s AI schválit doplnění Zásad o Anthropic jako zpracovatele (LEGAL-REVIEW 2g).
 
 - Doklady z e-mailu (doklady@…) vyžadují Cloudflare Email Routing (zdarma) a rozšíření oprávnění tokenu.
+
+### E3c – Rekonstrukce nákladů 2026 (zadání majitele 26. 11. 2026)
+Souhrnná PDF z AliExpressu a Temu → položky → účel → průměrné ceny dílů → odhad materiálu prodaných hodinek
+PRIM / OMEGA / ROLEX → zásoby, ztráty, ziskovost. Návod: [`REKONSTRUKCE-2026.md`](REKONSTRUKCE-2026.md).
+
+| Část | Stav |
+|---|---|
+| Import souhrnných PDF po 6 stranách (AI), původní PDF uloženo jako podklad | ✅ kód, ⏳ ověřit na skutečných PDF |
+| Rozpočítání dopravy, slev a vratek na položky; kurz ČNB ke dni objednávky | ✅ |
+| Účel (komponent, obaly, nářadí, materiál, provoz, soukromé, nejasné) – AI + kontrolní pravidla, rozpor → ke kontrole | ✅ |
+| Sekce Ke kontrole, ruční oprava každé položky, hromadné zařazení stejných názvů, nic se nemaže samo | ✅ |
+| Duplicity: soubor, otisk položky, číslo objednávky (i proti Nákupům a prodejům) | ✅ |
+| Průměrné ceny podle typu, kusovníky, typ hodinek z faktur (ruční oprava), odhad materiálu a režie na kus | ✅ |
+| Sklad: poškozené, odpad, inventura, hodnota zásob (odhad) | ✅ |
+| Ekonomika a export „Náklady“ obsahují potvrzené položky; nový export „Nezahrnuté položky“; interní exporty označené ODHAD | ✅ |
+

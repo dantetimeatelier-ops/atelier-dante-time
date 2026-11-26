@@ -4,6 +4,22 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-26 – Claude – claude/rekonstrukce-nakladu-2026 (rekonstrukce nákladů 2026)
+**Hotovo:** Více → Rekonstrukce nákladů 2026: import souhrnných PDF AliExpress/Temu po dávkách stran (AI, effort low,
+max 16 000 tokenů), položky v `recon_lines` (rozpočítaná doprava/slevy/vratky, kurz ČNB, otisk proti duplicitám),
+účel + druh dílu + typ PRIM/OMEGA/ROLEX (AI + pravidla podle názvu, rozpor/soukromé/nejasné → ke kontrole),
+kusovníky, typ hodinek k fakturám 2026, průměrné ceny, odhad spotřeby, poškozené/odpad/inventura, hodnota zásob,
+ziskovost kusů. Ekonomika (`overview`) a export Náklady zahrnují potvrzené položky (bez soukromých); nový export
+„Nezahrnuté položky“; interní CSV označené ODHAD. Migrace 0018, testy `tests/unit/recon.test.mjs` (D1 nad SQLite).
+Návod pro majitele `docs/REKONSTRUKCE-2026.md`.
+**Rozpracováno:** prompt neověřen na skutečných PDF (majitel je nahraje po nasazení) – první import projít s majitelem.
+**Pozor na:** limit D1 na bezplatném Cloudflare (50 dotazů na požadavek) – rekonstrukce vkládá položky jedním dotazem
+(`json_each`) a souhrn počítá souhrnnými dotazy. Stávající `finance.overview` volá `productEconomics` pro každé hodinky
+(5 dotazů na kus) – při více než ~9 kusech s náklady může limit překročit. Vlastní práce (hodiny × sazba) se ve
+„skutečném“ výsledku rekonstrukce nepočítá (není to výdaj), v Ekonomice ano. `sniff` přesunut do `docstore.js`.
+
+---
+
 ## 2026-11-26 – Claude – claude/fakturace (centrální fakturační systém)
 **Hotovo:** fakturace nezávislá na e-shopu: řada DT-RRRR-NNNN (čítač po letech, UNIQUE), zdroj prodeje
 (eshop/vinted/aukro/instagram/facebook/osobne/zakazka/jine), druhy faktura / zálohová / dobropis, vyúčtování zálohy

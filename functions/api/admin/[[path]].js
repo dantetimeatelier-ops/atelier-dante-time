@@ -18,6 +18,7 @@ import * as DOC from '../../../server/documents.js';
 import * as INV from '../../../server/invoicing.js';
 import { INVOICE_KINDS, SALE_CHANNELS, INVOICE_PAY } from '../../../src/shop/invoice.mjs';
 import * as INB from '../../../server/inbox.js';
+import * as REC from '../../../server/recon.js';
 import { html } from '../../../server/http.js';
 
 const STATUSES = ['draft', 'available', 'reserved', 'sold', 'in_progress', 'archived'];
@@ -561,10 +562,32 @@ route('PUT', 'finance/ai-model', async ({ env, body, user }) => {
 });
 route('GET', 'finance/export', async ({ env, request, user }) => {
   const u = new URL(request.url).searchParams;
-  const kind = u.get('kind') === 'faktury' ? 'faktury' : 'naklady';
+  const kind = ['faktury', 'nezahrnuto'].includes(u.get('kind')) ? u.get('kind') : 'naklady';
   const csv = await FIN.exportCsv(env, kind, u.get('from'), u.get('to'));
   await audit(env, user.email, 'export_ucetni', 'finance', kind, { from: u.get('from'), to: u.get('to') });
   return new Response(csv, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="dante-time-${kind}-${u.get('from')}-${u.get('to')}.csv"`, 'Cache-Control': 'no-store' } });
+});
+// --- Rekonstrukce nákladů 2026 (souhrnná PDF AliExpress / Temu) ---------------------------------
+route('GET', 'recon', async ({ env, request }) => json(await REC.summary(env, new URL(request.url).searchParams.get('year'))));
+route('POST', 'recon/upload', async ({ env, request, user }) => json(await REC.uploadSummary(env, await request.formData(), user.email), 201));
+route('POST', 'recon/imports/:id/extract', async ({ env, params, body, user }) => json(await REC.extractSummary(env, params.id, body || {}, user.email)));
+route('POST', 'recon/imports/:id/reset', async ({ env, params, body, user }) => json(await REC.resetImport(env, params.id, body.confirm, user.email)));
+route('POST', 'recon/lines', async ({ env, body, user }) => json(await REC.saveLine(env, null, body, user.email), 201));
+route('PUT', 'recon/lines/:id', async ({ env, params, body, user }) => json(await REC.saveLine(env, params.id, body, user.email)));
+route('POST', 'recon/lines/confirm', async ({ env, body, user }) => json(await REC.bulkConfirm(env, body.ids, user.email)));
+route('PUT', 'recon/sales/:kind/:id', async ({ env, params, body, user }) => { await REC.setSaleFamily(env, params.kind, params.id, body, user.email); return json({ ok: true }); });
+route('PUT', 'recon/recipes/:id', async ({ env, params, body, user }) => { await REC.saveRecipe(env, params.id, body.rows, user.email); return json({ ok: true }); });
+route('POST', 'recon/adjustments', async ({ env, body, user }) => json({ id: await REC.addAdjustment(env, body, user.email) }, 201));
+route('DELETE', 'recon/adjustments/:id', async ({ env, params, user }) => {
+  await env.DB.prepare('DELETE FROM recon_adjustments WHERE id = ?').bind(params.id).run();
+  await audit(env, user.email, 'rekonstrukce_sklad_pohyb_smazan', 'recon_adjustment', params.id); return json({ ok: true });
+});
+route('GET', 'recon/export', async ({ env, request, user }) => {
+  const u = new URL(request.url).searchParams;
+  const kind = ['polozky', 'zasoby', 'ziskovost'].includes(u.get('kind')) ? u.get('kind') : 'polozky';
+  const csv = await REC.exportCsv(env, kind, u.get('year'));
+  await audit(env, user.email, 'export_rekonstrukce', 'finance', kind, { year: u.get('year') });
+  return new Response(csv, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="dante-time-rekonstrukce-${kind}${kind === 'polozky' ? '' : '-odhad'}-${u.get('year') || REC.RECON_YEAR}.csv"`, 'Cache-Control': 'no-store' } });
 });
 route('GET', 'parts', async ({ env }) => {
   const { results } = await env.DB.prepare("SELECT x.*, p.title AS product_title FROM parts x LEFT JOIN products p ON p.id = x.product_id ORDER BY CASE x.status WHEN 'skladem' THEN 0 ELSE 1 END, x.kind, x.title LIMIT 500").all();

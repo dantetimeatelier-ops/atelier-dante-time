@@ -3,6 +3,7 @@
 import { HttpError } from './http.js';
 import { randomId, getSettings, audit } from './db.js';
 import { str, int, num, oneOf } from './validate.js';
+import { taxExpenseRows, PURPOSES, COMPONENTS, RECON_PLATFORMS } from './recon.js';
 
 export const COST_CATS = { nakup: 'Nákup hodinek', dil: 'Díly', material: 'Materiál', prace: 'Práce', doprava: 'Doprava', poplatky: 'Poplatky', reklama: 'Reklama', provoz: 'Provoz', jine: 'Jiné' };
 export const PART_KINDS = { strojek: 'Strojek', cifernik: 'Ciferník', rucicky: 'Ručičky', pouzdro: 'Pouzdro', sklo: 'Sklo', remen: 'Řemínek', naramek: 'Náramek', korunka: 'Korunka', krabicka: 'Krabička', jine: 'Jiné' };
@@ -89,6 +90,10 @@ export async function overview(env, year) {
     if (c.category === 'nakup') m.purchases += amt;
     if (!c.product_id && !c.commission_id) m.overhead += amt;
   }
+  // Rekonstrukce 2026: potvrzené položky ze souhrnných PDF (AliExpress, Temu) – skutečně zaplaceno, bez soukromých
+  const { results: rl } = await env.DB.prepare("SELECT order_date, amount_czk, purpose FROM recon_lines WHERE status = 'potvrzeno' AND purpose <> 'soukrome' AND substr(order_date,1,4) = ?").bind(y).all().catch(() => ({ results: [] }));
+  let recon = 0;
+  for (const r of rl) { const m = months[idx(r.order_date)]; m.costs += r.amount_czk || 0; recon += r.amount_czk || 0; if (r.purpose !== 'komponent' && r.purpose !== 'obaly') m.overhead += r.amount_czk || 0; }
   const { results: pc } = await env.DB.prepare("SELECT purchase_date, unit_cost_czk, qty FROM parts WHERE substr(COALESCE(purchase_date,''),1,4) = ?").bind(y).all();
   for (const x of pc) months[idx(x.purchase_date)].costs += (x.unit_cost_czk || 0) * (x.qty || 1);
   for (const m of months) m.profit = m.revenue - m.costs;
@@ -105,7 +110,7 @@ export async function overview(env, year) {
   }
   pieces.sort((a, b) => (b.margin ?? -1e12) - (a.margin ?? -1e12));
   const revenue = sum('revenue');
-  return { year: y, goal, goalPct: Math.round((revenue / goal) * 1000) / 10, months, revenue, costs: sum('costs'), purchases: sum('purchases'), overhead: sum('overhead'), profit: revenue - sum('costs'), stockValue, pieces, rate };
+  return { year: y, goal, goalPct: Math.round((revenue / goal) * 1000) / 10, months, revenue, recon, costs: sum('costs'), purchases: sum('purchases'), overhead: sum('overhead'), profit: revenue - sum('costs'), stockValue, pieces, rate };
 }
 
 /** CSV pro účetní: náklady a vystavené faktury za období (středník, UTF-8 s BOM pro Excel). */
@@ -114,8 +119,21 @@ export async function exportCsv(env, kind, from, to) {
   const esc = (v) => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   let rows;
   if (kind === 'naklady') {
-    const { results } = await env.DB.prepare("SELECT c.cost_date, c.category, c.description, c.amount_czk, c.hours, c.supplier, c.document_ref, p.title AS hodinky, (SELECT COUNT(*) FROM documents d WHERE d.cost_id = c.id) AS prilohy FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE c.status = 'potvrzeno' AND c.cost_date BETWEEN ? AND ? ORDER BY c.cost_date").bind(f, t).all();
-    rows = [['Datum', 'Druh', 'Popis', 'Částka Kč', 'Hodiny', 'Dodavatel', 'Doklad', 'Hodinky', 'Doklad nahrán'], ...results.map((r) => [r.cost_date, COST_CATS[r.category], r.description, r.amount_czk, r.hours ?? '', r.supplier, r.document_ref, r.hodinky, r.prilohy ? 'ano' : 'ne'])];
+    const { results } = await env.DB.prepare("SELECT c.cost_date, c.category, c.description, c.amount_czk, c.hours, c.supplier, c.document_ref, c.currency, c.amount_orig, c.fx_rate, p.title AS hodinky, (SELECT COUNT(*) FROM documents d WHERE d.cost_id = c.id) AS prilohy FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE c.status = 'potvrzeno' AND c.cost_date BETWEEN ? AND ? ORDER BY c.cost_date").bind(f, t).all();
+    // Jen skutečně zaplacené výdaje. Vlastní práce (hodiny) není výdaj → sloupec jen pro informaci, částka 0.
+    rows = [['Datum', 'Druh', 'Popis', 'Částka Kč', 'Hodiny', 'Dodavatel', 'Doklad', 'Hodinky', 'Doklad nahrán', 'Měna', 'Částka v měně', 'Kurz ČNB', 'Zdroj'],
+      ...results.map((r) => [r.cost_date, COST_CATS[r.category], r.description, r.amount_czk, r.hours ?? '', r.supplier, r.document_ref, r.hodinky, r.prilohy ? 'ano' : 'ne', r.currency || 'CZK', r.amount_orig ?? '', r.fx_rate ?? '', 'evidence nákupů'])];
+    // Rekonstrukce 2026: položky ze souhrnných PDF (soukromé a nevyřešené položky nejsou zahrnuty – viz export „ke kontrole“)
+    for (const l of await taxExpenseRows(env, f, t)) {
+      const orig = Math.round(((l.price_orig || 0) + (l.shipping_orig || 0) - (l.discount_orig || 0) - (l.refund_orig || 0)) * 100) / 100;
+      rows.push([l.order_date, PURPOSES[l.purpose], `${l.title}${l.variant ? ` (${l.variant})` : ''}${l.qty !== 1 ? ` – ${l.qty} ks` : ''}${l.refund_qty ? `, vráceno ${l.refund_qty} ks` : ''}${l.component ? ` [${COMPONENTS[l.component]}]` : ''}`, l.amount_czk, '', l.seller || RECON_PLATFORMS[l.platform] || l.platform, l.order_ref ? `${RECON_PLATFORMS[l.platform] || l.platform} ${l.order_ref}` : '', '', l.filename ? `ano – ${l.filename}` : 'ne', l.currency, orig, l.fx_rate ?? '', 'rekonstrukce 2026 – souhrnné PDF']);
+    }
+    rows.sort((a, b) => (a[0] === 'Datum' ? -1 : b[0] === 'Datum' ? 1 : String(a[0]).localeCompare(String(b[0]))));
+  } else if (kind === 'nezahrnuto') {
+    // Co NENÍ v exportu výdajů: položky ke kontrole, soukromé nákupy a ručně nezapočítané (pro úplnost a kontrolu poradcem)
+    const { results } = await env.DB.prepare("SELECT l.*, d.filename FROM recon_lines l LEFT JOIN documents d ON d.id = l.document_id WHERE (l.status <> 'potvrzeno' OR l.purpose = 'soukrome') AND COALESCE(l.order_date, ?) BETWEEN ? AND ? ORDER BY l.order_date").bind(f, f, t).all().catch(() => ({ results: [] }));
+    const WHY = (l) => (l.status === 'ke_kontrole' ? `ke kontrole: ${l.check_note || ''}` : l.status === 'nezapocitano' ? `nezapočítáno: ${l.excluded_reason || ''}` : 'soukromý nákup');
+    rows = [['Datum', 'Platforma', 'Objednávka', 'Položka', 'Částka Kč', 'Důvod, proč není ve výdajích', 'Podklad'], ...results.map((l) => [l.order_date || '', RECON_PLATFORMS[l.platform] || l.platform, l.order_ref || '', l.title, l.amount_czk ?? '', WHY(l), l.filename || ''])];
   } else {
     const { results } = await env.DB.prepare("SELECT number, kind, channel, substr(issued_at,1,10) AS d, buyer_name, total, pay_currency AS currency, payment_method, paid_at, cancelled_at FROM invoices WHERE mode = 'live' AND substr(issued_at,1,10) BETWEEN ? AND ? ORDER BY issued_at").bind(f, t).all();
     const KIND = { faktura: 'faktura', zalohova: 'zálohová faktura (není tržba)', dobropis: 'opravný doklad' };

@@ -144,7 +144,7 @@ async function guardian(env) {
 }
 
 // ---- Zálohy databáze (soukromé úložiště KV, 30 dní) ----------------------------------------------
-const BACKUP_TABLES = ['products', 'product_images', 'customers', 'orders', 'order_items', 'commissions', 'inquiries', 'withdrawals', 'invoices', 'settings', 'counters', 'warranty_inspections', 'agent_roles', 'approvals', 'audit_log', 'costs', 'parts', 'watch_passports', 'passport_events'];
+const BACKUP_TABLES = ['products', 'product_images', 'customers', 'orders', 'order_items', 'commissions', 'inquiries', 'withdrawals', 'invoices', 'settings', 'counters', 'warranty_inspections', 'agent_roles', 'approvals', 'audit_log', 'costs', 'parts', 'watch_passports', 'passport_events', 'recon_imports', 'recon_lines', 'recon_recipes', 'recon_sales', 'recon_adjustments'];
 // Doklady: v záloze jen evidence (bez souborů – ty chrání vestavěná obnova Cloudflare D1).
 const BACKUP_QUERIES = { documents: 'SELECT id, cost_id, kind, filename, mime, size, sha256, note, created_by, created_at FROM documents' };
 export async function backup(env) {

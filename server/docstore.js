@@ -58,3 +58,12 @@ export async function docComplete(env, id) {
 }
 
 export const removeChunks = (env, id) => env.DB.prepare('DELETE FROM document_chunks WHERE document_id = ?').bind(id).run();
+
+/** Druh souboru podle prvních bajtů (nevěří příponě ani údaji prohlížeče). */
+export const sniff = (b) => {
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
+  if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45) return 'image/webp';
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return 'image/png';
+  if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) return 'application/pdf';
+  return null;
+};

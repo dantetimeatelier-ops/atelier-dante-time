@@ -36,7 +36,7 @@ export async function deleteAiFile(env, fileId, deps = {}) {
 }
 
 /** Pošle dokument modelu a vrátí vyčtený JSON podle schématu. Zapíše náklady do deníku AI. */
-export async function extractJson(env, { b64, fileId, mime, system, prompt, schema }, deps = {}) {
+export async function extractJson(env, { b64, fileId, mime, system, prompt, schema, maxTokens = 8000 }, deps = {}) {
   const st = await aiStatus(env);
   if (!st.ready) { const e = new Error(st.reason); e.code = 'ai_off'; throw e; }
   const client = aiClient(env, deps);
@@ -45,7 +45,7 @@ export async function extractJson(env, { b64, fileId, mime, system, prompt, sche
   const block = mime === 'application/pdf' ? { type: 'document', source } : { type: 'image', source };
   const res = await client.messages.create({
     model: st.model,
-    max_tokens: 8000,
+    max_tokens: Math.min(16000, maxTokens),
     system,
     output_config: { effort: 'low', format: { type: 'json_schema', schema } },
     messages: [{ role: 'user', content: [block, { type: 'text', text: prompt }] }],
