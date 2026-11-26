@@ -17,13 +17,16 @@ export async function aiStatus(env) {
   const model = MODELS[s.ai_model] ? s.ai_model : 'claude-opus-5-5';
   const budget = await aiBudget(env);
   const role = await env.DB.prepare("SELECT active, paused FROM agent_roles WHERE id = 'office'").first().catch(() => null);
-  const enabled = Boolean(env.ANTHROPIC_API_KEY);
+  const enabled = Boolean(cleanKey(env.ANTHROPIC_API_KEY));
   let reason = null;
   if (!enabled) reason = 'AI není zapnutá (chybí klíč Anthropic) – údaje vyplníte ručně';
   else if (role?.paused) reason = 'Role DT Doklady je pozastavená (přehled Systém)';
   else if (budget.blocked && budget.limit > 0) reason = `Měsíční limit AI ${budget.limit} Kč je vyčerpán – údaje vyplníte ručně`;
   return { enabled, ready: enabled && !reason, reason, model, modelName: MODELS[model].name, budget, models: MODELS };
 }
+
+/** Klíč vložený na iPhonu často obsahuje mezeru, konec řádku nebo neviditelný znak → odstranit vše mimo tisknutelné ASCII. */
+export const cleanKey = (k) => String(k || '').replace(/[^\x21-\x7E]/g, '');
 
 const b64 = (bytes) => {
   let s = ''; const chunk = 0x8000;
@@ -35,7 +38,7 @@ const b64 = (bytes) => {
 export async function extractJson(env, { bytes, mime, system, prompt, schema }, deps = {}) {
   const st = await aiStatus(env);
   if (!st.ready) { const e = new Error(st.reason); e.code = 'ai_off'; throw e; }
-  const client = deps.client || new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, baseURL: env.ANTHROPIC_BASE_URL || undefined, maxRetries: 2, timeout: 120000 });
+  const client = deps.client || new Anthropic({ apiKey: cleanKey(env.ANTHROPIC_API_KEY), baseURL: env.ANTHROPIC_BASE_URL || undefined, maxRetries: 2, timeout: 120000 });
   const source = { type: 'base64', media_type: mime, data: b64(bytes) };
   const block = mime === 'application/pdf' ? { type: 'document', source } : { type: 'image', source };
   const res = await client.messages.create({
