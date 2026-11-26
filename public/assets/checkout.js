@@ -111,7 +111,7 @@
     // Na celou obrazovku (na iPhonu jinak lišta prohlížeče zakryje tlačítko pro potvrzení výběru dole v mapě)
     document.body.insertAdjacentHTML('beforeend', `<div data-bk-modal role="dialog" aria-modal="true" aria-label="${L('Výběr Balíkovny', 'Choose Balíkovna')}" style="position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center">
       <div style="width:min(960px,100%);height:100%;max-height:min(760px,100dvh);background:#fff;overflow:hidden;display:flex;flex-direction:column">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:#111;color:#f2f2f2"><span>${L('Vyberte Balíkovnu a potvrďte ji v mapě', 'Choose Balíkovna and confirm it in the map')}</span><button type="button" class="btn ghost" data-bk-close style="min-height:36px;padding:6px 14px">${L('Zavřít', 'Close')}</button></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:#111;color:#f2f2f2"><span>${L('Klepněte na místo, sjeďte v mapě dolů pod otevírací dobu a potvrďte tlačítkem výběru', 'Tap a point, scroll down below the opening hours and confirm with the select button')}</span><button type="button" class="btn ghost" data-bk-close style="min-height:36px;padding:6px 14px">${L('Zavřít', 'Close')}</button></div>
         <iframe src="${url}" title="${L('Mapa výdejních míst Balíkovny', 'Balíkovna pickup point map')}" allow="geolocation" style="flex:1;border:0;width:100%;min-height:0"></iframe>
       </div></div>`);
     document.documentElement.style.overflow = 'hidden';
