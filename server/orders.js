@@ -11,6 +11,7 @@ import { EU_COUNTRIES, countryName, czkToEurCents, formatEur } from '../src/shop
 import { legalDoc, LEGAL_VERSION } from '../src/legal/docs.mjs';
 import { TERMS } from '../src/terms.mjs';
 import { createForOrder } from './warranty.js';
+import { onDelivered } from './passport.js';
 
 // Texty e-mailů v jazyce objednávky (zákazníci z EU objednávají i anglicky)
 const tr = (o, cs, en) => (o?.lang === 'en' ? en : cs);
@@ -228,6 +229,7 @@ export async function markDelivered(env, orderId, deliveredOn, actor) {
     const { setHandover } = await import('./warranty.js');
     for (const r of results) await setHandover(env, r.id, day, actor);
   }
+  try { await onDelivered(env, orderId, day, actor); } catch (e) { console.error('Pas: založení selhalo', e?.message); }
   await audit(env, actor, 'objednavka_prevzata', 'order', orderId, { day });
 }
 
@@ -242,6 +244,7 @@ export async function markPaid(env, orderId, actor, origin) {
     // Dobírka: zákazník platí při převzetí → den platby = skutečné převzetí (lze upravit v administraci)
     await env.DB.prepare("UPDATE orders SET status='completed', paid_at=?, completed_at=?, delivered_on=COALESCE(delivered_on, ?), updated_at=? WHERE id=?").bind(t, t, t.slice(0, 10), t, orderId).run();
     await createForOrder(env, { ...order, delivered_on: t.slice(0, 10) }, t.slice(0, 10));
+    try { await onDelivered(env, orderId, t.slice(0, 10), actor); } catch (e) { console.error('Pas: založení selhalo', e?.message); }
     const inv = await issueInvoice(env, orderId);
     await audit(env, actor, 'dobirka_zaplacena', 'order', orderId);
     await invoiceEmail(env, orderId, inv, origin);

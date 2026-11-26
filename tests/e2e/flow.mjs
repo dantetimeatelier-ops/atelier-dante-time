@@ -169,6 +169,25 @@ try {
   await page.getByText('Provedeno', { exact: true }).waitFor();
   await page.getByText('Zákonná práva do').waitFor();
   step('převzetí zapsáno, garanční prohlídka založena a zapsán protokol');
+  // 5c) Digitální pas: vznikl sám při převzetí, má záznam o předání a prohlídce, veřejná stránka bez zákazníka
+  await page.goto(`${BASE}/admin/#/pasy`);
+  await page.locator('.list a.item').first().click();
+  await page.getByText('Předání majiteli', { exact: false }).first().waitFor();
+  await page.getByText('Garanční prohlídka', { exact: false }).first().waitFor();
+  const pasUrl = await page.getByRole('link', { name: 'Otevřít pas ↗' }).getAttribute('href');
+  const pasPath = new URL(pasUrl).pathname;
+  const pas = await page.context().newPage();
+  const pr = await pas.goto(`${BASE}${pasPath}`);
+  assert.equal(pr.status(), 200);
+  await pas.getByText('Pas je platný').waitFor();
+  await pas.getByText('Historie hodinek').waitFor();
+  const pasHtml = await pas.content();
+  assert.ok(!/Jana Testovací|jana@example|Testovací 5|600 000 000/.test(pasHtml), 'pas nesmí obsahovat zákazníka ani cenu');
+  assert.equal((await pas.goto(`${BASE}/pas/ABCDEFGHJKMN`)).status(), 404);
+  await pas.close();
+  const cert = await page.evaluate(async (u) => (await fetch(u)).text(), `${BASE}/api/admin/passports/${page.url().split('/').pop()}/certificate`);
+  assert.match(cert, /Certifikát pravosti/);
+  step('digitální pas: založen při převzetí, historie, veřejné ověření bez osobních údajů, certifikát');
   await page.goto(orderUrl);
 
   // 6) Online odstoupení od smlouvy (dva kroky)

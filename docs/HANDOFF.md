@@ -4,6 +4,15 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-26 – Claude – claude/os-e3-priprava (E2 nasazeno, E3a pas hodinek)
+**Hotovo:** E2 sklad a ekonomika sloučeno (PR #8) a ověřeno na ostrém webu. E3a: digitální pas hodinek s QR
+(`/pas/<kód>`, `/en/passport/<kód>`), historie (předání, prohlídky, renovace), certifikát pravosti k tisku,
+administrace Pasy hodinek. Pas vzniká sám při převzetí. Žádné osobní údaje ani ceny v pasu.
+**Další krok:** E3b doklady – nejdřív bez AI; AI vytěžení až po souhlasu majitele (💰 Claude API, odhad 20–50 Kč/měs., levnější model pod 5 Kč).
+**Pozor na:** stále čeká token „Workers Scripts: Edit“ a GitHub Secret BACKUP_KEY (majitel).
+
+---
+
 ## 2026-11-26 – Claude – main (Dante Time OS E1 nasazeno)
 **Hotovo:** E1 (PR #7): role a oprávnění, DT Guardian (kontroly bez AI, pozastavení rolí), DT Logistics
 (automatické připomínky prohlídek), DT Director (týdenní souhrn), přehled Systém, šifrované zálohy,
