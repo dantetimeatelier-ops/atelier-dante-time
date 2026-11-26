@@ -44,7 +44,7 @@
   const manual = $('[data-pickup-manual]');
   const pickLabel = $('[data-pickup-label]');
   const submitBtn = form.querySelector('button[type=submit]');
-  manual.insertAdjacentHTML('afterend', `<p class="doc-meta" data-zas-map hidden><a href="https://www.zasilkovna.cz/pobocky" target="_blank" rel="noopener noreferrer">${L('Najít výdejní místo Zásilkovny na mapě', 'Find a Packeta pickup point on the map')}</a> ${L('a zkopírujte jeho název a adresu.', 'and copy its name and address.')}</p>`);
+  manual.insertAdjacentHTML('afterend', `<p class="doc-meta" data-zas-map hidden><a href="https://www.zasilkovna.cz/pobocky" target="_blank" rel="noopener noreferrer">${L('Otevřít mapu Zásilkovny', 'Open the Packeta map')}</a> ${L('(v novém okně). Mapa výběr sama nepřenese – opište prosím název a adresu výdejního místa do pole výše.', '(new window). The map cannot send the choice back – please type the pickup point name and address into the field above.')}</p>`);
 
   const radio = (name, opts, selected) => opts.map((o, n) => `<label class="choice"><input type="radio" name="${name}" value="${esc(o.id)}" ${(selected ? o.id === selected : n === 0) ? 'checked' : ''} required><span><span class="t">${esc(o.label)}</span>${o.price != null ? `<br><span class="doc-meta">${o.price === 0 ? L('zdarma', 'free') : fmt(o.price)}</span>` : ''}${o.note ? `<br><span class="doc-meta">${esc(o.note)}</span>` : ''}</span></label>`).join('');
 
@@ -105,28 +105,32 @@
   // Balíkovna: oficiální výběr České pošty v okně (iframe), výsledek přijde zprávou postMessage
   const BALIKOVNA_ORIGIN = 'https://b2c.cpost.cz';
   let bkFrame = null;
-  const closeBk = () => { document.querySelector('[data-bk-modal]')?.remove(); bkFrame = null; };
+  const closeBk = () => { document.querySelector('[data-bk-modal]')?.remove(); bkFrame = null; document.documentElement.style.overflow = ''; };
   const openBalikovna = () => {
     const url = `${BALIKOVNA_ORIGIN}/locations/?type=BALIKOVNY&skipLocation=false&messageId=pickerResult`;
-    document.body.insertAdjacentHTML('beforeend', `<div data-bk-modal role="dialog" aria-modal="true" aria-label="${L('Výběr Balíkovny', 'Choose Balíkovna')}" style="position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.75);display:grid;place-items:center;padding:12px">
-      <div style="width:min(960px,100%);height:min(720px,92vh);background:#fff;border-radius:14px;overflow:hidden;display:flex;flex-direction:column">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#111;color:#f2f2f2"><span>${L('Vyberte Balíkovnu', 'Choose Balíkovna')}</span><button type="button" class="btn ghost" data-bk-close style="min-height:36px;padding:6px 14px">${L('Zavřít', 'Close')}</button></div>
-        <iframe src="${url}" title="${L('Mapa výdejních míst Balíkovny', 'Balíkovna pickup point map')}" allow="geolocation" style="flex:1;border:0;width:100%"></iframe>
+    // Na celou obrazovku (na iPhonu jinak lišta prohlížeče zakryje tlačítko pro potvrzení výběru dole v mapě)
+    document.body.insertAdjacentHTML('beforeend', `<div data-bk-modal role="dialog" aria-modal="true" aria-label="${L('Výběr Balíkovny', 'Choose Balíkovna')}" style="position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center">
+      <div style="width:min(960px,100%);height:100%;max-height:min(760px,100dvh);background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:#111;color:#f2f2f2"><span>${L('Vyberte Balíkovnu a potvrďte ji v mapě', 'Choose Balíkovna and confirm it in the map')}</span><button type="button" class="btn ghost" data-bk-close style="min-height:36px;padding:6px 14px">${L('Zavřít', 'Close')}</button></div>
+        <iframe src="${url}" title="${L('Mapa výdejních míst Balíkovny', 'Balíkovna pickup point map')}" allow="geolocation" style="flex:1;border:0;width:100%;min-height:0"></iframe>
       </div></div>`);
+    document.documentElement.style.overflow = 'hidden';
     bkFrame = document.querySelector('[data-bk-modal] iframe');
     document.querySelector('[data-bk-close]').addEventListener('click', closeBk);
   };
+  // Výsledek z mapy České pošty. Zpráva může přijít i z vnořeného okna mapy, proto se ověřuje jen původ (b2c.cpost.cz).
   window.addEventListener('message', (event) => {
-    if (!bkFrame || event.origin !== BALIKOVNA_ORIGIN || event.source !== bkFrame.contentWindow) return;
+    if (!bkFrame || !/^https:\/\/([a-z0-9-]+\.)*cpost\.cz$/.test(event.origin)) return;
     let data = event.data;
     try { if (typeof data === 'string') data = JSON.parse(data); } catch { return; }
-    if (!data || !['pickerResult', 'pickResult'].includes(data.message) || !data.point) return;
-    const p = data.point;
-    if (!p.id || !p.name) return;
+    const p = data && typeof data === 'object' ? (data.point || (data.message === 'pickerResult' ? data : null)) : null;
+    if (!p || typeof p !== 'object' || p.id == null) return;
     const city = p.municipality_name || p.city || '';
+    const label = [p.name || p.nazev, p.street || p.address || p.adresa, [p.zip || p.psc, city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+    if (!label) return;
     form.pickupPointId.value = String(p.id);
-    form.pickupPointName.value = [p.name, p.street || p.address, [p.zip, city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
-    pickLabel.textContent = form.pickupPointName.value;
+    form.pickupPointName.value = label.slice(0, 200);
+    pickLabel.textContent = `${L('Vybráno:', 'Selected:')} ${form.pickupPointName.value}`;
     closeBk(); update();
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeBk(); });
@@ -141,8 +145,8 @@
     window.Packeta?.Widget.pick(config.packetaKey, (point) => {
       if (!point) return;
       form.pickupPointId.value = String(point.id);
-      form.pickupPointName.value = `${point.name}, ${point.street || ''} ${point.city || ''}`.trim();
-      pickLabel.textContent = form.pickupPointName.value;
+      form.pickupPointName.value = (point.formatedValue || [point.name, point.street, [point.zip, point.city].filter(Boolean).join(' ')].filter(Boolean).join(', ')).slice(0, 200);
+      pickLabel.textContent = `${L('Vybráno:', 'Selected:')} ${form.pickupPointName.value}`;
       update();
     }, { country: 'cz', language: cs ? 'cs' : 'en' });
   });
