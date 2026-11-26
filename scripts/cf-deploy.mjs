@@ -177,10 +177,13 @@ if (process.env.RESEND_API_KEY) {
 }
 
 // 8) Sestavení a nasazení
+// Režim e-shopu ostrého webu má jediný zdroj: SHOP_MODE v [vars] souboru wrangler.toml.
+// Podle něj se řídí server (objednávky) i sestavení stránek, takže se nemohou rozejít.
+const prodMode = (readFileSync(path.join(ROOT, 'wrangler.toml'), 'utf8').split('[[d1_databases]]')[0].match(/^SHOP_MODE\s*=\s*"(\w+)"/m) || [])[1] || 'preview';
 step('Sestavení webu');
 execFileSync('node', ['scripts/build.mjs'], {
   cwd: ROOT, stdio: 'inherit',
-  env: { ...process.env, SHOP_MODE: production ? (process.env.SHOP_MODE_PRODUCTION || 'preview') : 'test', SITE_ENV: production ? 'production' : 'preview' },
+  env: { ...process.env, SHOP_MODE: production ? prodMode : 'test', SITE_ENV: production ? 'production' : 'preview' },
 });
 step(production ? 'Nasazení OSTRÉ verze' : `Nasazení zkušební verze (větev ${branch})`);
 run(['pages', 'deploy', 'dist', '--project-name', PROJECT, '--branch', branch, '--commit-dirty=true']);
