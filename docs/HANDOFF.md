@@ -4,6 +4,16 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-26 – Claude – claude/dt-sales-navrh-odpovedi
+**Hotovo:** E4 – DT Sales. V Poptávkách je u každé poptávky „Návrh odpovědi (AI)“: volitelný pokyn majitele, návrh
+předmětu a textu (vykání, do 120 slov, bez cen, termínů a závazků – co doplnit, vypíše zvlášť), tlačítka „Otevřít
+v e-mailu“ (mailto) a „Kopírovat text“. Nic se neodesílá automaticky. Náklady jdou do `ai_costs` pod rolí `sales`
+a hlídá je stejný měsíční limit (R20); pozastavení role `sales` návrhy vypne. `extractJson` umí i čistý text (bez dokumentu).
+**Další krok:** DT Logistics – sledování zásilek (potřebuje `PACKETA_API_KEY`), import nákupů (podklady majitele).
+**Pozor na:** zpráva zákazníka jde do AI v `<zprava_zakaznika>` jako data; model v návrhu nesmí slibovat ceny.
+
+---
+
 ## 2026-11-26 – Claude – claude/balikovna-bez-pole
 **Hotovo:** u Balíkovny zmizelo ruční pole „Výdejní místo (název a adresa)“ – místo se vybírá jen na mapě (pod tlačítkem se ukáže „Vybráno: …“). Ruční pole zůstává jen u Zásilkovny bez `PACKETA_API_KEY`.
 ## 2026-11-26 – Claude – claude/fotky-zakazek

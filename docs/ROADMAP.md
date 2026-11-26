@@ -142,10 +142,12 @@ nebo schválení majitele se nejprve konzultují.
 - [x] 1. Nová úvodní fotografie (podklad od majitele), úprava pro počítač, tablet i mobil
 - [x] 2a. Ukázkové hodinky odstraněny ze zkušební verze (25. 11.)
 - [ ] 2. Vyčištění e-shopu: ponechat šest skutečných, kontrola fotek, cen, popisů a dostupnosti
-- [ ] 3. Sociální sítě: elegantní ikony Instagram, TikTok, Facebook v horní liště a patičce, návrh další decentní propagace (podklad: odkaz na Facebook)
+- [x] 3. Sociální sítě: elegantní ikony Instagram, TikTok, Facebook v horní liště a patičce, návrh další decentní propagace (podklad: odkaz na Facebook)
 - [ ] 4. Společná kontrola dokumentů: obchodní podmínky, GDPR, reklamační řád, odstoupení, doprava a platba
-- [ ] 5. Faktura ve vizuálním stylu podle vzoru majitele, se zákonnými náležitostmi, maximálně automatické vystavování z objednávek
+- [x] 5. Faktura ve vizuálním stylu podle vzoru majitele, se zákonnými náležitostmi, maximálně automatické vystavování z objednávek
 - [ ] 6. Závěrečná kontrola webu, e-shopu, objednávek, odkazů a mobilního zobrazení
+- [x] 7. Fotografie u zakázek a přiložení fotek k poptávce (26. 11.)
+- [x] 8. E4 – DT Sales: návrh odpovědi na poptávku v administraci (26. 11.); DT Logistics (sledování zásilek) čeká na klíč API Zásilkovny
 
 ## Rozhodnutí, která čekají na majitele
 
