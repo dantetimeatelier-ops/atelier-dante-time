@@ -4,6 +4,13 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-26 – Claude – claude/import-faktur-503, claude/doklady-text (PR #20–#22)
+**Hotovo:** Chyba 503 při hromadném importu cca 2MB faktur: server načítal soubor z D1 (BLOB → velká zátěž CPU na bezplatném Cloudflare) při kontrole duplicity i při čtení AI. Nyní se duplicita ověřuje přes `length()` v SQL, velký soubor se předá AI (Files API, `documents.ai_file_id`, migrace 0016) hned při nahrání a čtení AI ho z D1 nenačítá. Tlačítko „Začít import faktur znovu“ (smaže prodeje `source IN ('import','ai')` a jejich soubory, potvrzení slovem SMAZAT).
+Skutečná příčina 503: D1 převádí BLOB po bajtech na čísla. Proto se nové doklady ukládají jako text base64 (`documents.enc = 'b64'`, migrace 0017, nativní `Uint8Array.toBase64`) a AI dostává base64 přímo. Klient při 503 nahrání i čtení AI až 3× zopakuje.
+**Výsledek:** Všech 40 historických faktur 2026 je importováno, tržby 2026 = 515 200 Kč. Proti tabulce majitele je rozdíl +300 Kč v říjnu; majitel rozhodl ponechat.
+**Další krok:** Import nákupů (náklady jsou zatím 0), pak E4.
+**Pozor na:** Nikdy neukládat ani nečíst velké soubory jako BLOB v D1. Starší BLOB doklady fungují dál, ale jsou drahé.
+
 ## 2026-11-26 – Claude – claude/fakturace (centrální fakturační systém)
 **Hotovo:** fakturace nezávislá na e-shopu: řada DT-RRRR-NNNN (čítač po letech, UNIQUE), zdroj prodeje
 (eshop/vinted/aukro/instagram/facebook/osobne/zakazka/jine), druhy faktura / zálohová / dobropis, vyúčtování zálohy
