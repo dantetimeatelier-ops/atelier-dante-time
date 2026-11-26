@@ -76,7 +76,8 @@
     const widget = (s?.id === 'zasilkovna' && config.packetaKey) || s?.id === 'balikovna';
     $('[data-pick-point]').hidden = !widget;
     $('[data-pick-point]').textContent = s?.id === 'balikovna' ? L('Vybrat Balíkovnu na mapě', 'Choose Balíkovna on the map') : L('Vybrat Zásilkovnu na mapě', 'Choose Packeta point on the map');
-    const manualNeeded = needsPoint && !(s?.id === 'zasilkovna' && config.packetaKey);
+    // Ruční pole jen u Zásilkovny bez mapy v okně (bez klíče API); Balíkovna se vybírá výhradně na mapě
+    const manualNeeded = needsPoint && s?.id === 'zasilkovna' && !config.packetaKey;
     manual.hidden = !manualNeeded;
     manual.querySelector('input').required = Boolean(manualNeeded) && !form.pickupPointId.value;
     $('[data-zas-map]').hidden = !(s?.id === 'zasilkovna' && !config.packetaKey);

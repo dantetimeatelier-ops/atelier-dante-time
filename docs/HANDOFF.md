@@ -4,6 +4,8 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-26 – Claude – claude/balikovna-bez-pole
+**Hotovo:** u Balíkovny zmizelo ruční pole „Výdejní místo (název a adresa)“ – místo se vybírá jen na mapě (pod tlačítkem se ukáže „Vybráno: …“). Ruční pole zůstává jen u Zásilkovny bez `PACKETA_API_KEY`.
 ## 2026-11-26 – Claude – claude/fotky-zakazek
 **Hotovo:** fotografie u zakázek. V detailu zakázky sekce „Fotografie“ (nahrání z fotoaparátu/galerie, zmenšení v telefonu,
 smazání, otevření ve velkém). Formulář služeb na webu má pole „Fotografie hodinek“ (max. 5, zmenší se na 1600 px a odstraní
