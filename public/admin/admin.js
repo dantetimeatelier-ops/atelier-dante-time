@@ -459,6 +459,7 @@
     app.querySelectorAll('[data-delsale]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat tento prodej? Faktura zůstane uložená.')) return; await api('DELETE', `sales/${b.dataset.delsale}`); views.doklady(); })));
     for (const purpose of ['nakup', 'prodej']) {
       app.querySelector(`#up-${purpose}`).addEventListener('change', (e) => run(async () => {
+        const seq = navSeq;
         const files = [...e.target.files]; const prog = app.querySelector('#prog');
         const stats = { ok: 0, review: 0, dup: 0, err: 0 };
         for (const [i, file] of files.entries()) {
@@ -475,7 +476,7 @@
           } catch (err) { stats.err++; row.textContent = `${file.name} – chyba: ${err.message}`; }
         }
         toast(`Hotovo: ${stats.ok} uloženo, ${stats.review} ke kontrole${stats.dup ? `, ${stats.dup} duplicit` : ''}${stats.err ? `, ${stats.err} chyb` : ''}`, stats.err > 0);
-        setTimeout(() => { if (location.hash.startsWith('#/doklady')) views.doklady(); }, stats.err || stats.review ? 6000 : 2000);
+        setTimeout(() => { if (seq === navSeq) views.doklady(); }, stats.err || stats.review ? 6000 : 2000);
       }));
     }
   };
@@ -875,7 +876,9 @@
   };
 
   // --- Směrovač -------------------------------------------------------------------------
+  let navSeq = 0; // zvyšuje se při každém přechodu – zpožděné akce staré obrazovky se pak nespustí
   async function router() {
+    navSeq++;
     const [rawPath, qs] = location.hash.replace(/^#\/?/, '').split('?');
     const q = new URLSearchParams(qs || '');
     const parts = rawPath.split('/').filter(Boolean);
