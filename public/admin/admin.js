@@ -313,8 +313,34 @@
     if (!k) { app.innerHTML = '<p>Zakázka nenalezena.</p>'; return; }
     app.innerHTML = `<p><a href="#/zakazky">← Zakázky</a></p><h1>${esc(k.number)}</h1><p class="small muted">Vytvořeno ${date(k.created_at)}</p>
       <a class="btn block" style="margin-bottom:12px" href="#/faktury/nova?z=${encodeURIComponent(JSON.stringify({ commission_id: k.id, buyer_name: k.customer_name, buyer_email: k.customer_email, items: [{ text: `${L.ctype[k.type]} – ${k.watch || 'hodinky'} (zakázka ${k.number})`, price: k.final_price_czk ?? k.estimate_czk ?? '' }] }))}">Vystavit fakturu</a>
+      <h2>Fotografie</h2>
+      <div class="photos" id="kphotos"><p class="small muted">Načítám…</p></div>
+      <p class="small muted" id="kupl"></p>
       ${commissionForm(k)}`;
     app.querySelector('#kf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `commissions/${id}`, formData(e.target)); toast('Uloženo'); }); });
+    const box = app.querySelector('#kphotos');
+    const draw = async () => {
+      const { photos } = await api('GET', `commissions/${id}/photos`);
+      box.innerHTML = `${photos.map((f) => `<div class="photo">${f.source === 'zakaznik' ? '<span class="first">Od zákazníka</span>' : ''}<a href="/api/admin/commission-photos/${esc(f.id)}/l" target="_blank"><img src="/api/admin/commission-photos/${esc(f.id)}/s" alt="Fotografie zakázky" loading="lazy"></a>
+        <div class="act"><span></span><button data-kdel="${esc(f.id)}" aria-label="Smazat">🗑</button></div></div>`).join('')}
+        <label class="upload">+ Přidat fotky<br>(fotoaparát nebo galerie)<input type="file" accept="image/*" multiple id="kfiles"></label>`;
+      box.querySelectorAll('[data-kdel]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat fotografii?')) return; await api('DELETE', `commission-photos/${b.dataset.kdel}`); await draw(); })));
+      box.querySelector('#kfiles').addEventListener('change', (e) => run(async () => {
+        const files = [...e.target.files]; const info = app.querySelector('#kupl');
+        try {
+          for (const [n, file] of files.entries()) {
+            info.textContent = `Nahrávám ${n + 1} z ${files.length}…`;
+            const large = await resize(file, 2000); const small = await resize(file, 600);
+            const fd = new FormData(); const ext = (b) => (b.type === 'image/webp' ? 'webp' : 'jpg');
+            fd.append('large', large.blob, `l.${ext(large.blob)}`); fd.append('small', small.blob, `s.${ext(small.blob)}`);
+            fd.append('width', large.w); fd.append('height', large.h);
+            await api('POST', `commissions/${id}/photos`, fd);
+          }
+          toast('Fotografie nahrány');
+        } finally { info.textContent = ''; await draw(); }
+      }));
+    };
+    run(draw);
   };
 
   // --- Ekonomika (E2) ---------------------------------------------------------------------
@@ -686,6 +712,7 @@
       <p style="margin:8px 0 4px"><b>${esc(i.name)}</b> · ${esc(L.itype[i.type] || i.type)}${i.product_title ? ` · <a href="/hodinky/${esc(i.product_slug)}" target="_blank">${esc(i.product_title)}</a>` : ''}</p>
       <p class="small"><a href="mailto:${esc(i.email)}?subject=${encodeURIComponent('Re: poptávka Dante Time')}">${esc(i.email)}</a>${i.phone ? ` · <a href="tel:${esc(i.phone)}">${esc(i.phone)}</a>` : ''}</p>
       <p style="white-space:pre-wrap">${esc(i.message)}</p>
+      ${i.photo_ids ? `<div class="photos">${i.photo_ids.split(',').map((f) => `<div class="photo"><a href="/api/admin/commission-photos/${esc(f)}/l" target="_blank"><img src="/api/admin/commission-photos/${esc(f)}/s" alt="Fotografie od zákazníka" loading="lazy"></a></div>`).join('')}</div>` : ''}
       <div class="row"><select data-s="${i.id}" style="flex:1">${Object.entries(L.inq).map(([v, t]) => `<option value="${v}" ${i.status === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
       ${['servis', 'renovace', 'zakazkova_vyroba', 'prestavba', 'jine', 'general'].includes(i.type) ? `<a class="btn" href="#/zakazky/nova?z=${encodeURIComponent(JSON.stringify({ type: ['servis', 'renovace', 'zakazkova_vyroba', 'prestavba'].includes(i.type) ? i.type : 'servis', customer_name: i.name, customer_email: i.email, customer_phone: i.phone, description: i.message, inquiry_id: i.id }))}">→ Zakázka</a>` : ''}</div>
     </div>`).join('') || '<p class="muted">Zatím žádné poptávky.</p>'}</div>`;

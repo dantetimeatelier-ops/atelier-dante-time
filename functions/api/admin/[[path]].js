@@ -18,6 +18,7 @@ import * as DOC from '../../../server/documents.js';
 import * as INV from '../../../server/invoicing.js';
 import { INVOICE_KINDS, SALE_CHANNELS, INVOICE_PAY } from '../../../src/shop/invoice.mjs';
 import * as INB from '../../../server/inbox.js';
+import * as CPH from '../../../server/commission-photos.js';
 import { html } from '../../../server/http.js';
 
 const STATUSES = ['draft', 'available', 'reserved', 'sold', 'in_progress', 'archived'];
@@ -117,6 +118,7 @@ route('GET', 'dashboard', async ({ env }) => {
     env.DB.prepare("DELETE FROM inquiries WHERE created_at < ? AND id NOT IN (SELECT inquiry_id FROM commissions WHERE inquiry_id IS NOT NULL)").bind(yearAgo),
     env.DB.prepare("DELETE FROM admin_sessions WHERE expires_at < ?").bind(new Date().toISOString()),
   ]);
+  try { await CPH.purgeOrphans(env, yearAgo); } catch (e) { console.error('Fotky poptávek:', e?.message); }
   const q = (sql, ...b) => env.DB.prepare(sql).bind(...b).first();
   const counts = {};
   const { results } = await env.DB.prepare('SELECT status, COUNT(*) AS n FROM products GROUP BY status').all();
@@ -368,6 +370,7 @@ route('POST', 'commissions', async ({ env, body, user }) => {
   const id = randomId(); const keys = Object.keys(d);
   await env.DB.prepare(`INSERT INTO commissions (id, ${keys.join(', ')}) VALUES (?, ${keys.map(() => '?').join(', ')})`).bind(id, ...keys.map((k) => d[k])).run();
   await audit(env, user.email, 'zakazka_vytvorena', 'commission', id, { number: d.number });
+  await CPH.linkInquiry(env, d.inquiry_id, id);
   return json({ id, number: d.number }, 201);
 });
 route('PUT', 'commissions/:id', async ({ env, params, body, user }) => {
@@ -377,6 +380,23 @@ route('PUT', 'commissions/:id', async ({ env, params, body, user }) => {
   const keys = Object.keys(d);
   await env.DB.prepare(`UPDATE commissions SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`).bind(...keys.map((k) => d[k]), params.id).run();
   await audit(env, user.email, 'zakazka_upravena', 'commission', params.id, { status: d.status });
+// Fotografie zakázky (z atelieru i od zákazníka) – soukromé, jen po přihlášení
+route('GET', 'commissions/:id/photos', async ({ env, params }) => json({ photos: await CPH.forCommission(env, params.id) }));
+route('POST', 'commissions/:id/photos', async ({ env, params, request, user }) => {
+  const photos = await CPH.forCommission(env, params.id);
+  if (photos.length >= CPH.MAX_PER_COMMISSION) throw new HttpError(`Maximálně ${CPH.MAX_PER_COMMISSION} fotografií na zakázku`);
+  const form = await request.formData();
+  const id = await CPH.save(env, { commissionId: params.id, source: 'atelier', large: form.get('large'), small: form.get('small'), width: form.get('width'), height: form.get('height') });
+  await env.DB.prepare('UPDATE commissions SET updated_at = ? WHERE id = ?').bind(now(), params.id).run();
+  await audit(env, user.email, 'zakazka_foto', 'commission', params.id);
+  return json({ id }, 201);
+});
+route('GET', 'commission-photos/:id/:size', async ({ env, params }) => CPH.file(env, params.id, params.size));
+route('DELETE', 'commission-photos/:id', async ({ env, params, user }) => {
+  const p = await CPH.remove(env, params.id);
+  await audit(env, user.email, 'zakazka_foto_smazano', p.commission_id ? 'commission' : 'inquiry', p.commission_id || p.inquiry_id);
+  return json({ ok: true });
+});
   return json({ ok: true });
 });
 
@@ -427,7 +447,7 @@ route('GET', 'passports/:id/certificate', async ({ env, params }) => html(PAS.ce
 
 // --- Poptávky a odstoupení -----------------------------------------------------------
 route('GET', 'inquiries', async ({ env }) => {
-  const { results } = await env.DB.prepare('SELECT i.*, p.title AS product_title, p.slug AS product_slug FROM inquiries i LEFT JOIN products p ON p.id = i.product_id ORDER BY CASE i.status WHEN \'nova\' THEN 0 ELSE 1 END, i.created_at DESC LIMIT 300').all();
+  const { results } = await env.DB.prepare('SELECT i.*, p.title AS product_title, p.slug AS product_slug, (SELECT group_concat(f.id) FROM commission_photos f WHERE f.inquiry_id = i.id) AS photo_ids FROM inquiries i LEFT JOIN products p ON p.id = i.product_id ORDER BY CASE i.status WHEN \'nova\' THEN 0 ELSE 1 END, i.created_at DESC LIMIT 300').all();
   return json({ inquiries: results });
 });
 route('PUT', 'inquiries/:id', async ({ env, params, body }) => {
