@@ -76,9 +76,28 @@ export async function upload(env, form, actor) {
   if (!mime) throw new HttpError(`${f.name || 'Soubor'}: podporované jsou obrázky (JPEG, PNG, WebP) a PDF`);
   const hash = hex(await crypto.subtle.digest('SHA-256', buf));
   const dup = await env.DB.prepare('SELECT id, cost_id, sale_id FROM documents WHERE sha256 = ?').bind(hash).first();
-  if (dup) return { id: dup.id, duplicate: true, cost_id: dup.cost_id, sale_id: dup.sale_id };
-  const id = randomId();
   const name = str(f.name, { max: 200 });
+  if (dup) {
+    // Soubor už v systému je. Patří-li stále k nákupu/prodeji, je to opravdová duplicita.
+    const linked = (dup.cost_id && await env.DB.prepare('SELECT id FROM costs WHERE id = ?').bind(dup.cost_id).first())
+      || (dup.sale_id && await env.DB.prepare('SELECT id FROM sales WHERE id = ?').bind(dup.sale_id).first());
+    if (linked) return { id: dup.id, duplicate: true, cost_id: dup.cost_id, sale_id: dup.sale_id };
+    // Záznam byl dříve smazán → soubor se použije znovu a vznikne nový koncept
+    const draft = await createDraft(env, purpose, name, actor);
+    await env.DB.prepare("UPDATE documents SET cost_id = ?, sale_id = ?, purpose = ?, ai_status = ? WHERE id = ?")
+      .bind(draft.costId, draft.saleId, purpose, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai', dup.id).run();
+    await audit(env, actor, 'doklad_znovu_pouzit', 'document', dup.id, { purpose });
+    return { id: dup.id, cost_id: draft.costId, sale_id: draft.saleId, reused: true };
+  }
+  const id = randomId();
+  const { costId, saleId } = await createDraft(env, purpose, name, actor);
+  await env.DB.prepare("INSERT INTO documents (id, cost_id, sale_id, kind, purpose, filename, mime, size, sha256, data, created_by, ai_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(id, costId, saleId, purpose === 'prodej' ? 'faktura' : 'jiny', purpose, name, mime, buf.length, hash, buf, actor, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai').run();
+  await audit(env, actor, 'doklad_nahran', 'document', id, { purpose, size: buf.length });
+  return { id, cost_id: costId, sale_id: saleId };
+}
+
+async function createDraft(env, purpose, name, actor) {
   let costId = null; let saleId = null;
   if (purpose === 'nakup') {
     costId = randomId();
@@ -89,10 +108,7 @@ export async function upload(env, form, actor) {
     await env.DB.prepare("INSERT INTO sales (id, issued_on, items, status, source, check_note, created_by) VALUES (?, ?, ?, 'ke_kontrole', 'import', ?, ?)")
       .bind(saleId, now().slice(0, 10), name || 'Prodej', 'Doplňte údaje z faktury', actor).run();
   }
-  await env.DB.prepare("INSERT INTO documents (id, cost_id, sale_id, kind, purpose, filename, mime, size, sha256, data, created_by, ai_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .bind(id, costId, saleId, purpose === 'prodej' ? 'faktura' : 'jiny', purpose, name, mime, buf.length, hash, buf, actor, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai').run();
-  await audit(env, actor, 'doklad_nahran', 'document', id, { purpose, size: buf.length });
-  return { id, cost_id: costId, sale_id: saleId };
+  return { costId, saleId };
 }
 
 // ---- Vytěžení pomocí AI ---------------------------------------------------------------------
