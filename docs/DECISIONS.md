@@ -164,3 +164,12 @@ Upřesnění majitele:
 - Významné změny nejdřív mimo ostrý web. Centrální přehled rolí (aktivita, výsledky, náklady, oprávnění, pozastavení).
 - Souhlas s rozšířením oprávnění Cloudflare v nezbytném rozsahu (minimální oprávnění, bezpečné uložení klíčů).
 - Majitel schvaluje jen zásadní rozhodnutí, nové výdaje a rizikové zásahy, ne drobné technické změny.
+
+## R22 – Jména modelů hodinek (2026-11-26)
+- Každý kus má vlastní jméno modelu ve stylu „Prim <řada> <název> LTD.<číslo>“ (řady Classic / Heritage – ateliér nedělá sportovní hodinky);
+  jméno je hlavní název na webu, na fakturách i v pasu. Jména se nesmí opakovat (kontrola v katalogu).
+- Schválená jména: Prim Classic Soleil LTD.01, Prim Classic Diamant LTD.01, Prim Classic Blanc LTD.01,
+  Prim Heritage Date LTD.01. Adresy stránek beze změny.
+- U každého nového inzerátu z fotografií navrhne agent jméno modelu automaticky (postup v `katalog/README.md`).
+- Upozornění předáno majiteli: „Prim“ je ochranná známka jiného výrobce; majitel zvolil variantu A (na vlastní odpovědnost).
+
