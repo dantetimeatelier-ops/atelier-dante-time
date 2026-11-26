@@ -4,6 +4,17 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-26 – Claude – claude/os-e3b-doklady (E3a nasazeno, E3b doklady bez AI)
+**Hotovo:** E3a pas hodinek sloučen (PR #9) a ověřen na ostrém webu. E3b: doklady k nákladům (fotka/PDF,
+D1 EU, bez GPS, duplicity), přehled Doklady, export „Doklad nahrán“. Oprava: zálohy nezahrnovaly costs,
+parts, watch_passports, passport_events – doplněno (+ evidence dokladů bez souborů).
+**Další krok:** AI vytěžení dokladů jen po souhlasu majitele (💰); doklady z e-mailu (Email Routing, oprávnění tokenu).
+E4 Obchod a logistika (DT Sales návrhy odpovědí bez AI šablonami, sledování zásilek).
+**Pozor na:** ⚖️ zásady ochrany osobních údajů zatím nezmiňují doklady od dodavatelů – fyzických osob
+(např. nákup hodinek od soukromé osoby; právní titul: povinnost archivace účetních dokladů). Zapsáno do LEGAL-REVIEW, text neměněn.
+
+---
+
 ## 2026-11-26 – Claude – claude/os-e3-priprava (E2 nasazeno, E3a pas hodinek)
 **Hotovo:** E2 sklad a ekonomika sloučeno (PR #8) a ověřeno na ostrém webu. E3a: digitální pas hodinek s QR
 (`/pas/<kód>`, `/en/passport/<kód>`), historie (předání, prohlídky, renovace), certifikát pravosti k tisku,

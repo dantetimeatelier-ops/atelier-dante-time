@@ -226,8 +226,16 @@ webu a vytvoří bezpečný základ, na kterém budou všichni agenti stát.
 | Certifikát pravosti k tisku / PDF s QR kódem (A4) | ✅ |
 | Záruční list: text ze schválených podmínek 1.1 se posílá v potvrzení objednávky (§ 2174a) – beze změny | ✅ |
 
-### E3b – Doklady (připraveno k rozhodnutí)
-- **Bez AI (0 Kč):** fotka účtenky z iPhonu → šifrovaně uložená, ručně vyplníte částku a druh; přiřadí se k nákladu.
+### E3b – Doklady
+| Část | Stav |
+|---|---|
+| Doklady bez AI (migrace 0011): fotka nebo PDF účtenky/faktury k nákladu, v databázi D1 (EU), jen pro přihlášenou administraci | ✅ |
+| Fotka se v telefonu zmenší a odstraní se z ní poloha (GPS); duplicitní doklad se pozná a odmítne | ✅ |
+| Více → Doklady: všechny / nepřiřazené, přiřazení k nákladu, otevření, smazání omylu | ✅ |
+| Export pro účetní: sloupec „Doklad nahrán“ | ✅ |
+| Zálohy nově i s náklady, díly, pasy a evidencí dokladů (soubory chrání obnova D1) | ✅ |
+
+- **Bez AI (0 Kč):** hotovo – částku a druh vyplníte ručně.
 - **💰 S AI (vyžaduje souhlas):** Claude API účtenku přečte a vyplní sama. Odhad při 30–50 dokladech měsíčně
   **cca 20–50 Kč/měsíc** (nejschopnější model, ~1 Kč za doklad), s nejlevnějším modelem Haiku pod 5 Kč; obojí se vejde do limitu 300 Kč. Vyžaduje účet Anthropic API s platební kartou a klíč
   (uloží majitel do Cloudflare, ne do repozitáře).

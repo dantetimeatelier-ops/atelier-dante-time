@@ -14,6 +14,7 @@ import * as W from '../../../server/warranty.js';
 import * as OS from '../../../server/os.js';
 import * as FIN from '../../../server/finance.js';
 import * as PAS from '../../../server/passport.js';
+import * as DOC from '../../../server/documents.js';
 import { html } from '../../../server/http.js';
 
 const STATUSES = ['draft', 'available', 'reserved', 'sold', 'in_progress', 'archived'];
@@ -525,14 +526,21 @@ route('GET', 'finance/products/:id', async ({ env, params }) => json(await FIN.p
 route('GET', 'costs', async ({ env, request }) => {
   const u = new URL(request.url).searchParams;
   const where = u.get('overhead') ? 'c.product_id IS NULL AND c.commission_id IS NULL' : '1=1';
-  const { results } = await env.DB.prepare(`SELECT c.*, p.title AS product_title FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE ${where} ORDER BY c.cost_date DESC, c.created_at DESC LIMIT 300`).all();
+  const { results } = await env.DB.prepare(`SELECT c.*, p.title AS product_title, (SELECT COUNT(*) FROM documents d WHERE d.cost_id = c.id) AS docs FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE ${where} ORDER BY c.cost_date DESC, c.created_at DESC LIMIT 300`).all();
   return json({ costs: results, categories: FIN.COST_CATS });
 });
 route('POST', 'costs', async ({ env, body, user }) => json({ id: await FIN.addCost(env, body, user.email) }, 201));
 route('DELETE', 'costs/:id', async ({ env, params, user }) => {
   await env.DB.prepare('DELETE FROM costs WHERE id = ?').bind(params.id).run();
+  await env.DB.prepare('UPDATE documents SET cost_id = NULL WHERE cost_id = ?').bind(params.id).run(); // doklad se nemaže, jen se odpojí
   await audit(env, user.email, 'naklad_smazan', 'cost', params.id); return json({ ok: true });
 });
+// --- Doklady k nákladům (E3b, bez AI) ---------------------------------------------------
+route('GET', 'documents', async ({ env, request }) => json({ documents: await DOC.list(env, { unassigned: !!new URL(request.url).searchParams.get('volne') }), kinds: DOC.DOC_KINDS }));
+route('POST', 'documents', async ({ env, request, user }) => json({ id: await DOC.upload(env, await request.formData(), user.email) }, 201));
+route('PUT', 'documents/:id', async ({ env, params, body, user }) => { await DOC.assign(env, params.id, body.cost_id ? str(body.cost_id, { max: 40 }) : null, user.email); return json({ ok: true }); });
+route('GET', 'documents/:id/file', async ({ env, params, user }) => DOC.file(env, params.id, user.email));
+route('DELETE', 'documents/:id', async ({ env, params, user }) => { await DOC.remove(env, params.id, user.email); return json({ ok: true }); });
 route('GET', 'finance/export', async ({ env, request, user }) => {
   const u = new URL(request.url).searchParams;
   const kind = u.get('kind') === 'faktury' ? 'faktury' : 'naklady';

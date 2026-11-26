@@ -311,7 +311,26 @@
   const costForm = (pre = {}) => `<form id="cf">${sel('category', 'Druh', CC, pre.category || 'dil')}${field('description', 'Popis', pre, 'required')}
     <div class="grid">${field('amount_czk', 'Částka (Kč)', pre, 'inputmode="numeric"')}${field('hours', 'Hodiny práce', pre, 'inputmode="decimal"')}</div>
     <div class="grid">${field('cost_date', 'Datum', { cost_date: today() }, 'type="date"')}${field('supplier', 'Dodavatel', pre)}</div>${field('document_ref', 'Číslo dokladu', pre)}
+    <label>Fotka nebo PDF dokladu (nepovinné)<input type="file" name="file" accept="image/*,application/pdf"></label>
     <button class="btn primary block">Přidat náklad</button></form>`;
+  // Doklad: fotka se v telefonu zmenší a zbaví metadat (GPS), PDF se nahraje beze změny
+  async function uploadDoc(file, costId, extra = {}) {
+    const fd = new FormData();
+    if (file.type === 'application/pdf') fd.append('file', file, file.name);
+    else { const { blob } = await resize(file, 2000); fd.append('file', blob, (file.name || 'doklad').replace(/\.[^.]+$/, '') + (blob.type === 'image/webp' ? '.webp' : '.jpg')); }
+    if (costId) fd.append('cost_id', costId);
+    for (const [k, v] of Object.entries(extra)) if (v) fd.append(k, v);
+    return api('POST', 'documents', fd);
+  }
+  // Uloží náklad z formuláře a případně k němu nahraje doklad
+  async function saveCost(form, extra = {}) {
+    const d = formData(form); delete d.file;
+    const { id } = await api('POST', 'costs', { ...d, ...extra });
+    const f = form.file?.files?.[0];
+    if (f) { try { await uploadDoc(f, id); } catch (e) { toast(`Náklad uložen, doklad ne: ${e.message}`, true); return; } }
+    toast(f ? 'Přidáno i s dokladem' : 'Přidáno');
+  }
+  const docTag = (c) => (c.docs ? ' · <a href="#/doklady">doklad</a>' : '');
 
   views.ekonomika = async (_, q) => {
     const y = q.get('y') || String(new Date().getFullYear());
@@ -339,20 +358,42 @@
       ${e.hasPurchase ? '' : '<div class="card warn small" style="margin-top:12px">Chybí nákupní cena hodinek – přidejte náklad druhu „Nákup hodinek“.</div>'}
       <div class="card" style="margin-top:12px"><table>${Object.entries(e.byCat).map(([k, v]) => `<tr><th>${esc(CC[k] || k)}</th><td>${czk(v)}</td></tr>`).join('')}
         ${e.partsCost ? `<tr><th>Díly ze skladu</th><td>${czk(e.partsCost)}</td></tr>` : ''}${e.hours ? `<tr><th>Práce ${e.hours} h${e.rate ? ` × ${czk(e.rate)}` : ''}</th><td>${e.rate ? czk(e.laborCost) : '<span class="small muted">nastavte sazbu v Ekonomice</span>'}</td></tr>` : ''}</table></div>
-      <h2 style="margin-top:16px">Zapsané náklady</h2><div class="list">${e.costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br><span class="small muted">${esc(CC[c.category])} · ${esc(c.cost_date)}${c.supplier ? ` · ${esc(c.supplier)}` : ''}</span></span><b>${c.amount_czk ? czk(c.amount_czk) : `${c.hours} h`}</b><button class="btn" data-del="${c.id}" aria-label="Smazat">✕</button></div>`).join('') || '<p class="muted">Zatím nic.</p>'}</div>
+      <h2 style="margin-top:16px">Zapsané náklady</h2><div class="list">${e.costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br><span class="small muted">${esc(CC[c.category])} · ${esc(c.cost_date)}${c.supplier ? ` · ${esc(c.supplier)}` : ''}${docTag(c)}</span></span><b>${c.amount_czk ? czk(c.amount_czk) : `${c.hours} h`}</b><button class="btn" data-del="${c.id}" aria-label="Smazat">✕</button></div>`).join('') || '<p class="muted">Zatím nic.</p>'}</div>
       ${e.parts.length ? `<h2 style="margin-top:16px">Použité díly</h2><div class="list">${e.parts.map((x) => `<div class="item"><span class="grow">${esc(x.title)} <span class="small muted">${esc(PK[x.kind])}${x.original ? ' · originál' : ''}</span></span><b>${czk((x.unit_cost_czk || 0) * (x.qty || 1))}</b></div>`).join('')}</div>` : ''}
       <details open style="margin-top:16px"><summary>Přidat náklad</summary>${costForm({ category: e.hasPurchase ? 'dil' : 'nakup' })}</details>`;
-    app.querySelector('#cf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => { await api('POST', 'costs', { ...formData(ev.target), product_id: id }); toast('Přidáno'); views['marze/:id']({ id }); }); });
+    app.querySelector('#cf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => { await saveCost(ev.target, { product_id: id }); views['marze/:id']({ id }); }); });
     app.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat náklad?')) return; await api('DELETE', `costs/${b.dataset.del}`); views['marze/:id']({ id }); })));
   };
 
   views.naklady = async () => {
     const { costs } = await api('GET', 'costs');
-    app.innerHTML = `<h1>Náklady</h1><p class="small muted">Společné provozní náklady (krabičky, nářadí, reklama, hosting…). Náklady konkrétních hodinek zapisujte u hodinek.</p>
+    app.innerHTML = `<h1>Náklady</h1><p class="small muted">Společné provozní náklady (krabičky, nářadí, reklama, hosting…). Náklady konkrétních hodinek zapisujte u hodinek. <a href="#/doklady">Doklady</a></p>
       <details><summary>Přidat provozní náklad</summary>${costForm({ category: 'provoz' })}</details>
-      <div class="list" style="margin-top:12px">${costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br><span class="small muted">${esc(CC[c.category])} · ${esc(c.cost_date)}${c.product_title ? ` · ${esc(c.product_title)}` : ' · provoz'}</span></span><b>${c.amount_czk ? czk(c.amount_czk) : `${c.hours} h`}</b><button class="btn" data-del="${c.id}" aria-label="Smazat">✕</button></div>`).join('') || '<p class="muted">Zatím žádné náklady.</p>'}</div>`;
-    app.querySelector('#cf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => { await api('POST', 'costs', formData(ev.target)); toast('Přidáno'); views.naklady(); }); });
+      <div class="list" style="margin-top:12px">${costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br><span class="small muted">${esc(CC[c.category])} · ${esc(c.cost_date)}${c.product_title ? ` · ${esc(c.product_title)}` : ' · provoz'}${docTag(c)}</span></span><b>${c.amount_czk ? czk(c.amount_czk) : `${c.hours} h`}</b><button class="btn" data-del="${c.id}" aria-label="Smazat">✕</button></div>`).join('') || '<p class="muted">Zatím žádné náklady.</p>'}</div>`;
+    app.querySelector('#cf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => { await saveCost(ev.target); views.naklady(); }); });
     app.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat náklad?')) return; await api('DELETE', `costs/${b.dataset.del}`); views.naklady(); })));
+  };
+
+  views.doklady = async (_, q) => {
+    const volne = q.get('volne') === '1';
+    const [{ documents, kinds }, { costs }] = await Promise.all([api('GET', `documents${volne ? '?volne=1' : ''}`), api('GET', 'costs')]);
+    const kb = (n) => `${Math.max(1, Math.round(n / 1024))} kB`;
+    app.innerHTML = `<h1>Doklady</h1><p class="small muted">Účtenky a faktury od dodavatelů. Uloženy v zabezpečené databázi (EU), vidí je jen přihlášená administrace. Fotky se v telefonu zmenší a odstraní se z nich poloha (GPS).</p>
+      <p><a href="#/doklady"${volne ? '' : ' aria-current="page"'}>Všechny</a> · <a href="#/doklady?volne=1"${volne ? ' aria-current="page"' : ''}>Nepřiřazené</a></p>
+      <details><summary>Nahrát doklad (přiřadit lze později)</summary><form class="card" id="uf">
+        <label>Druh<select name="kind">${Object.entries(kinds).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label>
+        <label>Fotka nebo PDF<input type="file" name="file" accept="image/*,application/pdf" required></label>
+        <label>Poznámka<input name="note" maxlength="500"></label>
+        <button class="btn primary block">Nahrát</button></form></details>
+      <div class="list" style="margin-top:12px">${documents.map((d) => `<div class="item"><span class="grow"><a class="t" href="/api/admin/documents/${esc(d.id)}/file" target="_blank" rel="noopener">${esc(kinds[d.kind])}${d.filename ? ` – ${esc(d.filename)}` : ''}</a><br>
+        <span class="small muted">${date(d.created_at)} · ${kb(d.size)}${d.note ? ` · ${esc(d.note)}` : ''}</span><br>
+        <label class="small">Náklad<select data-assign="${d.id}"><option value="">– nepřiřazeno –</option>${costs.map((c) => `<option value="${c.id}" ${c.id === d.cost_id ? 'selected' : ''}>${esc(c.cost_date)} · ${esc(c.description).slice(0, 50)} · ${czk(c.amount_czk)}</option>`).join('')}</select></label></span>
+        <button class="btn" data-del="${d.id}" aria-label="Smazat doklad">✕</button></div>`).join('') || '<p class="muted">Zatím žádné doklady.</p>'}</div>`;
+    app.querySelector('#uf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => {
+      await uploadDoc(ev.target.file.files[0], null, { kind: ev.target.kind.value, note: ev.target.note.value }); toast('Doklad nahrán'); views.doklady(_, q);
+    }); });
+    app.querySelectorAll('[data-assign]').forEach((el) => el.addEventListener('change', () => run(async () => { await api('PUT', `documents/${el.dataset.assign}`, { cost_id: el.value }); toast('Uloženo'); })));
+    app.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat doklad? Účetní doklady je nutné archivovat – mažte jen omyl nebo duplikát.')) return; await api('DELETE', `documents/${b.dataset.del}`); views.doklady(_, q); })));
   };
 
   const partForm = (x = {}, products = []) => `<form id="pf">${sel('kind', 'Druh', PK, x.kind || 'strojek')}${field('title', 'Název (např. PRIM kalibr 66)', x, 'required')}
@@ -687,6 +728,7 @@
     app.innerHTML = `<h1>Více</h1><div class="list">
       <a class="item" href="#/ekonomika"><span class="grow">Ekonomika – tržby, náklady, zisk, export pro účetní</span></a>
       <a class="item" href="#/naklady"><span class="grow">Náklady a provozní výdaje</span></a>
+      <a class="item" href="#/doklady"><span class="grow">Doklady (účtenky, faktury od dodavatelů)</span></a>
       <a class="item" href="#/dily"><span class="grow">Sklad dílů</span></a>
       <a class="item" href="#/system"><span class="grow">Systém Dante Time OS (role, kontroly, zálohy)</span></a>
       <a class="item" href="#/prohlidky"><span class="grow">Garanční prohlídky</span></a>

@@ -144,11 +144,16 @@ async function guardian(env) {
 }
 
 // ---- Zálohy databáze (soukromé úložiště KV, 30 dní) ----------------------------------------------
-const BACKUP_TABLES = ['products', 'product_images', 'customers', 'orders', 'order_items', 'commissions', 'inquiries', 'withdrawals', 'invoices', 'settings', 'counters', 'warranty_inspections', 'agent_roles', 'approvals', 'audit_log'];
+const BACKUP_TABLES = ['products', 'product_images', 'customers', 'orders', 'order_items', 'commissions', 'inquiries', 'withdrawals', 'invoices', 'settings', 'counters', 'warranty_inspections', 'agent_roles', 'approvals', 'audit_log', 'costs', 'parts', 'watch_passports', 'passport_events'];
+// Doklady: v záloze jen evidence (bez souborů – ty chrání vestavěná obnova Cloudflare D1).
+const BACKUP_QUERIES = { documents: 'SELECT id, cost_id, kind, filename, mime, size, sha256, note, created_by, created_at FROM documents' };
 export async function backup(env) {
   const data = {}; let rows = 0;
   for (const t of BACKUP_TABLES) {
     try { const { results } = await env.DB.prepare(`SELECT * FROM ${t}`).all(); data[t] = results; rows += results.length; } catch { /* tabulka v této verzi není */ }
+  }
+  for (const [t, sql] of Object.entries(BACKUP_QUERIES)) {
+    try { const { results } = await env.DB.prepare(sql).all(); data[t] = results; rows += results.length; } catch { /* tabulka v této verzi není */ }
   }
   // Zálohy obsahují osobní údaje → šifrují se (AES-256-GCM) klíčem BACKUP_KEY, který zná jen majitel.
   if (!env.BACKUP_KEY || env.BACKUP_KEY.length < 32) {
