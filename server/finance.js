@@ -35,9 +35,10 @@ export async function addCost(env, b, actor) {
 export async function productEconomics(env, productId) {
   const s = await getSettings(env);
   const rate = Number(s.labor_rate_czk) || 0;
-  const { results: costs } = await env.DB.prepare('SELECT c.*, (SELECT COUNT(*) FROM documents d WHERE d.cost_id = c.id) AS docs FROM costs c WHERE c.product_id = ? ORDER BY c.cost_date, c.created_at').bind(productId).all();
+  const { results: costs } = await env.DB.prepare("SELECT c.*, (SELECT COUNT(*) FROM documents d WHERE d.cost_id = c.id) AS docs FROM costs c WHERE c.product_id = ? AND c.status = 'potvrzeno' ORDER BY c.cost_date, c.created_at").bind(productId).all();
   const { results: parts } = await env.DB.prepare("SELECT * FROM parts WHERE product_id = ? AND status IN ('pouzito','prodano')").bind(productId).all();
-  const sale = await env.DB.prepare(`SELECT i.price_czk, o.number, o.created_at FROM order_items i JOIN orders o ON o.id = i.order_id WHERE i.product_id = ? AND o.status IN ${SOLD} ORDER BY o.created_at DESC LIMIT 1`).bind(productId).first();
+  const sale = (await env.DB.prepare(`SELECT i.price_czk, o.number, o.created_at FROM order_items i JOIN orders o ON o.id = i.order_id WHERE i.product_id = ? AND o.status IN ${SOLD} ORDER BY o.created_at DESC LIMIT 1`).bind(productId).first())
+    || (await env.DB.prepare("SELECT total_czk AS price_czk, COALESCE(number, 'prodej mimo e-shop') AS number, issued_on AS created_at FROM sales WHERE product_id = ? AND status = 'potvrzeno' ORDER BY issued_on DESC LIMIT 1").bind(productId).first());
   const p = await env.DB.prepare('SELECT price_czk, status FROM products WHERE id = ?').bind(productId).first();
   const byCat = {};
   let hours = 0;
@@ -66,7 +67,10 @@ export async function overview(env, year) {
   const idx = (d) => Number(String(d).slice(5, 7)) - 1;
   const { results: inv } = await env.DB.prepare("SELECT issued_at, total FROM invoices WHERE cancelled_at IS NULL AND mode = 'live' AND substr(issued_at,1,4) = ?").bind(y).all();
   for (const r of inv) months[idx(r.issued_at)].revenue += r.total;
-  const { results: cs } = await env.DB.prepare('SELECT cost_date, category, amount_czk, hours, product_id, commission_id FROM costs WHERE substr(cost_date,1,4) = ?').bind(y).all();
+  // Prodeje mimo systém a importované faktury (bez duplicit s fakturami vystavenými v systému)
+  const { results: sl } = await env.DB.prepare("SELECT issued_on, total_czk FROM sales WHERE status = 'potvrzeno' AND substr(issued_on,1,4) = ? AND (number IS NULL OR number NOT IN (SELECT number FROM invoices WHERE mode = 'live'))").bind(y).all();
+  for (const r of sl) months[idx(r.issued_on)].revenue += r.total_czk;
+  const { results: cs } = await env.DB.prepare("SELECT cost_date, category, amount_czk, hours, product_id, commission_id FROM costs WHERE status = 'potvrzeno' AND substr(cost_date,1,4) = ?").bind(y).all();
   for (const c of cs) {
     const m = months[idx(c.cost_date)];
     const amt = c.amount_czk + Math.round((c.hours || 0) * rate);
@@ -99,11 +103,13 @@ export async function exportCsv(env, kind, from, to) {
   const esc = (v) => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   let rows;
   if (kind === 'naklady') {
-    const { results } = await env.DB.prepare('SELECT c.cost_date, c.category, c.description, c.amount_czk, c.hours, c.supplier, c.document_ref, p.title AS hodinky, (SELECT COUNT(*) FROM documents d WHERE d.cost_id = c.id) AS prilohy FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE c.cost_date BETWEEN ? AND ? ORDER BY c.cost_date').bind(f, t).all();
+    const { results } = await env.DB.prepare("SELECT c.cost_date, c.category, c.description, c.amount_czk, c.hours, c.supplier, c.document_ref, p.title AS hodinky, (SELECT COUNT(*) FROM documents d WHERE d.cost_id = c.id) AS prilohy FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE c.status = 'potvrzeno' AND c.cost_date BETWEEN ? AND ? ORDER BY c.cost_date").bind(f, t).all();
     rows = [['Datum', 'Druh', 'Popis', 'Částka Kč', 'Hodiny', 'Dodavatel', 'Doklad', 'Hodinky', 'Doklad nahrán'], ...results.map((r) => [r.cost_date, COST_CATS[r.category], r.description, r.amount_czk, r.hours ?? '', r.supplier, r.document_ref, r.hodinky, r.prilohy ? 'ano' : 'ne'])];
   } else {
     const { results } = await env.DB.prepare("SELECT number, substr(issued_at,1,10) AS d, buyer_name, total, pay_currency AS currency, payment_method, paid_at, cancelled_at FROM invoices WHERE mode = 'live' AND substr(issued_at,1,10) BETWEEN ? AND ? ORDER BY issued_at").bind(f, t).all();
-    rows = [['Číslo', 'Datum vystavení', 'Odběratel', 'Celkem Kč', 'Měna platby', 'Způsob platby', 'Uhrazeno', 'Stornováno'], ...results.map((r) => [r.number, r.d, r.buyer_name, r.total, r.currency || 'CZK', r.payment_method, r.paid_at ? r.paid_at.slice(0, 10) : '', r.cancelled_at ? r.cancelled_at.slice(0, 10) : ''])];
+    rows = [['Číslo', 'Datum vystavení', 'Odběratel', 'Celkem Kč', 'Měna platby', 'Způsob platby', 'Uhrazeno', 'Stornováno', 'Zdroj'], ...results.map((r) => [r.number, r.d, r.buyer_name, r.total, r.currency || 'CZK', r.payment_method, r.paid_at ? r.paid_at.slice(0, 10) : '', r.cancelled_at ? r.cancelled_at.slice(0, 10) : '', 'Dante Time OS'])];
+    const { results: imp } = await env.DB.prepare("SELECT number, issued_on, buyer_name, total_czk, currency, payment_method FROM sales WHERE status = 'potvrzeno' AND issued_on BETWEEN ? AND ? AND (number IS NULL OR number NOT IN (SELECT number FROM invoices WHERE mode = 'live')) ORDER BY issued_on").bind(f, t).all();
+    rows.push(...imp.map((r) => [r.number || '', r.issued_on, r.buyer_name, r.total_czk, r.currency, r.payment_method || '', '', '', 'import / mimo e-shop']));
   }
   return `﻿${rows.map((r) => r.map(esc).join(';')).join('\r\n')}\r\n`;
 }

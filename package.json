@@ -23,6 +23,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@anthropic-ai/sdk": "1.14.0",
     "qrcode-generator": "2.0.4"
   }
 }

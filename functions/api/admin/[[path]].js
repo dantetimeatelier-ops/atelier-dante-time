@@ -15,6 +15,7 @@ import * as OS from '../../../server/os.js';
 import * as FIN from '../../../server/finance.js';
 import * as PAS from '../../../server/passport.js';
 import * as DOC from '../../../server/documents.js';
+import * as INB from '../../../server/inbox.js';
 import { html } from '../../../server/http.js';
 
 const STATUSES = ['draft', 'available', 'reserved', 'sold', 'in_progress', 'archived'];
@@ -541,6 +542,25 @@ route('POST', 'documents', async ({ env, request, user }) => json({ id: await DO
 route('PUT', 'documents/:id', async ({ env, params, body, user }) => { await DOC.assign(env, params.id, body.cost_id ? str(body.cost_id, { max: 40 }) : null, user.email); return json({ ok: true }); });
 route('GET', 'documents/:id/file', async ({ env, params, user }) => DOC.file(env, params.id, user.email));
 route('DELETE', 'documents/:id', async ({ env, params, user }) => { await DOC.remove(env, params.id, user.email); return json({ ok: true }); });
+// --- Nákupy a prodeje (E3b v2): nahrání, AI vytěžení, kontrola, ruční zadání ------------------
+route('GET', 'inbox', async ({ env }) => json(await INB.overview(env)));
+route('POST', 'inbox/upload', async ({ env, request, user }) => json(await INB.upload(env, await request.formData(), user.email), 201));
+route('POST', 'inbox/:id/extract', async ({ env, params, user }) => json(await INB.extract(env, params.id, user.email)));
+route('POST', 'purchases', async ({ env, body, user }) => json({ id: await INB.savePurchase(env, null, body, user.email) }, 201));
+route('PUT', 'purchases/:id', async ({ env, params, body, user }) => json({ id: await INB.savePurchase(env, params.id, body, user.email, { confirm: body.confirm !== false }) }));
+route('POST', 'sales', async ({ env, body, user }) => json({ id: await INB.saveSale(env, null, body, user.email) }, 201));
+route('PUT', 'sales/:id', async ({ env, params, body, user }) => json({ id: await INB.saveSale(env, params.id, body, user.email, { confirm: body.confirm !== false }) }));
+route('DELETE', 'sales/:id', async ({ env, params, user }) => {
+  await env.DB.prepare('DELETE FROM sales WHERE id = ?').bind(params.id).run();
+  await env.DB.prepare('UPDATE documents SET sale_id = NULL WHERE sale_id = ?').bind(params.id).run();
+  await audit(env, user.email, 'prodej_smazan', 'sale', params.id); return json({ ok: true });
+});
+route('PUT', 'finance/ai-model', async ({ env, body, user }) => {
+  const { MODELS } = await import('../../../server/ai.js');
+  const m = oneOf(body.ai_model, Object.keys(MODELS), 'model');
+  await env.DB.prepare("INSERT INTO settings (key, value) VALUES ('ai_model', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").bind(m).run();
+  await audit(env, user.email, 'ai_model', 'settings', 'ai_model', { model: m }); return json({ ok: true });
+});
 route('GET', 'finance/export', async ({ env, request, user }) => {
   const u = new URL(request.url).searchParams;
   const kind = u.get('kind') === 'faktury' ? 'faktury' : 'naklady';

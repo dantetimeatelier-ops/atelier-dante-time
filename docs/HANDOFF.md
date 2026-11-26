@@ -4,6 +4,18 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-26 – Claude – claude/os-e3b-nakupy-prodeje (E3b v2 podle majitele)
+**Hotovo:** univerzální evidence nákupů a prodejů: nahrání screenshotů/PDF/fotek (i hromadně), DT Doklady (Claude API,
+strukturovaný výstup, effort low, limit 300 Kč), automatické potvrzení spolehlivých, „Ke kontrole“ pro nejisté,
+kurzy ČNB (tabulka fx_rates), přiřazení hodinky/sklad/provoz, ruční zadání, duplicity, import faktur do `sales`,
+tržby = faktury systému + import (bez dvojího započtení), export pro účetní. Migrace 0012. Závislost @anthropic-ai/sdk.
+Ověřeno lokálně proti simulovanému API (klíč jde jako Authorization: Bearer – chování SDK 1.x).
+**Čeká na majitele:** klíč ANTHROPIC_API_KEY v Cloudflare (💰), ⚖️ souhlas s doplněním Zásad (LEGAL-REVIEW 2g).
+**Pozor na:** www.cnb.cz je z vývojového prostředí blokované – kurz ověřit na ostrém webu prvním nákupem v cizí měně
+(při výpadku jde položka ke kontrole a kurz se doplní ručně).
+
+---
+
 ## 2026-11-26 – Claude – claude/os-e3b-doklady (E3a nasazeno, E3b doklady bez AI)
 **Hotovo:** E3a pas hodinek sloučen (PR #9) a ověřen na ostrém webu. E3b: doklady k nákladům (fotka/PDF,
 D1 EU, bez GPS, duplicity), přehled Doklady, export „Doklad nahrán“. Oprava: zálohy nezahrnovaly costs,
