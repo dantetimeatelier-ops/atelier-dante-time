@@ -61,6 +61,8 @@ export function loadCatalog(dir = CATALOG_DIR) {
       }
       return item;
     });
+    const dupName = out.find((x) => String(x.title).trim().toLowerCase() === String(w.title).trim().toLowerCase());
+    if (dupName) err(`název modelu „${w.title}“ už má katalog/${dupName.slug} – každý kus musí mít jiný název`);
     out.push({ ...w, id: `kat-${slug}`, slug, fotky });
   }
   return out;
