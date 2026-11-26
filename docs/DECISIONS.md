@@ -119,3 +119,10 @@ u nabídky a objednávání konkrétních služeb, nic se trvale nemaže. **Zás
 nebo struktury webu agent nejdřív předloží majiteli ke schválení.** Priorita: dokončení
 a spuštění webu.
 
+
+## R16 – Úvodní sekce hlavní stránky (2026-11-26)
+**Rozhodl:** majitel („schvaluji úvod“)
+**Rozhodnutí:** Úvodní sekce podle návrhu majitele: velký zlatý štít DT, nápis DANTE TIME,
+„Dáváme času nový život“ s linkami a ornamentem, „Tradice. Řemeslo. Čas.“ a jedno zlaté
+orámované tlačítko „Objevte naši tvorbu“; pod ním malý odkaz „Servis a zakázka na míru“.
+Fotografie zůstává. Krátký popis ateliéru z úvodu odebrán.
