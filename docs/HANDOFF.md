@@ -4,6 +4,17 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-26 – Claude – claude/oprava-vyber-vydejniho-mista
+**Hotovo:** majitel nemohl v pokladně potvrdit výdejní místo (Balíkovna i Zásilkovna). Okno Balíkovny přes celou
+obrazovku (na iPhonu zakrývala lišta prohlížeče spodní část mapy), zpráva z mapy se ověřuje jen podle původu
+`*.cpost.cz` (dříve i podle okna – zpráva z vnořeného okna mapy se zahodila), tolerantnější čtení údajů bodu,
+text „Vybráno: …“. Permissions-Policy povoluje polohu pro mapy Balíkovny a Zásilkovny (dříve zakázána všem).
+Zásilkovna bez `PACKETA_API_KEY` jen odkazuje na mapu v novém okně – výběr se nepřenese, text to nyní říká.
+**Pozor na:** neověřeno v prohlížeči proti skutečné mapě České pošty (z vývojového prostředí nedostupná) – ověřit na iPhonu.
+Zjistit, zda je v Cloudflare nastaven `PACKETA_API_KEY`.
+
+---
+
 ## 2026-11-26 – Claude – claude/import-faktur-503, claude/doklady-text (PR #20–#22)
 **Hotovo:** Chyba 503 při hromadném importu cca 2MB faktur: server načítal soubor z D1 (BLOB → velká zátěž CPU na bezplatném Cloudflare) při kontrole duplicity i při čtení AI. Nyní se duplicita ověřuje přes `length()` v SQL, velký soubor se předá AI (Files API, `documents.ai_file_id`, migrace 0016) hned při nahrání a čtení AI ho z D1 nenačítá. Tlačítko „Začít import faktur znovu“ (smaže prodeje `source IN ('import','ai')` a jejich soubory, potvrzení slovem SMAZAT).
 Skutečná příčina 503: D1 převádí BLOB po bajtech na čísla. Proto se nové doklady ukládají jako text base64 (`documents.enc = 'b64'`, migrace 0017, nativní `Uint8Array.toBase64`) a AI dostává base64 přímo. Klient při 503 nahrání i čtení AI až 3× zopakuje.

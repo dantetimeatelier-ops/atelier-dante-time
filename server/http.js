@@ -20,7 +20,7 @@ export const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(self "https://b2c.cpost.cz" "https://widget.packeta.com"), payment=()',
   'Cross-Origin-Opener-Policy': 'same-origin',
 };
 

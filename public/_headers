@@ -3,7 +3,7 @@
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Permissions-Policy: camera=(), microphone=(), geolocation=(self "https://b2c.cpost.cz" "https://widget.packeta.com"), payment=()
   Cross-Origin-Opener-Policy: same-origin
   Content-Security-Policy: default-src 'self'; img-src 'self' data: blob: https://widget.packeta.com; script-src 'self' https://widget.packeta.com; style-src 'self' 'unsafe-inline' https://widget.packeta.com; frame-src https://widget.packeta.com https://b2c.cpost.cz; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
 
