@@ -139,5 +139,6 @@ od 26. 11. 2026. Web se spouští na doméně atelier-dante-time.cz. Otevřený 
 od převzetí (±30 dnů), cena 690 Kč, prohlídka jen v ateliéru, doprava na náklady zákazníka.
 Zákonná práva zachována, platí jen pro nákupy od verze 1.1, garance pravosti nezávislá.
 Majitel bere na vědomí riziko přiměřenosti u zákazníků z EU (LEGAL-REVIEW 2f).
+Majitel potvrdil, že tištěná knížka už obsahuje stejné podmínky (varianta A), takže se záruční texty neliší.
 **Fyzické balení:** majitel dodává knížku a gravírovanou kartičku s modelem; další tištěný
 záruční list nechce. Záruční list v textové podobě (§ 2174a OZ) jde e-mailem s potvrzením objednávky.
