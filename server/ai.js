@@ -36,16 +36,34 @@ const b64 = (bytes) => {
 };
 
 /** Pošle dokument modelu a vrátí vyčtený JSON podle schématu. Zapíše náklady do deníku AI. */
-export async function extractJson(env, { bytes, mime, system, prompt, schema }, deps = {}) {
+const aiClient = (env, deps) => deps.client || new Anthropic({ apiKey: cleanKey(env.ANTHROPIC_API_KEY), baseURL: env.ANTHROPIC_BASE_URL || undefined, maxRetries: 2, timeout: 120000 });
+const fname = (mime) => (mime === 'application/pdf' ? 'doklad.pdf' : 'doklad');
+
+/** Předá velký soubor AI hned při nahrání (bajty jsou v paměti z požadavku). Vrátí id souboru, nebo null. */
+export async function uploadAiFile(env, bytes, mime, deps = {}) {
+  if (bytes.length <= BIG || !(await aiStatus(env)).ready) return null;
+  try {
+    const f = await aiClient(env, deps).files.upload({ file: await toFile(bytes, fname(mime), { type: mime }), expires_in_seconds: 3600 });
+    return f.id;
+  } catch { return null; } // nevadí – AI si soubor vezme z databáze až při čtení
+}
+
+/** Smaže soubor u AI (po přečtení). Chyby se ignorují – soubor by i tak sám vypršel. */
+export async function deleteAiFile(env, fileId, deps = {}) {
+  if (fileId) await aiClient(env, deps).files.delete(fileId).catch(() => {});
+}
+
+export async function extractJson(env, { bytes, fileId: preId, mime, system, prompt, schema }, deps = {}) {
   const st = await aiStatus(env);
   if (!st.ready) { const e = new Error(st.reason); e.code = 'ai_off'; throw e; }
-  const client = deps.client || new Anthropic({ apiKey: cleanKey(env.ANTHROPIC_API_KEY), baseURL: env.ANTHROPIC_BASE_URL || undefined, maxRetries: 2, timeout: 120000 });
+  const client = aiClient(env, deps);
   // Velké soubory se posílají přes Files API (bez převodu do base64 – ten by na bezplatném Cloudflare překročil
   // časový limit procesoru). Soubor se po přečtení hned smaže a i tak by za hodinu sám vypršel.
   let fileId = null;
   let source;
-  if (bytes.length > BIG) {
-    const f = await client.files.upload({ file: await toFile(bytes, mime === 'application/pdf' ? 'doklad.pdf' : 'doklad', { type: mime }), expires_in_seconds: 3600 });
+  if (preId) source = { type: 'file', file_id: preId }; // soubor předaný už při nahrání (smaže ho volající)
+  else if (bytes.length > BIG) {
+    const f = await client.files.upload({ file: await toFile(bytes, fname(mime), { type: mime }), expires_in_seconds: 3600 });
     fileId = f.id;
     source = { type: 'file', file_id: fileId };
   } else source = { type: 'base64', media_type: mime, data: b64(bytes) };

@@ -5,7 +5,7 @@ import { randomId, now, audit } from './db.js';
 import { str, int, num, oneOf } from './validate.js';
 import { COST_CATS } from './finance.js';
 import { cnbRate, toCzk } from './fx.js';
-import { extractJson, aiStatus } from './ai.js';
+import { extractJson, aiStatus, uploadAiFile, deleteAiFile } from './ai.js';
 import { runRole } from './os.js';
 import { DOC_MAX, splitDoc, docBytes, removeChunks } from './docstore.js';
 
@@ -69,7 +69,7 @@ const sniff = (b) => {
 const hex = (buf) => [...new Uint8Array(buf)].map((x) => x.toString(16).padStart(2, '0')).join('');
 
 /** Uloží soubor a založí koncept nákupu nebo prodeje. Duplicitní soubor nevytvoří nic nového. */
-export async function upload(env, form, actor) {
+export async function upload(env, form, actor, deps = {}) {
   const f = form.get('file');
   if (!f || typeof f === 'string') throw new HttpError('Vyberte soubor');
   if (f.size > DOC_MAX) throw new HttpError(`${f.name || 'Soubor'}: větší než 10 MB – zmenšete PDF (v Pages: Exportovat → PDF → Kvalita obrázků: Dobrá)`);
@@ -80,10 +80,14 @@ export async function upload(env, form, actor) {
   const hash = hex(await crypto.subtle.digest('SHA-256', buf));
   const dup = await env.DB.prepare('SELECT id, cost_id, sale_id FROM documents WHERE sha256 = ?').bind(hash).first();
   const name = str(f.name, { max: 200 });
-  if (dup && (await docBytes(env, { id: dup.id, data: (await env.DB.prepare('SELECT data FROM documents WHERE id = ?').bind(dup.id).first()).data })).length !== buf.length) {
-    // Dříve se soubor neuložil celý → smazat a uložit znovu
-    await env.DB.prepare('DELETE FROM documents WHERE id = ?').bind(dup.id).run(); await removeChunks(env, dup.id);
-    return upload(env, form, actor);
+  // Velikost uloženého souboru se zjistí v databázi (bez načítání souboru – to by na Cloudflare překročilo limit procesoru)
+  if (dup) {
+    const st = await env.DB.prepare('SELECT COALESCE(length(data), 0) + (SELECT COALESCE(SUM(length(data)), 0) FROM document_chunks WHERE document_id = ?) AS n FROM documents WHERE id = ?').bind(dup.id, dup.id).first();
+    if (st.n !== buf.length) {
+      // Dříve se soubor neuložil celý → smazat a uložit znovu
+      await env.DB.prepare('DELETE FROM documents WHERE id = ?').bind(dup.id).run(); await removeChunks(env, dup.id);
+      return upload(env, form, actor, deps);
+    }
   }
   if (dup) {
     // Soubor už v systému je. Patří-li stále k nákupu/prodeji, je to opravdová duplicita.
@@ -92,8 +96,9 @@ export async function upload(env, form, actor) {
     if (linked) return { id: dup.id, duplicate: true, cost_id: dup.cost_id, sale_id: dup.sale_id };
     // Záznam byl dříve smazán → soubor se použije znovu a vznikne nový koncept
     const draft = await createDraft(env, purpose, name, actor);
-    await env.DB.prepare("UPDATE documents SET cost_id = ?, sale_id = ?, purpose = ?, ai_status = ? WHERE id = ?")
-      .bind(draft.costId, draft.saleId, purpose, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai', dup.id).run();
+    const aiFile = await uploadAiFile(env, buf, sniff(buf), deps);
+    await env.DB.prepare("UPDATE documents SET cost_id = ?, sale_id = ?, purpose = ?, ai_status = ?, ai_file_id = ? WHERE id = ?")
+      .bind(draft.costId, draft.saleId, purpose, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai', aiFile, dup.id).run();
     await audit(env, actor, 'doklad_znovu_pouzit', 'document', dup.id, { purpose });
     return { id: dup.id, cost_id: draft.costId, sale_id: draft.saleId, reused: true };
   }
@@ -107,7 +112,9 @@ export async function upload(env, form, actor) {
     throw new HttpError(`${name || 'Soubor'}: nepodařilo se uložit celý – zkuste ho nahrát znovu`, 503);
   }
   const { costId, saleId } = await createDraft(env, purpose, name, actor);
-  await env.DB.prepare('UPDATE documents SET cost_id = ?, sale_id = ? WHERE id = ?').bind(costId, saleId, id).run();
+  // Velký soubor se rovnou předá AI – čtení pak nemusí soubor načítat z databáze
+  const aiFile = await uploadAiFile(env, buf, mime, deps);
+  await env.DB.prepare('UPDATE documents SET cost_id = ?, sale_id = ?, ai_file_id = ? WHERE id = ?').bind(costId, saleId, aiFile, id).run();
   await audit(env, actor, 'doklad_nahran', 'document', id, { purpose, size: buf.length });
   return { id, cost_id: costId, sale_id: saleId };
 }
@@ -189,7 +196,8 @@ const uncText = (u) => u.map((x) => UNC_CS[x] || x).join(', ');
 
 /** Vytěží jeden doklad. Spolehlivý výsledek bez duplicity potvrdí sám, jinak nechá ke kontrole. */
 export async function extract(env, docId, actor, deps = {}) {
-  const d = await env.DB.prepare('SELECT * FROM documents WHERE id = ?').bind(docId).first();
+  // Bez sloupce data: soubor se z databáze načte jen tehdy, když ho AI ještě nemá
+  const d = await env.DB.prepare('SELECT id, purpose, mime, cost_id, sale_id, ai_file_id FROM documents WHERE id = ?').bind(docId).first();
   if (!d) throw new HttpError('Doklad nenalezen', 404);
   const st = await aiStatus(env);
   if (!st.ready && !deps.client) {
@@ -198,9 +206,19 @@ export async function extract(env, docId, actor, deps = {}) {
   }
   let result = { status: 'manual' };
   const run = await runRole(env, 'office', `vytěžení ${d.purpose === 'prodej' ? 'faktury' : 'nákupu'}`, async () => {
-    const bytes = await docBytes(env, d);
+    const read = async (system, prompt, schema) => {
+      if (d.ai_file_id) {
+        try { return await extractJson(env, { fileId: d.ai_file_id, mime: d.mime, system, prompt, schema }, deps); } catch (e) {
+          if (!/not.?found|404|expired/i.test(String(e.message || e.status || ''))) throw e;
+          d.ai_file_id = null; // soubor u AI už vypršel → vezme se z databáze
+          await env.DB.prepare('UPDATE documents SET ai_file_id = NULL WHERE id = ?').bind(docId).run();
+        }
+      }
+      const row = await env.DB.prepare('SELECT data FROM documents WHERE id = ?').bind(docId).first();
+      return extractJson(env, { bytes: await docBytes(env, { id: docId, data: row.data }), mime: d.mime, system, prompt, schema }, deps);
+    };
     if (d.purpose === 'nakup') {
-      const a = await extractJson(env, { bytes, mime: d.mime, system: SYSTEM, prompt: PURCHASE_PROMPT, schema: PURCHASE_SCHEMA }, deps);
+      const a = await read(SYSTEM, PURCHASE_PROMPT, PURCHASE_SCHEMA);
       const rate = a.currency && cur(a.currency) !== 'CZK' ? await cnbRate(env, cur(a.currency), ymd(a.date)) : 1;
       const { patch, uncertain } = purchaseFromAi(a, rate);
       const products = await productsForMatch(env);
@@ -219,7 +237,7 @@ export async function extract(env, docId, actor, deps = {}) {
       await env.DB.prepare("UPDATE documents SET ai_status = 'hotovo', ai_data = ? WHERE id = ?").bind(JSON.stringify(a).slice(0, 20000), docId).run();
       result = { status: ok ? 'confirmed' : 'review', note: set.check_note };
     } else {
-      const a = await extractJson(env, { bytes, mime: d.mime, system: SYSTEM, prompt: SALE_PROMPT, schema: SALE_SCHEMA }, deps);
+      const a = await read(SYSTEM, SALE_PROMPT, SALE_SCHEMA);
       const rate = a.currency && cur(a.currency) !== 'CZK' ? await cnbRate(env, cur(a.currency), ymd(a.date)) : 1;
       const { patch, uncertain } = saleFromAi(a, rate);
       let dup = null;
@@ -239,6 +257,7 @@ export async function extract(env, docId, actor, deps = {}) {
       await env.DB.prepare("UPDATE documents SET ai_status = 'hotovo', ai_data = ? WHERE id = ?").bind(JSON.stringify(a).slice(0, 20000), docId).run();
       result = { status: ok ? 'confirmed' : 'review', note: set.check_note };
     }
+    if (d.ai_file_id) { await deleteAiFile(env, d.ai_file_id, deps); await env.DB.prepare('UPDATE documents SET ai_file_id = NULL WHERE id = ?').bind(docId).run(); }
     return { summary: result.status === 'confirmed' ? 'potvrzeno automaticky' : 'ke kontrole' };
   });
   if (run.status === 'error') {
@@ -347,7 +366,21 @@ export async function overview(env) {
     UNION ALL SELECT 'faktura' AS kind, i.id, i.number, substr(i.issued_at,1,10) AS day, i.buyer_name, i.watch_model, NULL AS items, i.total, NULL AS doc_id FROM invoices i WHERE i.mode = 'live' AND i.cancelled_at IS NULL AND i.kind <> 'zalohova'
     ORDER BY day DESC LIMIT 100`).all();
   const empty = (await env.DB.prepare("SELECT (SELECT COUNT(*) FROM sales s WHERE s.status = 'ke_kontrole' AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.sale_id = s.id)) + (SELECT COUNT(*) FROM costs c WHERE c.status = 'ke_kontrole' AND c.source = 'rucne' AND c.amount_czk = 0 AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.cost_id = c.id)) AS n").first()).n;
-  return { empty, review, saleReview, purchases, sales, ai: await aiStatus(env), platforms: PLATFORMS, pay: PAY, categories: COST_CATS };
+  const imported = (await env.DB.prepare("SELECT COUNT(*) AS n FROM sales WHERE source IN ('import', 'ai')").first()).n;
+  return { empty, imported, review, saleReview, purchases, sales, ai: await aiStatus(env), platforms: PLATFORMS, pay: PAY, categories: COST_CATS };
+}
+
+/** Začít import znovu: smaže všechny prodeje nahrané z faktur (ne faktury vystavené systémem) i jejich soubory. */
+export async function resetSalesImport(env, actor) {
+  const { results } = await env.DB.prepare("SELECT d.id FROM documents d JOIN sales s ON s.id = d.sale_id WHERE s.source IN ('import', 'ai')").all();
+  for (const r of results) { await removeChunks(env, r.id); await env.DB.prepare('DELETE FROM documents WHERE id = ?').bind(r.id).run(); }
+  // Soubory prodejů, jejichž záznam už byl smazán dříve
+  const { results: orphans } = await env.DB.prepare("SELECT id FROM documents WHERE purpose = 'prodej' AND sale_id IS NULL").all();
+  for (const r of orphans) { await removeChunks(env, r.id); await env.DB.prepare('DELETE FROM documents WHERE id = ?').bind(r.id).run(); }
+  const s = await env.DB.prepare("DELETE FROM sales WHERE source IN ('import', 'ai')").run();
+  const n = s.meta?.changes || 0;
+  await audit(env, actor, 'import_prodeju_smazan', 'inbox', null, { sales: n, files: results.length + orphans.length });
+  return { sales: n, files: results.length + orphans.length };
 }
 
 /** Úklid: smaže koncepty ke kontrole, ke kterým není žádný soubor (vznikly při přerušeném nahrávání). */
