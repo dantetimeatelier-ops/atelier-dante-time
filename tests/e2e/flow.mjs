@@ -163,7 +163,6 @@ try {
   await page.getByText('Termín prohlídky').waitFor();
   await page.getByLabel(/Odchylka chodu/).fill('+4');
   await page.getByLabel(/Amplituda/).fill('285');
-  page.once('dialog', (d) => d.accept());
   await page.getByRole('button', { name: /Uložit protokol/ }).click();
   await page.getByText('Záruka do').waitFor();
   step('garanční prohlídka založena při odeslání a zapsán protokol');
