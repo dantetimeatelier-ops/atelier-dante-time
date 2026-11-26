@@ -136,7 +136,7 @@
     const pub = `/hodinky/${p.slug}`;
     app.innerHTML = `<p><a href="#/hodinky">← Hodinky</a></p>
       <h1>${esc(p.title)}</h1>
-      <div class="row" style="margin-bottom:12px">${chip('product', p.status)} ${p.status !== 'draft' ? `<a class="small" href="${pub}" target="_blank">Zobrazit na webu ↗</a>` : '<span class="small muted">Koncept – na webu není vidět</span>'}</div>
+      <div class="row" style="margin-bottom:12px">${chip('product', p.status)} ${p.status !== 'draft' ? `<a class="small" href="${pub}" target="_blank">Zobrazit na webu ↗</a>` : '<span class="small muted">Koncept – na webu není vidět</span>'} <a class="btn" href="#/marze/${p.id}">Náklady a marže</a></div>
       ${q.get('nove') ? '<div class="card warn small">Začněte fotografiemi, pak vyplňte základní údaje a cenu. Popis a SEO vygenerujete tlačítkem.</div>' : ''}
       <h2>Fotografie</h2>
       <div class="photos" id="photos">${p.images.map((i, n) => `<div class="photo">${n === 0 ? '<span class="first">Hlavní</span>' : ''}<img src="/media/${esc(i.key_small)}" alt="">
@@ -300,6 +300,81 @@
       <a class="btn block" style="margin-bottom:12px" href="#/faktury/nova?z=${encodeURIComponent(JSON.stringify({ commission_id: k.id, buyer_name: k.customer_name, buyer_email: k.customer_email, items: [{ text: `${L.ctype[k.type]} – ${k.watch || 'hodinky'} (zakázka ${k.number})`, price: k.final_price_czk ?? k.estimate_czk ?? '' }] }))}">Vystavit fakturu</a>
       ${commissionForm(k)}`;
     app.querySelector('#kf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `commissions/${id}`, formData(e.target)); toast('Uloženo'); }); });
+  };
+
+  // --- Ekonomika (E2) ---------------------------------------------------------------------
+  const CC = { nakup: 'Nákup hodinek', dil: 'Díly', material: 'Materiál', prace: 'Práce', doprava: 'Doprava', poplatky: 'Poplatky', reklama: 'Reklama', provoz: 'Provoz', jine: 'Jiné' };
+  const PK = { strojek: 'Strojek', cifernik: 'Ciferník', rucicky: 'Ručičky', pouzdro: 'Pouzdro', sklo: 'Sklo', remen: 'Řemínek', naramek: 'Náramek', korunka: 'Korunka', krabicka: 'Krabička', jine: 'Jiné' };
+  const sel = (name, label, map, v) => `<label>${label}<select name="${name}">${Object.entries(map).map(([k, t]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>`;
+  const today = () => new Date().toISOString().slice(0, 10);
+  const costForm = (pre = {}) => `<form id="cf">${sel('category', 'Druh', CC, pre.category || 'dil')}${field('description', 'Popis', pre, 'required')}
+    <div class="grid">${field('amount_czk', 'Částka (Kč)', pre, 'inputmode="numeric"')}${field('hours', 'Hodiny práce', pre, 'inputmode="decimal"')}</div>
+    <div class="grid">${field('cost_date', 'Datum', { cost_date: today() }, 'type="date"')}${field('supplier', 'Dodavatel', pre)}</div>${field('document_ref', 'Číslo dokladu', pre)}
+    <button class="btn primary block">Přidat náklad</button></form>`;
+
+  views.ekonomika = async (_, q) => {
+    const y = q.get('y') || String(new Date().getFullYear());
+    const d = await api('GET', `finance/overview?year=${y}`);
+    const pct = Math.min(100, d.goalPct);
+    app.innerHTML = `<div class="row" style="justify-content:space-between"><h1>Ekonomika ${esc(d.year)}</h1><span><a href="#/ekonomika?y=${+y - 1}">‹ ${+y - 1}</a> · <a href="#/ekonomika?y=${+y + 1}">${+y + 1} ›</a></span></div>
+      <div class="grid"><div class="stat"><b>${czk(d.revenue)}</b>tržby</div><div class="stat"><b>${czk(d.costs)}</b>náklady</div><div class="stat"><b>${czk(d.profit)}</b>zisk</div><div class="stat"><b>${czk(d.stockValue)}</b>hodnota skladu (náklady)</div></div>
+      <div class="card" style="margin-top:12px"><b>Cíl ${czk(d.goal)}</b><div style="height:10px;background:var(--line);border-radius:6px;margin:8px 0;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--gold)"></div></div><span class="small">${d.goalPct} % splněno</span></div>
+      <div class="card" style="margin-top:12px;overflow-x:auto"><b>Po měsících</b><table><tr><th>Měsíc</th><td><b>Tržby</b></td><td><b>Náklady</b></td><td><b>Zisk</b></td></tr>
+        ${d.months.filter((m) => m.revenue || m.costs).map((m) => `<tr><th>${m.month.slice(5)}/${m.month.slice(0, 4)}</th><td>${czk(m.revenue)}</td><td>${czk(m.costs)}</td><td>${czk(m.profit)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Zatím žádné údaje.</td></tr>'}</table>
+        <p class="small muted">Tržby = vystavené faktury (ostrý provoz). Náklady = zapsané náklady včetně nákupu hodinek a dílů${d.rate ? ` a práce (${czk(d.rate)}/h)` : ''}. Orientační přehled, rozhodující je účetnictví.</p></div>
+      <div class="card" style="margin-top:12px"><b>Marže hodinek</b>${d.pieces.length ? `<div class="list" style="margin-top:8px">${d.pieces.map((x) => `<a class="item" href="#/marze/${x.id}"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${x.sold ? 'prodáno' : 'skladem'} · náklady ${czk(x.cost)} · cena ${czk(x.price)} · marže <b>${czk(x.margin)}</b>${x.marginPct != null ? ` (${x.marginPct} %)` : ''}${x.hasPurchase ? '' : ' · ⚠ chybí nákupní cena'}</span></span></a>`).join('')}</div>` : '<p class="small muted">Zapište u hodinek nákupní cenu a náklady (Hodinky → detail → Náklady a marže).</p>'}</div>
+      <div class="card" style="margin-top:12px"><b>Podklady pro účetní (CSV pro Excel)</b>
+        <div class="grid">${field('from', 'Od', { from: `${y}-01-01` }, 'type="date" id="ef"')}${field('to', 'Do', { to: `${y}-12-31` }, 'type="date" id="et"')}</div>
+        <div class="row"><button class="btn" data-x="naklady">Náklady</button><button class="btn" data-x="faktury">Vydané faktury</button></div></div>
+      <details style="margin-top:12px"><summary>Hodinová sazba práce</summary><form id="rf">${field('labor_rate_czk', 'Kč za hodinu (pro výpočet nákladů na vlastní práci)', { labor_rate_czk: d.rate || '' }, 'inputmode="numeric"')}<button class="btn block">Uložit</button></form></details>`;
+    app.querySelectorAll('[data-x]').forEach((b) => b.addEventListener('click', () => { location.href = `/api/admin/finance/export?kind=${b.dataset.x}&from=${app.querySelector('[name=from]').value}&to=${app.querySelector('[name=to]').value}`; }));
+    app.querySelector('#rf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', 'finance/settings', formData(e.target)); toast('Uloženo'); views.ekonomika(_, q); }); });
+  };
+
+  views['marze/:id'] = async ({ id }) => {
+    const [{ product: p }, e] = await Promise.all([api('GET', `products/${id}`), api('GET', `finance/products/${id}`)]);
+    app.innerHTML = `<p><a href="#/hodinky/${esc(id)}">← ${esc(p.title)}</a></p><h1 style="font-size:22px">Náklady a marže</h1><p class="small muted">Interní údaje – na webu se nikdy nezobrazují.</p>
+      <div class="grid"><div class="stat"><b>${czk(e.total)}</b>náklady celkem</div><div class="stat"><b>${czk(e.expected)}</b>${e.sold ? `prodáno (${esc(e.saleOrder)})` : 'prodejní cena'}</div><div class="stat"><b>${czk(e.margin)}</b>marže${e.marginPct != null ? ` ${e.marginPct} %` : ''}</div></div>
+      ${e.hasPurchase ? '' : '<div class="card warn small" style="margin-top:12px">Chybí nákupní cena hodinek – přidejte náklad druhu „Nákup hodinek“.</div>'}
+      <div class="card" style="margin-top:12px"><table>${Object.entries(e.byCat).map(([k, v]) => `<tr><th>${esc(CC[k] || k)}</th><td>${czk(v)}</td></tr>`).join('')}
+        ${e.partsCost ? `<tr><th>Díly ze skladu</th><td>${czk(e.partsCost)}</td></tr>` : ''}${e.hours ? `<tr><th>Práce ${e.hours} h${e.rate ? ` × ${czk(e.rate)}` : ''}</th><td>${e.rate ? czk(e.laborCost) : '<span class="small muted">nastavte sazbu v Ekonomice</span>'}</td></tr>` : ''}</table></div>
+      <h2 style="margin-top:16px">Zapsané náklady</h2><div class="list">${e.costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br><span class="small muted">${esc(CC[c.category])} · ${esc(c.cost_date)}${c.supplier ? ` · ${esc(c.supplier)}` : ''}</span></span><b>${c.amount_czk ? czk(c.amount_czk) : `${c.hours} h`}</b><button class="btn" data-del="${c.id}" aria-label="Smazat">✕</button></div>`).join('') || '<p class="muted">Zatím nic.</p>'}</div>
+      ${e.parts.length ? `<h2 style="margin-top:16px">Použité díly</h2><div class="list">${e.parts.map((x) => `<div class="item"><span class="grow">${esc(x.title)} <span class="small muted">${esc(PK[x.kind])}${x.original ? ' · originál' : ''}</span></span><b>${czk((x.unit_cost_czk || 0) * (x.qty || 1))}</b></div>`).join('')}</div>` : ''}
+      <details open style="margin-top:16px"><summary>Přidat náklad</summary>${costForm({ category: e.hasPurchase ? 'dil' : 'nakup' })}</details>`;
+    app.querySelector('#cf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => { await api('POST', 'costs', { ...formData(ev.target), product_id: id }); toast('Přidáno'); views['marze/:id']({ id }); }); });
+    app.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat náklad?')) return; await api('DELETE', `costs/${b.dataset.del}`); views['marze/:id']({ id }); })));
+  };
+
+  views.naklady = async () => {
+    const { costs } = await api('GET', 'costs');
+    app.innerHTML = `<h1>Náklady</h1><p class="small muted">Společné provozní náklady (krabičky, nářadí, reklama, hosting…). Náklady konkrétních hodinek zapisujte u hodinek.</p>
+      <details><summary>Přidat provozní náklad</summary>${costForm({ category: 'provoz' })}</details>
+      <div class="list" style="margin-top:12px">${costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br><span class="small muted">${esc(CC[c.category])} · ${esc(c.cost_date)}${c.product_title ? ` · ${esc(c.product_title)}` : ' · provoz'}</span></span><b>${c.amount_czk ? czk(c.amount_czk) : `${c.hours} h`}</b><button class="btn" data-del="${c.id}" aria-label="Smazat">✕</button></div>`).join('') || '<p class="muted">Zatím žádné náklady.</p>'}</div>`;
+    app.querySelector('#cf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => { await api('POST', 'costs', formData(ev.target)); toast('Přidáno'); views.naklady(); }); });
+    app.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat náklad?')) return; await api('DELETE', `costs/${b.dataset.del}`); views.naklady(); })));
+  };
+
+  const partForm = (x = {}, products = []) => `<form id="pf">${sel('kind', 'Druh', PK, x.kind || 'strojek')}${field('title', 'Název (např. PRIM kalibr 66)', x, 'required')}
+    <div class="grid">${field('brand', 'Značka', x)}${field('caliber', 'Kalibr', x)}</div>
+    <label class="check"><input type="checkbox" name="original" ${x.original ? 'checked' : ''}> Originální díl značky</label>${field('condition', 'Stav', x)}
+    <div class="grid">${field('qty', 'Počet', { qty: x.qty ?? 1 }, 'inputmode="numeric"')}${field('unit_cost_czk', 'Cena za kus (Kč)', x, 'inputmode="numeric"')}</div>
+    <div class="grid">${field('purchase_date', 'Datum nákupu', x, 'type="date"')}${field('supplier', 'Dodavatel', x)}</div>
+    ${sel('status', 'Stav na skladě', { skladem: 'Skladem', pouzito: 'Použito v hodinkách', prodano: 'Prodáno samostatně', vyrazeno: 'Vyřazeno' }, x.status || 'skladem')}
+    <label>Použito v hodinkách<select name="product_id"><option value="">–</option>${products.map((p) => `<option value="${esc(p.id)}" ${x.product_id === p.id ? 'selected' : ''}>${esc(p.title)}</option>`).join('')}</select></label>
+    ${area('note', 'Poznámka', x)}<button class="btn primary block">Uložit</button></form>`;
+  views.dily = async (_, q) => {
+    const [{ parts }, { products }] = await Promise.all([api('GET', 'parts'), api('GET', 'products')]);
+    const edit = parts.find((x) => x.id === q.get('e'));
+    const stock = parts.filter((x) => x.status === 'skladem');
+    const value = stock.reduce((a, x) => a + (x.unit_cost_czk || 0) * (x.qty || 0), 0);
+    app.innerHTML = `<h1>Sklad dílů</h1><p class="small muted">Skladem ${stock.length} položek v hodnotě ${czk(value)}.</p>
+      <details ${edit ? 'open' : ''}><summary>${edit ? `Upravit: ${esc(edit.title)}` : 'Přidat díl'}</summary>${partForm(edit, products)}</details>
+      <div class="list" style="margin-top:12px">${parts.map((x) => `<a class="item" href="#/dily?e=${x.id}"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${esc(PK[x.kind])}${x.original ? ' · originál' : ''} · ${x.qty} ks · ${czk(x.unit_cost_czk)}/ks · ${esc({ skladem: 'skladem', pouzito: 'použito', prodano: 'prodáno', vyrazeno: 'vyřazeno' }[x.status])}${x.product_title ? ` · ${esc(x.product_title)}` : ''}</span></span></a>`).join('') || '<p class="muted">Zatím žádné díly.</p>'}</div>`;
+    app.querySelector('#pf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => {
+      const d = formData(ev.target); d.original = ev.target.original.checked;
+      if (edit) await api('PUT', `parts/${edit.id}`, d); else await api('POST', 'parts', d);
+      toast('Uloženo'); location.hash = '#/dily';
+    }); });
   };
 
   // --- Dante Time OS: centrální přehled rolí ---------------------------------------------
@@ -555,6 +630,9 @@
 
   views.vice = async () => {
     app.innerHTML = `<h1>Více</h1><div class="list">
+      <a class="item" href="#/ekonomika"><span class="grow">Ekonomika – tržby, náklady, zisk, export pro účetní</span></a>
+      <a class="item" href="#/naklady"><span class="grow">Náklady a provozní výdaje</span></a>
+      <a class="item" href="#/dily"><span class="grow">Sklad dílů</span></a>
       <a class="item" href="#/system"><span class="grow">Systém Dante Time OS (role, kontroly, zálohy)</span></a>
       <a class="item" href="#/prohlidky"><span class="grow">Garanční prohlídky</span></a>
       <a class="item" href="#/poptavky"><span class="grow">Poptávky</span></a>

@@ -215,3 +215,8 @@ test('garanční prohlídky: termíny 12 měsíců ±30 dnů a prodloužení zá
 test('právní dokumenty: žádná nevyplněná proměnná ${…} v textu', () => {
   for (const d of ALL_LEGAL) assert.ok(!/\$\{/.test(d.body()), `${d.path} obsahuje nevyplněnou proměnnou`);
 });
+
+test('ekonomika: nákupní ceny a náklady nejsou ve veřejných tabulkách', () => {
+  const m = readFileSync(new URL('../../migrations/0009_ekonomika.sql', import.meta.url), 'utf8');
+  assert.ok(!/ALTER TABLE products/i.test(m), 'interní ekonomické údaje nesmí být ve sloupcích tabulky products (veřejný web ji čte)');
+});

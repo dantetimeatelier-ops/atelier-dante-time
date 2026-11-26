@@ -12,6 +12,7 @@ import { slugify } from '../../../src/shop/format.mjs';
 import { OPERATOR } from '../../../src/site.mjs';
 import * as W from '../../../server/warranty.js';
 import * as OS from '../../../server/os.js';
+import * as FIN from '../../../server/finance.js';
 
 const STATUSES = ['draft', 'available', 'reserved', 'sold', 'in_progress', 'archived'];
 const PRODUCT_TEXT = { title: 200, brand: 80, model: 120, reference: 80, year: 20, movement: 120, case_material: 120, crystal: 80, water_resistance: 80, dial: 200, strap: 200, condition: 1000, service_done: 1000, original_parts: 1000, replaced_parts: 1000, accessories: 500, manufacturer_info: 500, safety_info: 500, hallmark: 200, plating: 200, authenticity_note: 1000, serial_ref: 120, description_cs: 5000, description_en: 5000, seo_title: 80, seo_description: 200 };
@@ -498,6 +499,47 @@ route('GET', 'emails/:id', async ({ env, params }) => {
 route('GET', 'audit', async ({ env }) => {
   const { results } = await env.DB.prepare('SELECT * FROM audit_log ORDER BY id DESC LIMIT 150').all();
   return json({ log: results });
+});
+
+// --- Ekonomika (E2): náklady, díly, marže, přehledy, export pro účetní ------------------
+route('GET', 'finance/overview', async ({ env, request }) => json(await FIN.overview(env, new URL(request.url).searchParams.get('year'))));
+route('GET', 'finance/products/:id', async ({ env, params }) => json(await FIN.productEconomics(env, params.id)));
+route('GET', 'costs', async ({ env, request }) => {
+  const u = new URL(request.url).searchParams;
+  const where = u.get('overhead') ? 'c.product_id IS NULL AND c.commission_id IS NULL' : '1=1';
+  const { results } = await env.DB.prepare(`SELECT c.*, p.title AS product_title FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE ${where} ORDER BY c.cost_date DESC, c.created_at DESC LIMIT 300`).all();
+  return json({ costs: results, categories: FIN.COST_CATS });
+});
+route('POST', 'costs', async ({ env, body, user }) => json({ id: await FIN.addCost(env, body, user.email) }, 201));
+route('DELETE', 'costs/:id', async ({ env, params, user }) => {
+  await env.DB.prepare('DELETE FROM costs WHERE id = ?').bind(params.id).run();
+  await audit(env, user.email, 'naklad_smazan', 'cost', params.id); return json({ ok: true });
+});
+route('GET', 'finance/export', async ({ env, request, user }) => {
+  const u = new URL(request.url).searchParams;
+  const kind = u.get('kind') === 'faktury' ? 'faktury' : 'naklady';
+  const csv = await FIN.exportCsv(env, kind, u.get('from'), u.get('to'));
+  await audit(env, user.email, 'export_ucetni', 'finance', kind, { from: u.get('from'), to: u.get('to') });
+  return new Response(csv, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="dante-time-${kind}-${u.get('from')}-${u.get('to')}.csv"`, 'Cache-Control': 'no-store' } });
+});
+route('GET', 'parts', async ({ env }) => {
+  const { results } = await env.DB.prepare("SELECT x.*, p.title AS product_title FROM parts x LEFT JOIN products p ON p.id = x.product_id ORDER BY CASE x.status WHEN 'skladem' THEN 0 ELSE 1 END, x.kind, x.title LIMIT 500").all();
+  return json({ parts: results, kinds: FIN.PART_KINDS });
+});
+route('POST', 'parts', async ({ env, body, user }) => {
+  const d = FIN.partInput(body); const id = randomId(); const k = Object.keys(d);
+  await env.DB.prepare(`INSERT INTO parts (id, ${k.join(', ')}) VALUES (?, ${k.map(() => '?').join(', ')})`).bind(id, ...k.map((x) => d[x])).run();
+  await audit(env, user.email, 'dil_pridan', 'part', id, { title: d.title }); return json({ id }, 201);
+});
+route('PUT', 'parts/:id', async ({ env, params, body, user }) => {
+  const d = FIN.partInput(body); const k = Object.keys(d);
+  await env.DB.prepare(`UPDATE parts SET ${k.map((x) => `${x} = ?`).join(', ')}, updated_at = ? WHERE id = ?`).bind(...k.map((x) => d[x]), now(), params.id).run();
+  await audit(env, user.email, 'dil_upraven', 'part', params.id, { status: d.status, product: d.product_id }); return json({ ok: true });
+});
+route('PUT', 'finance/settings', async ({ env, body, user }) => {
+  const rate = int(body.labor_rate_czk, { min: 0, max: 100000, name: 'hodinová sazba' });
+  await env.DB.prepare("INSERT INTO settings (key, value) VALUES ('labor_rate_czk', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").bind(rate == null ? null : String(rate)).run();
+  await audit(env, user.email, 'sazba_prace', 'settings', 'labor_rate_czk', { rate }); return json({ ok: true });
 });
 
 // --- Dante Time OS: přehled rolí, nálezy, schválení, náklady, zálohy -------------------
