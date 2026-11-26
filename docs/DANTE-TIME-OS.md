@@ -226,17 +226,28 @@ webu a vytvoří bezpečný základ, na kterém budou všichni agenti stát.
 | Certifikát pravosti k tisku / PDF s QR kódem (A4) | ✅ |
 | Záruční list: text ze schválených podmínek 1.1 se posílá v potvrzení objednávky (§ 2174a) – beze změny | ✅ |
 
-### E3b – Doklady
+### E3b v2 – Nákupy a prodeje (upraveno podle majitele 26. 11. 2026)
+Majitel nakupuje hlavně přes Aukro, AliExpress, eBay a od soukromých osob → místo účtenek univerzální evidence.
+
 | Část | Stav |
 |---|---|
-| Doklady bez AI (migrace 0011): fotka nebo PDF účtenky/faktury k nákladu, v databázi D1 (EU), jen pro přihlášenou administraci | ✅ |
-| Fotka se v telefonu zmenší a odstraní se z ní poloha (GPS); duplicitní doklad se pozná a odmítne | ✅ |
-| Více → Doklady: všechny / nepřiřazené, přiřazení k nákladu, otevření, smazání omylu | ✅ |
-| Export pro účetní: sloupec „Doklad nahrán“ | ✅ |
-| Zálohy nově i s náklady, díly, pasy a evidencí dokladů (soubory chrání obnova D1) | ✅ |
+| **Více → Nákupy a prodeje:** nahrát více screenshotů / fotek / PDF najednou (nákupy) nebo hromadně vydané faktury (import 2026) | ✅ |
+| **DT Doklady (AI):** vyčte datum, platformu, prodávajícího, číslo objednávky, položky, měnu, cenu, dopravu; u faktur číslo, odběratele, položky, částku a platbu | ✅ kód, ⏳ klíč majitele |
+| Spolehlivě rozpoznané se **uloží samo**; nejisté údaje, duplicita nebo chybějící kurz → **Ke kontrole** s popisem, co ověřit | ✅ |
+| Kurz **ČNB** k datu nákupu (zdarma, ukládá se), ruční úprava kurzu i částky v Kč | ✅ |
+| Přiřazení: **hodinky** (i automatické spárování podle názvu), **sklad dílů** (naskladní díl s cenou), **provoz** | ✅ |
+| Ruční zadání nákupu i prodeje bez dokladu; původní soubor zůstává uložený | ✅ |
+| Duplicity: stejný soubor, stejné číslo objednávky / faktury, stejná částka + datum + platforma | ✅ |
+| Import faktur → tabulka `sales` (nezasahuje do číselné řady), zákazník s e-mailem → seznam zákazníků | ✅ |
+| Faktury vystavené v Dante Time OS se do ekonomiky propisují **samy** (bez nahrávání); import je v tržbách jen jednou | ✅ |
+| Limit AI 300 Kč/měsíc hlídán, při vyčerpání vše funguje ručně; model volitelný (Opus 5.5 / Sonnet 5.5 / Haiku 5.5) | ✅ |
+| Žádné účetní funkce navíc (DPH, deník, rozvaha) – podklady pro účetní jako CSV | záměrně |
 
-- **Bez AI (0 Kč):** hotovo – částku a druh vyplníte ručně.
-- **💰 S AI (vyžaduje souhlas):** Claude API účtenku přečte a vyplní sama. Odhad při 30–50 dokladech měsíčně
-  **cca 20–50 Kč/měsíc** (nejschopnější model, ~1 Kč za doklad), s nejlevnějším modelem Haiku pod 5 Kč; obojí se vejde do limitu 300 Kč. Vyžaduje účet Anthropic API s platební kartou a klíč
-  (uloží majitel do Cloudflare, ne do repozitáře).
+**Odhad nákladů AI (ceník Anthropic 11/2026):** Opus 5.5 ~1 Kč za doklad; jednorázový import cca 100 faktur ~100 Kč;
+běžný měsíc 30–50 dokladů 30–50 Kč. Haiku 5.5 je cca 40× levnější, ale méně přesný u rozmazaných screenshotů.
+
+**Zapnutí AI (majitel, jednorázově):** console.anthropic.com → účet a kredit (např. 5 USD, limit útraty) → API klíč →
+Cloudflare → Workers & Pages → projekt → Settings → Variables and Secrets → Secret `ANTHROPIC_API_KEY`.
+⚖️ Před importem faktur s AI schválit doplnění Zásad o Anthropic jako zpracovatele (LEGAL-REVIEW 2g).
+
 - Doklady z e-mailu (doklady@…) vyžadují Cloudflare Email Routing (zdarma) a rozšíření oprávnění tokenu.

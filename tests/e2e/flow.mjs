@@ -297,15 +297,53 @@ try {
   await page.getByRole('button', { name: 'Přidat náklad' }).click();
   await page.locator('.toast', { hasText: 'Přidáno i s dokladem' }).waitFor();
   await page.getByText('Nákup hodinek – test').waitFor();
-  // Doklad: uložen, přiřazen k nákladu, jde otevřít jen po přihlášení, duplikát odmítnut
+  // Doklad u nákladu: uložen, jde otevřít jen po přihlášení
   await page.goto(`${BASE}/admin/#/doklady`);
-  const docHref = await page.locator('.list a.t').first().getAttribute('href');
+  await page.getByRole('heading', { name: 'Nákupy a prodeje' }).waitFor();
+  const docLink = page.locator('.item', { hasText: 'Nákup hodinek – test' }).getByRole('link', { name: 'doklad' });
+  const docHref = await docLink.getAttribute('href');
   const docRes = await page.evaluate(async (u) => { const r = await fetch(u); return { s: r.status, t: r.headers.get('content-type'), n: (await r.arrayBuffer()).byteLength }; }, `${BASE}${docHref}`);
   assert.equal(docRes.s, 200); assert.match(docRes.t, /^image\//); assert.ok(docRes.n > 1000);
-  assert.ok(/Nákup hodinek – test/.test(await page.locator('.list select').first().locator('option:checked').innerText()));
-  const anon = await (await fetch(`${BASE}${docHref}`)).status;
-  assert.equal(anon, 401, 'doklad nesmí být dostupný bez přihlášení');
-  step('doklad: nahrán s nákladem, přiřazen, chráněn přihlášením');
+  assert.equal((await fetch(`${BASE}${docHref}`)).status, 401, 'doklad nesmí být dostupný bez přihlášení');
+  step('doklad: nahrán s nákladem, chráněn přihlášením');
+
+  // Nákup ze screenshotu (bez AI): nahrát → ke kontrole → doplnit EUR s kurzem → naskladnit jako díl
+  await page.locator('#up-nakup').setInputFiles(path.join(ROOT, 'assets/originals/service-watch-box-2.jpg'));
+  await page.getByRole('heading', { name: /Ke kontrole/ }).waitFor();
+  const pf = page.locator('form.pform[data-id]:not([data-id=""])').first();
+  await pf.getByLabel('Co jste koupil').fill('Strojek PRIM 66 – eBay test');
+  await pf.getByLabel('Platforma').selectOption('ebay');
+  await pf.getByLabel('Měna').selectOption('EUR');
+  await pf.getByLabel('Zaplaceno v měně (vč. dopravy)').fill('100');
+  await pf.getByLabel('Kurz ČNB (Kč)').fill('25');
+  assert.equal(await pf.getByLabel('Částka v Kč').inputValue(), '2500');
+  await pf.locator('select[name=category]').selectOption('dil');
+  await pf.locator('select[name=target]').selectOption('sklad');
+  await pf.locator('select[name=part_kind]').selectOption('strojek');
+  await pf.getByRole('button', { name: 'Potvrdit' }).click();
+  await page.locator('.item', { hasText: 'Strojek PRIM 66 – eBay test' }).getByText('sklad dílů').waitFor();
+  // Stejný soubor podruhé → rozpoznán jako duplicita
+  await page.locator('#up-nakup').setInputFiles(path.join(ROOT, 'assets/originals/service-watch-box-2.jpg'));
+  await page.getByText('už nahráno dříve, přeskočeno').waitFor();
+  await page.goto(`${BASE}/admin/#/dily`);
+  await page.getByText('Strojek PRIM 66 – eBay test').waitFor();
+  step('nákup ze screenshotu: kontrola, kurz EUR, naskladnění dílu, duplicita odhalena');
+
+  // Prodej mimo systém (např. historická faktura) → tržby a export pro účetní; duplicitní číslo odmítnuto
+  await page.goto(`${BASE}/admin/#/doklady`);
+  await page.getByText('Zadat prodej ručně').click();
+  const sf = page.locator('form.sform[data-id=""]');
+  await sf.getByLabel('Číslo faktury').fill('2026-IMPORT-1');
+  await sf.getByLabel('Co bylo prodáno').fill('PRIM Orlík – historická faktura');
+  await sf.getByLabel('Zaplaceno v měně (vč. dopravy)').fill('15000');
+  await sf.getByLabel('Zákazník', { exact: true }).fill('Testovací Zákazník');
+  await sf.getByRole('button', { name: 'Uložit prodej' }).click();
+  await page.locator('.item', { hasText: '2026-IMPORT-1' }).waitFor();
+  const dupSale = await page.evaluate(async () => (await fetch('/api/admin/sales', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-DT-Admin': '1' }, body: JSON.stringify({ number: '2026-IMPORT-1', items: 'x', amount_orig: 1 }) })).status);
+  assert.equal(dupSale, 409);
+  const fcsv = await page.evaluate(async (b) => (await fetch(`${b}/api/admin/finance/export?kind=faktury&from=2000-01-01&to=2100-01-01`)).text(), BASE);
+  assert.match(fcsv, /2026-IMPORT-1;.*15000/);
+  step('prodej mimo systém: uložen, v exportu pro účetní, duplicitní číslo odmítnuto');
   await page.goto(`${BASE}/admin/#/ekonomika`);
   await page.getByText('Marže hodinek').waitFor();
   await page.locator('a.item', { hasText: 'marže' }).first().waitFor();

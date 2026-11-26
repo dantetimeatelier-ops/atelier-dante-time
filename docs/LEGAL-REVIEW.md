@@ -224,6 +224,14 @@ patička, košík, stránky hodinek, stránka objednávky a e-maily).
   plnění právní povinnosti (archivace účetních dokladů, zákon o účetnictví / daňové předpisy).
   **Návrh:** doplnit do Zásad ochrany osobních údajů řádek „Dodavatelé a prodávající hodinek – identifikační
   údaje na dokladu – čl. 6 odst. 1 písm. c) – po dobu archivace dokladů“. Vyžaduje souhlas majitele.
+- **AI vytěžení dokladů (E3b v2) – nový zpracovatel:** při zapnuté AI se nahraný doklad (u vydaných faktur včetně
+  jména, adresy a e-mailu zákazníka) posílá ke zpracování společnosti **Anthropic** (Claude API, USA; obchodní
+  podmínky API: data se nepoužívají k trénování, smlouva o zpracování je součástí podmínek; přenos mimo EU na
+  základě standardních smluvních doložek / DPF – **ověřit při založení účtu**).
+  **Návrh:** doplnit do Zásad Anthropic mezi příjemce („zpracování dokladů pomocí AI“) a do tabulky účel
+  „evidence prodejů a nákupů – čl. 6 odst. 1 písm. c) a f)“. **Dokud majitel nesouhlasí, importovat faktury
+  bez AI** (nákupy z platforem obvykle osobní údaje zákazníků neobsahují).
+- **Import historických faktur:** zákazníci s e-mailem se doplní do seznamu zákazníků (stejný účel jako u e-shopu).
 - **Digitální pas (E3a):** neobsahuje osobní údaje (jméno, kontakt, cenu); výrobní číslo veřejně jen
   zkráceně. Datum předání je uvedeno bez jména. Zásady už pokrývají identifikaci hodinek pro garanci pravosti.
 

@@ -241,3 +241,27 @@ test('zálohy obsahují i ekonomiku, pasy a evidenci dokladů', () => {
   const m = readFileSync(new URL('../../migrations/0011_doklady.sql', import.meta.url), 'utf8');
   assert.ok(!/ALTER TABLE products/i.test(m), 'doklady nesmí být u veřejné tabulky hodinek');
 });
+
+test('kurzy ČNB: rozbor kurzovního lístku (množství, desetinná čárka)', async () => {
+  const { parseCnb, toCzk } = await import('../../server/fx.js');
+  const r = parseCnb('26.11.2026 #229\nzemě|měna|množství|kód|kurz\nEMU|euro|1|EUR|24,315\nJaponsko|jen|100|JPY|15,512\nchyba\n');
+  assert.equal(r.EUR, 24.315); assert.ok(Math.abs(r.JPY - 0.15512) < 1e-9);
+  assert.equal(toCzk(100, 24.315), 2432); assert.equal(toCzk(null, 24), null);
+});
+
+test('nákupy a prodeje: výsledek AI → záznam, nejisté údaje ke kontrole, párování hodinek', async () => {
+  const { purchaseFromAi, saleFromAi, matchProduct } = await import('../../server/inbox.js');
+  const ok = purchaseFromAi({ date: '2026-03-04', platform: 'ebay', seller: 'watchparts', order_ref: '12-345', items: [{ title: 'PRIM 66 movement', qty: 1, price: 40 }], currency: 'eur', total: 52.5, shipping: 12.5, category: 'dil', is_watch: false, uncertain: [], note: null }, 25);
+  assert.deepEqual(ok.uncertain, []);
+  assert.equal(ok.patch.amount_czk, 1313); assert.equal(ok.patch.shipping_czk, 313); assert.equal(ok.patch.currency, 'EUR'); assert.equal(ok.patch.category, 'dil');
+  const bad = purchaseFromAi({ date: 'loni', platform: 'jine', items: [], currency: null, total: null, shipping: null, category: 'nakup', uncertain: ['platform'] }, null);
+  assert.deepEqual(new Set(bad.uncertain), new Set(['platform', 'currency', 'total', 'date', 'items']));
+  const noRate = purchaseFromAi({ date: '2026-01-01', items: [{ title: 'x' }], currency: 'USD', total: 10, category: 'dil', uncertain: [] }, null);
+  assert.ok(noRate.uncertain.includes('kurz'));
+  const s = saleFromAi({ is_sales_invoice: true, number: '20260012', date: '2026-02-10', buyer_name: 'Jan Novák', buyer_email: 'JAN@EXAMPLE.COM', buyer_address: null, items: [{ title: 'PRIM Sport', price: 12900 }], currency: 'CZK', total: 12900, payment_method: 'prevod', uncertain: [], note: null }, 1);
+  assert.deepEqual(s.uncertain, []); assert.equal(s.patch.total_czk, 12900); assert.equal(s.patch.buyer_email, 'jan@example.com');
+  assert.ok(saleFromAi({ is_sales_invoice: false, number: '1', date: '2026-01-01', items: [], currency: 'CZK', total: 1, uncertain: [] }, 1).uncertain.length > 0);
+  const products = [{ id: 'a', title: 'PRIM Sport 1968', brand: 'PRIM', model: 'Sport', reference: null }, { id: 'b', title: 'Omega Genève', brand: 'Omega', model: 'Genève', reference: null }];
+  assert.equal(matchProduct(products, 'Prodej hodinek PRIM Sport 1968'), 'a');
+  assert.equal(matchProduct(products, 'řemínek kožený'), null);
+});
