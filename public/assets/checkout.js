@@ -102,53 +102,61 @@
   config = await getConfig(form.country.value, itemsTotal);
   renderOptions();
 
-  // Balíkovna: oficiální výběr České pošty v okně (iframe), výsledek přijde zprávou postMessage
+  // Výběr výdejního místa: oficiální mapa dopravce v okně přes celou obrazovku (iframe), výsledek přijde zprávou postMessage.
+  // Balíkovna = Česká pošta (b2c.cpost.cz), Zásilkovna = widget.packeta.com (vlastní okno místo jejich knihovny –
+  // ta na iPhonu přepisuje nastavení zobrazení stránky a okno zamrzne).
   const BALIKOVNA_ORIGIN = 'https://b2c.cpost.cz';
-  let bkFrame = null;
-  const closeBk = () => { document.querySelector('[data-bk-modal]')?.remove(); bkFrame = null; document.documentElement.style.overflow = ''; };
-  const openBalikovna = () => {
-    const url = `${BALIKOVNA_ORIGIN}/locations/?type=BALIKOVNY&skipLocation=false&messageId=pickerResult`;
-    // Na celou obrazovku (na iPhonu jinak lišta prohlížeče zakryje tlačítko pro potvrzení výběru dole v mapě)
-    document.body.insertAdjacentHTML('beforeend', `<div data-bk-modal role="dialog" aria-modal="true" aria-label="${L('Výběr Balíkovny', 'Choose Balíkovna')}" style="position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center">
+  const PACKETA_ORIGIN = 'https://widget.packeta.com';
+  let picker = null; // { frame, carrier }
+  const closePicker = () => { document.querySelector('[data-pick-modal]')?.remove(); picker = null; document.documentElement.style.overflow = ''; };
+  const openPicker = (carrier, url, title, hint) => {
+    closePicker();
+    document.body.insertAdjacentHTML('beforeend', `<div data-pick-modal role="dialog" aria-modal="true" aria-label="${esc(title)}" style="position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center">
       <div style="width:min(960px,100%);height:100%;max-height:min(760px,100dvh);background:#fff;overflow:hidden;display:flex;flex-direction:column">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:#111;color:#f2f2f2"><span>${L('Klepněte na místo, sjeďte v mapě dolů pod otevírací dobu a potvrďte tlačítkem výběru', 'Tap a point, scroll down below the opening hours and confirm with the select button')}</span><button type="button" class="btn ghost" data-bk-close style="min-height:36px;padding:6px 14px">${L('Zavřít', 'Close')}</button></div>
-        <iframe src="${url}" title="${L('Mapa výdejních míst Balíkovny', 'Balíkovna pickup point map')}" allow="geolocation" style="flex:1;border:0;width:100%;min-height:0"></iframe>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:#111;color:#f2f2f2"><span>${esc(hint)}</span><button type="button" class="btn ghost" data-pick-close style="min-height:36px;padding:6px 14px">${L('Zavřít', 'Close')}</button></div>
+        <iframe src="${esc(url)}" title="${esc(title)}" allow="geolocation" style="flex:1;border:0;width:100%;min-height:0"></iframe>
       </div></div>`);
     document.documentElement.style.overflow = 'hidden';
-    bkFrame = document.querySelector('[data-bk-modal] iframe');
-    document.querySelector('[data-bk-close]').addEventListener('click', closeBk);
+    picker = { frame: document.querySelector('[data-pick-modal] iframe'), carrier };
+    document.querySelector('[data-pick-close]').addEventListener('click', closePicker);
   };
-  // Výsledek z mapy České pošty. Zpráva může přijít i z vnořeného okna mapy, proto se ověřuje jen původ (b2c.cpost.cz).
-  window.addEventListener('message', (event) => {
-    if (!bkFrame || !/^https:\/\/([a-z0-9-]+\.)*cpost\.cz$/.test(event.origin)) return;
-    let data = event.data;
-    try { if (typeof data === 'string') data = JSON.parse(data); } catch { return; }
-    const p = data && typeof data === 'object' ? (data.point || (data.message === 'pickerResult' ? data : null)) : null;
-    if (!p || typeof p !== 'object' || p.id == null) return;
-    const city = p.municipality_name || p.city || '';
-    const label = [p.name || p.nazev, p.street || p.address || p.adresa, [p.zip || p.psc, city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
-    if (!label) return;
-    form.pickupPointId.value = String(p.id);
+  const choose = (id, label) => {
+    form.pickupPointId.value = String(id);
     form.pickupPointName.value = label.slice(0, 200);
     pickLabel.textContent = `${L('Vybráno:', 'Selected:')} ${form.pickupPointName.value}`;
-    closeBk(); update();
-  });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeBk(); });
-
-  // Zásilkovna (widget se načte až po kliknutí, jen s API klíčem Zásilkovny)
-  $('[data-pick-point]').addEventListener('click', async () => {
-    if (shippingSel()?.id === 'balikovna') { openBalikovna(); return; }
-    if (!window.Packeta) {
-      await new Promise((ok, fail) => { const s = document.createElement('script'); s.src = 'https://widget.packeta.com/v6/www/js/library.js'; s.onload = ok; s.onerror = fail; document.head.appendChild(s); })
-        .catch(() => { manual.hidden = false; manual.querySelector('input').required = true; });
+    closePicker(); update();
+  };
+  window.addEventListener('message', (event) => {
+    if (!picker) return;
+    let data = event.data;
+    try { if (typeof data === 'string') data = JSON.parse(data); } catch { return; }
+    if (!data || typeof data !== 'object') return;
+    if (picker.carrier === 'balikovna' && /^https:\/\/([a-z0-9-]+\.)*cpost\.cz$/.test(event.origin)) {
+      // Zpráva může přijít i z vnořeného okna mapy, proto se ověřuje jen původ
+      const p = data.point || (data.message === 'pickerResult' ? data : null);
+      if (!p || typeof p !== 'object' || p.id == null) return;
+      const label = [p.name || p.nazev, p.street || p.address || p.adresa, [p.zip || p.psc, p.municipality_name || p.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+      if (label) choose(p.id, label);
+    } else if (picker.carrier === 'zasilkovna' && /^https:\/\/([a-z0-9-]+\.)*packeta\.com$/.test(event.origin)) {
+      if (!data.packetaWidgetMessage) return;
+      const p = data.packetaPoint;
+      if (!p) { closePicker(); return; } // zákazník mapu zavřel bez výběru
+      const label = p.formatedValue || [p.name, p.street, [p.zip, p.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+      if (p.id != null && label) choose(p.id, label);
     }
-    window.Packeta?.Widget.pick(config.packetaKey, (point) => {
-      if (!point) return;
-      form.pickupPointId.value = String(point.id);
-      form.pickupPointName.value = (point.formatedValue || [point.name, point.street, [point.zip, point.city].filter(Boolean).join(' ')].filter(Boolean).join(', ')).slice(0, 200);
-      pickLabel.textContent = `${L('Vybráno:', 'Selected:')} ${form.pickupPointName.value}`;
-      update();
-    }, { country: 'cz', language: cs ? 'cs' : 'en' });
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePicker(); });
+
+  $('[data-pick-point]').addEventListener('click', () => {
+    if (shippingSel()?.id === 'balikovna') {
+      openPicker('balikovna', `${BALIKOVNA_ORIGIN}/locations/?type=BALIKOVNY&skipLocation=false&messageId=pickerResult`, L('Mapa výdejních míst Balíkovny', 'Balíkovna pickup point map'),
+        L('Klepněte na místo, sjeďte v mapě dolů pod otevírací dobu a potvrďte tlačítkem výběru', 'Tap a point, scroll down below the opening hours and confirm with the select button'));
+      return;
+    }
+    if (!config.packetaKey) return;
+    const q = new URLSearchParams({ apiKey: config.packetaKey, language: cs ? 'cs' : 'en', country: 'cz', appIdentity: 'atelier-dante-time' });
+    openPicker('zasilkovna', `${PACKETA_ORIGIN}/v6/#/?${q.toString()}`, L('Mapa výdejních míst Zásilkovny', 'Packeta pickup point map'),
+      L('Vyberte výdejní místo Zásilkovny a potvrďte ho tlačítkem Vybrat', 'Choose a Packeta pickup point and confirm it with the select button'));
   });
 
   form.addEventListener('submit', async (e) => {
