@@ -5,11 +5,13 @@ import { randomId, now, audit, releaseExpired, getSettings, nextCounter, product
 import { str, email as vEmail, oneOf, int, num } from '../../../server/validate.js';
 import { qrSvg } from '../../../server/qr.js';
 import { media } from '../../../server/media.js';
-import { markPaid, markShipped, cancelOrder, shopConfig, createInvoice } from '../../../server/orders.js';
+import { markPaid, markShipped, markDelivered, cancelOrder, shopConfig, createInvoice } from '../../../server/orders.js';
 import { describe, productName } from '../../../src/shop/describe.mjs';
 import { puncCheck } from '../../../src/shop/punc.mjs';
 import { slugify } from '../../../src/shop/format.mjs';
 import { OPERATOR } from '../../../src/site.mjs';
+import * as W from '../../../server/warranty.js';
+import * as OS from '../../../server/os.js';
 
 const STATUSES = ['draft', 'available', 'reserved', 'sold', 'in_progress', 'archived'];
 const PRODUCT_TEXT = { title: 200, brand: 80, model: 120, reference: 80, year: 20, movement: 120, case_material: 120, crystal: 80, water_resistance: 80, dial: 200, strap: 200, condition: 1000, service_done: 1000, original_parts: 1000, replaced_parts: 1000, accessories: 500, manufacturer_info: 500, safety_info: 500, hallmark: 200, plating: 200, authenticity_note: 1000, serial_ref: 120, description_cs: 5000, description_en: 5000, seo_title: 80, seo_description: 200 };
@@ -100,6 +102,8 @@ route('POST', 'logout-all', async ({ env, user }) => {
 // --- Přehled -------------------------------------------------------------------
 route('GET', 'dashboard', async ({ env }) => {
   await releaseExpired(env);
+  // Záložní spuštění OS, pokud časovač (Worker) neběží: nejvýš jednou za hodinu, chyba nesmí rozbít přehled
+  try { await OS.tick(env); } catch (e) { console.error('OS tick:', e?.message); }
   // Doby uložení podle zásad ochrany osobních údajů
   const yearAgo = new Date(Date.now() - 365 * 86400000).toISOString();
   await env.DB.batch([
@@ -136,6 +140,7 @@ route('GET', 'dashboard', async ({ env }) => {
     ordersToShip: (await q("SELECT COUNT(*) AS n FROM orders WHERE status='paid'")).n,
     commissionsActive: (await q("SELECT COUNT(*) AS n FROM commissions WHERE status IN ('prijato','v_praci','ceka_na_dily','hotovo')")).n,
     withdrawals: (await q('SELECT COUNT(*) AS n FROM withdrawals WHERE created_at > ?', new Date(Date.now() - 30 * 86400000).toISOString())).n,
+    warranty: await (async () => { try { const l = await W.list(env); return { remind: l.filter((x) => x.phase === 'pripomenout').length, window: l.filter((x) => x.phase === 'v_okne').length }; } catch { return { remind: 0, window: 0 }; } })(),
   });
 });
 
@@ -293,6 +298,7 @@ route('GET', 'orders/:id', async ({ env, params }) => {
 route('POST', 'orders/:id/paid', async ({ env, params, user, request }) => json({ order: await markPaid(env, params.id, user.email, new URL(request.url).origin) }));
 route('POST', 'orders/:id/shipped', async ({ env, params, body, user }) => { await markShipped(env, params.id, str(body.tracking, { max: 60 }), user.email); return json({ ok: true }); });
 route('POST', 'orders/:id/cancel', async ({ env, params, user }) => { await cancelOrder(env, params.id, user.email); return json({ ok: true }); });
+route('POST', 'orders/:id/delivered', async ({ env, params, body, user }) => { await markDelivered(env, params.id, body.delivered_on, user.email); return json({ ok: true }); });
 route('POST', 'orders/:id/status', async ({ env, params, body, user }) => {
   const status = oneOf(body.status, ['completed', 'withdrawn'], 'stav');
   await env.DB.prepare(`UPDATE orders SET status = ?, ${status === 'completed' ? 'completed_at' : 'cancelled_at'} = ?, updated_at = ? WHERE id = ?`).bind(status, now(), now(), params.id).run();
@@ -366,6 +372,35 @@ route('PUT', 'commissions/:id', async ({ env, params, body, user }) => {
   await audit(env, user.email, 'zakazka_upravena', 'commission', params.id, { status: d.status });
   return json({ ok: true });
 });
+
+// --- Garanční prohlídky (Dante Time OS E1) -------------------------------------------
+route('GET', 'warranty', async ({ env }) => json({ inspections: await W.list(env) }));
+route('POST', 'warranty', async ({ env, body, user }) => {
+  const id = await W.createManual(env, {
+    watch_title: str(body.watch_title, { max: 200, required: true, name: 'hodinky' }), customer_name: str(body.customer_name, { max: 120, required: true, name: 'jméno' }),
+    customer_email: vEmail(body.customer_email), lang: body.lang, handover_date: body.handover_date,
+  }, user.email);
+  return json({ id }, 201);
+});
+route('PUT', 'warranty/:id', async ({ env, params, body, user }) => {
+  if (body.handover_date) await W.setHandover(env, params.id, String(body.handover_date).slice(0, 10), user.email);
+  const set = []; const vals = [];
+  if ('status' in body) { set.push('status = ?'); vals.push(oneOf(body.status, ['planovana', 'objednana', 'zrusena'], 'stav')); }
+  if ('booked_for' in body) { set.push('booked_for = ?'); vals.push(body.booked_for ? String(body.booked_for).slice(0, 10) : null); }
+  if ('note' in body) { set.push('note = ?'); vals.push(str(body.note, { max: 2000, required: false })); }
+  if (set.length) {
+    await env.DB.prepare(`UPDATE warranty_inspections SET ${set.join(', ')}, updated_at = ? WHERE id = ? AND status <> 'hotova'`).bind(...vals, now(), params.id).run();
+    await audit(env, user.email, 'prohlidka_upravena', 'warranty_inspection', params.id, { status: body.status });
+  }
+  return json({ ok: true });
+});
+route('POST', 'warranty/:id/remind', async ({ env, params, user }) => { await W.sendReminder(env, params.id, user.email); return json({ ok: true }); });
+route('POST', 'warranty/remind-due', async ({ env, user }) => json({ sent: await W.sendDueReminders(env, user.email) }));
+route('POST', 'warranty/:id/protocol', async ({ env, params, body, user }) => json(await W.recordProtocol(env, params.id, {
+  done_on: body.done_on, result: oneOf(body.result || 'ok', ['ok', 'zavada'], 'výsledek'),
+  rate_s_day: num(body.rate_s_day, { min: -999, max: 999, name: 'odchylka chodu' }), amplitude_deg: int(body.amplitude_deg, { min: 0, max: 360, name: 'amplituda' }),
+  beat_error_ms: num(body.beat_error_ms, { min: 0, max: 99, name: 'odchylka kroku' }), findings: str(body.findings, { max: 2000, required: false }), paid: !!body.paid,
+}, user.email)));
 
 // --- Poptávky a odstoupení -----------------------------------------------------------
 route('GET', 'inquiries', async ({ env }) => {
@@ -463,6 +498,38 @@ route('GET', 'emails/:id', async ({ env, params }) => {
 route('GET', 'audit', async ({ env }) => {
   const { results } = await env.DB.prepare('SELECT * FROM audit_log ORDER BY id DESC LIMIT 150').all();
   return json({ log: results });
+});
+
+// --- Dante Time OS: přehled rolí, nálezy, schválení, náklady, zálohy -------------------
+route('GET', 'system', async ({ env }) => {
+  const runs = (await env.DB.prepare('SELECT * FROM agent_runs ORDER BY started_at DESC LIMIT 60').all()).results;
+  const approvals = (await env.DB.prepare("SELECT * FROM approvals ORDER BY CASE status WHEN 'ceka' THEN 0 ELSE 1 END, created_at DESC LIMIT 50").all()).results;
+  const backups = (await env.DB.prepare('SELECT * FROM backups ORDER BY created_at DESC LIMIT 10').all()).results;
+  const s = await getSettings(env);
+  return json({ roles: await OS.roles(env), runs, findings: await OS.openFindings(env), approvals, backups, budget: await OS.aiBudget(env), lastTick: s.os_last_tick, cron: !!env.OS_TICK_SECRET });
+});
+route('POST', 'system/roles/:id/pause', async ({ env, params, body, user }) => { await OS.pauseRole(env, params.id, 'majitel', str(body.reason, { max: 200 }) || `pozastavil ${user.email}`); return json({ ok: true }); });
+route('POST', 'system/roles/:id/resume', async ({ env, params, user }) => { await OS.resumeRole(env, params.id, user.email); return json({ ok: true }); });
+route('POST', 'system/run', async ({ env, user }) => { await audit(env, user.email, 'os_spusteno_rucne', 'os', null); return json(await OS.tick(env, { force: true })); });
+route('POST', 'system/director', async ({ env, user }) => { await audit(env, user.email, 'os_souhrn_rucne', 'os', null); return json(await OS.runRole(env, 'director', 'souhrn na vyžádání', () => OS.directorSummary(env))); });
+route('POST', 'system/findings/:id/resolve', async ({ env, params, user }) => {
+  await env.DB.prepare('UPDATE os_findings SET resolved_at = ? WHERE id = ?').bind(now(), params.id).run();
+  await audit(env, user.email, 'nalez_uzavren', 'os_finding', params.id); return json({ ok: true });
+});
+route('POST', 'system/approvals/:id', async ({ env, params, body, user }) => {
+  const st = oneOf(body.decision, ['schvaleno', 'zamitnuto'], 'rozhodnutí');
+  await env.DB.prepare("UPDATE approvals SET status=?, decided_at=?, decided_by=? WHERE id=? AND status='ceka'").bind(st, now(), user.email, params.id).run();
+  await audit(env, user.email, `schvaleni_${st}`, 'approval', params.id); return json({ ok: true });
+});
+route('PUT', 'system/ai-limit', async ({ env }) => { throw new HttpError('Limit AI mění majitel po schválení (R20). Napište agentovi.', 403); });
+route('GET', 'system/backups/:id', async ({ env, params, user }) => {
+  const b = await env.DB.prepare('SELECT * FROM backups WHERE id = ?').bind(params.id).first();
+  if (!b) throw new HttpError('Záloha nenalezena', 404);
+  const data = await env.MEDIA_KV.get(b.storage_key, 'arrayBuffer');
+  if (!data) throw new HttpError('Záloha už vypršela', 404);
+  await audit(env, user.email, 'zaloha_stazena', 'backup', params.id);
+  // Šifrovaný soubor; rozšifruje ho jen držitel klíče BACKUP_KEY (scripts/backup-decrypt.mjs)
+  return new Response(data, { headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `attachment; filename="dante-time-${b.created_at.slice(0, 10)}.enc"`, 'Cache-Control': 'no-store' } });
 });
 
 // --- Směrovač ---------------------------------------------------------------------------

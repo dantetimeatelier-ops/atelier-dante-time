@@ -11,7 +11,7 @@
 //   jakákoli jiná   → zkušební verze (SHOP_MODE=test, neindexuje se), hodinky z katalogu
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { loadCatalog, catalogSql, catalogMedia } from './catalog.mjs';
@@ -174,6 +174,38 @@ if (process.env.RESEND_API_KEY) {
   const g = await (await fetch(api, { headers })).json();
   const has = (envName) => Boolean(g.result?.deployment_configs?.[envName]?.env_vars?.RESEND_API_KEY);
   console.log(`uloženo (zkušební verze: ${has('preview') ? 'ano' : 'NE'}, ostrá verze: ${has('production') ? 'ano' : 'NE'})`);
+}
+
+// 7c2) Šifrovací klíč záloh (GitHub Secret BACKUP_KEY) → šifrovaná proměnná projektu Pages
+if (process.env.BACKUP_KEY) {
+  step('Klíč pro šifrování záloh');
+  const api = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/pages/projects/${PROJECT}`;
+  const headers = { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, 'Content-Type': 'application/json' };
+  const secret = { BACKUP_KEY: { type: 'secret_text', value: process.env.BACKUP_KEY.trim() } };
+  const r = await fetch(api, { method: 'PATCH', headers, body: JSON.stringify({ deployment_configs: { preview: { env_vars: secret }, production: { env_vars: secret } } }) });
+  console.log(r.ok ? 'uloženo' : `NEULOŽENO (HTTP ${r.status})`);
+}
+
+// 7d) Dante Time OS – časovač (jen ostrý web). Klíč se při každém nasazení vymění a uloží
+//     šifrovaně do projektu Pages i do Workeru; v repozitáři ani ve výpisu se neobjeví.
+//     Potřebuje oprávnění tokenu „Workers Scripts: Edit“. Bez něj se kontroly spouštějí
+//     při otevření administrace (záložní režim) a nasazení pokračuje.
+if (production) {
+  step('Časovač Dante Time OS');
+  const key = randomBytes(32).toString('hex');
+  const api = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/pages/projects/${PROJECT}`;
+  const headers = { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, 'Content-Type': 'application/json' };
+  try {
+    const wdir = path.join(ROOT, 'workers', 'os-cron');
+    run(['deploy', '--config', path.join(wdir, 'wrangler.toml')], { cwd: wdir, capture: true });
+    execFileSync(path.join(ROOT, 'node_modules', '.bin', 'wrangler'), ['secret', 'put', 'OS_TICK_SECRET', '--config', path.join(wdir, 'wrangler.toml')],
+      { cwd: wdir, input: key, env: { ...process.env, WRANGLER_SEND_METRICS: 'false', CI: 'true' }, stdio: ['pipe', 'pipe', 'pipe'] });
+    const r = await fetch(api, { method: 'PATCH', headers, body: JSON.stringify({ deployment_configs: { production: { env_vars: { OS_TICK_SECRET: { type: 'secret_text', value: key } } } } }) });
+    if (!r.ok) throw new Error(`uložení klíče do Pages (HTTP ${r.status})`);
+    console.log('nasazen (spouští se každou hodinu)');
+  } catch (e) {
+    console.log(`NENASAZEN – ${String(e.message).split('\n')[0].slice(0, 200)}. Kontroly poběží při otevření administrace. Pro časovač přidejte tokenu oprávnění „Workers Scripts: Edit“ (docs/DANTE-TIME-OS.md).`);
+  }
 }
 
 // 8) Sestavení a nasazení

@@ -5,7 +5,7 @@ import { head, toc, email, seller, vatText, returnAddress, coi, ecc, tradeOffice
 import { TERMS as T, priceCs } from '../terms.mjs';
 
 // Krátká věta o záruce pro všechna místa, kde se záruka zmiňuje (reklama musí obsahovat podmínky, § 2113 odst. 2 OZ)
-export const warrantyShortCs = () => `záruka ${T.warrantyMonths} měsíců${T.inspection.enabled ? ` (ve druhém roce po garanční prohlídce)` : ''}`;
+export const warrantyShortCs = () => `záruka za jakost až ${T.warrantyMonths} měsíců${T.inspection.enabled ? ` (ve druhém roce po garanční prohlídce)` : ''}`;
 const insp = T.inspection;
 
 const L = 'cs';
@@ -79,8 +79,7 @@ ${toc(L, [['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky, součásti a materi
 
 <h2 id="op7">7. Záruka a práva z vadného plnění</h2>
 <ol>
-<li>Na prodávané hodinky poskytuje prodávající dobrovolnou <strong>záruku za jakost ${T.warrantyMonths} měsíců</strong> od převzetí${insp.enabled ? `; ve druhém roce trvá záruka po absolvování garanční prohlídky` : ''}. Podmínky jsou na stránce <a href="/warranty">Záruka a garance pravosti</a>.</li>
-<li>Spotřebiteli dále vždy náleží zákonná práva z vadného plnění v době ${T.liabilityMonths} měsíců od převzetí, a to i u použitého zboží. Záruka ani garanční prohlídka tato práva neomezují. Postup upravuje <a href="/reklamace">Reklamační řád</a>.</li>
+<li>Na prodávané hodinky poskytuje prodávající dobrovolnou <strong>záruku za jakost až ${T.warrantyMonths} měsíců</strong>${insp.enabled ? '. Podmínkou jejího pokračování ve druhém roce je absolvování garanční prohlídky' : ''}. Podrobné podmínky naleznete na stránce <a href="/warranty">Záruka a garance pravosti</a>. Zákonná práva spotřebitele z vadného plnění tím nejsou dotčena. Postup při reklamaci upravuje <a href="/reklamace">Reklamační řád</a>.</li>
 </ol>
 
 <h2 id="op8">8. Doživotní garance pravosti</h2>
@@ -118,7 +117,7 @@ ${toc(L, [['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky, součásti a materi
 
 // ---------------------------------------------------------------------------
 export const claims = doc('claims', '/reklamace', 'Reklamační řád',
-  `Reklamační řád Atelier Dante Time: záruka 24 měsíců, lhůty a postup reklamace hodinek${SVC ? ', zakázek a servisu' : ''}.`,
+  `Reklamační řád Atelier Dante Time: záruka za jakost, lhůty a postup reklamace hodinek${SVC ? ', zakázek a servisu' : ''}.`,
   () => `${head(L)}
 <h2>1. Na co se reklamační řád vztahuje</h2>
 <ul>
@@ -130,9 +129,8 @@ ${SVC ? `<li><strong>zakázková výroba</strong> – hodinky sestavené z díl�
 
 <h2>2. Záruční doba a odpovědnost za vady</h2>
 <ol>
-<li>Na prodávané hodinky poskytujeme dobrovolnou <strong>záruku za jakost ${T.warrantyMonths} měsíců</strong> od převzetí${insp.enabled ? ', ve druhém roce po absolvování garanční prohlídky' : ''} (podmínky na stránce <a href="/warranty">Záruka a garance pravosti</a>).</li>
-<li>Spotřebitel má vždy zákonná práva z vadného plnění po dobu ${T.liabilityMonths} měsíců od převzetí, i u použitých hodinek, nezávisle na záruce a garanční prohlídce. Projeví-li se vada do ${T.presumptionMonths} měsíců od převzetí, má se za to, že hodinky byly vadné již při převzetí.</li>
-${SVC ? '<li>U servisu, renovace a přestavby odpovídáme za provedenou práci a nově dodané součásti ${T.liabilityMonths} měsíců od předání.</li>' : ''}
+<li>Na prodávané hodinky poskytujeme dobrovolnou <strong>záruku za jakost až ${T.warrantyMonths} měsíců</strong>${insp.enabled ? '. Podmínkou jejího pokračování ve druhém roce je absolvování garanční prohlídky' : ''}. Podrobné podmínky naleznete na stránce <a href="/warranty">Záruka a garance pravosti</a>. Zákonná práva spotřebitele z vadného plnění tím nejsou dotčena.</li>
+${SVC ? `<li>U servisu, renovace a přestavby odpovídáme za provedenou práci a nově dodané součásti ${T.liabilityMonths} měsíců od předání.</li>` : ''}
 </ol>
 
 <h2>3. Co není vadou</h2>
@@ -217,12 +215,12 @@ ${SVC ? '<li><strong>servis a renovace</strong> zcela dokončené s vaším výs
 
 // ---------------------------------------------------------------------------
 export const warranty = doc('warranty', '/warranty', 'Záruka a doživotní garance pravosti',
-  'Záruka 24 měsíců na hodinky Atelier Dante Time a doživotní garance pravosti originálních strojků, ciferníků a ručiček.',
+  'Záruka za jakost až 24 měsíců s garanční prohlídkou a doživotní garance pravosti originálních strojků, ciferníků a ručiček Atelier Dante Time.',
   () => `${head(L)}
-<h2>1. Záruka ${T.warrantyMonths} měsíců</h2>
-<p><strong>Ze zákona máte vůči prodávajícímu právo na bezplatnou nápravu vady, která se projeví do ${T.liabilityMonths} měsíců od převzetí. Toto právo není zárukou ani garanční prohlídkou nijak dotčeno.</strong></p>
+<h2>1. Záruka za jakost až ${T.warrantyMonths} měsíců</h2>
+<p><strong>Ze zákona máte vůči prodávajícímu právo na bezplatnou nápravu vady, která se projeví do ${T.liabilityMonths} měsíců od převzetí, a to i u použitých hodinek. Projeví-li se vada do ${T.presumptionMonths} měsíců, má se za to, že hodinky byly vadné již při převzetí. Tato práva nejsou zárukou ani garanční prohlídkou nijak dotčena.</strong></p>
 <ol>
-<li>Nad rámec zákonných práv poskytuje ${OPERATOR.name} (${OPERATOR.tradeName}) na prodávané hodinky dobrovolnou <strong>záruku za jakost ${T.warrantyMonths} měsíců</strong> od převzetí (§ 2113 a násl. OZ). Záruka se vztahuje na funkčnost strojku a provedené práce.</li>
+<li>Nad rámec zákonných práv poskytuje ${OPERATOR.name} (${OPERATOR.tradeName}) na prodávané hodinky dobrovolnou <strong>záruku za jakost až ${T.warrantyMonths} měsíců</strong> od převzetí (§ 2113 a násl. OZ). Záruka se vztahuje na funkčnost strojku a provedené práce.</li>
 ${insp.enabled ? `<li><strong>Garanční prohlídka.</strong> V prvním roce platí záruka bez dalších podmínek. Ve druhém roce trvá záruka, pokud hodinky absolvují garanční prohlídku <strong>po ${insp.afterMonths} měsících od převzetí</strong>, a to v období ${insp.toleranceDays} dnů před tímto dnem nebo po něm. Prohlídka zahrnuje kontrolu přesnosti chodu, amplitudy, odchylky kroku a základního technického stavu hodinek; o výsledku obdržíte písemný protokol. Cena prohlídky je <strong>${priceCs(insp.priceCzk)}</strong>. Dopravu hodinek do ateliéru a zpět hradíte vy, nedohodneme-li se jinak. Vadu, na kterou se vztahuje záruka nebo vaše zákonná práva, při prohlídce odstraníme bezplatně.</li>
 <li>Pokud garanční prohlídku neabsolvujete, dobrovolná záruka skončí uplynutím ${insp.afterMonths} měsíců od převzetí. Vaše zákonná práva z vadného plnění trvají dál v plném rozsahu.</li>
 <li>Podmínka garanční prohlídky platí pro hodinky zakoupené od účinnosti verze ${insp.fromVersion} těchto podmínek. Na dříve zakoupené hodinky se nevztahuje.</li>` : ''}
@@ -346,7 +344,7 @@ export const privacy = doc('privacy', '/privacy', 'Zásady ochrany osobních úd
 <h2>5. Vaše práva</h2>
 <p>Máte právo na přístup, opravu, výmaz, omezení zpracování, přenositelnost a námitku proti zpracování na základě oprávněného zájmu. Uplatněte je na ${email}, odpovíme do měsíce. Stížnost můžete podat u Úřadu pro ochranu osobních údajů (Pplk. Sochora 27, 170 00 Praha 7, <a href="https://uoou.gov.cz" rel="noopener noreferrer">uoou.gov.cz</a>) nebo u dozorového úřadu ve státě vašeho bydliště.</p>
 <h2>6. Zabezpečení</h2>
-<p>Web používá šifrované spojení (HTTPS). Administrace je chráněna heslem a dvoufázovým ověřením. Fotografie hodinek se při nahrání zbavují metadat včetně polohy. Zákaznické údaje nejsou ve veřejném zdrojovém kódu.</p>`);
+<p>Web používá šifrované spojení (HTTPS). Administrace je chráněna heslem a dvoufázovým ověřením. Fotografie hodinek se při nahrání zbavují metadat včetně polohy. Zákaznické údaje nejsou ve veřejném zdrojovém kódu. Databázi pravidelně zálohujeme; zálohy jsou šifrované a uchovávají se nejvýše 30 dní.</p>`);
 
 // ---------------------------------------------------------------------------
 export const cookies = doc('cookies', '/cookies', 'Zásady používání cookies',

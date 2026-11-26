@@ -148,7 +148,7 @@ ${o.body}
       <ul>
         <li><a href="${legalHref('/doprava-a-platba')}">${L('Doprava a platba', 'Shipping &amp; payment')}</a></li>
         <li><a href="${legalHref('/returns')}">${L(`Vrácení do ${TERMS.withdrawalDays} dnů`, `${TERMS.withdrawalDays}-day returns`)}</a> · <a href="${lang === 'en' ? '/odstoupeni' : '/odstoupeni'}">${L('odstoupit online', 'withdraw online')}</a></li>
-        <li><a href="${legalHref('/reklamace')}">${L(`Reklamace a záruka ${TERMS.warrantyMonths} měsíců`, `Complaints &amp; ${TERMS.warrantyMonths}-month warranty`)}</a></li>
+        <li><a href="${legalHref('/reklamace')}">${L('Reklamace a záruka', 'Complaints &amp; warranty')}</a></li>
         <li><a href="${legalHref('/warranty')}">${L('Doživotní garance pravosti', 'Lifetime authenticity guarantee')}</a></li>
         ${SERVICES_OFFERED ? `<li><a href="${legalHref('/zakazkova-vyroba')}">${L('Servis a zakázky na míru – podmínky', 'Service &amp; commissions – terms')}</a></li>` : ''}
       </ul>

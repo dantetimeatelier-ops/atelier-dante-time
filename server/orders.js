@@ -10,6 +10,7 @@ import { isValidIban } from '../src/shop/spd.mjs';
 import { EU_COUNTRIES, countryName, czkToEurCents, formatEur } from '../src/shop/eu.mjs';
 import { legalDoc, LEGAL_VERSION } from '../src/legal/docs.mjs';
 import { TERMS } from '../src/terms.mjs';
+import { createForOrder } from './warranty.js';
 
 // Texty e-mailů v jazyce objednávky (zákazníci z EU objednávají i anglicky)
 const tr = (o, cs, en) => (o?.lang === 'en' ? en : cs);
@@ -213,6 +214,23 @@ ${legalAttachment(order)}`,
   });
 }
 
+/** Skutečné převzetí hodinek zákazníkem: dokončí objednávku a založí garanční prohlídky (od tohoto dne). */
+export async function markDelivered(env, orderId, deliveredOn, actor) {
+  const order = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();
+  if (!order) throw new HttpError('Objednávka neexistuje', 404);
+  if (!['shipped', 'completed'].includes(order.status)) throw new HttpError('Převzetí lze zapsat jen u odeslané objednávky');
+  const day = /^\d{4}-\d{2}-\d{2}$/.test(deliveredOn || '') ? deliveredOn : now().slice(0, 10);
+  if (day > now().slice(0, 10)) throw new HttpError('Datum převzetí nemůže být v budoucnosti');
+  await env.DB.prepare("UPDATE orders SET status='completed', completed_at=COALESCE(completed_at, ?), delivered_on=?, updated_at=? WHERE id=?").bind(now(), day, now(), orderId).run();
+  const created = await createForOrder(env, order, day);
+  if (!created) { // už existují → jen opravit datum převzetí
+    const { results } = await env.DB.prepare("SELECT id FROM warranty_inspections WHERE order_id = ? AND status <> 'hotova'").bind(orderId).all();
+    const { setHandover } = await import('./warranty.js');
+    for (const r of results) await setHandover(env, r.id, day, actor);
+  }
+  await audit(env, actor, 'objednavka_prevzata', 'order', orderId, { day });
+}
+
 /** Označí objednávku jako zaplacenou: hodinky prodány, faktura, e-mail. */
 export async function markPaid(env, orderId, actor, origin) {
   const order = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();
@@ -221,7 +239,9 @@ export async function markPaid(env, orderId, actor, origin) {
   const t = now();
   if (order.status === 'shipped') {
     // Dobírka: peníze dorazily po odeslání → objednávka je dokončena
-    await env.DB.prepare("UPDATE orders SET status='completed', paid_at=?, completed_at=?, updated_at=? WHERE id=?").bind(t, t, t, orderId).run();
+    // Dobírka: zákazník platí při převzetí → den platby = skutečné převzetí (lze upravit v administraci)
+    await env.DB.prepare("UPDATE orders SET status='completed', paid_at=?, completed_at=?, delivered_on=COALESCE(delivered_on, ?), updated_at=? WHERE id=?").bind(t, t, t.slice(0, 10), t, orderId).run();
+    await createForOrder(env, { ...order, delivered_on: t.slice(0, 10) }, t.slice(0, 10));
     const inv = await issueInvoice(env, orderId);
     await audit(env, actor, 'dobirka_zaplacena', 'order', orderId);
     await invoiceEmail(env, orderId, inv, origin);

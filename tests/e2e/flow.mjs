@@ -155,6 +155,21 @@ try {
   await page.getByRole('button', { name: /Odesláno/ }).click();
   await page.locator('.chip.shipped').waitFor();
   step('odeslání označeno');
+  const orderUrl = page.url();
+
+  // 5b) Převzetí zákazníkem → garanční prohlídka vznikne automaticky (podmínky 1.1) a jde zapsat protokol
+  await page.getByRole('button', { name: /Převzato zákazníkem/ }).click();
+  await page.locator('.chip.completed').waitFor();
+  await page.goto(`${BASE}/admin/#/prohlidky`);
+  await page.locator('.list a.item').first().click();
+  await page.getByText('Termín prohlídky').waitFor();
+  await page.getByLabel(/Odchylka chodu/).fill('+4');
+  await page.getByLabel(/Amplituda/).fill('285');
+  await page.getByRole('button', { name: /Uložit protokol/ }).click();
+  await page.getByText('Provedeno', { exact: true }).waitFor();
+  await page.getByText('Zákonná práva do').waitFor();
+  step('převzetí zapsáno, garanční prohlídka založena a zapsán protokol');
+  await page.goto(orderUrl);
 
   // 6) Online odstoupení od smlouvy (dva kroky)
   const orderNumber = (await page.locator('h1').textContent()).trim();
@@ -251,6 +266,14 @@ try {
   await page.getByRole('button', { name: 'Potvrdit výměnu' }).click();
   await page.locator('.toast', { hasText: 'Klíč vyměněn' }).waitFor();
   step('klíč dvoufázového ověření vyměněn');
+
+  // Dante Time OS: přehled rolí, Guardian, záloha
+  await page.goto(`${BASE}/admin/#/system`);
+  await page.getByRole('button', { name: 'Spustit kontroly teď' }).click();
+  await page.getByText('DT Guardian – otevřené nálezy').waitFor();
+  await page.getByText('guardian · záloha').first().waitFor();
+  await page.getByText('guardian · kontrola').first().waitFor();
+  step('Dante Time OS: kontroly DT Guardian a záloha databáze proběhly');
 
   assert.deepEqual(errors, [], `Chyby v prohlížeči: ${errors.join(' | ')}`);
   console.log('\n✅ Celý proces funguje.');

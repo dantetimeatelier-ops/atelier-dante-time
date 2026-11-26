@@ -111,7 +111,7 @@ test('právní dokumenty: anglická verze má stejné dokumenty a náležitosti'
   assert.deepEqual(en.map((d) => d.key).sort(), cs);
   for (const d of en) assert.ok(d.path.startsWith('/en/'), d.path);
   const all = en.map((d) => d.body()).join('\n');
-  for (const must of ['14 days', '24-month', 'every subsequent owner', 'movements, dials and hands', '539/1992 Coll.', '363/2013 Coll.', 'adr.coi.cz', 'Rome I', '2018/302', 'IBAN', 'Model withdrawal form']) {
+  for (const must of ['14 days', 'up to 24 months', 'every subsequent owner', 'movements, dials and hands', '539/1992 Coll.', '363/2013 Coll.', 'adr.coi.cz', 'Rome I', '2018/302', 'IBAN', 'Model withdrawal form']) {
     assert.ok(all.includes(must), `Missing: ${must}`);
   }
   assert.equal(new Set(ALL_LEGAL.map((d) => d.path)).size, ALL_LEGAL.length); // unikátní URL
@@ -188,4 +188,30 @@ test('bezpečnostní hlavičky: _headers má jediný blok /* s HSTS, CSP a X-Fra
   const h = readFileSync(new URL('../../public/_headers', import.meta.url), 'utf8');
   assert.equal(h.match(/^\/\*$/gm).length, 1);
   for (const k of ['Strict-Transport-Security', 'Content-Security-Policy', 'X-Frame-Options', 'X-Content-Type-Options']) assert.ok(h.includes(k), k);
+});
+
+test('garanční prohlídky: termíny 12 měsíců ±30 dnů a prodloužení záruky', async () => {
+  const W = await import('../../src/shop/warranty.mjs');
+  assert.equal(W.addMonths('2026-01-31', 1), '2026-02-28');
+  assert.equal(W.addMonths('2026-11-26', 12), '2027-11-26');
+  const s = W.schedule('2026-11-26');
+  assert.equal(s.due_date, '2027-11-26');
+  assert.equal(s.window_from, '2027-10-27');
+  assert.equal(s.window_to, '2027-12-26');
+  assert.equal(s.remind_on, '2027-10-13');
+  assert.equal(s.warranty_full_until, '2028-11-26');
+  const row = { ...s, status: 'planovana', reminder_sent_at: null };
+  assert.equal(W.phase(row, '2027-06-01'), 'planovana');
+  assert.equal(W.phase(row, '2027-10-20'), 'pripomenout');
+  assert.equal(W.phase(row, '2027-11-01'), 'v_okne');
+  assert.equal(W.phase(row, '2027-12-27'), 'zmeskana');
+  assert.equal(W.warrantyUntilAfter(row, '2027-11-20'), '2028-11-26');      // v termínu → 24 měsíců
+  assert.equal(W.warrantyUntilAfter(row, '2028-01-15'), '2027-11-26');      // po termínu → jen 12 měsíců
+  assert.equal(W.inspectionApplies('1.1'), true);
+  assert.equal(W.inspectionApplies('1.0'), false);                          // ne zpětně
+  assert.equal(W.inspectionApplies('2026-12-navrh-3'), false);
+});
+
+test('právní dokumenty: žádná nevyplněná proměnná ${…} v textu', () => {
+  for (const d of ALL_LEGAL) assert.ok(!/\$\{/.test(d.body()), `${d.path} obsahuje nevyplněnou proměnnou`);
 });
