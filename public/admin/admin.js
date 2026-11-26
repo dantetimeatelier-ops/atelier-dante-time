@@ -428,8 +428,8 @@
         ${ai.enabled ? '' : '<p><b>Zapnutí (jednorázově):</b> 1) účet na console.anthropic.com, nabít kredit (např. 5 USD) a nastavit limit útraty; 2) vytvořit API klíč; 3) Cloudflare → Workers &amp; Pages → projekt → Settings → Variables and Secrets → přidat <b>Secret</b> s názvem <code>ANTHROPIC_API_KEY</code>. Klíč nikam jinam neposílejte.</p>'}
         <form id="mf"><label>Model<select name="ai_model">${Object.entries(ai.models).map(([k, m]) => `<option value="${k}" ${k === ai.model ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label><button class="btn block">Uložit model</button></form></details></div>
       <div class="grid" style="margin-top:12px">
-        <label class="btn primary block">Nahrát nákupy<input type="file" id="up-nakup" accept="image/*,application/pdf" multiple hidden></label>
-        <label class="btn block">Importovat vydané faktury<input type="file" id="up-prodej" accept="image/*,application/pdf" multiple hidden></label></div>
+        <label class="btn primary block filebtn">Nahrát nákupy<input type="file" id="up-nakup" accept="image/*,application/pdf" multiple></label>
+        <label class="btn block filebtn">Importovat vydané faktury<input type="file" id="up-prodej" accept="image/*,application/pdf" multiple></label></div>
       <p class="small muted">Screenshoty objednávek (Aukro, AliExpress, eBay…), fotky, PDF i faktury. Můžete vybrat více souborů najednou.</p>
       <div id="prog" class="list"></div>
       ${d.review.length || d.saleReview.length ? `<h2 style="margin-top:16px">Ke kontrole (${d.review.length + d.saleReview.length})</h2>
