@@ -4,6 +4,11 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-26 – Claude – claude/balikovna-bez-pole
+**Hotovo:** u Balíkovny zmizelo ruční pole „Výdejní místo (název a adresa)“ – místo se vybírá jen na mapě (pod tlačítkem se ukáže „Vybráno: …“). Ruční pole zůstává jen u Zásilkovny bez `PACKETA_API_KEY`.
+
+---
+
 ## 2026-11-26 – Claude – claude/oprava-vyber-vydejniho-mista
 **Hotovo:** majitel nemohl v pokladně potvrdit výdejní místo (Balíkovna i Zásilkovna). Okno Balíkovny přes celou
 obrazovku (na iPhonu zakrývala lišta prohlížeče spodní část mapy), zpráva z mapy se ověřuje jen podle původu
