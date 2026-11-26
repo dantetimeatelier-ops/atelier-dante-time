@@ -142,3 +142,9 @@ Majitel bere na vědomí riziko přiměřenosti u zákazníků z EU (LEGAL-REVIE
 Majitel potvrdil, že tištěná knížka už obsahuje stejné podmínky (varianta A), takže se záruční texty neliší.
 **Fyzické balení:** majitel dodává knížku a gravírovanou kartičku s modelem; další tištěný
 záruční list nechce. Záruční list v textové podobě (§ 2174a OZ) jde e-mailem s potvrzením objednávky.
+
+## R19 – Schválení podmínek verze 1.1 a zapnutí objednávek (2026-11-26)
+**Rozhodl:** majitel („schvaluji 1.1“)
+**Rozhodnutí:** Podmínky 1.1 (reklamace s prodloužením jen po dohodě, garanční prohlídka varianta A,
+zálohy jen po dohodě 20–30 %, záruční list v potvrzení objednávky) platí od 26. 11. 2026.
+Ostrý web přijímá objednávky (`SHOP_MODE = "live"` ve `wrangler.toml`).

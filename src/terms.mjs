@@ -15,8 +15,8 @@ export const TERMS = {
   pickupDays: 30,              // převzetí hotové zakázky od oznámení
   accuracyVintage: '±30 s/den', // orientační tolerance chodu vintage hodinek
   deposit: { typical: '20–30 %' }, // záloha u zakázek: jen po individuální dohodě
-  // Garanční prohlídka – podmínka dobrovolné záruky ve 2. roce (návrh R18, čeká na schválení majitele)
-  inspection: { enabled: true, afterMonths: 12, toleranceDays: 30, priceCzk: 690, fromVersion: '1.1' },
+  // Garanční prohlídka – podmínka dobrovolné záruky ve 2. roce (R18)
+  inspection: { enabled: true, afterMonths: 12, toleranceDays: 30, priceCzk: 690, fromVersion: '1.1' }, // varianta A schválena (R18)
   defaultPrices: { zasilkovna: 99, balikovna: 79, cod: 49 },
 };
 

@@ -1,6 +1,6 @@
 # Právní dokumenty – kontrola před zveřejněním
 
-**Stav:** verze 1.0 schválena 26. 11. 2026. ⚖️ **NÁVRH 1.1** (reklamace, garanční prohlídka, zálohy – část 2f) čeká na schválení majitele. Otevřený právní bod L1 (část 2e) zůstává na odpovědnosti majitele.
+**Stav:** ✅ verze 1.1 schválena majitelem 26. 11. 2026 (R19), účinnost od 26. 11. 2026 (1.0 nahrazena týž den, žádné objednávky podle 1.0 nevznikly). Otevřený právní bod L1 (část 2e) zůstává na odpovědnosti majitele.
 **Připraveno:** 25. 11. 2026
 **Zdroj textů:** `src/legal/cs.mjs` (česky), `src/legal/en.mjs` (anglicky), společné údaje
 `src/legal/common.mjs` a `src/site.mjs` (objekt `OPERATOR`).
