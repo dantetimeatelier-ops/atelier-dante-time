@@ -4,6 +4,12 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-26 – Claude – claude/import-faktur-503 (PR #21, #20)
+**Hotovo:** Chyba 503 při hromadném importu cca 2MB faktur: server načítal soubor z D1 (BLOB → velká zátěž CPU na bezplatném Cloudflare) při kontrole duplicity i při čtení AI. Nyní se duplicita ověřuje přes `length()` v SQL, velký soubor se předá AI (Files API, `documents.ai_file_id`, migrace 0016) hned při nahrání a čtení AI ho z D1 nenačítá. Tlačítko „Začít import faktur znovu“ (smaže prodeje `source IN ('import','ai')` a jejich soubory, potvrzení slovem SMAZAT).
+**Rozpracováno:** Majitel maže import a nahrává znovu všech 40 historických faktur 2026.
+**Další krok:** Ověřit výsledek importu a tržby 2026; pak E4.
+**Pozor na:** Čtení souboru z D1 (`docBytes`) je u velkých souborů drahé. Používat jen jako zálohu (např. „Přečíst znovu“ po vypršení souboru u AI).
+
 ## 2026-11-26 – Claude – claude/fakturace (centrální fakturační systém)
 **Hotovo:** fakturace nezávislá na e-shopu: řada DT-RRRR-NNNN (čítač po letech, UNIQUE), zdroj prodeje
 (eshop/vinted/aukro/instagram/facebook/osobne/zakazka/jine), druhy faktura / zálohová / dobropis, vyúčtování zálohy
