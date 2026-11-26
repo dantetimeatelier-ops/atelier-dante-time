@@ -5,9 +5,9 @@ import { randomId, now, audit } from './db.js';
 import { str, int, num, oneOf } from './validate.js';
 import { COST_CATS } from './finance.js';
 import { cnbRate, toCzk } from './fx.js';
-import { extractJson, aiStatus, uploadAiFile, deleteAiFile } from './ai.js';
+import { extractJson, aiStatus, deleteAiFile } from './ai.js';
 import { runRole } from './os.js';
-import { DOC_MAX, splitDoc, docBytes, removeChunks } from './docstore.js';
+import { DOC_MAX, splitDoc, docB64, docComplete, removeChunks } from './docstore.js';
 
 export const PLATFORMS = { aukro: 'Aukro', aliexpress: 'AliExpress', ebay: 'eBay', vinted: 'Vinted', bazos: 'Bazoš', sbazar: 'Sbazar', etsy: 'Etsy', chrono24: 'Chrono24', amazon: 'Amazon', temu: 'Temu', soukrome: 'Soukromá osoba', obchod: 'Obchod / dodavatel', jine: 'Jiné' };
 export const PAY = { prevod: 'Převod', karta: 'Karta', dobirka: 'Dobírka', hotove: 'Hotově', jine: 'Jiné' };
@@ -80,14 +80,11 @@ export async function upload(env, form, actor, deps = {}) {
   const hash = hex(await crypto.subtle.digest('SHA-256', buf));
   const dup = await env.DB.prepare('SELECT id, cost_id, sale_id FROM documents WHERE sha256 = ?').bind(hash).first();
   const name = str(f.name, { max: 200 });
-  // Velikost uloženého souboru se zjistí v databázi (bez načítání souboru – to by na Cloudflare překročilo limit procesoru)
-  if (dup) {
-    const st = await env.DB.prepare('SELECT COALESCE(length(data), 0) + (SELECT COALESCE(SUM(length(data)), 0) FROM document_chunks WHERE document_id = ?) AS n FROM documents WHERE id = ?').bind(dup.id, dup.id).first();
-    if (st.n !== buf.length) {
-      // Dříve se soubor neuložil celý → smazat a uložit znovu
-      await env.DB.prepare('DELETE FROM documents WHERE id = ?').bind(dup.id).run(); await removeChunks(env, dup.id);
-      return upload(env, form, actor, deps);
-    }
+  // Úplnost uloženého souboru se ověří v databázi bez načítání obsahu
+  if (dup && !(await docComplete(env, dup.id))) {
+    // Dříve se soubor neuložil celý → smazat a uložit znovu
+    await env.DB.prepare('DELETE FROM documents WHERE id = ?').bind(dup.id).run(); await removeChunks(env, dup.id);
+    return upload(env, form, actor, deps);
   }
   if (dup) {
     // Soubor už v systému je. Patří-li stále k nákupu/prodeji, je to opravdová duplicita.
@@ -96,25 +93,22 @@ export async function upload(env, form, actor, deps = {}) {
     if (linked) return { id: dup.id, duplicate: true, cost_id: dup.cost_id, sale_id: dup.sale_id };
     // Záznam byl dříve smazán → soubor se použije znovu a vznikne nový koncept
     const draft = await createDraft(env, purpose, name, actor);
-    const aiFile = await uploadAiFile(env, buf, sniff(buf), deps);
-    await env.DB.prepare("UPDATE documents SET cost_id = ?, sale_id = ?, purpose = ?, ai_status = ?, ai_file_id = ? WHERE id = ?")
-      .bind(draft.costId, draft.saleId, purpose, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai', aiFile, dup.id).run();
+    await env.DB.prepare("UPDATE documents SET cost_id = ?, sale_id = ?, purpose = ?, ai_status = ? WHERE id = ?")
+      .bind(draft.costId, draft.saleId, purpose, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai', dup.id).run();
     await audit(env, actor, 'doklad_znovu_pouzit', 'document', dup.id, { purpose });
     return { id: dup.id, cost_id: draft.costId, sale_id: draft.saleId, reused: true };
   }
   const id = randomId();
   // Nejdřív se uloží celý soubor; koncept vznikne až potom (při chybě nezůstane prázdný koncept ani půlka souboru)
   const store = splitDoc(env, id, buf);
-  await env.DB.prepare("INSERT INTO documents (id, kind, purpose, filename, mime, size, sha256, data, created_by, ai_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .bind(id, purpose === 'prodej' ? 'faktura' : 'jiny', purpose, name, mime, buf.length, hash, store.data, actor, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai').run();
+  await env.DB.prepare("INSERT INTO documents (id, kind, purpose, filename, mime, size, sha256, data, enc, created_by, ai_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(id, purpose === 'prodej' ? 'faktura' : 'jiny', purpose, name, mime, buf.length, hash, store.data, store.enc, actor, env.ANTHROPIC_API_KEY ? 'ceka' : 'bez_ai').run();
   try { for (const st of store.stmts) await st.run(); } catch (e) {
     await env.DB.prepare('DELETE FROM documents WHERE id = ?').bind(id).run(); await removeChunks(env, id);
     throw new HttpError(`${name || 'Soubor'}: nepodařilo se uložit celý – zkuste ho nahrát znovu`, 503);
   }
   const { costId, saleId } = await createDraft(env, purpose, name, actor);
-  // Velký soubor se rovnou předá AI – čtení pak nemusí soubor načítat z databáze
-  const aiFile = await uploadAiFile(env, buf, mime, deps);
-  await env.DB.prepare('UPDATE documents SET cost_id = ?, sale_id = ?, ai_file_id = ? WHERE id = ?').bind(costId, saleId, aiFile, id).run();
+  await env.DB.prepare('UPDATE documents SET cost_id = ?, sale_id = ? WHERE id = ?').bind(costId, saleId, id).run();
   await audit(env, actor, 'doklad_nahran', 'document', id, { purpose, size: buf.length });
   return { id, cost_id: costId, sale_id: saleId };
 }
@@ -197,7 +191,7 @@ const uncText = (u) => u.map((x) => UNC_CS[x] || x).join(', ');
 /** Vytěží jeden doklad. Spolehlivý výsledek bez duplicity potvrdí sám, jinak nechá ke kontrole. */
 export async function extract(env, docId, actor, deps = {}) {
   // Bez sloupce data: soubor se z databáze načte jen tehdy, když ho AI ještě nemá
-  const d = await env.DB.prepare('SELECT id, purpose, mime, cost_id, sale_id, ai_file_id FROM documents WHERE id = ?').bind(docId).first();
+  const d = await env.DB.prepare('SELECT id, purpose, mime, enc, cost_id, sale_id, ai_file_id FROM documents WHERE id = ?').bind(docId).first();
   if (!d) throw new HttpError('Doklad nenalezen', 404);
   const st = await aiStatus(env);
   if (!st.ready && !deps.client) {
@@ -214,8 +208,7 @@ export async function extract(env, docId, actor, deps = {}) {
           await env.DB.prepare('UPDATE documents SET ai_file_id = NULL WHERE id = ?').bind(docId).run();
         }
       }
-      const row = await env.DB.prepare('SELECT data FROM documents WHERE id = ?').bind(docId).first();
-      return extractJson(env, { bytes: await docBytes(env, { id: docId, data: row.data }), mime: d.mime, system, prompt, schema }, deps);
+      return extractJson(env, { b64: await docB64(env, d), mime: d.mime, system, prompt, schema }, deps);
     };
     if (d.purpose === 'nakup') {
       const a = await read(SYSTEM, PURCHASE_PROMPT, PURCHASE_SCHEMA);

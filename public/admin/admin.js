@@ -32,9 +32,19 @@
     // Načítání pro obrazovku, ze které uživatel mezitím odešel → nevykreslovat přes novou obrazovku
     if (method === 'GET' && seq !== navSeq) { const e = new Error('stale'); e.stale = true; throw e; }
     if (res.status === 401 && !path.startsWith('login') && !path.startsWith('setup')) { showLogin(); throw new Error('Přihlaste se prosím'); }
-    if (!res.ok) throw new Error(out.error || `Chyba ${res.status}`);
+    if (!res.ok) { const e = new Error(out.error || `Chyba ${res.status}`); e.status = res.status; e.busy = !out.error && res.status >= 500; throw e; }
     return out;
   }
+  // Přetížený server (503 bez vysvětlení) → chvíli počkat a zkusit znovu (nahrání je bezpečné opakovat – duplicitu server pozná)
+  const retry = async (fn, row, label) => {
+    for (let i = 0; ; i++) {
+      try { return await fn(); } catch (e) {
+        if (!e.busy || i >= 3) throw e;
+        if (row) row.textContent = `${label} – server je vytížený, zkouším znovu (${i + 1}/3)…`;
+        await new Promise((r) => setTimeout(r, 4000 * (i + 1)));
+      }
+    }
+  };
   const run = async (fn) => { try { await fn(); } catch (e) { if (!e.stale) toast(e.message, true); } };
   const formData = (form) => Object.fromEntries(new FormData(form));
 
@@ -481,11 +491,11 @@
           try {
             const { blob, name } = await prepFile(file);
             const fd = new FormData(); fd.append('file', blob, name); fd.append('purpose', purpose);
-            const up = await api('POST', 'inbox/upload', fd);
+            const up = await retry(() => api('POST', 'inbox/upload', fd), row, file.name);
             if (up.duplicate) { stats.dup++; row.textContent = `${file.name} – už nahráno dříve, přeskočeno`; continue; }
             if (!ai.ready) { stats.review++; row.textContent = `${file.name} – uloženo, doplňte údaje`; continue; }
             row.textContent = `${i + 1}/${files.length} ${file.name} – AI čte doklad…`;
-            const r = await api('POST', `inbox/${up.id}/extract`, {});
+            const r = await retry(() => api('POST', `inbox/${up.id}/extract`, {}), row, file.name);
             if (r.status === 'confirmed') { stats.ok++; row.textContent = `${file.name} – rozpoznáno a uloženo`; } else { stats.review++; row.textContent = `${file.name} – ke kontrole${r.note ? `: ${r.note}` : r.reason ? `: ${r.reason}` : ''}`; }
           } catch (err) { stats.err++; row.textContent = `${file.name} – chyba: ${err.message}`; }
         }

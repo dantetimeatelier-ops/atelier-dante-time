@@ -29,8 +29,8 @@ export async function upload(env, form, actor) {
   if (costId && !(await env.DB.prepare('SELECT id FROM costs WHERE id = ?').bind(costId).first())) throw new HttpError('Náklad nenalezen', 404);
   const id = randomId();
   const store = splitDoc(env, id, buf);
-  await env.DB.prepare('INSERT INTO documents (id, cost_id, kind, filename, mime, size, sha256, data, note, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .bind(id, costId, oneOf(form.get('kind') || 'uctenka', Object.keys(DOC_KINDS), 'druh dokladu'), str(f.name, { max: 200 }), mime, buf.length, hash, store.data, str(form.get('note'), { max: 500 }), actor).run();
+  await env.DB.prepare('INSERT INTO documents (id, cost_id, kind, filename, mime, size, sha256, data, enc, note, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(id, costId, oneOf(form.get('kind') || 'uctenka', Object.keys(DOC_KINDS), 'druh dokladu'), str(f.name, { max: 200 }), mime, buf.length, hash, store.data, store.enc, str(form.get('note'), { max: 500 }), actor).run();
   for (const st of store.stmts) await st.run();
   await audit(env, actor, 'doklad_nahran', 'document', id, { cost: costId, size: buf.length });
   return id;
@@ -49,7 +49,7 @@ export async function assign(env, id, costId, actor) {
 }
 
 export async function file(env, id, actor) {
-  const d = await env.DB.prepare('SELECT id, mime, filename, data FROM documents WHERE id = ?').bind(id).first();
+  const d = await env.DB.prepare('SELECT id, mime, filename, enc FROM documents WHERE id = ?').bind(id).first();
   if (!d) throw new HttpError('Doklad nenalezen', 404);
   await audit(env, actor, 'doklad_zobrazen', 'document', id);
   const name = (d.filename || `doklad-${id}`).replace(/[^\w.-]+/g, '_');
