@@ -173,3 +173,31 @@ Každá etapa: zkušební verze → testy → váš souhlas → ostrý provoz. K
 
 **Doporučený první krok:** E1 Jádro včetně garančních prohlídek – je zdarma, nic nemění na veřejném
 webu a vytvoří bezpečný základ, na kterém budou všichni agenti stát.
+
+---
+
+## Stav realizace
+
+### E1 – Jádro (26. 11. 2026, schváleno R20)
+| Část | Stav |
+|---|---|
+| Role a oprávnění (`agent_roles`), běhy (`agent_runs`), nálezy (`os_findings`), fronta schválení (`approvals`), deník nákladů AI (`ai_costs`, limit **300 Kč/měsíc**) | ✅ migrace 0008 |
+| Přehled **Systém** v administraci: role, činnost, výsledky, oprávnění, pozastavení/obnovení, nálezy, schvalování, náklady, zálohy | ✅ |
+| **DT Guardian** (bez AI): ceny a fotky v prodeji, změny cen jinou osobou, součty objednávek, neodeslané e-maily, pokusy o přihlášení, zálohy, limit AI, chybovost a aktivita ostatních rolí včetně Directora → **automatické pozastavení**; obnovit smí jen majitel | ✅ |
+| **DT Logistics**: automatické připomínky garančních prohlídek, upozornění na neodeslané objednávky | ✅ |
+| **DT Director**: týdenní souhrn e-mailem (pondělí 7:00) + na vyžádání | ✅ |
+| Garanční prohlídky od **skutečného převzetí** (tlačítko „Převzato zákazníkem“ u objednávky, u dobírky den zaplacení), dobrovolná záruka a zákonná práva evidovány zvlášť | ✅ |
+| Časovač: Worker `workers/os-cron` (každou hodinu) → `/api/os/tick` s tajným klíčem; záložně běží kontroly při otevření administrace | ✅ kód, ⏳ čeká na oprávnění tokenu |
+| Zálohy: denně, **šifrované AES-256**, 30 dní, ke stažení v přehledu Systém; obnova `scripts/backup-decrypt.mjs` + Cloudflare D1 Time Travel | ✅ kód, ⏳ čeká na klíč BACKUP_KEY |
+
+### Co udělá majitel (jednorázově, asi 5 minut)
+1. **Token Cloudflare – přidat oprávnění** (Cloudflare → My Profile → API Tokens → stávající token → Edit):
+   `Account → Workers Scripts → Edit`. Nic dalšího (R2 ani Email Routing zatím nepotřebujeme).
+2. **Šifrovací klíč záloh:** vymyslet dlouhé heslo (alespoň 32 znaků), **uložit si ho do aplikace Hesla**
+   a zadat jako GitHub Secret `BACKUP_KEY`. Bez tohoto klíče nejde zálohu přečíst – ani agentovi.
+
+### Obnova ze zálohy (postup pro agenta)
+1. Stáhnout šifrovanou zálohu z přehledu Systém (nebo z KV `backup/…`).
+2. `BACKUP_KEY=… node scripts/backup-decrypt.mjs zaloha.enc > zaloha.json` (klíč zadá majitel, nikam se neukládá).
+3. Obnovu do D1 provést jen po souhlasu majitele, nejdřív do zkušební databáze. Pro nedávné chyby
+   použít `wrangler d1 time-travel restore` (až 7 dní zpět).

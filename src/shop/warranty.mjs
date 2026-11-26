@@ -39,6 +39,8 @@ export function schedule(handover) {
     remind_on: addDays(addDays(due, -i.toleranceDays), -14), // připomínka 2 týdny před otevřením okna
     warranty_basic_until: due,                                 // bez prohlídky končí záruka po 12 měsících
     warranty_full_until: addMonths(handover, TERMS.warrantyMonths),
+    liability_until: addMonths(handover, TERMS.liabilityMonths),     // zákonná práva – nezávisle na záruce
+    presumption_until: addMonths(handover, TERMS.presumptionMonths), // domněnka vady při převzetí
   };
 }
 

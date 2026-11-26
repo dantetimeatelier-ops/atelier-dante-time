@@ -134,6 +134,8 @@ jobs:
       ADMIN_SETUP_TOKEN: ${{ secrets.ADMIN_SETUP_TOKEN }}
       # Nepovinné: klíč pro odesílání e-mailů (Resend), viz docs/INTEGRATIONS.md
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      # Nepovinné: šifrovací klíč záloh Dante Time OS (zná ho jen majitel), viz docs/DANTE-TIME-OS.md
+      BACKUP_KEY: ${{ secrets.BACKUP_KEY }}
       SHOP_MODE_PRODUCTION: ${{ vars.SHOP_MODE || 'preview' }}
     steps:
       - name: Je Cloudflare nastaven?

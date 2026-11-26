@@ -1,0 +1,11 @@
+# Časovač Dante Time OS (Cloudflare Workers, Cron Triggers – zdarma)
+name = "dante-time-os-cron"
+main = "index.js"
+compatibility_date = "2026-11-01"
+workers_dev = false
+
+[triggers]
+crons = ["7 * * * *"]   # každou hodinu v 7. minutě
+
+[vars]
+SITE_ORIGIN = "https://atelier-dante-time.cz"

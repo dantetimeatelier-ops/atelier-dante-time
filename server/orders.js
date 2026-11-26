@@ -214,6 +214,23 @@ ${legalAttachment(order)}`,
   });
 }
 
+/** Skutečné převzetí hodinek zákazníkem: dokončí objednávku a založí garanční prohlídky (od tohoto dne). */
+export async function markDelivered(env, orderId, deliveredOn, actor) {
+  const order = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();
+  if (!order) throw new HttpError('Objednávka neexistuje', 404);
+  if (!['shipped', 'completed'].includes(order.status)) throw new HttpError('Převzetí lze zapsat jen u odeslané objednávky');
+  const day = /^\d{4}-\d{2}-\d{2}$/.test(deliveredOn || '') ? deliveredOn : now().slice(0, 10);
+  if (day > now().slice(0, 10)) throw new HttpError('Datum převzetí nemůže být v budoucnosti');
+  await env.DB.prepare("UPDATE orders SET status='completed', completed_at=COALESCE(completed_at, ?), delivered_on=?, updated_at=? WHERE id=?").bind(now(), day, now(), orderId).run();
+  const created = await createForOrder(env, order, day);
+  if (!created) { // už existují → jen opravit datum převzetí
+    const { results } = await env.DB.prepare("SELECT id FROM warranty_inspections WHERE order_id = ? AND status <> 'hotova'").bind(orderId).all();
+    const { setHandover } = await import('./warranty.js');
+    for (const r of results) await setHandover(env, r.id, day, actor);
+  }
+  await audit(env, actor, 'objednavka_prevzata', 'order', orderId, { day });
+}
+
 /** Označí objednávku jako zaplacenou: hodinky prodány, faktura, e-mail. */
 export async function markPaid(env, orderId, actor, origin) {
   const order = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();
@@ -222,7 +239,9 @@ export async function markPaid(env, orderId, actor, origin) {
   const t = now();
   if (order.status === 'shipped') {
     // Dobírka: peníze dorazily po odeslání → objednávka je dokončena
-    await env.DB.prepare("UPDATE orders SET status='completed', paid_at=?, completed_at=?, updated_at=? WHERE id=?").bind(t, t, t, orderId).run();
+    // Dobírka: zákazník platí při převzetí → den platby = skutečné převzetí (lze upravit v administraci)
+    await env.DB.prepare("UPDATE orders SET status='completed', paid_at=?, completed_at=?, delivered_on=COALESCE(delivered_on, ?), updated_at=? WHERE id=?").bind(t, t, t.slice(0, 10), t, orderId).run();
+    await createForOrder(env, { ...order, delivered_on: t.slice(0, 10) }, t.slice(0, 10));
     const inv = await issueInvoice(env, orderId);
     await audit(env, actor, 'dobirka_zaplacena', 'order', orderId);
     await invoiceEmail(env, orderId, inv, origin);
@@ -314,8 +333,6 @@ export async function markShipped(env, orderId, tracking, actor) {
   if (cod) stmts.push(env.DB.prepare("UPDATE products SET status='sold', sold_at=?, reserved_until=NULL, updated_at=? WHERE id IN (SELECT product_id FROM order_items WHERE order_id=?)").bind(t, t, orderId));
   await env.DB.batch(stmts);
   await audit(env, actor, 'objednavka_odeslana', 'order', orderId, { tracking });
-  // Garanční prohlídky (podmínky 1.1+): termíny od převzetí, datum lze v administraci upravit
-  await createForOrder(env, order);
   await sendEmail(env, {
     to: order.email, subject: tr(order, `Objednávka ${order.number} je na cestě`, `Order ${order.number} is on its way`), related: `order:${orderId}`,
     body: tr(order, `<p>Dobrý den, ${order.name},</p>${cod ? `<p>Při převzetí zaplatíte <strong>${formatCzk(order.total)}</strong>.</p>` : ''}<p>vaše hodinky jsou na cestě${order.pickup_point_name ? ` na výdejní místo ${order.pickup_point_name}` : ''}.${tracking ? ` Číslo zásilky: <strong>${tracking}</strong>.` : ''}</p><p>Po převzetí doporučujeme nechat hodinky několik hodin v klidu při pokojové teplotě. Rady k péči: <a href="${SITE.origin}/care">Péče o hodinky</a>.</p>${TERMS.inspection.enabled ? `<p style="font-size:13px;color:#555">Záruka za jakost: ${TERMS.warrantyMonths} měsíců, ve druhém roce po garanční prohlídce ${TERMS.inspection.afterMonths} měsíců od převzetí. Podrobnosti: <a href="${SITE.origin}/warranty">Záruka a garance pravosti</a>.</p>` : ''}`,

@@ -344,7 +344,7 @@ export const privacy = doc('privacy', '/privacy', 'Zásady ochrany osobních úd
 <h2>5. Vaše práva</h2>
 <p>Máte právo na přístup, opravu, výmaz, omezení zpracování, přenositelnost a námitku proti zpracování na základě oprávněného zájmu. Uplatněte je na ${email}, odpovíme do měsíce. Stížnost můžete podat u Úřadu pro ochranu osobních údajů (Pplk. Sochora 27, 170 00 Praha 7, <a href="https://uoou.gov.cz" rel="noopener noreferrer">uoou.gov.cz</a>) nebo u dozorového úřadu ve státě vašeho bydliště.</p>
 <h2>6. Zabezpečení</h2>
-<p>Web používá šifrované spojení (HTTPS). Administrace je chráněna heslem a dvoufázovým ověřením. Fotografie hodinek se při nahrání zbavují metadat včetně polohy. Zákaznické údaje nejsou ve veřejném zdrojovém kódu.</p>`);
+<p>Web používá šifrované spojení (HTTPS). Administrace je chráněna heslem a dvoufázovým ověřením. Fotografie hodinek se při nahrání zbavují metadat včetně polohy. Zákaznické údaje nejsou ve veřejném zdrojovém kódu. Databázi pravidelně zálohujeme; zálohy jsou šifrované a uchovávají se nejvýše 30 dní.</p>`);
 
 // ---------------------------------------------------------------------------
 export const cookies = doc('cookies', '/cookies', 'Zásady používání cookies',

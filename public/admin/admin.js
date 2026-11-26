@@ -106,6 +106,7 @@
         <a class="stat" href="#/prohlidky"><b>${d.warranty?.window || 0}</b>prohlídek v termínu</a>
       </div>
       <div class="card" style="margin-top:12px"><b>Limity DPH (neplátce)</b><p class="small" style="margin:6px 0 0">Obrat letos (vystavené faktury): <b>${d.turnover.toLocaleString('cs-CZ')} Kč</b> z 2 000 000 Kč<br>Prodej spotřebitelům do jiných zemí EU: <b>${d.euSales.toLocaleString('cs-CZ')} Kč</b> z ${d.euLimitCzk.toLocaleString('cs-CZ')} Kč (10 000 €)</p><p class="small muted" style="margin:6px 0 0">Orientační přehled. Rozhodující je evidence vaší účetní.</p></div>
+      <a class="card" style="display:block;margin-top:12px" href="#/system"><b>Dante Time OS</b><br><span class="small muted">Role, kontroly DT Guardian, schvalování a zálohy</span></a>
       ${d.withdrawals ? `<a class="card err" style="display:block;margin-top:12px" href="#/odstoupeni">⚠ ${d.withdrawals} odstoupení od smlouvy za 30 dní</a>` : ''}
       <p class="muted small" style="margin-top:16px">Režim e-shopu: <b>${{ preview: 'náhled (bez nákupu)', test: 'testovací', live: 'ostrý' }[d.mode]}</b></p>`;
   };
@@ -246,7 +247,8 @@
         ${(o.status === 'awaiting_payment' && o.payment_method !== 'cod') || o.status === 'expired' ? '<button class="btn primary block" data-a="paid">✓ Platba přijata</button>' : ''}
         ${o.status === 'paid' || (o.status === 'awaiting_payment' && o.payment_method === 'cod') ? `<label>Číslo zásilky (nepovinné)<input id="tracking"></label><button class="btn primary block" data-a="shipped">Odesláno${o.payment_method === 'cod' ? ' na dobírku' : ''} – informovat zákazníka</button>` : ''}
         ${o.status === 'shipped' && o.payment_method === 'cod' ? '<button class="btn primary block" data-a="paid">✓ Dobírka zaplacena – vystavit fakturu</button>' : ''}
-        ${o.status === 'shipped' && o.payment_method !== 'cod' ? '<button class="btn block" data-a="completed">Dokončeno (převzato)</button>' : ''}
+        ${o.status === 'shipped' && o.payment_method !== 'cod' ? `<label>Datum převzetí zákazníkem<input id="delivered" type="date" value="${new Date().toISOString().slice(0, 10)}" max="${new Date().toISOString().slice(0, 10)}"></label><button class="btn block" data-a="delivered">Převzato zákazníkem – dokončit</button>` : ''}
+        ${o.status === 'completed' ? `<p class="small muted">Převzato: ${o.delivered_on ? new Date(o.delivered_on + 'T12:00:00Z').toLocaleDateString('cs-CZ') : '–'} (od tohoto dne běží záruka a zákonná práva)</p>` : ''}
         ${['paid', 'shipped', 'completed'].includes(o.status) ? '<button class="btn ghost block" data-a="withdrawn">Zákazník odstoupil – vrátit hodinky do prodeje</button>' : ''}
         ${o.status === 'awaiting_payment' ? '<button class="btn danger block" data-a="cancel">Zrušit objednávku a uvolnit hodinky</button>' : ''}
       </div>
@@ -258,6 +260,7 @@
       if (a === 'paid') await api('POST', `orders/${id}/paid`, {});
       else if (a === 'shipped') await api('POST', `orders/${id}/shipped`, { tracking: app.querySelector('#tracking').value });
       else if (a === 'cancel') await api('POST', `orders/${id}/cancel`, {});
+      else if (a === 'delivered') await api('POST', `orders/${id}/delivered`, { delivered_on: app.querySelector('#delivered').value });
       else await api('POST', `orders/${id}/status`, { status: a });
       toast('Hotovo'); views['objednavky/:id']({ id });
     })));
@@ -299,6 +302,40 @@
     app.querySelector('#kf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `commissions/${id}`, formData(e.target)); toast('Uloženo'); }); });
   };
 
+  // --- Dante Time OS: centrální přehled rolí ---------------------------------------------
+  const sev = { critical: '🔴', warning: '🟡', info: '⚪' };
+  const rstat = { ok: 'v pořádku', warning: 'upozornění', error: 'chyba', skipped: 'přeskočeno', running: 'běží' };
+  views.system = async () => {
+    const d = await api('GET', 'system');
+    const waiting = d.approvals.filter((a) => a.status === 'ceka');
+    app.innerHTML = `<h1>Dante Time OS</h1>
+      <p class="small muted">Časovač: ${d.cron ? 'nastaven' : '<b>zatím není</b> – kontroly se spouštějí při otevření administrace'} · poslední běh ${d.lastTick ? date(d.lastTick) : '–'}</p>
+      <div class="row" style="margin-bottom:12px"><button class="btn" id="run">Spustit kontroly teď</button><button class="btn" id="dir">Poslat souhrn e-mailem</button></div>
+      <div class="card"><b>DT Guardian – otevřené nálezy (${d.findings.length})</b>
+        ${d.findings.length ? `<div class="list" style="margin-top:8px">${d.findings.map((f) => `<div class="item"><span class="grow">${sev[f.severity] || ''} ${esc(f.title)}${f.detail ? `<br><span class="small muted">${esc(f.detail)}</span>` : ''}<br><span class="small muted">od ${date(f.created_at)}</span></span><button class="btn" data-res="${f.id}">Vyřešeno</button></div>`).join('')}</div>` : '<p class="small muted" style="margin:6px 0 0">Vše v pořádku.</p>'}</div>
+      <div class="card" style="margin-top:12px"><b>Ke schválení (${waiting.length})</b>
+        ${waiting.length ? waiting.map((a) => `<div style="margin-top:8px"><b>${esc(a.title)}</b> <span class="small muted">· ${esc(a.role_id)}</span><p class="small" style="white-space:pre-wrap">${esc(a.detail || '')}</p><div class="row"><button class="btn primary" data-ap="${a.id}" data-d="schvaleno">Schválit</button><button class="btn" data-ap="${a.id}" data-d="zamitnuto">Zamítnout</button></div></div>`).join('') : '<p class="small muted" style="margin:6px 0 0">Nic nečeká.</p>'}</div>
+      <div class="card" style="margin-top:12px"><b>Náklady AI tento měsíc</b><p class="small" style="margin:6px 0 0">${d.budget.spent.toLocaleString('cs-CZ')} Kč z limitu ${d.budget.limit.toLocaleString('cs-CZ')} Kč${d.budget.blocked ? ' – <b>limit vyčerpán, AI stojí (e-shop běží dál)</b>' : ''}</p><p class="small muted" style="margin:4px 0 0">Etapa E1 AI nepoužívá (0 Kč). Navýšení limitu jen s vaším souhlasem.</p></div>
+      <h2 style="margin-top:18px">Role</h2>
+      <div class="list">${d.roles.map((r) => `<div class="card"><div class="row" style="justify-content:space-between"><b>${esc(r.name)}</b><span class="chip ${r.paused ? 'zmeskana' : r.active ? 'v_okne' : 'planovana'}">${r.paused ? 'pozastaveno' : r.active ? 'aktivní' : 'připravuje se'}</span></div>
+        <p class="small" style="margin:6px 0">${esc(r.purpose)}</p><p class="small muted" style="margin:0">Spouštění: ${esc(r.schedule || '–')}</p>
+        <details><summary class="small">Oprávnění</summary><p class="small"><b>Samostatně:</b> ${esc((r.permissions.samostatne || []).join(', '))}<br><b>Jen se schválením:</b> ${esc((r.permissions.se_schvalenim || []).join(', '))}</p></details>
+        ${r.last_run_at ? `<p class="small" style="margin:6px 0 0">Poslední běh ${date(r.last_run_at)} · ${esc(rstat[r.last_status] || r.last_status)}${r.last_summary ? ` – ${esc(r.last_summary)}` : ''}</p>` : ''}
+        ${r.paused ? `<p class="small" style="margin:6px 0 0">Pozastavil ${esc(r.paused_by)}: ${esc(r.paused_reason || '')}</p>` : ''}
+        ${r.active ? `<div class="row" style="margin-top:8px">${r.paused ? `<button class="btn primary" data-resume="${r.id}">Obnovit</button>` : `<button class="btn" data-pause="${r.id}">Pozastavit</button>`}</div>` : ''}</div>`).join('')}</div>
+      <h2 style="margin-top:18px">Poslední činnost</h2>
+      <div class="list">${d.runs.slice(0, 25).map((x) => `<div class="item"><span class="grow"><span class="t">${esc(x.role_id)} · ${esc(x.task)}</span><br><span class="small muted">${date(x.started_at)} · ${esc(rstat[x.status] || x.status)}${x.summary ? ` – ${esc(x.summary)}` : ''}</span></span></div>`).join('') || '<p class="muted">Zatím žádná činnost.</p>'}</div>
+      <h2 style="margin-top:18px">Zálohy databáze</h2><p class="small muted">Každý den, uchovávají se 30 dní v soukromém úložišti. Obnovu provádí agent podle docs/DANTE-TIME-OS.md.</p>
+      <div class="list">${d.backups.map((b) => `<a class="item" href="/api/admin/system/backups/${b.id}"><span class="grow"><span class="t">${date(b.created_at)}</span><br><span class="small muted">${b.rows} řádků · ${Math.round(b.bytes / 1024)} kB · stáhnout</span></span></a>`).join('') || '<p class="muted">Zatím žádná záloha.</p>'}</div>`;
+    const re = () => views.system();
+    app.querySelector('#run').addEventListener('click', () => run(async () => { await api('POST', 'system/run', {}); toast('Kontroly proběhly'); re(); }));
+    app.querySelector('#dir').addEventListener('click', () => run(async () => { await api('POST', 'system/director', {}); toast('Souhrn odeslán na váš e-mail'); re(); }));
+    app.querySelectorAll('[data-res]').forEach((b) => b.addEventListener('click', () => run(async () => { await api('POST', `system/findings/${b.dataset.res}/resolve`, {}); re(); })));
+    app.querySelectorAll('[data-ap]').forEach((b) => b.addEventListener('click', () => run(async () => { await api('POST', `system/approvals/${b.dataset.ap}`, { decision: b.dataset.d }); toast('Uloženo'); re(); })));
+    app.querySelectorAll('[data-pause]').forEach((b) => b.addEventListener('click', () => run(async () => { const reason = prompt('Důvod pozastavení (nepovinné):') || ''; await api('POST', `system/roles/${b.dataset.pause}/pause`, { reason }); toast('Role pozastavena'); re(); })));
+    app.querySelectorAll('[data-resume]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Obnovit roli? Ujistěte se, že důvod pozastavení je vyřešen.')) return; await api('POST', `system/roles/${b.dataset.resume}/resume`, {}); toast('Role obnovena'); re(); })));
+  };
+
   // --- Garanční prohlídky ------------------------------------------------------------
   const dd = (s) => (s ? new Date(`${s}T12:00:00Z`).toLocaleDateString('cs-CZ') : '–');
   views.prohlidky = async (_, q) => {
@@ -308,11 +345,11 @@
     const list = inspections.filter(groups[f] || groups.open);
     const due = inspections.filter((x) => x.phase === 'pripomenout').length;
     app.innerHTML = `<div class="row" style="justify-content:space-between"><h1>Garanční prohlídky</h1><a class="btn" href="#/prohlidky/nova">+ Ručně</a></div>
-      <p class="small muted">Po ${12} měsících od převzetí (±30 dnů). Vznikají samy při odeslání objednávky. Připomínka se posílá 2 týdny před otevřením termínu.</p>
-      ${due ? `<button class="btn primary block" id="rall" style="margin-bottom:12px">Poslat ${due} ${due === 1 ? 'připomínku' : 'připomínky'} zákazníkům</button>` : ''}
+      <p class="small muted">Po 12 měsících od skutečného převzetí (±30 dnů). Vznikají samy, když u objednávky zapíšete převzetí. Připomínky posílá DT Logistics automaticky 2 týdny před otevřením termínu.</p>
+      ${due ? `<button class="btn block" id="rall" style="margin-bottom:12px">Poslat ${due} ${due === 1 ? 'připomínku' : 'připomínky'} hned</button>` : ''}
       <div class="filters">${[['open', 'Otevřené'], ['done', 'Hotové'], ['all', 'Vše']].map(([k, t]) => `<button data-f="${k}" aria-pressed="${f === k}">${t}</button>`).join('')}</div>
       <div class="list">${list.map((x) => `<a class="item" href="#/prohlidky/${x.id}"><span class="grow"><span class="t">${esc(x.watch_title)}</span><br>
-        <span class="chip ${esc(x.phase)}">${esc(L.wphase[x.phase] || x.phase)}</span> <span class="small muted">${esc(x.customer_name)} · termín ${dd(x.window_from)} – ${dd(x.window_to)}</span></span></a>`).join('') || '<p class="muted">Zatím žádné prohlídky. Vzniknou samy, jakmile odešlete první objednávku podle podmínek 1.1.</p>'}</div>`;
+        <span class="chip ${esc(x.phase)}">${esc(L.wphase[x.phase] || x.phase)}</span> <span class="small muted">${esc(x.customer_name)} · termín ${dd(x.window_from)} – ${dd(x.window_to)}</span></span></a>`).join('') || '<p class="muted">Zatím žádné prohlídky. Vzniknou samy, jakmile u objednávky zapíšete převzetí zákazníkem.</p>'}</div>`;
     app.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', () => { location.hash = `#/prohlidky?f=${b.dataset.f}`; }));
     app.querySelector('#rall')?.addEventListener('click', () => run(async () => { if (!confirm(`Odeslat ${due} připomínek e-mailem?`)) return; const r = await api('POST', 'warranty/remind-due', {}); toast(`Odesláno: ${r.sent}`); views.prohlidky(_, q); }));
   };
@@ -336,7 +373,9 @@
         <tr><th>Termín prohlídky</th><td>${dd(x.window_from)} – ${dd(x.window_to)}<br><span class="small muted">(12 měsíců: ${dd(x.due_date)})</span></td></tr>
         <tr><th>Připomínka</th><td>${x.reminder_sent_at ? `odeslána ${date(x.reminder_sent_at)}` : `naplánována na ${dd(x.remind_on)}`}</td></tr>
         <tr><th>Cena</th><td>${czk(x.price_czk)}</td></tr>
-        ${done ? `<tr><th>Provedeno</th><td>${dd(x.done_on)} · ${x.result === 'zavada' ? 'zjištěna vada' : 'v pořádku'}</td></tr><tr><th>Záruka do</th><td><b>${dd(x.warranty_until)}</b></td></tr>
+        <tr><th>Dobrovolná záruka do</th><td>${dd(x.warranty_until)}${done ? '' : ' <span class="small muted">(po prohlídce v termínu prodloužena)</span>'}</td></tr>
+        <tr><th>Zákonná práva do</th><td>${dd(x.liability_until)} <span class="small muted">(nezávisle na záruce; domněnka vady do ${dd(x.presumption_until)})</span></td></tr>
+        ${done ? `<tr><th>Provedeno</th><td>${dd(x.done_on)} · ${x.result === 'zavada' ? 'zjištěna vada' : 'v pořádku'}</td></tr>
           <tr><th>Měření</th><td>${x.rate_s_day ?? '–'} s/den · ${x.amplitude_deg ?? '–'}° · ${x.beat_error_ms ?? '–'} ms</td></tr>` : ''}
       </table>${x.order_id ? `<p class="small"><a href="#/objednavky/${esc(x.order_id)}">Objednávka</a></p>` : ''}</div>
       ${done ? '' : `<div class="row" style="margin:12px 0"><button class="btn" id="rem">${x.reminder_sent_at ? 'Poslat připomínku znovu' : 'Poslat připomínku'}</button></div>
@@ -516,6 +555,7 @@
 
   views.vice = async () => {
     app.innerHTML = `<h1>Více</h1><div class="list">
+      <a class="item" href="#/system"><span class="grow">Systém Dante Time OS (role, kontroly, zálohy)</span></a>
       <a class="item" href="#/prohlidky"><span class="grow">Garanční prohlídky</span></a>
       <a class="item" href="#/poptavky"><span class="grow">Poptávky</span></a>
       <a class="item" href="#/faktury"><span class="grow">Faktury</span></a>

@@ -239,7 +239,7 @@ export const privacy = doc('privacy', '/en/privacy', 'Privacy Policy',
 <h2>5. Your rights</h2>
 <p>You have the right of access, rectification, erasure, restriction, portability and to object to processing based on legitimate interest. Contact ${email}; we reply within one month. You may lodge a complaint with the Czech Office for Personal Data Protection (Pplk. Sochora 27, 170 00 Prague 7, <a href="https://uoou.gov.cz" rel="noopener noreferrer">uoou.gov.cz</a>) or the supervisory authority of your country of residence.</p>
 <h2>6. Security</h2>
-<p>The website uses HTTPS. The administration is protected by a password and two-factor authentication. Watch photos are stripped of metadata including location. Customer data is not stored in the public source code.</p>`);
+<p>The website uses HTTPS. The administration is protected by a password and two-factor authentication. Watch photos are stripped of metadata including location. Customer data is not stored in the public source code. The database is backed up regularly; backups are encrypted and kept for no more than 30 days.</p>`);
 
 export const cookies = doc('cookies', '/en/cookies', 'Cookie Policy',
   'Which cookies and technical storage the Atelier Dante Time website uses and how to manage consent.',

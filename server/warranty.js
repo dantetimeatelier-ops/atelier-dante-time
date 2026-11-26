@@ -10,16 +10,16 @@ const I = TERMS.inspection;
 const tr = (r, cs, en) => (r.lang === 'en' ? en : cs);
 const d = (r, s) => (s ? new Date(`${s}T12:00:00Z`).toLocaleDateString(r.lang === 'en' ? 'en-GB' : 'cs-CZ', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Prague' }) : '');
 
-/** Založí prohlídky pro odeslanou objednávku (jen podmínky 1.1+). Opakované volání nic nezdvojí. */
+/** Založí prohlídky po skutečném převzetí hodinek (jen podmínky 1.1+). Opakované volání nic nezdvojí. */
 export async function createForOrder(env, order, handover = today()) {
   if (!inspectionApplies(order.terms_version)) return 0;
   const { results: items } = await env.DB.prepare('SELECT product_id, title FROM order_items WHERE order_id = ?').bind(order.id).all();
   const s = schedule(handover);
   let n = 0;
   for (const it of items) {
-    const r = await env.DB.prepare(`INSERT OR IGNORE INTO warranty_inspections (id, order_id, product_id, watch_title, customer_name, customer_email, lang, terms_version, handover_date, due_date, window_from, window_to, remind_on, price_czk)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(randomId(), order.id, it.product_id, it.title, order.name, order.email, order.lang || 'cs', order.terms_version, s.handover_date, s.due_date, s.window_from, s.window_to, s.remind_on, I.priceCzk).run();
+    const r = await env.DB.prepare(`INSERT OR IGNORE INTO warranty_inspections (id, order_id, product_id, watch_title, customer_name, customer_email, lang, terms_version, handover_date, due_date, window_from, window_to, remind_on, price_czk, warranty_until, liability_until, presumption_until)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(randomId(), order.id, it.product_id, it.title, order.name, order.email, order.lang || 'cs', order.terms_version, s.handover_date, s.due_date, s.window_from, s.window_to, s.remind_on, I.priceCzk, s.due_date, s.liability_until, s.presumption_until).run();
     n += r.meta?.changes || 0;
   }
   return n;
@@ -30,9 +30,9 @@ export async function createManual(env, { watch_title, customer_name, customer_e
   if (!/^\d{4}-\d{2}-\d{2}$/.test(handover_date || '')) throw new HttpError('Zadejte datum převzetí');
   const s = schedule(handover_date);
   const id = randomId();
-  await env.DB.prepare(`INSERT INTO warranty_inspections (id, watch_title, customer_name, customer_email, lang, terms_version, handover_date, due_date, window_from, window_to, remind_on, price_czk)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(id, watch_title, customer_name, customer_email, lang === 'en' ? 'en' : 'cs', 'rucne', s.handover_date, s.due_date, s.window_from, s.window_to, s.remind_on, I.priceCzk).run();
+  await env.DB.prepare(`INSERT INTO warranty_inspections (id, watch_title, customer_name, customer_email, lang, terms_version, handover_date, due_date, window_from, window_to, remind_on, price_czk, warranty_until, liability_until, presumption_until)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(id, watch_title, customer_name, customer_email, lang === 'en' ? 'en' : 'cs', 'rucne', s.handover_date, s.due_date, s.window_from, s.window_to, s.remind_on, I.priceCzk, s.due_date, s.liability_until, s.presumption_until).run();
   await audit(env, actor, 'prohlidka_zalozena', 'warranty_inspection', id, { watch_title });
   return id;
 }
@@ -40,8 +40,8 @@ export async function createManual(env, { watch_title, customer_name, customer_e
 /** Změna data převzetí (např. doručení později než odeslání) – přepočítá termíny. */
 export async function setHandover(env, id, handover, actor) {
   const s = schedule(handover);
-  await env.DB.prepare('UPDATE warranty_inspections SET handover_date=?, due_date=?, window_from=?, window_to=?, remind_on=?, updated_at=? WHERE id=?')
-    .bind(s.handover_date, s.due_date, s.window_from, s.window_to, s.remind_on, now(), id).run();
+  await env.DB.prepare("UPDATE warranty_inspections SET handover_date=?, due_date=?, window_from=?, window_to=?, remind_on=?, liability_until=?, presumption_until=?, warranty_until=CASE WHEN status='hotova' THEN warranty_until ELSE ? END, updated_at=? WHERE id=?")
+    .bind(s.handover_date, s.due_date, s.window_from, s.window_to, s.remind_on, s.liability_until, s.presumption_until, s.due_date, now(), id).run();
   await audit(env, actor, 'prohlidka_prevzeti', 'warranty_inspection', id, { handover });
 }
 
@@ -74,17 +74,23 @@ export async function sendReminder(env, id, actor) {
   const r = await env.DB.prepare('SELECT * FROM warranty_inspections WHERE id = ?').bind(id).first();
   if (!r) throw new HttpError('Prohlídka nenalezena', 404);
   if (r.status === 'hotova' || r.status === 'zrusena') throw new HttpError('Prohlídka je uzavřená');
-  await sendEmail(env, { to: r.customer_email, subject: tr(r, 'Garanční prohlídka vašich hodinek Dante Time', 'Warranty inspection of your Dante Time watch'), body: reminderBody(r), related: `warranty:${id}`, replyTo: SITE.email });
+  const res = await sendEmail(env, { to: r.customer_email, subject: tr(r, 'Garanční prohlídka vašich hodinek Dante Time', 'Warranty inspection of your Dante Time watch'), body: reminderBody(r), related: `warranty:${id}`, replyTo: SITE.email });
+  if (res?.failed) throw new HttpError('E-mail se nepodařilo odeslat (viz E-maily)', 502);
   await env.DB.prepare('UPDATE warranty_inspections SET reminder_sent_at=?, updated_at=? WHERE id=?').bind(now(), now(), id).run();
   await audit(env, actor, 'prohlidka_pripominka', 'warranty_inspection', id, {});
 }
 
-/** Pošle všechny připomínky, které jsou na řadě. Vrací počet. */
-export async function sendDueReminders(env, actor) {
+/** Pošle všechny připomínky, které jsou na řadě (automaticky z časovače). Vrací počet odeslaných. */
+export async function sendDueReminders(env, actor, { max = 20 } = {}) {
   const t = today();
-  const { results } = await env.DB.prepare("SELECT id FROM warranty_inspections WHERE status IN ('planovana','objednana') AND reminder_sent_at IS NULL AND remind_on <= ? AND window_to >= ?").bind(t, t).all();
-  for (const r of results) await sendReminder(env, r.id, actor);
-  return results.length;
+  const { results } = await env.DB.prepare("SELECT id FROM warranty_inspections WHERE status IN ('planovana','objednana') AND reminder_sent_at IS NULL AND reminder_error IS NULL AND remind_on <= ? AND window_to >= ? ORDER BY remind_on LIMIT ?").bind(t, t, max).all();
+  let sent = 0;
+  for (const r of results) {
+    try { await sendReminder(env, r.id, actor); sent++; } catch (e) {
+      await env.DB.prepare('UPDATE warranty_inspections SET reminder_error=? WHERE id=?').bind(String(e.message).slice(0, 300), r.id).run();
+    }
+  }
+  return sent;
 }
 
 /** Zapíše výsledek prohlídky, spočítá trvání záruky a pošle zákazníkovi protokol. */
