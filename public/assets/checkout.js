@@ -44,7 +44,7 @@
   const manual = $('[data-pickup-manual]');
   const pickLabel = $('[data-pickup-label]');
   const submitBtn = form.querySelector('button[type=submit]');
-  manual.insertAdjacentHTML('afterend', `<p class="doc-meta" data-zas-map hidden><a href="https://www.zasilkovna.cz/pobocky" target="_blank" rel="noopener noreferrer">${L('Otevřít mapu Zásilkovny', 'Open the Packeta map')}</a> ${L('(v novém okně). Mapa výběr sama nepřenese – opište prosím název a adresu výdejního místa do pole výše.', '(new window). The map cannot send the choice back – please type the pickup point name and address into the field above.')}</p>`);
+  manual.insertAdjacentHTML('beforebegin', `<div data-zas-map hidden><a class="btn ghost" href="https://www.zasilkovna.cz/pobocky" target="_blank" rel="noopener noreferrer">${L('Vybrat Zásilkovnu na mapě', 'Choose Packeta point on the map')}</a><p class="doc-meta" style="margin-top:8px">${L('Mapa se otevře v novém okně. Název a adresu vybraného místa vložte do pole níže.', 'The map opens in a new window. Enter the chosen point name and address below.')}</p></div>`);
 
   const radio = (name, opts, selected) => opts.map((o, n) => `<label class="choice"><input type="radio" name="${name}" value="${esc(o.id)}" ${(selected ? o.id === selected : n === 0) ? 'checked' : ''} required><span><span class="t">${esc(o.label)}</span>${o.price != null ? `<br><span class="doc-meta">${o.price === 0 ? L('zdarma', 'free') : fmt(o.price)}</span>` : ''}${o.note ? `<br><span class="doc-meta">${esc(o.note)}</span>` : ''}</span></label>`).join('');
 
@@ -75,7 +75,7 @@
     pickup.hidden = !needsPoint;
     const widget = (s?.id === 'zasilkovna' && config.packetaKey) || s?.id === 'balikovna';
     $('[data-pick-point]').hidden = !widget;
-    $('[data-pick-point]').textContent = s?.id === 'balikovna' ? L('Vybrat Balíkovnu na mapě', 'Choose Balíkovna on the map') : L('Vybrat výdejní místo na mapě', 'Choose pickup point on the map');
+    $('[data-pick-point]').textContent = s?.id === 'balikovna' ? L('Vybrat Balíkovnu na mapě', 'Choose Balíkovna on the map') : L('Vybrat Zásilkovnu na mapě', 'Choose Packeta point on the map');
     const manualNeeded = needsPoint && !(s?.id === 'zasilkovna' && config.packetaKey);
     manual.hidden = !manualNeeded;
     manual.querySelector('input').required = Boolean(manualNeeded) && !form.pickupPointId.value;
