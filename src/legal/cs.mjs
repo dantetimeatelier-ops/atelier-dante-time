@@ -2,6 +2,11 @@
 // ⚖️ ÚROVEŇ 3 – změny jen se souhlasem majitele. Nejasnosti: docs/LEGAL-REVIEW.md
 import { SITE, OPERATOR, INDEPENDENCE, SERVICES_OFFERED as SVC } from '../site.mjs';
 import { head, toc, email, seller, vatText, returnAddress, coi, ecc, tradeOffice, registerText, LEGAL_VERSION } from './common.mjs';
+import { TERMS as T, priceCs } from '../terms.mjs';
+
+// Krátká věta o záruce pro všechna místa, kde se záruka zmiňuje (reklama musí obsahovat podmínky, § 2113 odst. 2 OZ)
+export const warrantyShortCs = () => `záruka ${T.warrantyMonths} měsíců${T.inspection.enabled ? ` (ve druhém roce po garanční prohlídce)` : ''}`;
+const insp = T.inspection;
 
 const L = 'cs';
 const doc = (key, path, title, description, body) => ({ key, lang: L, path, title, description, body });
@@ -56,7 +61,7 @@ ${toc(L, [['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky, součásti a materi
 <h2 id="op5">5. Platba</h2>
 <ol>
 <li>Způsoby platby: <strong>bankovní převod předem</strong> (v Kč s QR platbou, v EUR s QR kódem SEPA), <strong>dobírka</strong> (jen v ČR a jen s výdejním místem) a po aktivaci platební brány <strong>platba kartou</strong>. Zahraniční objednávky se hradí předem.</li>
-<li>Platba převodem je splatná do <strong>3 dnů</strong> od uzavření smlouvy na účet ${OPERATOR.bankAccount} (IBAN ${OPERATOR.ibanPretty}, BIC ${OPERATOR.bic}, majitel ${OPERATOR.accountHolder}) s variabilním symbolem nebo zprávou uvedenou v potvrzení objednávky.</li>
+<li>Platba převodem je splatná do <strong>${T.paymentDueDays} dnů</strong> od uzavření smlouvy na účet ${OPERATOR.bankAccount} (IBAN ${OPERATOR.ibanPretty}, BIC ${OPERATOR.bic}, majitel ${OPERATOR.accountHolder}) s variabilním symbolem nebo zprávou uvedenou v potvrzení objednávky.</li>
 <li>Neuhradí-li kupující cenu ve lhůtě splatnosti, rezervace skončí a prodávající může od smlouvy odstoupit. Kupujícího o tom informuje e-mailem.</li>
 <li>Při dobírce je cena splatná při převzetí zásilky.</li>
 <li>Vlastnické právo přechází na kupujícího zaplacením celé ceny a převzetím hodinek. Doklad o prodeji (fakturu) zašle prodávající elektronicky po zaplacení. Obsahuje identifikaci hodinek, která slouží i pro garanci pravosti.</li>
@@ -65,7 +70,7 @@ ${toc(L, [['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky, součásti a materi
 <h2 id="op6">6. Dodání</h2>
 <ol>
 <li>Prodávající doručuje do všech členských států Evropské unie. Způsoby a ceny dopravy uvádí stránka <a href="/doprava-a-platba">Doprava a platba</a>.</li>
-<li>Dostupné hodinky prodávající odešle do <strong>3 pracovních dnů</strong> od připsání platby, u dobírky od potvrzení objednávky, nejpozději však do 30 dnů od uzavření smlouvy, nebylo-li dohodnuto jinak.</li>
+<li>Dostupné hodinky prodávající odešle do <strong>${T.dispatchWorkingDays} pracovních dnů</strong> od připsání platby, u dobírky od potvrzení objednávky, nejpozději však do 30 dnů od uzavření smlouvy, nebylo-li dohodnuto jinak.</li>
 <li>Hodinky vyšší hodnoty odesílá prodávající jen <strong>pojištěnou přepravou</strong> odpovídající jejich hodnotě, nebo je po předchozí individuální domluvě předá osobně. Prodávající nemá kamennou prodejnu.</li>
 <li>Nebezpečí škody na hodinkách přechází na kupujícího-spotřebitele převzetím hodinek.</li>
 <li>Nepřevezme-li kupující zásilku na dobírku bez vážného důvodu, je prodávající oprávněn od smlouvy odstoupit a požadovat náhradu <strong>skutečně vynaložených nákladů</strong> na odeslání a vrácení zásilky jako náhradu škody. Žádnou smluvní pokutu prodávající neúčtuje.</li>
@@ -74,8 +79,8 @@ ${toc(L, [['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky, součásti a materi
 
 <h2 id="op7">7. Záruka a práva z vadného plnění</h2>
 <ol>
-<li>Na prodávané hodinky poskytuje prodávající <strong>záruku 24 měsíců</strong> od převzetí podle podmínek uvedených na stránce <a href="/warranty">Záruka a garance pravosti</a>.</li>
-<li>Spotřebiteli dále náleží zákonná práva z vadného plnění v době 24 měsíců od převzetí, a to i u použitého zboží. Záruka tato práva neomezuje. Postup upravuje <a href="/reklamace">Reklamační řád</a>.</li>
+<li>Na prodávané hodinky poskytuje prodávající dobrovolnou <strong>záruku za jakost ${T.warrantyMonths} měsíců</strong> od převzetí${insp.enabled ? `; ve druhém roce trvá záruka po absolvování garanční prohlídky` : ''}. Podmínky jsou na stránce <a href="/warranty">Záruka a garance pravosti</a>.</li>
+<li>Spotřebiteli dále vždy náleží zákonná práva z vadného plnění v době ${T.liabilityMonths} měsíců od převzetí, a to i u použitého zboží. Záruka ani garanční prohlídka tato práva neomezují. Postup upravuje <a href="/reklamace">Reklamační řád</a>.</li>
 </ol>
 
 <h2 id="op8">8. Doživotní garance pravosti</h2>
@@ -83,7 +88,7 @@ ${toc(L, [['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky, součásti a materi
 
 <h2 id="op9">9. Odstoupení od smlouvy</h2>
 <ol>
-<li>Spotřebitel může od smlouvy na hotové hodinky uzavřené na dálku odstoupit <strong>bez udání důvodu do 14 dnů</strong> od převzetí (§ 1829 OZ). Postup, vzorový formulář a funkce „Odstoupit od smlouvy“ jsou na stránce <a href="/returns">Odstoupení od smlouvy a vrácení zboží</a>.</li>
+<li>Spotřebitel může od smlouvy na hotové hodinky uzavřené na dálku odstoupit <strong>bez udání důvodu do ${T.withdrawalDays} dnů</strong> od převzetí (§ 1829 OZ). Postup, vzorový formulář a funkce „Odstoupit od smlouvy“ jsou na stránce <a href="/returns">Odstoupení od smlouvy a vrácení zboží</a>.</li>
 <li>Právo na odstoupení nemá spotřebitel u hodinek vyrobených nebo upravených <strong>podle jeho zadání</strong> (§ 1837 písm. d) OZ). Přestavby a sestavy nabízené v e-shopu jako hotové kusy lze vrátit.</li>
 </ol>
 
@@ -102,7 +107,7 @@ ${toc(L, [['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky, součásti a materi
 </ol>
 
 <h2 id="op13">13. Kupující podnikatelé</h2>
-<p>Na kupujícího-podnikatele se nevztahují ustanovení na ochranu spotřebitele, s výjimkou smluvní možnosti vrácení hotových hodinek do 14 dnů, kterou mu prodávající poskytuje za stejných podmínek jako spotřebiteli. Nebezpečí škody přechází předáním hodinek prvnímu dopravci. Záruka 24 měsíců podle čl. 7 platí i pro podnikatele.</p>
+<p>Na kupujícího-podnikatele se nevztahují ustanovení na ochranu spotřebitele, s výjimkou smluvní možnosti vrácení hotových hodinek do ${T.withdrawalDays} dnů, kterou mu prodávající poskytuje za stejných podmínek jako spotřebiteli. Nebezpečí škody přechází předáním hodinek prvnímu dopravci. Záruka podle čl. 7 platí i pro podnikatele, včetně podmínky garanční prohlídky.</p>
 
 <h2 id="op14">14. Závěrečná ustanovení</h2>
 <ol>
@@ -125,9 +130,9 @@ ${SVC ? `<li><strong>zakázková výroba</strong> – hodinky sestavené z díl�
 
 <h2>2. Záruční doba a odpovědnost za vady</h2>
 <ol>
-<li>Na prodávané hodinky poskytujeme <strong>záruku 24 měsíců</strong> od převzetí (podmínky na stránce <a href="/warranty">Záruka a garance pravosti</a>).</li>
-<li>Spotřebitel má navíc zákonná práva z vadného plnění po dobu 24 měsíců od převzetí, i u použitých hodinek. Projeví-li se vada do jednoho roku od převzetí, má se za to, že hodinky byly vadné již při převzetí.</li>
-${SVC ? '<li>U servisu, renovace a přestavby odpovídáme za provedenou práci a nově dodané součásti 24 měsíců od předání.</li>' : ''}
+<li>Na prodávané hodinky poskytujeme dobrovolnou <strong>záruku za jakost ${T.warrantyMonths} měsíců</strong> od převzetí${insp.enabled ? ', ve druhém roce po absolvování garanční prohlídky' : ''} (podmínky na stránce <a href="/warranty">Záruka a garance pravosti</a>).</li>
+<li>Spotřebitel má vždy zákonná práva z vadného plnění po dobu ${T.liabilityMonths} měsíců od převzetí, i u použitých hodinek, nezávisle na záruce a garanční prohlídce. Projeví-li se vada do ${T.presumptionMonths} měsíců od převzetí, má se za to, že hodinky byly vadné již při převzetí.</li>
+${SVC ? '<li>U servisu, renovace a přestavby odpovídáme za provedenou práci a nově dodané součásti ${T.liabilityMonths} měsíců od předání.</li>' : ''}
 </ol>
 
 <h2>3. Co není vadou</h2>
@@ -135,7 +140,7 @@ ${SVC ? '<li>U servisu, renovace a přestavby odpovídáme za provedenou práci 
 <li>stav a vlastnosti uvedené v popisu kusu (patina, stopy používání, vyměněné nebo nové součásti) a vady, pro které byla sjednána nižší cena,</li>
 <li>u použitých hodinek opotřebení odpovídající míře používání při převzetí,</li>
 <li>běžné opotřebení užíváním (řemínek, sklíčko, povrch pouzdra, postupné opotřebení pozlacení),</li>
-<li>odchylka přesnosti chodu v orientační toleranci <strong>±30 sekund za den</strong> u vintage mechanických hodinek, s ohledem na konkrétní kalibr, technický stav a stáří strojku (je-li u kusu uvedena jiná tolerance, platí ta),</li>
+<li>odchylka přesnosti chodu v orientační toleranci <strong>${T.accuracyVintage}</strong> u vintage mechanických hodinek, s ohledem na konkrétní kalibr, technický stav a stáří strojku (je-li u kusu uvedena jiná tolerance, platí ta),</li>
 <li>poškození pádem, nárazem, vodou nebo vlhkostí (nejsou-li hodinky výslovně označeny jako vodotěsné), magnetickým polem, chemikáliemi nebo neodborným zásahem třetí osoby,</li>
 <li>poškození vzniklé nedodržením <a href="/care">doporučení k péči o hodinky</a>.</li>
 </ul>
@@ -155,7 +160,9 @@ ${SVC ? '<li>U servisu, renovace a přestavby odpovídáme za provedenou práci 
 
 <h2>6. Vyřízení a náklady</h2>
 <ol>
-<li>Reklamaci vyřídíme a vadu odstraníme <strong>do 30 dnů</strong> od uplatnění, nedohodneme-li se s vámi na delší lhůtě.</li>
+<li>Reklamaci vyřídíme a vadu odstraníme <strong>do ${T.claimDays} dnů</strong> od jejího uplatnění.</li>
+<li><strong>Historické hodinky a originální díly.</strong> Pracujeme s historickými mechanickými hodinkami (např. PRIM, OMEGA nebo ROLEX). Originální náhradní díly k nim bývají vzácné a některé je nutné vyhledat a objednat v zahraničí. Na kvalitě opravy nechceme slevit, proto dáváme přednost originálním dílům. Pokud by oprava v této lhůtě nebyla možná, <strong>bez zbytečného odkladu vás informujeme</strong>, vysvětlíme důvod a navrhneme přiměřeně delší lhůtu.</li>
+<li>Delší lhůta platí <strong>jen po vzájemné dohodě</strong>, kterou s vámi potvrdíme e-mailem. Nikdy ji neprodlužujeme jednostranně ani automaticky. Pokud s prodloužením nesouhlasíte, platí lhůta ${T.claimDays} dnů; nevyřídíme-li reklamaci včas, máte stejná práva, jako by šlo o podstatné porušení smlouvy (zejména právo odstoupit od smlouvy nebo požadovat přiměřenou slevu).</li>
 <li>O vyřízení vás informujeme e-mailem s potvrzením o datu a způsobu vyřízení, případně s odůvodněním zamítnutí.</li>
 <li>U oprávněné reklamace uhradíme účelně vynaložené náklady (zejména poštovné) a opravené hodinky zašleme na naše náklady.</li>
 </ol>
@@ -166,8 +173,8 @@ export const withdrawal = doc('withdrawal', '/returns', 'Odstoupení od smlouvy 
   'Jak vrátit hotové hodinky do 14 dnů: postup, vzorový formulář a online funkce pro odstoupení od smlouvy.',
   () => `${head(L)}
 <p class="notice"><strong>Odstoupit od smlouvy můžete i online</strong> na stránce <a href="/odstoupeni">Odstoupit od smlouvy</a>, nebo e-mailem na ${email}.</p>
-<h2>1. Lhůta 14 dnů</h2>
-<p>Jako spotřebitel můžete od kupní smlouvy na <strong>hotové hodinky</strong> uzavřené na dálku odstoupit <strong>bez udání důvodu do 14 dnů</strong> od převzetí (§ 1829 OZ). Lhůta je zachována, odešlete-li odstoupení před jejím uplynutím. Stejnou možnost smluvně poskytujeme i nákupům na firmu.</p>
+<h2>1. Lhůta ${T.withdrawalDays} dnů</h2>
+<p>Jako spotřebitel můžete od kupní smlouvy na <strong>hotové hodinky</strong> uzavřené na dálku odstoupit <strong>bez udání důvodu do ${T.withdrawalDays} dnů</strong> od převzetí (§ 1829 OZ). Lhůta je zachována, odešlete-li odstoupení před jejím uplynutím. Stejnou možnost smluvně poskytujeme i nákupům na firmu.</p>
 <h2>2. Jak odstoupit</h2>
 <ul>
 <li>online pomocí funkce <a href="/odstoupeni">„Odstoupit od smlouvy“</a> (přijetí potvrdíme e-mailem),</li>
@@ -177,13 +184,13 @@ export const withdrawal = doc('withdrawal', '/returns', 'Odstoupení od smlouvy 
 <p>Můžete použít <a href="#formular">vzorový formulář</a>, není to povinné.</p>
 <h2>3. Vrácení hodinek</h2>
 <ol>
-<li>Hodinky zašlete do 14 dnů od odstoupení na adresu ${returnAddress(L)}, pojištěné a ne na dobírku. Osobní předání je možné po předchozí domluvě.</li>
+<li>Hodinky zašlete do ${T.withdrawalDays} dnů od odstoupení na adresu ${returnAddress(L)}, pojištěné a ne na dobírku. Osobní předání je možné po předchozí domluvě.</li>
 <li><strong>Náklady na vrácení nesete vy.</strong> Při vrácení ze zahraničí mohou být vyšší.</li>
 <li>Odpovídáte za snížení hodnoty hodinek vzniklé nakládáním nad rámec nutného seznámení s nimi (např. otevření pouzdra, poškrábání, vniknutí vody).</li>
 </ol>
 <h2>4. Vrácení peněz</h2>
 <ol>
-<li>Vrátíme všechny přijaté platby včetně nákladů na dodání (v rozsahu nejlevnějšího nabízeného způsobu) do 14 dnů od odstoupení, ve stejné měně a stejným způsobem, jakým jsme je přijali, nedohodneme-li se jinak.</li>
+<li>Vrátíme všechny přijaté platby včetně nákladů na dodání (v rozsahu nejlevnějšího nabízeného způsobu) do ${T.refundDays} dnů od odstoupení, ve stejné měně a stejným způsobem, jakým jsme je přijali, nedohodneme-li se jinak.</li>
 <li>Platbu nemusíme vrátit dříve, než nám hodinky předáte nebo prokážete jejich odeslání.</li>
 </ol>
 <h2>5. Kdy nelze odstoupit</h2>
@@ -212,11 +219,15 @@ ${SVC ? '<li><strong>servis a renovace</strong> zcela dokončené s vaším výs
 export const warranty = doc('warranty', '/warranty', 'Záruka a doživotní garance pravosti',
   'Záruka 24 měsíců na hodinky Atelier Dante Time a doživotní garance pravosti originálních strojků, ciferníků a ručiček.',
   () => `${head(L)}
-<h2>1. Záruka 24 měsíců</h2>
+<h2>1. Záruka ${T.warrantyMonths} měsíců</h2>
+<p><strong>Ze zákona máte vůči prodávajícímu právo na bezplatnou nápravu vady, která se projeví do ${T.liabilityMonths} měsíců od převzetí. Toto právo není zárukou ani garanční prohlídkou nijak dotčeno.</strong></p>
 <ol>
-<li>Na prodávané hodinky poskytuje ${OPERATOR.name} (${OPERATOR.tradeName}) <strong>záruku za jakost 24 měsíců</strong> od převzetí (§ 2113 a násl. OZ). Záruka se vztahuje na funkčnost strojku a provedené práce.</li>
-<li>Záruka se nevztahuje na: běžné opotřebení, řemínky a tahy, sklíčka, opotřebení pozlacení, odchylku chodu v orientační toleranci ±30 s/den u vintage hodinek (s ohledem na kalibr, stav a stáří), poškození pádem, nárazem, vodou, magnetismem či neodborným zásahem a vady uvedené v popisu kusu.</li>
-<li>Záruka nemá vliv na zákonná práva z vadného plnění. Uplatnění: <a href="/reklamace">Reklamační řád</a>.</li>
+<li>Nad rámec zákonných práv poskytuje ${OPERATOR.name} (${OPERATOR.tradeName}) na prodávané hodinky dobrovolnou <strong>záruku za jakost ${T.warrantyMonths} měsíců</strong> od převzetí (§ 2113 a násl. OZ). Záruka se vztahuje na funkčnost strojku a provedené práce.</li>
+${insp.enabled ? `<li><strong>Garanční prohlídka.</strong> V prvním roce platí záruka bez dalších podmínek. Ve druhém roce trvá záruka, pokud hodinky absolvují garanční prohlídku <strong>po ${insp.afterMonths} měsících od převzetí</strong>, a to v období ${insp.toleranceDays} dnů před tímto dnem nebo po něm. Prohlídka zahrnuje kontrolu přesnosti chodu, amplitudy, odchylky kroku a základního technického stavu hodinek; o výsledku obdržíte písemný protokol. Cena prohlídky je <strong>${priceCs(insp.priceCzk)}</strong>. Dopravu hodinek do ateliéru a zpět hradíte vy, nedohodneme-li se jinak. Vadu, na kterou se vztahuje záruka nebo vaše zákonná práva, při prohlídce odstraníme bezplatně.</li>
+<li>Pokud garanční prohlídku neabsolvujete, dobrovolná záruka skončí uplynutím ${insp.afterMonths} měsíců od převzetí. Vaše zákonná práva z vadného plnění trvají dál v plném rozsahu.</li>
+<li>Podmínka garanční prohlídky platí pro hodinky zakoupené od účinnosti verze ${insp.fromVersion} těchto podmínek. Na dříve zakoupené hodinky se nevztahuje.</li>` : ''}
+<li>Záruka se nevztahuje na: běžné opotřebení, řemínky a tahy, sklíčka, opotřebení pozlacení, odchylku chodu v orientační toleranci ${T.accuracyVintage} u vintage hodinek (s ohledem na kalibr, stav a stáří), poškození pádem, nárazem, vodou, magnetismem či neodborným zásahem a vady uvedené v popisu kusu.</li>
+<li>Záruku uplatníte stejně jako reklamaci, viz <a href="/reklamace">Reklamační řád</a>. Prohlášení o záruce (záruční list) obdržíte v textové podobě s potvrzením objednávky a znovu s hodinkami.</li>
 </ol>
 <h2>2. Doživotní garance pravosti</h2>
 <p><strong>Prohlášení o záruce (smluvní záruka podle § 2113 a násl. OZ)</strong></p>
@@ -230,6 +241,7 @@ export const warranty = doc('warranty', '/warranty', 'Záruka a doživotní gara
 <li><strong>Uplatnění:</strong> e-mailem na ${email} s identifikací hodinek a důvodem pochybnosti. Ateliér hodinky posoudí, případně nechá posoudit nezávislým odborníkem. Náklady posouzení a dopravy nese ateliér, potvrdí-li se pochybnost.</li>
 <li><strong>Náprava při prokázané nepravosti</strong> podle volby oprávněné osoby: <strong>výměna</strong> za originální součást na náklady ateliéru, je-li dostupná, nebo <strong>vrácení kupní ceny</strong> zaplacené ateliéru proti vrácení hodinek. Není-li originální součást dostupná, náleží vrácení kupní ceny.</li>
 <li><strong>Zákonná práva:</strong> garance <strong>neomezuje</strong> zákonná práva z vadného plnění. Spotřebitel je může vždy uplatnit místo garance.</li>
+<li><strong>Nezávislost:</strong> garance pravosti trvá bez ohledu na záruku za jakost a na garanční prohlídky.</li>
 </ol>
 ${SVC ? `<h2>3. Hodinky zákazníků (servis, renovace, přestavby)</h2>
 <p>U zakázek se garance pravosti vztahuje na strojky, ciferníky a ručičky dodané ateliérem a v popisu prací výslovně označené jako originální. Původní součásti hodinek zákazníka ateliér neověřuje, nebylo-li to sjednáno.</p>` : ''}
@@ -250,8 +262,10 @@ export const custom = doc('custom', '/zakazkova-vyroba', 'Zakázková výroba, s
 <h2>2. Cena a schválení prací</h2>
 <ol>
 <li>Ateliér pošle nabídku s popisem prací, cenou a orientačním termínem. Smlouva vzniká písemným (e-mailovým) přijetím nabídky.</li>
+<li><strong>Potvrzením nabídky se zakázka stává závaznou</strong>, při zachování zákonných práv spotřebitele (čl. 6).</li>
 <li><strong>Zákazník musí předem schválit cenu zakázky i případné dodatečné práce.</strong> Bez jeho souhlasu ateliér práce nad rámec schválené nabídky neprovede.</li>
-<li>U zakázkové výroby a přestaveb je před zahájením prací splatná <strong>záloha 50 % ceny</strong>. Záloha se započítává do ceny. Zbytek ceny je splatný před předáním hotových hodinek.</li>
+<li><strong>Záloha se nevyžaduje automaticky.</strong> Je-li u konkrétní zakázky potřebná (např. na nákup dílů), sjedná se individuálně, zpravidla ve výši ${T.deposit.typical} sjednané ceny. U specifických nebo finančně náročných zakázek lze individuálně sjednat i jinou výši. Záloha se v plné výši započítává do konečné ceny.</li>
+<li>Výši případné zálohy, její splatnost a splatnost zbývající ceny uvádí nabídka, takže platební podmínky znáte vždy před zahájením prací. Není-li v nabídce uvedeno jinak, je cena splatná před předáním hotových hodinek.</li>
 <li>${vatText(L)}</li>
 </ol>
 <h2>3. Termín</h2>
@@ -261,20 +275,20 @@ export const custom = doc('custom', '/zakazkova-vyroba', 'Zakázková výroba, s
 <li>U vintage hodinek se mohou při rozebrání ukázat skryté vady. Ateliér zákazníka informuje a další postup provede jen s jeho souhlasem.</li>
 <li>Ateliér vždy rozlišuje <strong>původní originální součásti</strong> a <strong>nové součásti použité při přestavbě Dante Time</strong>. Seznam vyměněných a nových součástí obdrží zákazník s hotovými hodinkami. Vyměněné původní součásti ateliér na požádání vrátí.</li>
 <li>Pouzdra z drahých kovů: ateliér při převzetí zaznamená ryzost a puncovní značku, je-li přítomna. Pozlacená pouzdra ateliér nebrousí způsobem, který by poškodil pozlacení, bez souhlasu zákazníka.</li>
-<li>Vodotěsnost vintage hodinek ateliér nezaručuje, nebyla-li sjednána a ověřena zkouškou. Přesnost chodu vintage hodinek je orientačně ±30 s/den s ohledem na kalibr, stav a stáří.</li>
+<li>Vodotěsnost vintage hodinek ateliér nezaručuje, nebyla-li sjednána a ověřena zkouškou. Přesnost chodu vintage hodinek je orientačně ${T.accuracyVintage} s ohledem na kalibr, stav a stáří.</li>
 </ol>
 <h2>5. Převzetí hodinek zákazníka a předání hotové zakázky</h2>
 <ol>
 <li>Hodinky lze předat osobně <strong>po předchozí domluvě</strong> (ateliér nemá kamennou prodejnu) nebo zaslat pojištěnou zásilkou. Při převzetí ateliér pořídí fotodokumentaci a potvrdí stav e-mailem.</li>
-<li>Hotovou zakázku si zákazník převezme do <strong>30 dnů</strong> od oznámení o dokončení. <strong>Skladné se neúčtuje.</strong> Po uplynutí lhůty ateliér zákazníka znovu vyzve. Nepřevezme-li hodinky ani v dodatečné přiměřené lhůtě, postupuje ateliér podle § 2609 OZ.</li>
+<li>Hotovou zakázku si zákazník převezme do <strong>${T.pickupDays} dnů</strong> od oznámení o dokončení. <strong>Skladné se neúčtuje.</strong> Po uplynutí lhůty ateliér zákazníka znovu vyzve. Nepřevezme-li hodinky ani v dodatečné přiměřené lhůtě, postupuje ateliér podle § 2609 OZ.</li>
 </ol>
 <h2>6. Odstoupení u spotřebitele</h2>
 <ol>
 <li>Zakázkovou výrobu a přestavbu podle zadání spotřebitele nelze vrátit (§ 1837 písm. d) OZ).</li>
-<li>U servisu a renovace sjednaných na dálku může spotřebitel odstoupit do 14 dnů od uzavření smlouvy. Chce-li, aby práce začaly dříve, musí o to výslovně požádat. Při odstoupení uhradí poměrnou část ceny. Po úplném dokončení prací s jeho souhlasem právo na odstoupení zaniká (§ 1837 písm. a) OZ).</li>
+<li>U servisu a renovace sjednaných na dálku může spotřebitel odstoupit do ${T.withdrawalDays} dnů od uzavření smlouvy. Zaplacenou zálohu mu v takovém případě vrátíme, s odečtením poměrné části ceny za práce již provedené na jeho žádost. Chce-li, aby práce začaly dříve, musí o to výslovně požádat. Při odstoupení uhradí poměrnou část ceny. Po úplném dokončení prací s jeho souhlasem právo na odstoupení zaniká (§ 1837 písm. a) OZ).</li>
 </ol>
 <h2>7. Odpovědnost</h2>
-<p>Za provedenou práci a nové součásti ateliér odpovídá 24 měsíců od předání (viz <a href="/reklamace">Reklamační řád</a>). Za hodinky převzaté od zákazníka odpovídá ateliér po dobu, kdy je má u sebe, podle občanského zákoníku.</p>`);
+<p>Za provedenou práci a nové součásti ateliér odpovídá ${T.liabilityMonths} měsíců od předání (viz <a href="/reklamace">Reklamační řád</a>). Za hodinky převzaté od zákazníka odpovídá ateliér po dobu, kdy je má u sebe, podle občanského zákoníku.</p>`);
 
 // ---------------------------------------------------------------------------
 export const shipping = doc('shipping', '/doprava-a-platba', 'Doprava a platba',
@@ -282,20 +296,20 @@ export const shipping = doc('shipping', '/doprava-a-platba', 'Doprava a platba',
   () => `${head(L)}
 <h2>Doprava v České republice</h2>
 <table><thead><tr><th>Způsob</th><th>Cena</th></tr></thead><tbody>
-<tr><td><strong>Zásilkovna</strong> – výdejní místo nebo Z-BOX (výběr na mapě)</td><td>99 Kč</td></tr>
-<tr><td><strong>Balíkovna</strong> – výdejní místo (výběr na mapě České pošty)</td><td>79 Kč</td></tr>
+<tr><td><strong>Zásilkovna</strong> – výdejní místo nebo Z-BOX (výběr na mapě)</td><td>${priceCs(T.defaultPrices.zasilkovna)}</td></tr>
+<tr><td><strong>Balíkovna</strong> – výdejní místo (výběr na mapě České pošty)</td><td>${priceCs(T.defaultPrices.balikovna)}</td></tr>
 <tr><td><strong>Pojištěná přeprava</strong> – u hodinek vyšší hodnoty</td><td>cena se zobrazí v košíku před objednáním</td></tr>
 <tr><td><strong>Osobní předání</strong> – pouze po předchozí individuální domluvě (nemáme kamennou prodejnu)</td><td>zdarma</td></tr>
 </tbody></table>
 <h2>Doprava do zemí EU</h2>
 <p>Doručujeme do všech 27 členských států EU včetně Slovenska. Cena dopravy se řídí cílovou zemí a dostupným dopravcem a <strong>zobrazí se v košíku po výběru země, ještě před odesláním objednávky</strong>. Do země, pro kterou cenu zatím nemáme, vám rádi připravíme nabídku.</p>
 <h2>Odeslání</h2>
-<p>Dostupné hodinky odesíláme do <strong>3 pracovních dnů</strong> od přijetí platby, u dobírky od potvrzení objednávky. O odeslání vás informujeme e-mailem s číslem zásilky. Hodinky vyšší hodnoty posíláme jen pojištěnou přepravou odpovídající jejich hodnotě, nebo je předáme osobně po domluvě.</p>
+<p>Dostupné hodinky odesíláme do <strong>${T.dispatchWorkingDays} pracovních dnů</strong> od přijetí platby, u dobírky od potvrzení objednávky. O odeslání vás informujeme e-mailem s číslem zásilky. Hodinky vyšší hodnoty posíláme jen pojištěnou přepravou odpovídající jejich hodnotě, nebo je předáme osobně po domluvě.</p>
 <h2>Platba</h2>
 <table><thead><tr><th>Způsob</th><th>Poplatek</th><th>Poznámka</th></tr></thead><tbody>
-<tr><td><strong>Bankovní převod v Kč</strong> s QR platbou</td><td>zdarma</td><td>splatnost 3 dny, údaje a QR kód hned po objednávce</td></tr>
+<tr><td><strong>Bankovní převod v Kč</strong> s QR platbou</td><td>zdarma</td><td>splatnost ${T.paymentDueDays} dny, údaje a QR kód hned po objednávce</td></tr>
 <tr><td><strong>Bankovní převod v EUR</strong> s QR kódem SEPA</td><td>zdarma ze strany ateliéru</td><td>IBAN ${OPERATOR.ibanPretty}, BIC ${OPERATOR.bic}. Částka v EUR podle kurzu ateliéru, zaokrouhlená nahoru na celé euro</td></tr>
-<tr><td><strong>Dobírka</strong> (jen ČR, Zásilkovna a Balíkovna)</td><td>49 Kč</td><td>hodinky jsou rezervovány do odeslání</td></tr>
+<tr><td><strong>Dobírka</strong> (jen ČR, Zásilkovna a Balíkovna)</td><td>${priceCs(T.defaultPrices.cod)}</td><td>hodinky jsou rezervovány do odeslání</td></tr>
 <tr><td><strong>Platba kartou</strong></td><td>–</td><td>bude k dispozici po aktivaci platební brány</td></tr>
 </tbody></table>
 <p>Zahraniční objednávky se hradí předem. ${vatText(L)} Fakturu zasíláme e-mailem po zaplacení.</p>
@@ -375,7 +389,7 @@ export const eu = doc('eu', '/prodej-do-eu', 'Prodej do zemí EU',
 <li><strong>Stejné podmínky pro celou EU:</strong> v souladu s nařízením (EU) 2018/302 (geoblocking) nabízíme zákazníkům ze všech států EU stejné ceny a obchodní podmínky bez ohledu na jejich státní příslušnost nebo bydliště.</li>
 <li><strong>Platba:</strong> zahraniční objednávky se hradí předem bankovním převodem v EUR (QR kód SEPA) nebo v Kč, po aktivaci i kartou. Dobírku do zahraničí nenabízíme.</li>
 <li><strong>Daně a clo:</strong> ${vatText(L)} V rámci EU se neplatí clo.</li>
-<li><strong>Vaše práva:</strong> 24měsíční záruka, zákonná práva z vadného plnění, 14 dní na odstoupení u hotových hodinek a doživotní garance pravosti platí stejně pro celou EU. Smlouva se řídí českým právem, ale spotřebitel neztrácí ochranu, kterou mu poskytují kogentní předpisy státu jeho bydliště (čl. 6 nařízení Řím I).</li>
+<li><strong>Vaše práva:</strong> ${warrantyShortCs()}, zákonná práva z vadného plnění (${T.liabilityMonths} měsíců), ${T.withdrawalDays} dní na odstoupení u hotových hodinek a doživotní garance pravosti platí stejně pro celou EU. Smlouva se řídí českým právem, ale spotřebitel neztrácí ochranu, kterou mu poskytují kogentní předpisy státu jeho bydliště (čl. 6 nařízení Řím I).</li>
 <li><strong>Vrácení ze zahraničí:</strong> náklady na vrácení hodinek nese spotřebitel a mohou být vyšší než v ČR. Doporučujeme pojištěnou zásilku.</li>
 <li><strong>Jazyk:</strong> komunikujeme česky a anglicky. Smlouvu lze uzavřít v obou jazycích.</li>
 <li><strong>Spory:</strong> viz <a href="/reseni-sporu">Řešení sporů</a>, včetně Evropského spotřebitelského centra.</li>

@@ -132,3 +132,19 @@ Fotografie zůstává. Krátký popis ateliéru z úvodu odebrán.
 **Rozhodnutí:** Právní dokumenty verze 3.2 (CZ + EN) schváleny jako verze 1.0 s účinností
 od 26. 11. 2026. Web se spouští na doméně atelier-dante-time.cz. Otevřený právní bod L1
 (živnostenské oprávnění) zůstává na odpovědnosti majitele (R15).
+
+## R18 – Garanční prohlídka, varianta A (2026-11-26)
+**Rozhodl:** majitel („beru jako A“)
+**Rozhodnutí:** Dobrovolná záruka 24 měsíců; ve 2. roce trvá po garanční prohlídce po 12 měsících
+od převzetí (±30 dnů), cena 690 Kč, prohlídka jen v ateliéru, doprava na náklady zákazníka.
+Zákonná práva zachována, platí jen pro nákupy od verze 1.1, garance pravosti nezávislá.
+Majitel bere na vědomí riziko přiměřenosti u zákazníků z EU (LEGAL-REVIEW 2f).
+Majitel potvrdil, že tištěná knížka už obsahuje stejné podmínky (varianta A), takže se záruční texty neliší.
+**Fyzické balení:** majitel dodává knížku a gravírovanou kartičku s modelem; další tištěný
+záruční list nechce. Záruční list v textové podobě (§ 2174a OZ) jde e-mailem s potvrzením objednávky.
+
+## R19 – Schválení podmínek verze 1.1 a zapnutí objednávek (2026-11-26)
+**Rozhodl:** majitel („schvaluji 1.1“)
+**Rozhodnutí:** Podmínky 1.1 (reklamace s prodloužením jen po dohodě, garanční prohlídka varianta A,
+zálohy jen po dohodě 20–30 %, záruční list v potvrzení objednávky) platí od 26. 11. 2026.
+Ostrý web přijímá objednávky (`SHOP_MODE = "live"` ve `wrangler.toml`).

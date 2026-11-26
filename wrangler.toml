@@ -9,7 +9,7 @@ compatibility_date = "2026-11-01"
 # --- Ostrý web (větev main) ---
 [vars]
 # preview = katalog bez nákupu (výchozí) · test = zkušební nákupy · live = ostrý provoz (jen se souhlasem majitele)
-SHOP_MODE = "preview"
+SHOP_MODE = "live"
 # E-maily: odesílají se přes Resend, jakmile je v Cloudflare tajný klíč RESEND_API_KEY (jinak se jen ukládají)
 EMAIL_PROVIDER = "resend"
 # Odesílatel: po ověření domény v Resend. Odpovědi zákazníků chodí na SITE.email (reply-to).

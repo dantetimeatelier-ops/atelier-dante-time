@@ -2,6 +2,10 @@
 // ⚖️ LEVEL 3 – changes only with the owner's approval.
 import { SITE, OPERATOR, INDEPENDENCE, SERVICES_OFFERED as SVC } from '../site.mjs';
 import { head, toc, email, seller, vatText, returnAddress, coi, ecc, tradeOffice, registerText, LEGAL_VERSION } from './common.mjs';
+import { TERMS as T, priceEn } from '../terms.mjs';
+
+export const warrantyShortEn = () => `${T.warrantyMonths}-month warranty${T.inspection.enabled ? ' (second year after a warranty inspection)' : ''}`;
+const insp = T.inspection;
 
 const L = 'en';
 const doc = (key, path, title, description, body) => ({ key, lang: L, path, title, description, body });
@@ -41,12 +45,12 @@ ${toc(L, [['t1', 'Introduction'], ['t2', 'Watches, components and materials'], [
 <li>After the order is sent, the Shop <strong>reserves</strong> the watches so nobody else can buy them at the same time: until the payment due date, or until dispatch for cash on delivery.</li>
 <li>The contract is concluded when the Seller delivers the e-mail <strong>order confirmation</strong>, which includes these Terms and the withdrawal information valid on the day of the order.</li>
 <li>The Seller archives the contract electronically and makes it available to the Buyer on request. It is not accessible to third parties.</li>
-<li>If the watch cannot be delivered (e.g. it was demonstrably damaged before dispatch), the Seller informs the Buyer without undue delay and refunds any payment within 14 days.</li>
+<li>If the watch cannot be delivered (e.g. it was demonstrably damaged before dispatch), the Seller informs the Buyer without undue delay and refunds any payment within ${T.refundDays} days.</li>
 </ol>
 <h2 id="t5">5. Payment</h2>
 <ol>
 <li>Payment methods: <strong>bank transfer in advance</strong> (CZK with Czech QR payment, EUR with SEPA QR code), <strong>cash on delivery</strong> (Czech pickup points only) and, once the payment gateway is activated, <strong>card payment</strong>. International orders are paid in advance.</li>
-<li>Bank transfers are due within <strong>3 days</strong> of the conclusion of the contract to the account ${OPERATOR.bankAccount} (IBAN ${OPERATOR.ibanPretty}, BIC ${OPERATOR.bic}, account holder ${OPERATOR.accountHolder}) with the reference given in the order confirmation.</li>
+<li>Bank transfers are due within <strong>${T.paymentDueDays} days</strong> of the conclusion of the contract to the account ${OPERATOR.bankAccount} (IBAN ${OPERATOR.ibanPretty}, BIC ${OPERATOR.bic}, account holder ${OPERATOR.accountHolder}) with the reference given in the order confirmation.</li>
 <li>If the price is not paid by the due date, the reservation ends and the Seller may withdraw from the contract; the Buyer is informed by e-mail.</li>
 <li>For cash on delivery the price is payable on collection of the parcel.</li>
 <li>Ownership passes to the Buyer upon full payment and receipt of the watch. The Seller sends the sales document (invoice) electronically after payment; it contains the watch identification, which is also used for the authenticity guarantee.</li>
@@ -54,7 +58,7 @@ ${toc(L, [['t1', 'Introduction'], ['t2', 'Watches, components and materials'], [
 <h2 id="t6">6. Delivery</h2>
 <ol>
 <li>The Seller delivers to all member states of the European Union. Methods and prices are listed under <a href="/en/shipping-payment">Shipping and Payment</a>.</li>
-<li>Available watches are dispatched within <strong>3 working days</strong> of receipt of payment, or of order confirmation for cash on delivery, and in any case within 30 days of the conclusion of the contract unless agreed otherwise.</li>
+<li>Available watches are dispatched within <strong>${T.dispatchWorkingDays} working days</strong> of receipt of payment, or of order confirmation for cash on delivery, and in any case within 30 days of the conclusion of the contract unless agreed otherwise.</li>
 <li>Higher-value watches are sent only by <strong>insured shipment</strong> corresponding to their value, or handed over in person by prior individual arrangement. The Seller has no retail shop.</li>
 <li>For consumers, the risk of damage passes upon receipt of the watch.</li>
 <li>If the Buyer fails to collect a cash-on-delivery parcel without good reason, the Seller may withdraw from the contract and claim the <strong>actual costs</strong> of sending and returning the parcel as damages. The Seller charges no contractual penalty.</li>
@@ -62,14 +66,14 @@ ${toc(L, [['t1', 'Introduction'], ['t2', 'Watches, components and materials'], [
 </ol>
 <h2 id="t7">7. Warranty and statutory rights</h2>
 <ol>
-<li>The Seller provides a <strong>24-month warranty</strong> on the watches sold, from receipt, under the conditions stated in <a href="/en/warranty">Warranty and Authenticity Guarantee</a>.</li>
-<li>Consumers also have statutory rights for defects for 24 months from receipt, including for pre-owned goods. The warranty does not limit these rights. The procedure is set out in the <a href="/en/complaints">Complaints Procedure</a>.</li>
+<li>The Seller provides a voluntary <strong>${T.warrantyMonths}-month quality warranty</strong> on the watches sold, from receipt${insp.enabled ? '; in the second year the warranty continues after a warranty inspection' : ''}. Conditions: <a href="/en/warranty">Warranty and Authenticity Guarantee</a>.</li>
+<li>Consumers always have statutory rights for defects for ${T.liabilityMonths} months from receipt, including for pre-owned goods. Neither the warranty nor the warranty inspection limits these rights. The procedure is set out in the <a href="/en/complaints">Complaints Procedure</a>.</li>
 </ol>
 <h2 id="t8">8. Lifetime authenticity guarantee</h2>
 <p>The Seller provides a lifetime authenticity guarantee on <strong>movements, dials and hands declared as original</strong>, also for every subsequent owner of the watch. Conditions: <a href="/en/warranty">Warranty and Authenticity Guarantee</a>. The guarantee does not limit the Buyer’s statutory rights.</p>
 <h2 id="t9">9. Withdrawal from the contract</h2>
 <ol>
-<li>A consumer may withdraw from a distance contract for finished watches <strong>without giving a reason within 14 days</strong> of receipt. Procedure, model form and the “Withdraw from contract” function: <a href="/en/withdrawal">Withdrawal and Returns</a>.</li>
+<li>A consumer may withdraw from a distance contract for finished watches <strong>without giving a reason within ${T.withdrawalDays} days</strong> of receipt. Procedure, model form and the “Withdraw from contract” function: <a href="/en/withdrawal">Withdrawal and Returns</a>.</li>
 <li>There is no right of withdrawal for watches made or modified <strong>to the consumer’s specification</strong> (Section 1837(d) of the Civil Code). Rebuilds and builds offered in the Shop as finished pieces may be returned.</li>
 </ol>
 <h2 id="t10">10. Sales to EU countries</h2>
@@ -84,7 +88,7 @@ ${toc(L, [['t1', 'Introduction'], ['t2', 'Watches, components and materials'], [
 <li>The Seller does not publish customer reviews. Should it start doing so, it will state whether and how it verifies their origin.</li>
 </ol>
 <h2 id="t13">13. Business customers</h2>
-<p>Consumer protection provisions do not apply to business Buyers, except for the contractual 14-day return of finished watches, which the Seller grants on the same terms as to consumers. The risk passes on handover to the first carrier. The 24-month warranty under Article 7 also applies to businesses.</p>
+<p>Consumer protection provisions do not apply to business Buyers, except for the contractual ${T.withdrawalDays}-day return of finished watches, which the Seller grants on the same terms as to consumers. The risk passes on handover to the first carrier. The warranty under Article 7, including the warranty inspection condition, also applies to businesses.</p>
 <h2 id="t14">14. Final provisions</h2>
 <ol>
 <li>The contract is governed by Czech law. For consumers habitually resident in another EU member state this does not affect the mandatory consumer protection rules of that state (Article 6 of the Rome I Regulation).</li>
@@ -99,30 +103,30 @@ export const claims = doc('claims', '/en/complaints', 'Complaints Procedure',
 <ul><li><strong>finished watches</strong> bought from the Seller (purchase contract),</li>${SVC ? '<li><strong>custom builds</strong> assembled from the Atelier’s parts to the customer’s specification,</li><li><strong>service, restoration and rebuilds</strong> of the customer’s watch (contract for work) – the work done and newly supplied components.</li>' : ''}</ul>
 <p>Operator: ${seller(L)}, e-mail ${email}.</p>
 <h2>2. Warranty period and liability for defects</h2>
-<ol><li>The watches sold carry a <strong>24-month warranty</strong> from receipt (see <a href="/en/warranty">Warranty and Authenticity Guarantee</a>).</li><li>Consumers also have statutory rights for defects for 24 months from receipt, including for pre-owned watches. A defect appearing within one year of receipt is presumed to have existed at receipt.</li>${SVC ? '<li>For service, restoration and rebuilds we are liable for the work done and new components for 24 months from handover.</li>' : ''}</ol>
+<ol><li>The watches sold carry a voluntary <strong>${T.warrantyMonths}-month quality warranty</strong> from receipt${insp.enabled ? ', in the second year after a warranty inspection' : ''} (see <a href="/en/warranty">Warranty and Authenticity Guarantee</a>).</li><li>Consumers always have statutory rights for defects for ${T.liabilityMonths} months from receipt, including for pre-owned watches, independently of the warranty and the warranty inspection. A defect appearing within ${T.presumptionMonths} months of receipt is presumed to have existed at receipt.</li>${SVC ? `<li>For service, restoration and rebuilds we are liable for the work done and new components for ${T.liabilityMonths} months from handover.</li>` : ''}</ol>
 <h2>3. What is not a defect</h2>
-<ul><li>condition and features stated in the description (patina, signs of use, replaced or new components) and defects for which a lower price was agreed,</li><li>for pre-owned watches, wear corresponding to the degree of use at receipt,</li><li>normal wear (strap, crystal, case surface, gradual wear of gold plating),</li><li>a rate deviation within the indicative tolerance of <strong>±30 seconds per day</strong> for vintage mechanical watches, depending on the calibre, technical condition and age (a different tolerance stated for a piece prevails),</li><li>damage caused by drops, impacts, water or moisture (unless expressly water-resistant), magnetism, chemicals or improper intervention by third parties,</li><li>damage resulting from not following the <a href="/en/care">watch care recommendations</a>.</li></ul>
+<ul><li>condition and features stated in the description (patina, signs of use, replaced or new components) and defects for which a lower price was agreed,</li><li>for pre-owned watches, wear corresponding to the degree of use at receipt,</li><li>normal wear (strap, crystal, case surface, gradual wear of gold plating),</li><li>a rate deviation within the indicative tolerance of <strong>${T.accuracyVintage.replace(' s/den', ' seconds per day')}</strong> for vintage mechanical watches, depending on the calibre, technical condition and age (a different tolerance stated for a piece prevails),</li><li>damage caused by drops, impacts, water or moisture (unless expressly water-resistant), magnetism, chemicals or improper intervention by third parties,</li><li>damage resulting from not following the <a href="/en/care">watch care recommendations</a>.</li></ul>
 <h2>4. How to make a claim</h2>
 <ol><li>E-mail ${email} with the subject “Complaint”: order or job number, description of the defect, when it appears, photos or video and the right you are claiming.</li><li>Send the watch insured to ${returnAddress(L)}, not cash on delivery, after agreeing with us.</li><li>We confirm receipt of the claim by e-mail (date, content, requested remedy).</li></ol>
 <h2>5. Your rights</h2>
 <ol><li>You may request <strong>repair</strong> or replacement. As our watches are unique, defects are usually remedied by repair unless agreed otherwise.</li><li>You may request a reasonable <strong>price reduction</strong> or <strong>withdraw</strong> if we refused or failed to remedy the defect in accordance with the law, the defect recurs, it is a material breach, or it is clear we will not remedy it within a reasonable time or without significant inconvenience to you. You cannot withdraw for an insignificant defect.</li></ol>
 <h2>6. Handling and costs</h2>
-<ol><li>We handle the claim and remedy the defect <strong>within 30 days</strong> of the claim unless we agree a longer period with you.</li><li>We inform you by e-mail and confirm the date and method of handling, or explain a rejection.</li><li>For justified claims we reimburse reasonably incurred costs (in particular postage) and return the repaired watch at our cost.</li></ol>
+<ol><li>We handle the claim and remedy the defect <strong>within ${T.claimDays} days</strong> of the claim.</li><li><strong>Historic watches and original parts.</strong> We work with historic mechanical watches (for example PRIM, OMEGA or ROLEX). Original spare parts for them can be rare, and some have to be sourced and ordered from abroad. We do not compromise on the quality of the repair, so we prefer original parts. If the repair cannot be completed within this period, <strong>we inform you without undue delay</strong>, explain why and propose a reasonably longer period.</li><li>A longer period applies <strong>only by mutual agreement</strong>, which we confirm with you by e-mail. We never extend it unilaterally or automatically. If you do not agree to an extension, the ${T.claimDays}-day period applies; if we do not handle the claim in time, you have the same rights as for a material breach of contract (in particular the right to withdraw from the contract or to a reasonable price reduction).</li><li>We inform you by e-mail and confirm the date and method of handling, or explain a rejection.</li><li>For justified claims we reimburse reasonably incurred costs (in particular postage) and return the repaired watch at our cost.</li></ol>
 <p>Out-of-court dispute resolution: <a href="/en/dispute-resolution">Dispute Resolution</a>.</p>`);
 
 export const withdrawal = doc('withdrawal', '/en/withdrawal', 'Withdrawal and Returns',
   'How to return finished watches within 14 days: procedure, model withdrawal form and online withdrawal function.',
   () => `${head(L)}
 <p class="notice"><strong>You can also withdraw online</strong> on the <a href="/odstoupeni">Withdraw from contract</a> page, or by e-mail to ${email}.</p>
-<h2>1. 14-day period</h2>
-<p>As a consumer you may withdraw from a distance contract for <strong>finished watches without giving a reason within 14 days</strong> of receipt. It is sufficient to send the withdrawal before the period expires. We grant the same option contractually to business purchases.</p>
+<h2>1. ${T.withdrawalDays}-day period</h2>
+<p>As a consumer you may withdraw from a distance contract for <strong>finished watches without giving a reason within ${T.withdrawalDays} days</strong> of receipt. It is sufficient to send the withdrawal before the period expires. We grant the same option contractually to business purchases.</p>
 <h2>2. How to withdraw</h2>
 <ul><li>online using the <a href="/odstoupeni">“Withdraw from contract”</a> function (we confirm receipt by e-mail),</li><li>by e-mail to ${email},</li><li>by letter to ${returnAddress(L)}.</li></ul>
 <p>You may use the <a href="#form">model form</a>, but you do not have to.</p>
 <h2>3. Returning the watch</h2>
-<ol><li>Send the watch within 14 days of withdrawal to ${returnAddress(L)}, insured and not cash on delivery. Personal handover is possible by prior arrangement.</li><li><strong>You bear the cost of returning the watch</strong>; returns from abroad may cost more.</li><li>You are liable for any diminished value resulting from handling beyond what is necessary to establish the nature and functioning of the watch (e.g. opening the case, scratches, water ingress).</li></ol>
+<ol><li>Send the watch within ${T.withdrawalDays} days of withdrawal to ${returnAddress(L)}, insured and not cash on delivery. Personal handover is possible by prior arrangement.</li><li><strong>You bear the cost of returning the watch</strong>; returns from abroad may cost more.</li><li>You are liable for any diminished value resulting from handling beyond what is necessary to establish the nature and functioning of the watch (e.g. opening the case, scratches, water ingress).</li></ol>
 <h2>4. Refund</h2>
-<ol><li>We refund all payments received, including delivery costs (up to the cheapest delivery method offered), within 14 days of withdrawal, in the same currency and by the same means used, unless agreed otherwise.</li><li>We may withhold the refund until we receive the watch or proof that it has been sent.</li></ol>
+<ol><li>We refund all payments received, including delivery costs (up to the cheapest delivery method offered), within ${T.refundDays} days of withdrawal, in the same currency and by the same means used, unless agreed otherwise.</li><li>We may withhold the refund until we receive the watch or proof that it has been sent.</li></ol>
 <h2>5. When withdrawal is not possible</h2>
 <ul><li><strong>custom builds and rebuilds made to your specification</strong> (Section 1837(d) of the Civil Code). Rebuilds and builds sold in the Shop as finished pieces can be returned${SVC ? ',' : '.'}</li>${SVC ? '<li><strong>service and restoration</strong> fully completed with your express consent before the withdrawal period expired. See <a href="/en/custom-work">Custom Work and Service</a>.</li>' : ''}</ul>
 <h2 id="damage">6. Damaged parcel</h2>
@@ -145,8 +149,9 @@ export const withdrawal = doc('withdrawal', '/en/withdrawal', 'Withdrawal and Re
 export const warranty = doc('warranty', '/en/warranty', 'Warranty and Lifetime Authenticity Guarantee',
   '24-month warranty on Atelier Dante Time watches and a lifetime authenticity guarantee on original movements, dials and hands.',
   () => `${head(L)}
-<h2>1. 24-month warranty</h2>
-<ol><li>${OPERATOR.name} (${OPERATOR.tradeName}) provides a <strong>24-month quality warranty</strong> on the watches sold, from receipt (Section 2113 et seq. of the Civil Code). It covers the functioning of the movement and the work carried out.</li><li>The warranty does not cover: normal wear, straps and bracelets, crystals, wear of gold plating, a rate deviation within the indicative ±30 s/day tolerance for vintage watches (depending on calibre, condition and age), damage from drops, impacts, water, magnetism or improper intervention, and defects stated in the description.</li><li>The warranty does not affect statutory rights for defects. How to claim: <a href="/en/complaints">Complaints Procedure</a>.</li></ol>
+<h2>1. ${T.warrantyMonths}-month warranty</h2>
+<p><strong>By law you have the right to a free remedy from the seller for a defect that appears within ${T.liabilityMonths} months of receipt. This right is not affected in any way by the warranty or the warranty inspection.</strong></p>
+<ol><li>In addition to your statutory rights, ${OPERATOR.name} (${OPERATOR.tradeName}) provides a voluntary <strong>${T.warrantyMonths}-month quality warranty</strong> on the watches sold, from receipt (Section 2113 et seq. of the Civil Code). It covers the functioning of the movement and the work carried out.</li>${insp.enabled ? `<li><strong>Warranty inspection.</strong> In the first year the warranty applies without further conditions. In the second year the warranty continues if the watch undergoes a warranty inspection <strong>${insp.afterMonths} months after receipt</strong>, within ${insp.toleranceDays} days before or after that date. The inspection covers rate accuracy, amplitude, beat error and the basic technical condition of the watch; you receive a written report. The inspection costs <strong>${priceEn(insp.priceCzk)}</strong>. You pay for shipping the watch to the atelier and back unless agreed otherwise. Any defect covered by the warranty or by your statutory rights found during the inspection is remedied free of charge.</li><li>If the warranty inspection is not carried out, the voluntary warranty ends ${insp.afterMonths} months after receipt. Your statutory rights for defects continue in full.</li><li>The warranty inspection condition applies to watches purchased from the effective date of version ${insp.fromVersion} of these terms. It does not apply to watches purchased earlier.</li>` : ''}<li>The warranty does not cover: normal wear, straps and bracelets, crystals, wear of gold plating, a rate deviation within the indicative ${T.accuracyVintage.replace(' s/den', ' s/day')} tolerance for vintage watches (depending on calibre, condition and age), damage from drops, impacts, water, magnetism or improper intervention, and defects stated in the description.</li><li>The warranty is claimed in the same way as a defect, see the <a href="/en/complaints">Complaints Procedure</a>. You receive the warranty statement in text form with the order confirmation and again with the watch.</li></ol>
 <h2>2. Lifetime authenticity guarantee</h2>
 <p><strong>Guarantee statement (commercial guarantee under Section 2113 et seq. of the Civil Code)</strong></p>
 <ol>
@@ -159,6 +164,7 @@ export const warranty = doc('warranty', '/en/warranty', 'Warranty and Lifetime A
 <li><strong>How to claim:</strong> e-mail ${email} with the watch identification and the reason for doubt. The Atelier examines the watch, possibly with an independent expert. The Atelier bears the costs of examination and transport if the doubt is confirmed.</li>
 <li><strong>Remedy for proven non-authenticity</strong>, at the entitled person’s choice: <strong>replacement</strong> with an original component at the Atelier’s cost if available, or a <strong>refund of the purchase price</strong> paid to the Atelier against return of the watch. If no original component is available, the purchase price is refunded.</li>
 <li><strong>Statutory rights:</strong> the guarantee <strong>does not limit</strong> statutory rights for defects; consumers may always assert them instead.</li>
+<li><strong>Independence:</strong> the authenticity guarantee applies regardless of the quality warranty and of warranty inspections.</li>
 </ol>
 ${SVC ? `<h2>3. Customers’ watches (service, restoration, rebuilds)</h2>
 <p>For jobs, the authenticity guarantee covers movements, dials and hands supplied by the Atelier and expressly declared as original in the work report. The Atelier does not verify the original components of a customer’s watch unless agreed.</p>` : ''}
@@ -176,37 +182,37 @@ export const custom = doc('custom', '/en/custom-work', 'Custom Work, Service and
 </tbody></table>
 <p>Jobs are carried out by ${seller(L)} (the “Atelier”).</p>
 <h2>2. Price and approval of work</h2>
-<ol><li>The Atelier sends an offer with the scope of work, price and indicative timing. The contract is concluded by written (e-mail) acceptance.</li><li><strong>The customer must approve the price and any additional work in advance.</strong> The Atelier does not carry out work beyond the approved offer without consent.</li><li>For custom builds and rebuilds, a <strong>50% deposit</strong> is payable before work starts and is credited to the price. The balance is payable before handover.</li><li>${vatText(L)}</li></ol>
+<ol><li>The Atelier sends an offer with the scope of work, price and indicative timing. The contract is concluded by written (e-mail) acceptance.</li><li><strong>The customer must approve the price and any additional work in advance.</strong> The Atelier does not carry out work beyond the approved offer without consent.</li><li><strong>Confirming the offer makes the job binding</strong>, without prejudice to the consumer’s statutory rights (Article 6).</li><li><strong>A deposit is not required automatically.</strong> Where a specific job needs one (for example to buy parts), it is agreed individually, usually ${T.deposit.typical} of the agreed price. For specific or costly jobs a different amount may be agreed individually. The deposit is credited in full to the final price.</li><li>The amount and due date of any deposit and of the remaining price are stated in the offer, so you always know the payment terms before work starts. Unless the offer states otherwise, the price is payable before handover of the finished watch.</li><li>${vatText(L)}</li></ol>
 <h2>3. Timing</h2>
 <p>The completion date is set <strong>individually</strong> depending on the complexity of the work and the availability of parts. A fixed date applies only if expressly agreed. The Atelier informs the customer of any delay.</p>
 <h2>4. Work and components</h2>
 <ol><li>Vintage watches may reveal hidden defects when dismantled; the Atelier informs the customer and proceeds only with consent.</li><li>The Atelier always distinguishes <strong>original components</strong> from <strong>new components used in the Dante Time rebuild</strong>; the customer receives a list of replaced and new components. Replaced original parts are returned on request.</li><li>Precious metal cases: the Atelier records the fineness and hallmark on receipt, if present. Gold-plated cases are not polished in a way that would damage the plating without the customer’s consent.</li><li>Water resistance of vintage watches is not guaranteed unless agreed and tested. The indicative accuracy of vintage watches is ±30 s/day depending on calibre, condition and age.</li></ol>
 <h2>5. Receipt and collection</h2>
-<ol><li>Watches can be handed over in person <strong>by prior arrangement</strong> (the Atelier has no retail shop) or sent by insured parcel. The Atelier documents the condition with photos and confirms it by e-mail.</li><li>The customer collects the finished job within <strong>30 days</strong> of notice of completion. <strong>No storage fee is charged.</strong> After that period the Atelier sends a reminder; if the watch is still not collected within a reasonable additional period, the Atelier proceeds under Section 2609 of the Civil Code.</li></ol>
+<ol><li>Watches can be handed over in person <strong>by prior arrangement</strong> (the Atelier has no retail shop) or sent by insured parcel. The Atelier documents the condition with photos and confirms it by e-mail.</li><li>The customer collects the finished job within <strong>${T.pickupDays} days</strong> of notice of completion. <strong>No storage fee is charged.</strong> After that period the Atelier sends a reminder; if the watch is still not collected within a reasonable additional period, the Atelier proceeds under Section 2609 of the Civil Code.</li></ol>
 <h2>6. Consumer withdrawal</h2>
-<ol><li>Custom builds and rebuilds made to the consumer’s specification cannot be returned (Section 1837(d) Civil Code).</li><li>For service and restoration agreed at a distance, a consumer may withdraw within 14 days of the contract. If the consumer expressly requests that work start earlier and then withdraws, they pay a proportionate part of the price; after full completion with their consent the right of withdrawal ends (Section 1837(a)).</li></ol>
+<ol><li>Custom builds and rebuilds made to the consumer’s specification cannot be returned (Section 1837(d) Civil Code).</li><li>For service and restoration agreed at a distance, a consumer may withdraw within ${T.withdrawalDays} days of the contract. Any deposit paid is refunded, less a proportionate part of the price for work already carried out at their request. If the consumer expressly requests that work start earlier and then withdraws, they pay a proportionate part of the price; after full completion with their consent the right of withdrawal ends (Section 1837(a)).</li></ol>
 <h2>7. Liability</h2>
-<p>The Atelier is liable for the work done and new components for 24 months from handover (see <a href="/en/complaints">Complaints Procedure</a>), and for watches received from customers while in its care under the Civil Code.</p>`);
+<p>The Atelier is liable for the work done and new components for ${T.liabilityMonths} months from handover (see <a href="/en/complaints">Complaints Procedure</a>), and for watches received from customers while in its care under the Civil Code.</p>`);
 
 export const shipping = doc('shipping', '/en/shipping-payment', 'Shipping and Payment',
   'Shipping in the Czech Republic and across the EU, payment by bank transfer (CZK, EUR) or cash on delivery in Czechia.',
   () => `${head(L)}
 <h2>Shipping in the Czech Republic</h2>
 <table><thead><tr><th>Method</th><th>Price</th></tr></thead><tbody>
-<tr><td><strong>Packeta (Zásilkovna)</strong> – pickup point or Z-BOX (map selection)</td><td>CZK 99</td></tr>
-<tr><td><strong>Balíkovna</strong> – pickup point (Czech Post map)</td><td>CZK 79</td></tr>
+<tr><td><strong>Packeta (Zásilkovna)</strong> – pickup point or Z-BOX (map selection)</td><td>${priceEn(T.defaultPrices.zasilkovna)}</td></tr>
+<tr><td><strong>Balíkovna</strong> – pickup point (Czech Post map)</td><td>${priceEn(T.defaultPrices.balikovna)}</td></tr>
 <tr><td><strong>Insured shipment</strong> – for higher-value watches</td><td>shown in the cart before ordering</td></tr>
 <tr><td><strong>Personal handover</strong> – only by prior individual arrangement (no retail shop)</td><td>free</td></tr>
 </tbody></table>
 <h2>Shipping to EU countries</h2>
 <p>We deliver to all 27 EU member states including Slovakia. The price depends on the destination country and available carrier and <strong>is shown in the cart after selecting the country, before the order is placed</strong>. For countries without a price yet, we will gladly prepare an offer.</p>
 <h2>Dispatch</h2>
-<p>Available watches are dispatched within <strong>3 working days</strong> of receipt of payment, or of order confirmation for cash on delivery. You receive the tracking number by e-mail. Higher-value watches are sent only by insured shipment corresponding to their value or handed over personally by arrangement.</p>
+<p>Available watches are dispatched within <strong>${T.dispatchWorkingDays} working days</strong> of receipt of payment, or of order confirmation for cash on delivery. You receive the tracking number by e-mail. Higher-value watches are sent only by insured shipment corresponding to their value or handed over personally by arrangement.</p>
 <h2>Payment</h2>
 <table><thead><tr><th>Method</th><th>Fee</th><th>Note</th></tr></thead><tbody>
-<tr><td><strong>Bank transfer in CZK</strong> with QR payment</td><td>free</td><td>due within 3 days; details and QR code right after ordering</td></tr>
+<tr><td><strong>Bank transfer in CZK</strong> with QR payment</td><td>free</td><td>due within ${T.paymentDueDays} days; details and QR code right after ordering</td></tr>
 <tr><td><strong>Bank transfer in EUR</strong> with SEPA QR code</td><td>no fee from the Atelier</td><td>IBAN ${OPERATOR.ibanPretty}, BIC ${OPERATOR.bic}. EUR amount at the Atelier’s rate, rounded up to a whole euro</td></tr>
-<tr><td><strong>Cash on delivery</strong> (Czechia only, Packeta and Balíkovna)</td><td>CZK 49</td><td>the watch is reserved until dispatch</td></tr>
+<tr><td><strong>Cash on delivery</strong> (Czechia only, Packeta and Balíkovna)</td><td>${priceEn(T.defaultPrices.cod)}</td><td>the watch is reserved until dispatch</td></tr>
 <tr><td><strong>Card payment</strong></td><td>–</td><td>available once the payment gateway is activated</td></tr>
 </tbody></table>
 <p>International orders are paid in advance. ${vatText(L)} The invoice is sent by e-mail after payment.</p>
@@ -270,7 +276,7 @@ export const eu = doc('eu', '/en/eu-sales', 'Sales to EU Countries',
 <li><strong>Same conditions across the EU:</strong> in line with Regulation (EU) 2018/302 (geo-blocking) we offer the same prices and terms to customers from all EU states regardless of nationality or residence.</li>
 <li><strong>Payment:</strong> international orders are paid in advance by bank transfer in EUR (SEPA QR code) or CZK, and by card once activated. Cash on delivery is not available abroad.</li>
 <li><strong>Taxes and customs:</strong> ${vatText(L)} No customs duties apply within the EU.</li>
-<li><strong>Your rights:</strong> the 24-month warranty, statutory rights for defects, the 14-day withdrawal right for finished watches and the lifetime authenticity guarantee apply equally across the EU. The contract is governed by Czech law, but consumers keep the protection of the mandatory rules of their country of residence (Article 6 Rome I).</li>
+<li><strong>Your rights:</strong> the ${warrantyShortEn()}, statutory rights for defects (${T.liabilityMonths} months), the ${T.withdrawalDays}-day withdrawal right for finished watches and the lifetime authenticity guarantee apply equally across the EU. The contract is governed by Czech law, but consumers keep the protection of the mandatory rules of their country of residence (Article 6 Rome I).</li>
 <li><strong>Returns from abroad:</strong> the consumer bears the cost of returning the watch, which may be higher than within Czechia. We recommend an insured parcel.</li>
 <li><strong>Language:</strong> we communicate in Czech and English; the contract can be concluded in either language.</li>
 <li><strong>Disputes:</strong> see <a href="/en/dispute-resolution">Dispute Resolution</a>, including the European Consumer Centre.</li>

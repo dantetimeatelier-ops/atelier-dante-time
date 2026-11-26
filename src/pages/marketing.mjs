@@ -156,7 +156,7 @@ export function services(lang) {
       <li>${L('Hotové hodinky předám s popisem provedených prací.', 'The finished watch is returned with a description of the work done.')}</li>
     </ol>
     <p>${L('Zaměření především na značky', 'Focus mainly on')}: ${brands} ${L('a další vintage modely.', 'and other vintage models.')}</p>
-    <p><a href="/zakazkova-vyroba" style="color:var(--gold-2)">${L('Podmínky zakázkové výroby, renovací a servisu', 'Terms for custom work, restoration and service (CZ)')}</a></p>
+    <p><a href="${L('/zakazkova-vyroba', '/en/custom-work')}" style="color:var(--gold-2)">${L('Podmínky zakázkové výroby, renovací a servisu', 'Terms for custom work, restoration and service')}</a></p>
   </div>
   <figure style="margin:0">
     <div class="frame"><img src="/img/watch-box-720.webp" srcset="/img/watch-box-400.webp 400w, /img/watch-box-720.webp 720w" sizes="(max-width: 900px) 100vw, 440px" width="720" height="1280" loading="lazy" decoding="async" alt="${L('Ukázka dokončeného kusu Atelier Dante Time', 'A finished piece by Atelier Dante Time')}"></div>
@@ -193,7 +193,7 @@ export function inquiryForm(lang, type, productId = '') {
   <label>${L('Telefon (nepovinné)', 'Phone (optional)')}<input name="phone" type="tel" autocomplete="tel" maxlength="40"></label>
   <label>${L('Zpráva', 'Message')}<textarea name="message" required maxlength="4000" placeholder="${L('Značka, model, stav, co od hodinek očekáváte…', 'Brand, model, condition, what you expect…')}"></textarea></label>
   <label class="hp" aria-hidden="true">Web<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
-  <p class="doc-meta">${L('Údaje použiji jen k vyřízení vaší poptávky. Více v <a href="/privacy" style="color:var(--gold-2)">ochraně osobních údajů</a>.', 'I will only use your details to handle your enquiry. See the <a href="/privacy" style="color:var(--gold-2)">privacy policy (CZ)</a>.')}</p>
+  <p class="doc-meta">${L('Údaje použiji jen k vyřízení vaší poptávky. Více v <a href="/privacy" style="color:var(--gold-2)">ochraně osobních údajů</a>.', 'I will only use your details to handle your enquiry. See the <a href="/en/privacy" style="color:var(--gold-2)">privacy policy</a>.')}</p>
   <button class="btn solid" type="submit">${L('Odeslat poptávku', 'Send enquiry')}</button>
   <div class="notice" data-form-status hidden role="status" aria-live="polite"></div>
 </form>`;
@@ -253,7 +253,7 @@ export function contact(lang) {
       <li>TikTok: <a href="${SITE.tiktok}" rel="noopener noreferrer" target="_blank">${SITE.tiktokHandle}</a></li>
     </ul>
     <p style="margin-top:18px">${L('Pro nezávaznou konzultaci pošlete fotografie hodinek a stručný popis jejich stavu. Připravím návrh postupu a orientační cenový odhad.', 'For a free consultation, send photos of the watch and a short description of its condition. I will suggest next steps and an estimated price.')}</p>
-    <p><a href="/provozovatel" style="color:var(--gold-2)">${L('Údaje o provozovateli', 'Operator details (CZ)')}</a></p>
+    <p><a href="${L('/provozovatel', '/en/legal-notice')}" style="color:var(--gold-2)">${L('Údaje o provozovateli', 'Operator details')}</a></p>
   </div>
 </div></section>`,
   };

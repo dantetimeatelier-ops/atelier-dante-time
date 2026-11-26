@@ -2,9 +2,9 @@
 // ⚖️ ÚROVEŇ 3 – obsah schvaluje majitel (AGENTS.md, docs/LEGAL-REVIEW.md).
 import { SITE, OPERATOR, missing, verify } from '../site.mjs';
 
-export const LEGAL_VERSION = '1.0';
+export const LEGAL_VERSION = '1.1';
 // Datum účinnosti = den ostrého spuštění e-shopu (schváleno majitelem 26. 11. 2026, verze 1.0).
-export const EFFECTIVE_DATE = '26. 11. 2026';
+export const EFFECTIVE_DATE = '26. 11. 2026'; // verze 1.1 schválena majitelem 26. 11. 2026 (R19)
 
 export const effective = (lang) => EFFECTIVE_DATE ?? missing(lang === 'cs' ? 'datum účinnosti = den ostrého spuštění e-shopu' : 'effective date = e-shop launch date');
 export const head = (lang) => `<p class="doc-meta">${lang === 'cs' ? 'Verze' : 'Version'}: ${LEGAL_VERSION} · ${lang === 'cs' ? 'Účinnost od' : 'Effective from'}: ${effective(lang)}</p>`;
