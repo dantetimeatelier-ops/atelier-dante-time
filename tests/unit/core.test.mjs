@@ -234,3 +234,10 @@ test('digitální pas: kód bez zaměnitelných znaků, zkrácené výrobní č�
   const html = publicBody({ p: { code: 'ABCDEFGHJKMN', title: 'PRIM <test>', status: 'platny', issued_on: '2026-11-26', serial_ref: 'X99887766', authenticity_parts: 'strojek,cifernik' }, events: [] }, 'cs');
   assert.ok(html.includes('&lt;test&gt;') && !html.includes('X99887766') && html.includes('••••7766') && html.includes('strojek, ciferník'));
 });
+
+test('zálohy obsahují i ekonomiku, pasy a evidenci dokladů', () => {
+  const os = readFileSync(new URL('../../server/os.js', import.meta.url), 'utf8');
+  for (const t of ['costs', 'parts', 'watch_passports', 'passport_events', 'documents']) assert.ok(os.includes(`'${t}'`) || os.includes(`${t}:`), `záloha nezahrnuje ${t}`);
+  const m = readFileSync(new URL('../../migrations/0011_doklady.sql', import.meta.url), 'utf8');
+  assert.ok(!/ALTER TABLE products/i.test(m), 'doklady nesmí být u veřejné tabulky hodinek');
+});

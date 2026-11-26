@@ -35,7 +35,7 @@ export async function addCost(env, b, actor) {
 export async function productEconomics(env, productId) {
   const s = await getSettings(env);
   const rate = Number(s.labor_rate_czk) || 0;
-  const { results: costs } = await env.DB.prepare('SELECT * FROM costs WHERE product_id = ? ORDER BY cost_date, created_at').bind(productId).all();
+  const { results: costs } = await env.DB.prepare('SELECT c.*, (SELECT COUNT(*) FROM documents d WHERE d.cost_id = c.id) AS docs FROM costs c WHERE c.product_id = ? ORDER BY c.cost_date, c.created_at').bind(productId).all();
   const { results: parts } = await env.DB.prepare("SELECT * FROM parts WHERE product_id = ? AND status IN ('pouzito','prodano')").bind(productId).all();
   const sale = await env.DB.prepare(`SELECT i.price_czk, o.number, o.created_at FROM order_items i JOIN orders o ON o.id = i.order_id WHERE i.product_id = ? AND o.status IN ${SOLD} ORDER BY o.created_at DESC LIMIT 1`).bind(productId).first();
   const p = await env.DB.prepare('SELECT price_czk, status FROM products WHERE id = ?').bind(productId).first();
@@ -99,8 +99,8 @@ export async function exportCsv(env, kind, from, to) {
   const esc = (v) => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   let rows;
   if (kind === 'naklady') {
-    const { results } = await env.DB.prepare('SELECT c.cost_date, c.category, c.description, c.amount_czk, c.hours, c.supplier, c.document_ref, p.title AS hodinky FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE c.cost_date BETWEEN ? AND ? ORDER BY c.cost_date').bind(f, t).all();
-    rows = [['Datum', 'Druh', 'Popis', 'Částka Kč', 'Hodiny', 'Dodavatel', 'Doklad', 'Hodinky'], ...results.map((r) => [r.cost_date, COST_CATS[r.category], r.description, r.amount_czk, r.hours ?? '', r.supplier, r.document_ref, r.hodinky])];
+    const { results } = await env.DB.prepare('SELECT c.cost_date, c.category, c.description, c.amount_czk, c.hours, c.supplier, c.document_ref, p.title AS hodinky, (SELECT COUNT(*) FROM documents d WHERE d.cost_id = c.id) AS prilohy FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE c.cost_date BETWEEN ? AND ? ORDER BY c.cost_date').bind(f, t).all();
+    rows = [['Datum', 'Druh', 'Popis', 'Částka Kč', 'Hodiny', 'Dodavatel', 'Doklad', 'Hodinky', 'Doklad nahrán'], ...results.map((r) => [r.cost_date, COST_CATS[r.category], r.description, r.amount_czk, r.hours ?? '', r.supplier, r.document_ref, r.hodinky, r.prilohy ? 'ano' : 'ne'])];
   } else {
     const { results } = await env.DB.prepare("SELECT number, substr(issued_at,1,10) AS d, buyer_name, total, pay_currency AS currency, payment_method, paid_at, cancelled_at FROM invoices WHERE mode = 'live' AND substr(issued_at,1,10) BETWEEN ? AND ? ORDER BY issued_at").bind(f, t).all();
     rows = [['Číslo', 'Datum vystavení', 'Odběratel', 'Celkem Kč', 'Měna platby', 'Způsob platby', 'Uhrazeno', 'Stornováno'], ...results.map((r) => [r.number, r.d, r.buyer_name, r.total, r.currency || 'CZK', r.payment_method, r.paid_at ? r.paid_at.slice(0, 10) : '', r.cancelled_at ? r.cancelled_at.slice(0, 10) : ''])];

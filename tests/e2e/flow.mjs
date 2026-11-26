@@ -293,8 +293,19 @@ try {
   await page.getByText('Interní údaje').waitFor();
   await page.getByLabel('Popis').fill('Nákup hodinek – test');
   await page.getByLabel('Částka (Kč)').fill('3000');
+  await page.locator('#cf input[name=file]').setInputFiles(path.join(ROOT, 'assets/originals/service-watch-box-2.jpg'));
   await page.getByRole('button', { name: 'Přidat náklad' }).click();
+  await page.locator('.toast', { hasText: 'Přidáno i s dokladem' }).waitFor();
   await page.getByText('Nákup hodinek – test').waitFor();
+  // Doklad: uložen, přiřazen k nákladu, jde otevřít jen po přihlášení, duplikát odmítnut
+  await page.goto(`${BASE}/admin/#/doklady`);
+  const docHref = await page.locator('.list a.t').first().getAttribute('href');
+  const docRes = await page.evaluate(async (u) => { const r = await fetch(u); return { s: r.status, t: r.headers.get('content-type'), n: (await r.arrayBuffer()).byteLength }; }, `${BASE}${docHref}`);
+  assert.equal(docRes.s, 200); assert.match(docRes.t, /^image\//); assert.ok(docRes.n > 1000);
+  assert.ok(/Nákup hodinek – test/.test(await page.locator('.list select').first().locator('option:checked').innerText()));
+  const anon = await (await fetch(`${BASE}${docHref}`)).status;
+  assert.equal(anon, 401, 'doklad nesmí být dostupný bez přihlášení');
+  step('doklad: nahrán s nákladem, přiřazen, chráněn přihlášením');
   await page.goto(`${BASE}/admin/#/ekonomika`);
   await page.getByText('Marže hodinek').waitFor();
   await page.locator('a.item', { hasText: 'marže' }).first().waitFor();
