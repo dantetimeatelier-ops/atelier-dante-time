@@ -475,7 +475,7 @@
           } catch (err) { stats.err++; row.textContent = `${file.name} – chyba: ${err.message}`; }
         }
         toast(`Hotovo: ${stats.ok} uloženo, ${stats.review} ke kontrole${stats.dup ? `, ${stats.dup} duplicit` : ''}${stats.err ? `, ${stats.err} chyb` : ''}`, stats.err > 0);
-        setTimeout(() => views.doklady(), stats.err || stats.review ? 6000 : 2000);
+        setTimeout(() => { if (location.hash.startsWith('#/doklady')) views.doklady(); }, stats.err || stats.review ? 6000 : 2000);
       }));
     }
   };
