@@ -4,6 +4,17 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-26 – Claude – main (SPUŠTĚNO)
+**Hotovo:** web běží na https://atelier-dante-time.cz (Cloudflare Pages, doména přes Cloudflare DNS,
+WEDOS jen registrátor). Objednávky zapnuté (`SHOP_MODE = "live"` ve wrangler.toml, jediný zdroj).
+Podmínky 1.1 (R19), garanční prohlídka varianta A (R18), centrální údaje `src/terms.mjs`,
+záruční list v potvrzení objednávky, e-maily v jazyce objednávky. Ostrá administrace nastavena majitelem.
+**Další krok:** fáze Dante Time OS (interní administrativa + AI agenti) – návrh ke schválení.
+**Pozor na:** otevřený bod L1 (živnost). Doména u WEDOS vyprší 9. 3. 2027. Cloudflare Web Analytics
+doporučeno vypnout (CSP ho blokuje). Záloha starého webu: zaloha/main-2026-11-25-pred-spustenim.
+
+---
+
 ## 2026-11-25 (večer) – Claude – claude/eshop-platforma (doména, etapa A rozpracována)
 **Hotovo:** Resend: doména atelier-dante-time.cz přidána (region EU). Ve WEDOS DNS přidány
 a aplikovány 4 záznamy: TXT `resend._domainkey` (DKIM), CNAME `rsend` → rsend-euw1.forge.rmta.net,
