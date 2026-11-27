@@ -31,6 +31,7 @@ Související: plán `ROADMAP.md`, rozhodnutí `DECISIONS.md`, agenti `DANTE-TIM
 | 9 | 💰 Párování plateb z banky | může stát peníze / přístup k účtu | – |
 | 10 | Fotka strojku Heritage Date do galerie? (poslal ji 27. 11.) | souhlas s použitím | 27. 11. |
 | 11 | Ochrana větve `main` na GitHubu (ROADMAP fáze 0) | nastavení účtu | 25. 11. |
+| 12 | Google Merchant Center (zdarma): založit účet a jako zdroj dat zadat `https://atelier-dante-time.cz/feed/google.xml` | účet Google zakládá majitel | 27. 11. |
 
 ## Rozpracováno
 
@@ -38,6 +39,7 @@ Související: plán `ROADMAP.md`, rozhodnutí `DECISIONS.md`, agenti `DANTE-TIM
 
 ## Dokončeno (nejnovější nahoře)
 
+- 27. 11. Produktový feed pro Google Nákupy `/feed/google.xml` (jen hodinky v prodeji s cenou a fotkou; zdarma).
 - 27. 11. Inzeráty: průměr pouzdra, kalibr 66 / PRIM typ 0111 a období výroby; Blanc balení sjednoceno (PR #59, #61, #63).
 - 27. 11. Limit DPH v Přehledu počítá i nahrané prodeje – stejné číslo jako Ekonomika (PR #57).
 - 27. 11. Balíkovna zpět, limit 50 000 Kč; oprava výběru Zásilkovny v mapě (PR #55, #56).
@@ -55,6 +57,6 @@ Související: plán `ROADMAP.md`, rozhodnutí `DECISIONS.md`, agenti `DANTE-TIM
 
 ## Návrhy inovací (k posouzení)
 
-- Google Business profil a Merchant Center (zdarma) – víc důvěry a zobrazení ve vyhledávání.
+- Google Business profil (zdarma) – víc důvěry a zobrazení v Mapách. Merchant Center: feed hotový, čeká na účet (bod 12).
 - Recenze zákazníků po převzetí (vlastní, bez placené služby) – po schválení textu e-mailu majitelem.
 - Upozornění na nové kusy pro zájemce (vlastní seznam, bez placeného newsletteru).
