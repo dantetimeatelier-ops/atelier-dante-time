@@ -4,6 +4,13 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/hero-tablet
+**Hotovo:** úvodní fotka na tabletech. 881–1280 px (iPad na šířku, menší notebooky): fotka jen v pravých 64 % s maskou do tmy,
+text vlevo ji nepřekrývá, nižší výška. 600–880 px (iPad na výšku, rozdělená obrazovka): široká fotka 16:9 s celou scénou
+místo úzkého mobilního výřezu. Mobil a velké obrazovky beze změny. Ověřeno snímky 390–1440 px.
+
+---
+
 ## 2026-11-27 – Claude – claude/os-sales-finance-director
 **Hotovo:** podle zadání Dante Time OS oživeny role **DT Sales** a **DT Finance** (migrace 0020, `salesCheck`, `financeCheck`
 v `server/os.js`, denně 8:00, bez AI). Sales: poptávky bez odpovědi 2+ dny (bez jmen), nabídky bez reakce 7+ dní, zakázky
