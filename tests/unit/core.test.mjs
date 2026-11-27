@@ -463,3 +463,16 @@ test('DT Logistics: sledování Balíkovny (Česká pošta) – číslo, posledn
   assert.match(url, /idParcel=DR123456789E/); assert.equal(s.code, 7); assert.equal(s.text, 'Dodání zásilky.'); assert.equal(s.at, '2026-11-27T12:00:00');
   await assert.rejects(() => C.cpostStatus('ABC'), /tvaru České pošty/);
 });
+
+test('admin API: všechny cesty jsou registrované na nejvyšší úrovni (ne uvnitř jiné obsluhy)', () => {
+  // Regrese: fotky zakázky byly omylem vložené dovnitř PUT commissions/:id → „Neznámá operace“
+  const src = readFileSync(new URL('../../functions/api/admin/[[path]].js', import.meta.url), 'utf8');
+  const nested = src.split('\n').filter((l) => /^\s+route\(/.test(l));
+  assert.deepEqual(nested, []);
+  let depth = 0;
+  for (const line of src.split('\n')) {
+    if (/^route\(/.test(line)) assert.equal(depth, 0, `route() uvnitř bloku: ${line.slice(0, 60)}`);
+    for (const ch of line.replace(/(['"`])(?:\\.|(?!\1).)*\1/g, '').replace(/\/\/.*$/, '')) { if ('{(['.includes(ch)) depth++; else if ('})]'.includes(ch)) depth--; }
+  }
+  assert.equal(depth, 0);
+});

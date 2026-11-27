@@ -414,6 +414,8 @@ route('PUT', 'commissions/:id', async ({ env, params, body, user }) => {
   const keys = Object.keys(d);
   await env.DB.prepare(`UPDATE commissions SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`).bind(...keys.map((k) => d[k]), params.id).run();
   await audit(env, user.email, 'zakazka_upravena', 'commission', params.id, { status: d.status });
+  return json({ ok: true });
+});
 // Fotografie zakázky (z atelieru i od zákazníka) – soukromé, jen po přihlášení
 route('GET', 'commissions/:id/photos', async ({ env, params }) => json({ photos: await CPH.forCommission(env, params.id) }));
 route('POST', 'commissions/:id/photos', async ({ env, params, request, user }) => {
@@ -429,8 +431,6 @@ route('GET', 'commission-photos/:id/:size', async ({ env, params }) => CPH.file(
 route('DELETE', 'commission-photos/:id', async ({ env, params, user }) => {
   const p = await CPH.remove(env, params.id);
   await audit(env, user.email, 'zakazka_foto_smazano', p.commission_id ? 'commission' : 'inquiry', p.commission_id || p.inquiry_id);
-  return json({ ok: true });
-});
   return json({ ok: true });
 });
 
