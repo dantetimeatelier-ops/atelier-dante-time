@@ -147,7 +147,7 @@ nebo schválení majitele se nejprve konzultují.
 - [x] 5. Faktura ve vizuálním stylu podle vzoru majitele, se zákonnými náležitostmi, maximálně automatické vystavování z objednávek
 - [ ] 6. Závěrečná kontrola webu, e-shopu, objednávek, odkazů a mobilního zobrazení
 - [x] 7. Fotografie u zakázek a přiložení fotek k poptávce (26. 11.)
-- [x] 8. E4 – DT Sales: návrh odpovědi na poptávku v administraci (26. 11.); DT Logistics (sledování zásilek) čeká na klíč API Zásilkovny
+- [x] 8. E4 – DT Sales: návrh odpovědi na poptávku v administraci (26. 11.); DT Logistics – sledování zásilek Zásilkovny hotovo 27. 11.
 
 ## Rozhodnutí, která čekají na majitele
 

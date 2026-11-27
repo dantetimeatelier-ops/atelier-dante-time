@@ -20,6 +20,7 @@ import { INVOICE_KINDS, SALE_CHANNELS, INVOICE_PAY } from '../../../src/shop/inv
 import * as INB from '../../../server/inbox.js';
 import * as CPH from '../../../server/commission-photos.js';
 import { draftReply } from '../../../server/sales.js';
+import { refreshOrder } from '../../../server/packeta.js';
 import { aiStatus } from '../../../server/ai.js';
 import { html } from '../../../server/http.js';
 
@@ -307,6 +308,12 @@ route('GET', 'orders/:id', async ({ env, params }) => {
   return json({ order, items, withdrawals, invoices });
 });
 route('POST', 'orders/:id/paid', async ({ env, params, user, request }) => json({ order: await markPaid(env, params.id, user.email, new URL(request.url).origin) }));
+// DT Logistics: aktuální stav zásilky Zásilkovny
+route('POST', 'orders/:id/tracking', async ({ env, params }) => {
+  const o = await env.DB.prepare('SELECT id, tracking_number FROM orders WHERE id = ?').bind(params.id).first();
+  if (!o) throw new HttpError('Objednávka nenalezena', 404);
+  return json(await refreshOrder(env, o));
+});
 route('POST', 'orders/:id/shipped', async ({ env, params, body, user }) => { await markShipped(env, params.id, str(body.tracking, { max: 60 }), user.email); return json({ ok: true }); });
 route('POST', 'orders/:id/cancel', async ({ env, params, user }) => { await cancelOrder(env, params.id, user.email); return json({ ok: true }); });
 route('POST', 'orders/:id/delivered', async ({ env, params, body, user }) => { await markDelivered(env, params.id, body.delivered_on, user.email); return json({ ok: true }); });
@@ -502,7 +509,7 @@ route('GET', 'settings', async ({ env }) => {
     settings: s,
     integrations: {
       mode: mode(env), email: env.EMAIL_PROVIDER === 'resend' && Boolean(env.RESEND_API_KEY), card: Boolean(env.COMGATE_MERCHANT && env.COMGATE_SECRET),
-      cardLive: env.PAYMENTS_LIVE === 'true', packeta: Boolean(env.PACKETA_API_KEY), iban: Boolean(OPERATOR.iban),
+      cardLive: env.PAYMENTS_LIVE === 'true', packeta: Boolean(env.PACKETA_API_KEY), packetaTracking: Boolean(env.PACKETA_API_PASSWORD), iban: Boolean(OPERATOR.iban),
     },
   });
 });

@@ -321,3 +321,32 @@ test('DT Sales: návrh odpovědi – text bez dokumentu, role sales, poptávka j
   assert.equal(db.prepare("SELECT role_id FROM ai_costs").get().role_id, 'sales');
   await assert.rejects(() => draftReply(env, 'neni', {}, { client }), /nenalezena/);
 });
+
+test('DT Logistics: stav zásilky Zásilkovny – číslo, XML odpověď, chyby, uložení, denní běh', async () => {
+  const P = await import('../../server/packeta.js');
+  assert.equal(P.packetId('Z 123 4567 890'), '1234567890');
+  assert.equal(P.packetId('z1234567890'), '1234567890');
+  assert.equal(P.packetId('DR1234567890CZ'), null);
+  const db = new DatabaseSync(':memory:');
+  for (const f of readdirSync(new URL('../../migrations/', import.meta.url)).sort()) { try { db.exec(readFileSync(new URL(`../../migrations/${f}`, import.meta.url), 'utf8')); } catch { /* část schématu mimo SQLite */ } }
+  const stmt = (sql) => { let a = []; const o = { bind: (...b) => { a = b; return o; }, run: async () => db.prepare(sql).run(...a), first: async () => db.prepare(sql).get(...a) ?? null, all: async () => ({ results: db.prepare(sql).all(...a) }) }; return o; };
+  const env = { DB: { prepare: stmt }, PACKETA_API_PASSWORD: 'tajne&heslo' };
+  const ok = (code) => `<?xml version="1.0"?><response><status>ok</status><result><dateTime>2026-11-27 10:15:00</dateTime><statusCode>${code}</statusCode><codeText>x</codeText><statusText>x</statusText></result></response>`;
+  let body;
+  const s = await P.packetStatus(env, 'Z 123 4567 890', { fetcher: async (u, r) => { body = r.body; return new Response(ok(5)); } });
+  assert.equal(s.code, 5); assert.equal(s.text, 'Připravena k vyzvednutí'); assert.equal(s.at, '2026-11-27T10:15:00');
+  assert.match(body, /<apiPassword>tajne&amp;heslo<\/apiPassword><packetId>1234567890<\/packetId>/);
+  await assert.rejects(() => P.packetStatus(env, 'Z1234567890', { fetcher: async () => new Response('<response><status>fault</status><fault>IncorrectApiPasswordFault</fault><string>x</string></response>') }), /neplatné API heslo/);
+  await assert.rejects(() => P.packetStatus({ DB: env.DB }, 'Z1234567890'), /PACKETA_API_PASSWORD/);
+  const cols = "id, number, email, name, shipping_method, payment_method, items_total, shipping_price, total, variable_symbol, terms_version, terms_accepted_at, status, tracking_number, shipped_at";
+  const vals = (id, n, tr, ship) => `'${id}', '${n}', 'a@example.cz', 'Test', '${ship}', 'bank_transfer', 1, 0, 1, '1', 'v1', '2026-11-01', 'shipped', '${tr}', '2026-11-20'`;
+  for (const [id, n, tr, ship] of [['o1', 'DT-1', 'Z1111111111', 'zasilkovna'], ['o2', 'DT-2', 'Z2222222222', 'zasilkovna'], ['o3', 'DT-3', 'DR1', 'balikovna']]) {
+    db.exec(`INSERT INTO orders (${cols}, phone, public_token, mode) VALUES (${vals(id, n, tr, ship)}, '1', 't-${id}', 'test')`);
+  }
+  const run = await P.refreshAll(env, { fetcher: async (u, r) => new Response(ok(r.body.includes('1111111111') ? 7 : 10)) });
+  assert.equal(run.checked, 2); assert.deepEqual(run.delivered, ['DT-1']); assert.match(run.problems[0], /DT-2: Vráceno odesílateli/);
+  assert.equal(db.prepare("SELECT tracking_code FROM orders WHERE id='o1'").get().tracking_code, 7);
+  const again = await P.refreshAll(env, { fetcher: async () => { throw new Error('nemá se volat'); } });
+  assert.equal(again.checked, 0); // doručené a vrácené se už neověřují
+  assert.equal(await P.refreshAll({ DB: env.DB }), null); // bez hesla nic
+});
