@@ -54,8 +54,11 @@ try {
   await page.goto(`${BASE}/admin/#/dopravci/pojistena`);
   await page.getByLabel('Stav').selectOption('aktivni');
   await page.getByLabel('Česko – cena').fill('450');
-  await page.getByRole('button', { name: 'Uložit', exact: true }).click();
-  await page.locator('.toast', { hasText: 'Uloženo' }).waitFor();
+  const [put] = await Promise.all([
+    page.waitForResponse((r) => r.url().includes('/api/admin/shipping-methods/pojistena') && r.request().method() === 'PUT'),
+    page.getByRole('button', { name: 'Uložit', exact: true }).click(),
+  ]);
+  assert.equal((await put.json()).method?.status, 'aktivni', 'Cenná zásilka se má zapnout');
   await page.goto(`${BASE}/admin/#/dopravci`);
   await page.locator('#pvout', { hasText: 'Cenná zásilka' }).waitFor(); // náhled „co uvidí zákazník“
   step('nastavena cena dopravy');
@@ -122,6 +125,9 @@ try {
   await shop.locator('[data-cart-items] .cart-item').waitFor();
   // Omega za 38 900 Kč: Zásilkovna ani Balíkovna ji na plnou hodnotu nepojistí → nabídne se jen pojištěná přeprava a osobní předání
   assert.equal(await shop.getByLabel(/Zásilkovna – výdejní místo/).count(), 0);
+  if (!(await shop.getByLabel(/Cenná zásilka, pojištěno na plnou hodnotu/).count())) {
+    console.log('Nabídka dopravy:', JSON.stringify(await shop.evaluate(async () => (await (await fetch(`/api/config?country=CZ&items=${JSON.parse(localStorage.getItem('dt_cart') || '[]').join(',')}`)).json()).shipping)));
+  }
   await shop.getByLabel(/Cenná zásilka, pojištěno na plnou hodnotu/).check();
   await shop.getByLabel('Jméno a příjmení').fill('Jana Testovací');
   await shop.getByLabel('E-mail').fill('jana@example.com');
