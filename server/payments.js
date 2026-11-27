@@ -36,8 +36,15 @@ export function gateway(env) {
 function stripeKeyAllowed(env) {
   const key = String(env.STRIPE_SECRET_KEY || '').trim();
   const liveKey = /^(sk|rk)_live_/.test(key);
-  return isLive(env) ? liveKey : /^(sk|rk)_test_/.test(key);
+  if (isLive(env)) return liveKey;
+  if (!/^(sk|rk)_test_/.test(key)) return false;
+  // Testovací klíč na ostrém webu: platbu kartou uvidí JEN přihlášený majitel (zkouška Stripe bez skutečných peněz),
+  // zákazníci ne. Zaplacená testovací objednávka se sama zruší a nevystaví se faktura (payment-events.js).
+  return env.SHOP_MODE !== 'live' || env.ADMIN_TEST === true;
 }
+
+/** Je na ostrém webu vložený jen testovací klíč Stripe (zkouška majitelem)? */
+export const stripeTestOnLiveShop = (env) => env.SHOP_MODE === 'live' && !isLive(env) && gateway(env) === 'stripe' && /^(sk|rk)_test_/.test(String(env.STRIPE_SECRET_KEY || '').trim());
 
 export const cardPaymentsAvailable = (env) => {
   const g = gateway(env);
@@ -164,7 +171,7 @@ export async function paymentStatus(env, transId, { fetcher } = {}) {
   if (gateway(env) === 'stripe') {
     const s = await stripeCall(env, 'GET', `checkout/sessions/${encodeURIComponent(transId)}`, null, fetcher);
     const status = s.payment_status === 'paid' ? 'PAID' : s.status === 'expired' ? 'CANCELLED' : 'PENDING';
-    return { status, cents: Number(s.amount_total), currency: String(s.currency || '').toUpperCase(), ref: s.client_reference_id };
+    return { status, cents: Number(s.amount_total), currency: String(s.currency || '').toUpperCase(), ref: s.client_reference_id, testMode: s.livemode === false };
   }
   const out = await comgateCall(env, 'status', { transId }, fetcher);
   return { status: out.status, cents: Number(out.price), currency: String(out.curr || 'CZK').toUpperCase(), ref: out.refId };

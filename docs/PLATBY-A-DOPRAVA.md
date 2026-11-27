@@ -52,15 +52,22 @@ Ručně: tlačítko „Předáno dopravci – informovat zákazníka“.
 - nový stav hodinek „Rezervováno osobně“ pro domluvený prodej mimo e-shop.
 
 ## 4. Aktivace Stripe – co udělá majitel
-1. Účet na stripe.com (zdarma), země Česko, typ účtu fyzická osoba podnikatel; zatím jen **testovací režim**.
-2. Developers → API keys: zkopírovat **testovací** Secret key (`sk_test_…`) do Cloudflare jako Secret `STRIPE_SECRET_KEY`.
-3. Developers → Webhooks: koncový bod `https://atelier-dante-time.cz/api/payments/stripe`, události
-   `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`,
-   `checkout.session.expired`; jeho Signing secret (`whsec_…`) do Cloudflare jako Secret `STRIPE_WEBHOOK_SECRET`.
-4. Proměnná `PAYMENT_GATEWAY` = `stripe` (běžná proměnná, ne tajná).
-5. Zkušební nákup testovací kartou 4242 4242 4242 4242 → objednávka se sama označí zaplacená, přijde faktura,
-   v ekonomice hodinek se objeví poplatek.
-6. Ve Stripe dokončit ověření (doklad totožnosti, podnikatelský účet CZ76 0800 0000 0070 5891 9329), Settings →
-   Payment methods: zapnuté jen Cards, Apple Pay, Google Pay; nezapínat Stripe Tax, Invoicing, Billing ani Radar for Fraud Teams.
-7. Ostrý provoz: ostrý Secret key (`sk_live_…`) a ostrý webhook secret místo testovacích + proměnná `PAYMENTS_LIVE` = `true`.
-Pojistka v kódu: ostrý klíč bez `PAYMENTS_LIVE=true` se zákazníkům nezobrazí a naopak.
+1. Účet na stripe.com (zdarma), země Česko. Zůstat v režimu **Sandbox** (testování bez peněz).
+2. Sandbox → Developers → API keys: testovací Secret key (`sk_test_…`) do Cloudflare (Workers & Pages →
+   atelier-dante-time → Settings → Variables and secrets → + Add) jako **Secret** `STRIPE_SECRET_KEY`.
+   Proměnná `PAYMENT_GATEWAY` není potřeba – Stripe se zapne sám, jakmile je klíč vložen.
+3. Sandbox → Developers → Webhooks → Add destination: adresa `https://atelier-dante-time.cz/api/payments/stripe`,
+   události `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+   `checkout.session.async_payment_failed`, `checkout.session.expired`; jeho Signing secret (`whsec_…`) do Cloudflare
+   jako Secret `STRIPE_WEBHOOK_SECRET`.
+4. Nasazení: hodnoty platí od dalšího nasazení webu (stačí jakákoli další změna, nebo „Create deployment“).
+5. **Zkouška na ostrém webu bez rizika:** s testovacím klíčem vidí platbu kartou JEN majitel přihlášený do administrace
+   (ve stejném prohlížeči). Zákazníci ji nevidí. Nákup testovací kartou 4242 4242 4242 4242 → Stripe potvrdí →
+   objednávka se sama zruší, hodinky zůstanou v nabídce, faktura se nevystaví a majitel dostane e-mail
+   „Test platby kartou proběhl v pořádku“.
+6. Ve Stripe dokončit ověření (doklad totožnosti, podnikatelský účet), Settings → Payment methods: zapnuté jen Cards,
+   Apple Pay, Google Pay; nezapínat Stripe Tax, Invoicing, Billing ani Radar for Fraud Teams.
+7. Ostrý provoz: přepnout Stripe na live, ostrý Secret key (`sk_live_…`) a ostrý webhook secret místo testovacích
+   + proměnná `PAYMENTS_LIVE` = `true` (Text). Teprve pak platbu kartou uvidí zákazníci.
+Pojistka v kódu: ostrý klíč bez `PAYMENTS_LIVE=true` se nepoužije; testovací klíč na ostrém webu vidí jen přihlášený
+majitel a testovací platba nikdy nic neprodá.

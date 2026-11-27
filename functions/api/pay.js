@@ -2,8 +2,10 @@
 import { json, handle, readJson, assertSameOrigin, clientIp, HttpError } from '../../server/http.js';
 import { rateLimit, releaseExpired } from '../../server/db.js';
 import { startCardPayment } from '../../server/orders.js';
+import { checkoutEnv } from '../../server/auth.js';
 
-export const onRequestPost = handle(async ({ env, request }) => {
+export const onRequestPost = handle(async ({ env: baseEnv, request }) => {
+  const env = await checkoutEnv(baseEnv, request);
   assertSameOrigin(request);
   const body = await readJson(request);
   await rateLimit(env, `pay:${clientIp(request)}`, 10, 60);
