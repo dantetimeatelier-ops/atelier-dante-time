@@ -4,6 +4,30 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/zakazky-ekonomika-faktury-fotky
+**Hotovo:** zakázky propojené s ekonomikou a fakturací (zadání majitele 27. 11.). Migrace 0022 (jen přidává sloupce):
+`costs.estimate` (odhad – nepočítá se), `costs.own_work` (vlastní práce – není výdaj), `costs.part_kind`,
+`commissions.deposit_received_on`, `commissions.main_photo_id`, `commission_photos.phase` (pred/behem/po), nastavení
+`invoice_autosend` (výchozí '0').
+- `server/finance.js`: `costValue` (paid/own/est – nikdy se nesčítají), `commissionEconomics`, `updateCost` (přiřazení
+  existujícího výdaje k zakázce; náklad patří vždy jen k hodinkám NEBO k zakázce), přehled roku rozlišuje
+  **fakturováno** (tržby, z toho cíl 2 mil.) a **přijato** (podle data úhrady; zálohová faktura při úhradě, faktura jen
+  částkou po odečtení zálohy, záloha bez dokladu u zakázky k datu přijetí). Náklady = jen zaplacené; vlastní práce zvlášť.
+- `server/invoicing.js`: `send_mode` ulozit | schvalit (žádost v `approvals`, kind `faktura_odeslani`, payload = id
+  faktury) | odeslat (jen když je `invoice_autosend` = 1 a platný e-mail). Odeslání uzavře žádost, storno ji zamítne,
+  schválení v Systému fakturu rovnou odešle. Odečet zálohy bez dokladu (`deduct_cash_deposit`), kontrola výše zálohy
+  před vystavením. `overdueInvoices` + stav „po splatnosti“.
+- `server/os.js` (DT Finance): nálezy „po splatnosti“ a denní souhrn e-mailem POUZE majiteli (`overdue_digest_last`).
+  Zákazníkům se žádné upomínky neposílají.
+- Administrace: v zakázce fotky (fáze, hlavní, celá obrazovka, smazání s potvrzením), ekonomika, platby, faktury,
+  náklady (rychlé druhy, zaplaceno/vlastní práce/odhad), přiřazení zapsaného výdaje. Seznam zakázek s miniaturou
+  (jinak ikona hodinek) a datem DD.MM.RRRR. Nastavení → Faktury. Ekonomika: fakturováno vs. přijato, ziskovost zakázek.
+- Testy: `tests/unit/zakazky.test.mjs`, rozšířený e2e (zakázky, schválení odeslání, fotky).
+**Další krok:** díly ze skladu použité v zakázce (dnes jen u hodinek); případně upomínky zákazníkům – jen po schválení majitele.
+**Pozor na:** e-shopové faktury se odesílají jako dosud (nastavení `invoice_autosend` se týká faktur z administrace).
+
+---
+
 ## 2026-11-27 – Claude – claude/zakazka-bez-emailu
 **Hotovo:** zakázku lze uložit bez e-mailu a telefonu (zákazníci z Instagramu). Migrace 0021: `commissions.contact_name`,
 `contact_info`. S e-mailem se zákazník dál ukládá do `customers`; bez něj zůstane jméno a kontakt (telefon, Instagram) u zakázky.

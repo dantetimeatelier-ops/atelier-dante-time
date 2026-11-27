@@ -273,7 +273,9 @@ try {
   await page.getByRole('link', { name: 'Vystavit fakturu' }).click();
   await page.locator('#lines [name=price]').first().fill('1800');
   await page.getByRole('button', { name: 'Vystavit fakturu' }).click();
-  await page.getByRole('heading', { name: 'Faktury' }).waitFor();
+  await page.getByRole('heading', { name: 'Ekonomika zakázky' }).waitFor(); // po vystavení zpět v zakázce
+  await page.locator('#kecon .item', { hasText: /DT-\d{4}-\d{4} · Faktura/ }).waitFor();
+  await page.goto(`${BASE}/admin/#/faktury`);
   await page.locator('.item', { hasText: 'Petr Poptávka' }).waitFor();
   step('faktura k zakázce vystavena z administrace');
 
@@ -431,6 +433,82 @@ try {
   const sums = (await api('GET', 'invoices?kind=zalohova')).j;
   assert.equal(sums.revenue, 0, 'záloha není tržba');
   step('fakturace: prodej ze skladu (Vinted), pas, marže, záloha a vyúčtování, dobropis, unikátní čísla');
+
+  // Zakázky: náklady (zaplacené / vlastní práce / odhad), přiřazení výdaje, záloha bez dokladu, schválení odeslání, platby
+  assert.equal((await api('GET', 'settings')).j.settings.invoice_autosend, '0', 'automatické odesílání je výchozí vypnuté');
+  const k2 = await api('POST', 'commissions', { type: 'prestavba', status: 'v_praci', name: 'Ekonomika Test', email: 'ekonomika@example.com', watch: 'PRIM Datejust test', final_price_czk: 13000, deposit_czk: 1000, deposit_received_on: '2026-03-01' });
+  assert.equal(k2.s, 201, JSON.stringify(k2.j));
+  const kid = k2.j.id;
+  await page.goto(`${BASE}/admin/#/zakazky/${kid}`);
+  await page.getByRole('heading', { name: 'Ekonomika zakázky' }).waitFor();
+  await page.locator('#addc summary').click();
+  await page.locator('#cq button', { hasText: 'Pouzdro' }).click();
+  await page.locator('#jcf [name=amount_czk]').fill('1500');
+  await page.locator('#jcf button.primary').click();
+  await page.locator('#kecon .item', { hasText: 'Pouzdro' }).waitFor();
+  assert.equal((await api('POST', 'costs', { commission_id: kid, category: 'prace', own_work: true, description: 'Vlastní práce test', amount_czk: 2000 })).s, 201);
+  assert.equal((await api('POST', 'costs', { commission_id: kid, category: 'dil', estimate: true, description: 'Sklo odhad', amount_czk: 400 })).s, 201);
+  assert.equal((await api('POST', 'costs', { category: 'material', description: 'Těsnění volné', amount_czk: 500 })).s, 201);
+  await page.goto(`${BASE}/admin/#/zakazky/${kid}`);
+  await page.locator('#assign summary').click();
+  await page.locator('#free .item', { hasText: 'Těsnění volné' }).getByRole('button', { name: 'Přiřadit' }).click();
+  await page.locator('#kecon .item', { hasText: 'Těsnění volné' }).waitFor();
+  let ke = (await api('GET', `commissions/${kid}/economics`)).j;
+  assert.deepEqual([ke.paid, ke.ownWork, ke.estimate, ke.price, ke.profit, ke.marginPct, ke.received, ke.remaining], [2000, 2000, 400, 13000, 11000, 84.6, 1000, 12000]);
+  // Faktura ze zakázky: záloha bez dokladu se odečte, odeslání čeká na schválení
+  await page.getByRole('link', { name: 'Vystavit fakturu' }).click();
+  await page.getByRole('heading', { name: 'Nová faktura' }).waitFor();
+  assert.equal(await page.locator('input[name=deduct_cash_deposit]').isChecked(), true);
+  assert.equal(await page.locator('input[name=send_mode][value=odeslat]').isDisabled(), true, 'okamžité odeslání je bez povolení vypnuté');
+  await page.locator('input[name=send_mode][value=schvalit]').check();
+  await page.getByRole('button', { name: 'Vystavit fakturu' }).click();
+  await page.getByRole('heading', { name: 'Ekonomika zakázky' }).waitFor();
+  await page.locator('#kecon .item', { hasText: 'čeká na schválení odeslání' }).waitFor();
+  assert.ok(!(await api('GET', 'emails')).j.emails.some((m) => m.to_addr === 'ekonomika@example.com'), 'před schválením se nic neodeslalo');
+  await page.getByRole('button', { name: 'Schválit a odeslat' }).click();
+  await page.locator('#kecon .item', { hasText: 'odesláno' }).waitFor();
+  const sent = (await api('GET', 'emails')).j.emails.filter((m) => m.to_addr === 'ekonomika@example.com');
+  assert.equal(sent.length, 1); assert.match(sent[0].subject, /^\[TEST\] Faktura DT-/); assert.equal(sent[0].status, 'stored', 'v testu se e-mail jen uloží');
+  ke = (await api('GET', `commissions/${kid}/economics`)).j;
+  assert.deepEqual([ke.invoiced, ke.received, ke.remaining, ke.depositCashLeft, ke.invoices[0].advance_deducted], [13000, 1000, 12000, 0, 1000]);
+  await page.locator('#kecon').getByRole('button', { name: 'Uhrazeno' }).click();
+  await page.locator('#kecon').getByRole('button', { name: 'Uhrazeno' }).waitFor({ state: 'detached' });
+  ke = (await api('GET', `commissions/${kid}/economics`)).j;
+  assert.deepEqual([ke.received, ke.remaining, ke.profit], [13000, 0, 11000]);
+  const ov = (await api('GET', `finance/overview?year=${new Date().getFullYear()}`)).j;
+  assert.ok(ov.jobs.some((j) => j.id === kid && j.margin === 11000), 'zakázka v přehledu ziskovosti');
+  await page.goto(`${BASE}/admin/#/ekonomika`);
+  await page.getByText('Ziskovost zakázek').waitFor();
+  await page.getByText('skutečně přijato').waitFor();
+  step('zakázky: náklady, vlastní práce, odhad, přiřazení výdaje, záloha, schválení odeslání, platby, zisk a marže');
+
+  // Fotky zakázky: fáze, hlavní fotka, celá obrazovka, smazání s potvrzením, miniatura v přehledu
+  const ph = await page.evaluate(async (id) => {
+    const c = document.createElement('canvas'); c.width = 40; c.height = 50; const x = c.getContext('2d'); x.fillStyle = '#c8a24a'; x.fillRect(0, 0, 40, 50);
+    const b = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.8)); const out = [];
+    for (const phase of ['pred', 'po']) {
+      const fd = new FormData(); fd.append('large', b, 'l.jpg'); fd.append('small', b, 's.jpg'); fd.append('width', '40'); fd.append('height', '50'); fd.append('phase', phase);
+      const r = await fetch(`/api/admin/commissions/${id}/photos`, { method: 'POST', headers: { 'X-DT-Admin': '1' }, body: fd }); out.push((await r.json()).id);
+    }
+    return out;
+  }, kid);
+  assert.equal((await api('GET', 'commissions')).j.commissions.find((x) => x.id === kid).cover_photo_id, ph[1], 'bez volby je hlavní fotka „po“');
+  await page.goto(`${BASE}/admin/#/zakazky/${kid}`);
+  await page.locator('#kphotos .photo').nth(1).waitFor();
+  await page.locator('#kphotos .photo .tag', { hasText: 'Před' }).waitFor();
+  await page.locator('#kphotos .open').first().click();
+  await page.locator('.lightbox img').waitFor();
+  await page.getByRole('button', { name: '☆ Nastavit jako hlavní' }).click();
+  await page.getByRole('button', { name: '★ Hlavní fotka' }).waitFor();
+  await page.locator('.lightbox .lb-x').click();
+  assert.equal((await api('GET', 'commissions')).j.commissions.find((x) => x.id === kid).cover_photo_id, ph[0]);
+  await page.locator('#kphotos .photo.main [data-kdel]').click(); // potvrzení se v testu odsouhlasí
+  await page.waitForFunction(() => document.querySelectorAll('#kphotos .photo').length === 1);
+  assert.equal((await api('GET', `commissions/${kid}/photos`)).j.photos.length, 1);
+  await page.goto(`${BASE}/admin/#/zakazky`);
+  await page.locator(`a.item[href="#/zakazky/${kid}"] img`).waitFor();
+  await page.locator('a.item .watchph').first().waitFor(); // zakázka bez fotky = ikona hodinek
+  step('fotky zakázky: fáze, hlavní fotka, celá obrazovka, smazání, miniatury v přehledu');
 
   // Dante Time OS: přehled rolí, Guardian, záloha
   await page.goto(`${BASE}/admin/#/system`);
