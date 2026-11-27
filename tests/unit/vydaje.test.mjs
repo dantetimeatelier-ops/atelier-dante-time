@@ -159,3 +159,30 @@ test('administrace: detail výdaje dostupný ze všech seznamů a s úplnými ak
   const api = readFileSync(new URL('../../functions/api/admin/[[path]].js', import.meta.url), 'utf8');
   for (const r of ["route('GET', 'costs/:id'", "route('GET', 'sales/:id'", "download: u.get('download') === '1'"]) assert.ok(api.includes(r), r);
 });
+
+test('faktura: oprava odběratele (adresa, e-mail, splatnost) s historií; storno s důvodem, ne při aktivním dobropisu', async () => {
+  const INV = await import('../../server/invoicing.js');
+  const { db, env } = makeEnv();
+  const base = { buyer_name: 'Pavel Testovací', buyer_email: 'pavel@example.cz', items: [{ text: 'Renovace', price: 13000 }], send_mode: 'ulozit' };
+  const a = await INV.issueManual(env, base, 'm', 'https://x');
+  const b = await INV.issueManual(env, { ...base, allow_duplicate: true }, 'm', 'https://x');
+  // oprava údajů – číslo a částka zůstávají
+  const r = await INV.updateBuyer(env, a.id, { buyer_name: 'Pavel Testovací', buyer_street: 'Masarykova 12', buyer_city: 'Brno', buyer_zip: '602 00', buyer_email: 'Pavel@Example.cz', due_date: '2026-12-15' }, 'm');
+  assert.deepEqual(r.changed.sort(), ['buyer_city', 'buyer_street', 'buyer_zip', 'due_date'].sort());
+  const v = db.prepare('SELECT number, total, buyer_street, buyer_city, buyer_zip, due_date FROM invoices WHERE id = ?').get(a.id);
+  assert.deepEqual({ ...v }, { number: a.number, total: 13000, buyer_street: 'Masarykova 12', buyer_city: 'Brno', buyer_zip: '602 00', due_date: '2026-12-15T23:59:59.000Z' });
+  const h = db.prepare("SELECT details FROM audit_log WHERE action = 'odberatel_upraven' AND entity_id = ?").get(a.id);
+  assert.deepEqual(JSON.parse(h.details).buyer_city, { z: null, na: 'Brno' });
+  await assert.rejects(() => INV.updateBuyer(env, a.id, { buyer_name: '' }, 'm'), /jméno odběratele/);
+  await assert.rejects(() => INV.updateBuyer(env, a.id, { buyer_email: 'spatne@' }, 'm'), /platný e-mail/);
+  // duplicitní faktura: omylem vystavený dobropis brání stornu, dokud není stornován on
+  const cr = await INV.creditNote(env, b.id, { reason: 'omyl' }, 'm');
+  await assert.rejects(() => INV.cancelInvoice(env, b.id, 'm', 'Vystaveno omylem dvakrát'), new RegExp(`dobropis ${cr.number}`));
+  await assert.rejects(() => INV.cancelInvoice(env, cr.id, 'm', ''), /důvod storna/);
+  await INV.cancelInvoice(env, cr.id, 'm', 'Dobropis omylem');
+  await INV.cancelInvoice(env, b.id, 'm', 'Vystaveno omylem dvakrát');
+  assert.equal(db.prepare('SELECT cancel_reason FROM invoices WHERE id = ?').get(b.id).cancel_reason, 'Vystaveno omylem dvakrát');
+  await assert.rejects(() => INV.updateBuyer(env, b.id, { buyer_city: 'Praha' }, 'm'), /Stornovaný/);
+  const ui = readFileSync(new URL('../../public/admin/admin.js', import.meta.url), 'utf8');
+  assert.match(ui, /data-storno[\s\S]{0,400}prompt\([\s\S]{0,300}Vystaveno omylem dvakrát[\s\S]{0,200}cancel`, \{ reason/);
+});

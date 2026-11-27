@@ -202,6 +202,8 @@ export async function cancelInvoice(env, id, actor, reason) {
   const why = str(reason, { max: 300, required: true, name: 'důvod storna' });
   const paid = await paidSum(env, id);
   if (paid) throw new HttpError(`Doklad má zaznamenané platby (${formatCzk(paid)}). Pokud jde o chybně zadanou platbu, nejdřív ji v detailu dokladu zrušte; pokud peníze opravdu přišly, vystavte dobropis.`);
+  const credit = await env.DB.prepare("SELECT number FROM invoices WHERE related_invoice_id = ? AND kind = 'dobropis' AND cancelled_at IS NULL").bind(id).first();
+  if (credit) throw new HttpError(`K dokladu je vystavený dobropis ${credit.number} – nejdřív stornujte dobropis, pak tento doklad`);
   if (inv.kind === 'zalohova') {
     const used = await env.DB.prepare("SELECT number FROM invoices WHERE related_invoice_id = ? AND kind = 'faktura' AND cancelled_at IS NULL").bind(id).first();
     if (used) throw new HttpError(`Záloha je vyúčtovaná ve faktuře ${used.number} – nejdřív stornujte tu`);
@@ -309,4 +311,31 @@ export async function copyToDraft(env, id, actor) {
     .bind(draftId, inv.commission_id || null, inv.buyer_name, inv.total, JSON.stringify({ fields, items, flags: { paid: false, inspection: false } })).run();
   await audit(env, actor, 'faktura_zkopirovana', 'invoice', id, { number: inv.number, draft: draftId });
   return { draft_id: draftId };
+}
+
+/**
+ * Oprava údajů odběratele na vystaveném dokladu (jméno, firma, IČO, DIČ, adresa, e-mail) a data splatnosti.
+ * Číslo, položky ani částky se nemění (číselná řada a tržby zůstávají). Každá změna je v historii „z → na“.
+ */
+export async function updateBuyer(env, id, b, actor) {
+  const inv = await env.DB.prepare('SELECT * FROM invoices WHERE id = ?').bind(id).first();
+  if (!inv) throw new HttpError('Doklad nenalezen', 404);
+  if (inv.cancelled_at) throw new HttpError('Stornovaný doklad nelze upravit');
+  const d = {};
+  if ('buyer_name' in b) d.buyer_name = str(b.buyer_name, { max: 200, required: true, name: 'jméno odběratele' });
+  for (const [k, max] of [['buyer_company', 200], ['buyer_ico', 20], ['buyer_dic', 20], ['buyer_street', 200], ['buyer_city', 120], ['buyer_zip', 12]]) if (k in b) d[k] = str(b[k], { max }) || null;
+  if ('buyer_email' in b) {
+    const e = String(b.buyer_email || '').trim().toLowerCase();
+    if (e && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)) throw new HttpError('Zadejte platný e-mail odběratele');
+    d.buyer_email = e || null;
+  }
+  if ('due_date' in b && b.due_date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(b.due_date))) throw new HttpError('Neplatné datum splatnosti');
+    if (inv.kind !== 'dobropis') d.due_date = `${b.due_date}T23:59:59.000Z`;
+  }
+  const k = Object.keys(d).filter((x) => (d[x] ?? null) !== (inv[x] ?? null));
+  if (!k.length) return { changed: [] };
+  await env.DB.prepare(`UPDATE invoices SET ${k.map((x) => `${x} = ?`).join(', ')} WHERE id = ?`).bind(...k.map((x) => d[x]), id).run();
+  await audit(env, actor, 'odberatel_upraven', 'invoice', id, Object.fromEntries(k.map((x) => [x, { z: inv[x] ?? null, na: d[x] ?? null }])));
+  return { changed: k };
 }

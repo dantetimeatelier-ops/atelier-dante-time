@@ -1194,7 +1194,10 @@
     app.querySelectorAll('[data-ddel]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat koncept faktury?')) return; await api('DELETE', `invoice-drafts/${b.dataset.ddel}`); views.faktury(_, q); })));
     app.querySelectorAll('[data-paid]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Zapsat úhradu zbývající částky s dnešním datem?')) return; await api('POST', `invoices/${b.dataset.paid}/paid`, {}); toast('Úhrada zapsána'); views.faktury(_, q); })));
     app.querySelectorAll('[data-send]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Poslat doklad zákazníkovi e-mailem?')) return; await api('POST', `invoices/${b.dataset.send}/send`, {}); toast('Odesláno'); views.faktury(_, q); })));
-    app.querySelectorAll('[data-storno]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Stornovat doklad? Použijte jen u chybně vystaveného dokladu. Hodinky prodané touto fakturou se vrátí na sklad.')) return; await api('POST', `invoices/${b.dataset.storno}/cancel`, {}); views.faktury(_, q); })));
+    app.querySelectorAll('[data-storno]').forEach((b) => b.addEventListener('click', () => run(async () => {
+      const reason = prompt('Stornovat doklad?\nZůstane v evidenci jako „Stornováno“ a nepočítá se do tržeb. Hodinky prodané touto fakturou se vrátí na sklad.\n\nDůvod storna:', 'Vystaveno omylem dvakrát'); if (!reason || !reason.trim()) return;
+      await api('POST', `invoices/${b.dataset.storno}/cancel`, { reason: reason.trim() }); toast('Doklad stornován'); views.faktury(_, q);
+    })));
     app.querySelectorAll('[data-credit]').forEach((b) => b.addEventListener('click', () => run(async () => {
       const reason = prompt('Důvod opravy (např. vrácení hodinek, sleva):'); if (!reason) return;
       const amount = prompt(`Částka dobropisu v Kč (prázdné = celá faktura ${b.dataset.total} Kč):`, '');
@@ -1205,7 +1208,7 @@
 
   // Detail dokladu: stav úhrady, platby (částečné, doplatky, přeplatky, vrácení), oprava platby, storno s důvodem, kopie, historie
   const PAYM = { bank_transfer: 'Převodem', cash: 'Hotově', card: 'Kartou', cod: 'Dobírka', other: 'Jinak' };
-  const ACT = { faktura_vystavena: 'Vystaveno', zaloha_vystavena: 'Záloha vystavena', faktura_odeslana: 'Odesláno zákazníkovi', faktura_stornovana: 'Stornováno', faktura_uhrazena: 'Uhrazeno', platba_zaznamenana: 'Platba zapsána', platba_vracena: 'Vráceno zákazníkovi', platba_zrusena: 'Platba zrušena (oprava)', faktura_zkopirovana: 'Zkopírováno do konceptu', dobropis_vystaven: 'Dobropis vystaven' };
+  const ACT = { faktura_vystavena: 'Vystaveno', zaloha_vystavena: 'Záloha vystavena', odberatel_upraven: 'Opraveny údaje odběratele', faktura_odeslana: 'Odesláno zákazníkovi', faktura_stornovana: 'Stornováno', faktura_uhrazena: 'Uhrazeno', platba_zaznamenana: 'Platba zapsána', platba_vracena: 'Vráceno zákazníkovi', platba_zrusena: 'Platba zrušena (oprava)', faktura_zkopirovana: 'Zkopírováno do konceptu', dobropis_vystaven: 'Dobropis vystaven' };
   views['faktury/:id'] = async ({ id }) => {
     const d = await api('GET', `invoices/${id}`);
     const v = d.invoice;
@@ -1237,6 +1240,15 @@
         <p class="small muted">Částečná platba, záloha i doplatek se sčítají. Vrácení peněz zadejte zápornou částkou (např. −500).</p>
         <button class="btn primary block">${dobropis ? 'Zapsat vrácení' : 'Zapsat platbu'}</button></form>`}
 
+      ${v.cancelled_at ? '' : `<details class="card" id="vbuyer" style="margin-top:16px"><summary>Opravit odběratele (jméno, adresa, e-mail${dobropis ? '' : ', splatnost'})</summary>
+        <form id="vbf">${field('buyer_name', 'Jméno a příjmení', v, 'required maxlength="200"')}
+          <div class="grid">${field('buyer_company', 'Firma', v, 'maxlength="200"')}${field('buyer_email', 'E-mail', v, 'type="email" maxlength="200"')}</div>
+          <div class="grid">${field('buyer_ico', 'IČO', v, 'inputmode="numeric" maxlength="20"')}${field('buyer_dic', 'DIČ', v, 'maxlength="20"')}</div>
+          ${field('buyer_street', 'Ulice a číslo', v, 'maxlength="200" autocomplete="street-address"')}
+          <div class="grid">${field('buyer_city', 'Město', v, 'maxlength="120"')}${field('buyer_zip', 'PSČ', v, 'inputmode="numeric" maxlength="12"')}</div>
+          ${dobropis ? '' : field('due_date', 'Splatnost', { due_date: v.due_date ? String(v.due_date).slice(0, 10) : '' }, 'type="date"')}
+          <p class="small muted">Číslo dokladu, položky ani částka se nemění. Změna se zapíše do historie${v.sent_at ? ' – doklad už byl zákazníkovi odeslán, po opravě ho pošlete znovu' : ''}.</p>
+          <button class="btn primary block">Uložit opravu</button></form></details>`}
       <h2>Další akce</h2>
       <div class="grid">
         ${dobropis ? '' : '<button class="btn" id="vcopy">Kopírovat jako koncept</button>'}
@@ -1259,10 +1271,14 @@
       const reason = prompt('Proč platbu rušíte? (např. špatná částka, zapsáno dvakrát)\nPlatba zůstane v historii jako zrušená, správnou pak zapište znovu.'); if (!reason) return;
       await api('POST', `invoice-payments/${b.dataset.pcancel}/cancel`, { reason }); toast('Platba zrušena – stav dokladu přepočítán'); reload();
     })));
+    app.querySelector('#vbf')?.addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
+      const r = await api('PUT', `invoices/${id}/buyer`, formData(e.target));
+      toast(r.changed?.length ? `Opraveno${v.sent_at ? ' – nezapomeňte doklad poslat znovu' : ''}` : 'Beze změn'); reload();
+    }); });
     app.querySelector('#vsend')?.addEventListener('click', () => run(async () => { if (!confirm(`Poslat doklad na ${v.buyer_email}?`)) return; await api('POST', `invoices/${id}/send`, {}); toast('Odesláno'); reload(); }));
     app.querySelector('#vcopy')?.addEventListener('click', () => run(async () => { const r = await api('POST', `invoices/${id}/copy`, {}); toast('Koncept vytvořen'); location.hash = `#/faktury/nova?draft=${r.draft_id}`; }));
     app.querySelector('#vstorno')?.addEventListener('click', () => run(async () => {
-      const reason = prompt(`Stornovat ${v.number}?\nDoklad zůstane v evidenci jako „Stornováno“ a přestane se počítat do tržeb a pohledávek. Hodinky prodané tímto dokladem se vrátí na sklad.\n\nDůvod storna (povinný, např. „vystaveno omylem dvakrát“):`); if (!reason) return;
+      const reason = prompt(`Stornovat ${v.number}?\nDoklad zůstane v evidenci jako „Stornováno“ a přestane se počítat do tržeb a pohledávek. Hodinky prodané tímto dokladem se vrátí na sklad.\n\nDůvod storna (povinný):`, 'Vystaveno omylem dvakrát'); if (!reason || !reason.trim()) return;
       await api('POST', `invoices/${id}/cancel`, { reason }); toast(`${v.number} stornováno`); reload();
     }));
     app.querySelector('#vcredit')?.addEventListener('click', () => run(async () => {
