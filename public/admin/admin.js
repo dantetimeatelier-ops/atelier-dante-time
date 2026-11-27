@@ -491,11 +491,11 @@
           <span class="row" style="gap:4px;margin-top:6px"><a class="btn ghost sm" href="/faktura/${esc(v.public_token)}" target="_blank">Zobrazit</a>
           ${v.awaiting_send && !v.cancelled_at ? `<button class="btn sm" data-isend="${v.id}">Schválit a odeslat</button>` : ''}
           ${!v.paid_at && !v.cancelled_at && v.kind !== 'dobropis' ? `<button class="btn ghost sm" data-ipaid="${v.id}">Uhrazeno</button>` : ''}<a class="btn ghost sm" href="#/faktury/${esc(v.id)}">Platby, storno…</a></span></span></div>`).join('') || '<p class="small muted">Zatím žádná faktura.</p>'}</div>
-        <h2>Náklady</h2><div class="list">${e.costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br>
+        <h2>Náklady</h2><div class="list">${e.costs.map((c) => `<div class="item"><a class="grow plain" href="#/naklady/${esc(c.id)}" aria-label="Otevřít výdaj ${esc(c.description)}"><span class="t">${esc(c.description)}</span><br>
           <span class="small muted">${esc(costLabel(c))} · ${esc(dmy(c.cost_date))}${c.supplier ? ` · ${esc(c.supplier)}` : ''}${docTag(c)}</span>
-          ${c.estimate ? ' <span class="chip">odhad</span>' : c.own ? ' <span class="chip">vlastní práce</span>' : ''}</span>
+          ${c.estimate ? ' <span class="chip">odhad</span>' : c.own ? ' <span class="chip">vlastní práce</span>' : ''}</a>
           <b>${costAmount(c)}</b><button class="btn ghost sm" data-cmenu="${c.id}" aria-label="Možnosti nákladu">⋯</button></div>
-          <div class="row cmenu" data-for="${c.id}" hidden>${c.estimate ? `<button class="btn sm" data-real="${c.id}" data-amt="${c.amount_czk}">Změnit na skutečný</button>` : ''}<button class="btn ghost sm" data-unassign="${c.id}">Odebrat ze zakázky</button><button class="btn danger sm" data-cdel="${c.id}">Smazat</button></div>`).join('') || '<p class="small muted">Zatím žádné náklady.</p>'}</div>
+          <div class="row cmenu" data-for="${c.id}" hidden>${c.estimate ? `<button class="btn sm" data-real="${c.id}" data-amt="${c.amount_czk}">Změnit na skutečný</button>` : ''}<a class="btn ghost sm" href="#/naklady/${esc(c.id)}">Otevřít</a><button class="btn ghost sm" data-unassign="${c.id}">Odebrat ze zakázky</button><button class="btn danger sm" data-cdel="${c.id}">Smazat</button></div>`).join('') || '<p class="small muted">Zatím žádné náklady.</p>'}</div>
         ${e.parts.length ? `<h2 style="font-size:17px;margin-top:16px">Díly ze skladu</h2><div class="list">${e.parts.map((x) => `<div class="item"><span class="grow"><span class="t" style="display:block">${esc(x.title)}</span>
           <span class="small muted">${esc(PK[x.kind] || '')}${x.original ? ' · originál' : ''} · ${x.qty} ks × ${czk(x.unit_cost_czk)}</span></span><b>${czk((x.unit_cost_czk || 0) * (x.qty || 1))}</b><button class="btn ghost sm" data-pret="${x.id}" aria-label="Vrátit na sklad">↩ Sklad</button></div>`).join('')}</div>` : ''}
         <details style="margin-top:12px" id="addc"><summary>+ Přidat náklad</summary>
@@ -587,7 +587,12 @@
     if (f) { try { await uploadDoc(f, id); } catch (e) { toast(`Náklad uložen, doklad ne: ${e.message}`, true); return; } }
     toast(f ? 'Přidáno i s dokladem' : 'Přidáno');
   }
-  const docTag = (c) => (c.docs ? ' · <a href="#/doklady">doklad</a>' : '');
+  const docTag = (c) => (c.docs ? ` · <span class="gold">📎 ${c.docs > 1 ? `${c.docs} doklady` : 'doklad'}</span>` : '');
+  // Jednotný řádek výdaje (všude v administraci) → klepnutím detail výdaje
+  const costRow = (c, { assign = true } = {}) => `<a class="item" href="#/naklady/${esc(c.id)}"><span class="grow"><span class="t">${esc(c.description)}</span><br>
+    <span class="small muted">${esc(c.part_kind && PK[c.part_kind] && c.part_kind !== 'jine' ? PK[c.part_kind] : CC[c.category] || '')} · ${esc(dmy(c.cost_date))}${c.supplier ? ` · ${esc(c.supplier)}` : ''}${assign ? (c.product_title ? ` · ${esc(c.product_title)}` : c.commission_number ? ` · zakázka ${esc(c.commission_number)}` : ' · provoz') : ''}${docTag(c)}${c.docs ? '' : ' · <span class="muted">bez dokladu</span>'}</span>
+    ${c.estimate ? ' <span class="chip">odhad</span>' : ''}${c.status === 'ke_kontrole' ? ' <span class="chip">ke kontrole</span>' : ''}${c.own_work ? ' <span class="chip">vlastní práce</span>' : ''}</span>
+    <b>${c.part_id && !c.amount_czk ? '<span class="small muted">sklad dílů</span>' : czk(c.amount_czk)}</b></a>`;
 
   views.ekonomika = async (_, q) => {
     const y = q.get('y') || String(new Date().getFullYear());
@@ -620,20 +625,175 @@
       ${e.hasPurchase ? '' : '<div class="card warn small" style="margin-top:12px">Chybí nákupní cena hodinek – přidejte náklad druhu „Nákup hodinek“.</div>'}
       <div class="card" style="margin-top:12px"><table>${Object.entries(e.byCat).map(([k, v]) => `<tr><th>${esc(CC[k] || k)}</th><td>${czk(v)}</td></tr>`).join('')}
         ${e.partsCost ? `<tr><th>Díly ze skladu</th><td>${czk(e.partsCost)}</td></tr>` : ''}${e.ownWork ? `<tr><th>Vlastní práce (starší záznamy, není výdaj)</th><td>${czk(e.ownWork)}</td></tr>` : ''}${e.estimate ? `<tr><th>Odhad (nezapočteno)</th><td>${czk(e.estimate)}</td></tr>` : ''}</table></div>
-      <h2 style="margin-top:16px">Zapsané náklady</h2><div class="list">${e.costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br><span class="small muted">${esc(CC[c.category])} · ${esc(c.cost_date)}${c.supplier ? ` · ${esc(c.supplier)}` : ''}${docTag(c)}</span></span><b>${c.amount_czk ? czk(c.amount_czk) : `${c.hours} h`}</b><button class="btn" data-del="${c.id}" aria-label="Smazat">✕</button></div>`).join('') || '<p class="muted">Zatím nic.</p>'}</div>
+      <h2 style="margin-top:16px">Zapsané náklady</h2><div class="list">${e.costs.map((c) => costRow(c, { assign: false })).join('') || '<p class="muted">Zatím nic.</p>'}</div>
       ${e.parts.length ? `<h2 style="margin-top:16px">Použité díly</h2><div class="list">${e.parts.map((x) => `<div class="item"><span class="grow">${esc(x.title)} <span class="small muted">${esc(PK[x.kind])}${x.original ? ' · originál' : ''}</span></span><b>${czk((x.unit_cost_czk || 0) * (x.qty || 1))}</b></div>`).join('')}</div>` : ''}
       <details open style="margin-top:16px"><summary>Přidat náklad</summary>${costForm({ category: e.hasPurchase ? 'dil' : 'nakup' })}</details>`;
     app.querySelector('#cf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => { await saveCost(ev.target, { product_id: id }); views['marze/:id']({ id }); }); });
     app.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat náklad?')) return; await api('DELETE', `costs/${b.dataset.del}`); views['marze/:id']({ id }); })));
   };
 
-  views.naklady = async () => {
-    const { costs } = await api('GET', 'costs');
-    app.innerHTML = `<h1>Náklady</h1><p class="small muted">Společné provozní náklady (krabičky, nářadí, reklama, hosting…). Náklady konkrétních hodinek zapisujte u hodinek. <a href="#/doklady">Doklady</a></p>
-      <details><summary>Přidat provozní náklad</summary>${costForm({ category: 'provoz' })}</details>
-      <div class="list" style="margin-top:12px">${costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br><span class="small muted">${esc(CC[c.category])} · ${esc(c.cost_date)}${c.product_title ? ` · ${esc(c.product_title)}` : c.commission_number ? ` · <a href="#/zakazky/${esc(c.commission_id)}">zakázka ${esc(c.commission_number)}</a>` : ' · provoz'}${c.estimate ? ' · odhad' : ''}${c.own_work ? ' · vlastní práce' : ''}${docTag(c)}</span></span><b>${c.amount_czk ? czk(c.amount_czk) : `${c.hours} h`}</b><button class="btn" data-del="${c.id}" aria-label="Smazat">✕</button></div>`).join('') || '<p class="muted">Zatím žádné náklady.</p>'}</div>`;
-    app.querySelector('#cf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => { await saveCost(ev.target); views.naklady(); }); });
-    app.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat náklad?')) return; await api('DELETE', `costs/${b.dataset.del}`); views.naklady(); })));
+  views.naklady = async (_, q = new URLSearchParams()) => {
+    const params = new URLSearchParams();
+    for (const k of ['q', 'category', 'obdobi', 'prirazeni', 'bez_dokladu']) if (q.get(k)) params.set(k, q.get(k));
+    const [{ costs }, { documents: loose }] = await Promise.all([api('GET', `costs?${params}`), api('GET', 'documents?volne=1')]);
+    const y = new Date().getFullYear();
+    const periods = { [String(y)]: `Rok ${y}`, [String(y - 1)]: `Rok ${y - 1}` };
+    for (let m = 12; m >= 1; m--) { const v = `${y}-${String(m).padStart(2, '0')}`; if (v <= today().slice(0, 7)) periods[v] = `${String(m).padStart(2, '0')}/${y}`; }
+    const real = costs.filter((c) => !c.estimate && c.status === 'potvrzeno' && !c.own_work);
+    const sum = real.reduce((a, c) => a + (c.amount_czk || 0), 0);
+    const filtered = [...params.keys()].length > 0;
+    app.innerHTML = `<div class="row" style="justify-content:space-between"><h1>Výdaje</h1><a class="btn ghost sm" href="#/doklady">Nahrát doklady</a></div>
+      <p class="small muted">Všechny výdaje na jednom místě – provozní, k hodinkám i k zakázkám. Klepnutím otevřete detail: úpravy, doklady, přiřazení.</p>
+      <details><summary>+ Nový výdaj</summary>${costForm({ category: 'provoz' })}</details>
+      <form id="cflt" class="card" style="margin-top:12px"><input name="q" type="search" placeholder="Hledat (popis, dodavatel, číslo dokladu, poznámka)" value="${esc(q.get('q') || '')}" aria-label="Hledat výdaj">
+        <div class="grid" style="margin-top:8px"><label>Období<select name="obdobi"><option value="">Vše</option>${Object.entries(periods).map(([v, t]) => `<option value="${v}" ${q.get('obdobi') === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+          <label>Druh<select name="category"><option value="">Vše</option>${Object.entries(CC).map(([v, t]) => `<option value="${v}" ${q.get('category') === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label></div>
+        <div class="grid"><label>Patří k<select name="prirazeni"><option value="">Vše</option>${Object.entries({ provoz: 'Provoz', hodinky: 'Hodinky', zakazka: 'Zakázky' }).map(([v, t]) => `<option value="${v}" ${q.get('prirazeni') === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+          <label class="check" style="align-self:end"><input type="checkbox" name="bez_dokladu" ${q.get('bez_dokladu') ? 'checked' : ''}> Jen bez dokladu</label></div>
+        <div class="row"><button class="btn primary">Filtrovat</button>${filtered ? '<a class="btn ghost" href="#/naklady">Zrušit filtr</a>' : ''}</div></form>
+      <div class="grid" style="margin-top:12px"><div class="stat"><b>${czk(sum)}</b>zaplaceno${filtered ? ' (výběr)' : ''}</div><div class="stat"><b>${costs.length}</b>záznamů${costs.filter((c) => !c.docs).length ? ` · ${costs.filter((c) => !c.docs).length} bez dokladu` : ''}</div></div>
+      ${loose.length ? `<details class="card warn" style="margin-top:12px" id="loose"><summary>Doklady bez výdaje (${loose.length})</summary>
+        <p class="small">Nahrané doklady, které zatím nepatří k žádnému výdaji. Připojíte je v detailu výdaje („Připojit nahraný doklad“).</p>
+        <div class="list">${loose.map((d) => `<div class="item"><span class="grow"><span class="t">${esc(d.filename || 'doklad')}</span><br><span class="small muted">${esc(dmy(d.created_at))} · ${fsize(d.size)}</span></span>
+          <a class="btn ghost sm" href="/api/admin/documents/${esc(d.id)}/file" target="_blank" rel="noopener">Zobrazit</a><button class="btn danger sm" data-ldel="${esc(d.id)}" aria-label="Smazat doklad">Smazat</button></div>`).join('')}</div></details>` : ''}
+      <div class="list" style="margin-top:12px">${costs.map((c) => costRow(c)).join('') || `<p class="muted">${filtered ? 'Nic neodpovídá filtru.' : 'Zatím žádné výdaje.'}</p>`}</div>`;
+    app.querySelector('#cf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => { await saveCost(ev.target); views.naklady(_, q); }); });
+    app.querySelector('#cflt').addEventListener('submit', (ev) => { ev.preventDefault(); const f = formData(ev.target); const p = new URLSearchParams(); for (const [k, v] of Object.entries(f)) if (v && v !== 'off') p.set(k, v === 'on' ? '1' : v); location.hash = `#/naklady${p.toString() ? `?${p}` : ''}`; });
+    app.querySelectorAll('[data-ldel]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Trvale smazat tento doklad? Soubor nelze obnovit.')) return; await api('DELETE', `documents/${b.dataset.ldel}`); toast('Doklad smazán'); views.naklady(_, q); })));
+  };
+
+  const DOCK = { uctenka: 'Účtenka', faktura: 'Faktura od dodavatele', smlouva: 'Kupní smlouva', jiny: 'Jiný doklad' };
+  const fsize = (n) => (n > 1048576 ? `${(n / 1048576).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round((n || 0) / 1024))} kB`);
+  const docUrl = (id, o = '') => `/api/admin/documents/${encodeURIComponent(id)}/file${o}`;
+  const HIST = { naklad_pridan: 'Výdaj zapsán', naklad_upraven: 'Upraveno', priloha_pridana: 'Přidán doklad', priloha_odebrana: 'Doklad odpojen', priloha_smazana: 'Doklad smazán', naklad_potvrzen: 'Potvrzeno', nakup_potvrzen: 'Nákup potvrzen', nakup_ulozen: 'Nákup uložen' };
+  const FIELD = { description: 'popis', category: 'druh', part_kind: 'upřesnění', amount_czk: 'částka', cost_date: 'datum', supplier: 'dodavatel', document_ref: 'číslo dokladu', note: 'poznámka', estimate: 'odhad', product_id: 'hodinky', commission_id: 'zakázka' };
+  const histText = (h) => {
+    let d = {}; try { d = JSON.parse(h.details || '{}'); } catch { /* starší záznam */ }
+    if (h.action === 'naklad_upraven') return Object.entries(d).map(([k, v]) => (v && typeof v === 'object' && 'na' in v ? `${FIELD[k] || k}: ${k === 'amount_czk' ? `${czk(v.z)} → ${czk(v.na)}` : k === 'estimate' ? (v.na ? 'ano' : 'ne') : k === 'product_id' || k === 'commission_id' ? (v.na ? 'přiřazeno' : 'odebráno') : `${v.z ?? '–'} → ${v.na ?? '–'}`}` : FIELD[k] || k)).join(' · ');
+    return d.soubor ? esc(d.soubor) : '';
+  };
+
+  // Prohlížeč dokladu na celou obrazovku (fotka); PDF se otevře v nové kartě
+  function docViewer(d) {
+    if (d.mime === 'application/pdf') { window.open(docUrl(d.id), '_blank', 'noopener'); return; }
+    const el = document.createElement('div');
+    el.className = 'lightbox'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Doklad');
+    el.innerHTML = `<button class="lb-x" aria-label="Zavřít">✕</button><div class="lb-img"><img src="${docUrl(d.id)}" alt="${esc(d.filename || 'Doklad')}"></div>
+      <div class="lb-bar"><span class="small muted">${esc(d.filename || 'doklad')} · ${fsize(d.size)}</span><div class="row" style="justify-content:center"><a class="btn" href="${docUrl(d.id, '?download=1')}">⤓ Stáhnout originál</a></div></div>`;
+    const close = () => { el.remove(); document.removeEventListener('keydown', key); window.removeEventListener('hashchange', close); };
+    const key = (e) => { if (e.key === 'Escape') close(); };
+    el.querySelector('.lb-x').onclick = close;
+    document.addEventListener('keydown', key); window.addEventListener('hashchange', close);
+    document.body.appendChild(el); el.querySelector('.lb-x').focus();
+  }
+
+  // Nahrání příloh k výdaji (více souborů najednou); duplicitní soubor bez výdaje se rovnou připojí
+  async function attachDocs(costId, files, info) {
+    let ok = 0;
+    for (const [i, f] of files.entries()) {
+      if (info) info.textContent = `Nahrávám ${i + 1}/${files.length}: ${f.name}`;
+      try { await uploadDoc(f, costId); ok++; } catch (e) {
+        if (e.status === 409 && e.data?.id && !e.data.cost_id) { await api('PUT', `documents/${e.data.id}`, { cost_id: costId }); ok++; continue; }
+        if (e.status === 409 && e.data?.cost_id) { toast(e.data.cost_id === costId ? `${f.name}: už je přiložen` : `${f.name}: tento doklad už patří k jinému výdaji`, true); continue; }
+        toast(`${f.name}: ${e.message}`, true);
+      }
+    }
+    if (info) info.textContent = '';
+    return ok;
+  }
+
+  views['naklady/:id'] = async ({ id }) => {
+    const [{ cost: c, docs, history, categories, partKinds }, { products }, { commissions }] = await Promise.all([api('GET', `costs/${id}`), api('GET', 'products'), api('GET', 'commissions')]);
+    const target = c.product_id ? 'hodinky' : c.commission_id ? 'zakazka' : 'provoz';
+    const back = c.commission_id ? `#/zakazky/${c.commission_id}` : c.product_id ? `#/marze/${c.product_id}` : '#/naklady';
+    const foreign = c.currency && c.currency !== 'CZK' && c.amount_orig != null;
+    const stockPart = c.part_id && !c.amount_czk;
+    app.innerHTML = `<p><a href="${back}" id="back">← Zpět</a></p>
+      <h1 style="font-size:24px;margin-bottom:4px">${esc(c.description)}</h1>
+      <p class="small muted" style="margin-top:0">${esc(CC[c.category] || '')} · ${esc(dmy(c.cost_date))}${c.supplier ? ` · ${esc(c.supplier)}` : ''}${c.updated_at ? ` · upraveno ${esc(dmy(c.updated_at))}` : ''}</p>
+      <div class="grid"><div class="stat"><b>${stockPart ? czk((c.part_unit_cost || 0) * (c.part_qty || 1)) : czk(c.amount_czk)}</b>${c.estimate ? 'odhad – nezapočítává se' : stockPart ? 'naskladněno jako díl' : 'zaplaceno'}</div>
+        <div class="stat"><b>${c.product_title ? esc(c.product_title) : c.commission_number ? esc(c.commission_number) : 'Provoz'}</b>${c.product_id ? `<a href="#/marze/${esc(c.product_id)}">hodinky ›</a>` : c.commission_id ? `<a href="#/zakazky/${esc(c.commission_id)}">zakázka${c.commission_customer ? ` · ${esc(c.commission_customer)}` : ''} ›</a>` : 'společný náklad'}</div></div>
+      ${c.status === 'ke_kontrole' ? '<div class="card warn small" style="margin-top:10px">Čeká na kontrolu v <a href="#/doklady">Nákupy a prodeje</a> – do ekonomiky se započítá až po potvrzení.</div>' : ''}
+      ${stockPart ? `<div class="card small" style="margin-top:10px">Nákup je naskladněný jako díl <b>${esc(c.part_title || '')}</b>. Cenu upravte ve <a href="#/dily">Skladu dílů</a> – započítá se jen jednou.</div>` : ''}
+      ${foreign ? `<p class="small muted">Zaplaceno ${String(c.amount_orig).replace('.', ',')} ${esc(c.currency)}${c.fx_rate ? ` · kurz ČNB ${String(c.fx_rate).replace('.', ',')}` : ''}${c.platform ? ` · ${esc(c.platform)}` : ''}${c.order_ref ? ` · obj. ${esc(c.order_ref)}` : ''}</p>` : ''}
+
+      <h2>Doklady a fotky (${docs.length})</h2>
+      <div class="list" id="docs">${docs.map((d) => `<div class="item doc"><button type="button" class="thumb" data-view="${esc(d.id)}" aria-label="Zobrazit ${esc(d.filename || 'doklad')}">${d.mime === 'application/pdf' ? '<span class="pdf">PDF</span>' : `<img src="${docUrl(d.id, '?preview=1')}" alt="" loading="lazy">`}</button>
+          <span class="grow"><span class="t" style="display:block">${esc(d.filename || 'doklad')}</span><span class="small muted">${esc(DOCK[d.kind] || '')} · ${fsize(d.size)} · ${esc(dmy(d.created_at))}</span>
+          <span class="row docact"><button class="btn ghost sm" type="button" data-view="${esc(d.id)}">Zobrazit</button><a class="btn ghost sm" href="${docUrl(d.id, '?download=1')}" aria-label="Stáhnout originál">⤓</a>
+            <label class="btn ghost sm filebtn">Nahradit<input type="file" accept="image/*,application/pdf" data-repl="${esc(d.id)}"></label><button class="btn danger sm" type="button" data-dremove="${esc(d.id)}" aria-label="Odstranit doklad">✕</button></span></span></div>`).join('') || '<p class="small muted">Zatím bez dokladu.</p>'}</div>
+      <label class="btn primary block filebtn" style="margin-top:10px">+ Přidat doklad nebo fotku<input type="file" id="dadd" accept="image/*,application/pdf" multiple></label>
+      <p class="small muted" id="dinfo"></p>
+      <details id="dloose"><summary>Připojit nahraný doklad bez výdaje</summary><div id="dlist"><p class="small muted">Načítám…</p></div></details>
+
+      <h2>Údaje</h2>
+      <form id="cedit">${field('description', 'Název / popis', c, 'required maxlength="300"')}
+        <div class="grid">${sel('category', 'Druh', categories, c.category)}<label>Upřesnění<select name="part_kind"><option value="">–</option>${Object.entries(partKinds).map(([v, t]) => `<option value="${v}" ${c.part_kind === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label></div>
+        <div class="grid">${field('amount_czk', 'Částka (Kč)', c, `inputmode="numeric" ${stockPart ? 'disabled' : 'required'}`)}${field('cost_date', 'Datum', c, 'type="date" required')}</div>
+        <div class="grid">${field('supplier', 'Dodavatel', c, 'maxlength="200"')}${field('document_ref', 'Číslo dokladu', c, 'maxlength="200"')}</div>
+        ${area('note', 'Poznámka', c)}
+        <label class="check"><input type="checkbox" name="estimate" ${c.estimate ? 'checked' : ''}> Jen odhad (zatím nezaplaceno – nepočítá se do nákladů)</label>
+        <button class="btn primary block">Uložit změny</button></form>
+
+      <h2>Patří k</h2>
+      <form id="cassign" class="card">
+        <div class="seg" role="group" aria-label="Patří k">${Object.entries({ provoz: 'Provoz', hodinky: 'Hodinkám', zakazka: 'Zakázce' }).map(([v, t]) => `<button type="button" data-tg="${v}" aria-pressed="${target === v}">${t}</button>`).join('')}</div>
+        <label data-tgx="hodinky">Hodinky<select name="product_id"><option value="">– vyberte –</option>${products.map((p) => `<option value="${esc(p.id)}" ${p.id === c.product_id ? 'selected' : ''}>${esc(p.title)}</option>`).join('')}</select></label>
+        <label data-tgx="zakazka">Zakázka<select name="commission_id"><option value="">– vyberte –</option>${commissions.filter((k) => k.status !== 'zruseno' || k.id === c.commission_id).map((k) => `<option value="${esc(k.id)}" ${k.id === c.commission_id ? 'selected' : ''}>${esc(k.number)} · ${esc(k.customer_name || '')}</option>`).join('')}</select></label>
+        <p class="small muted" data-tgx="provoz">Společný provozní náklad (krabičky, nářadí, reklama…). Výdaj patří vždy jen k jedné věci, takže se nikdy nezapočítá dvakrát.</p>
+        <button class="btn block">Uložit přiřazení</button>
+        ${c.commission_id ? '<button class="btn ghost block" type="button" id="unassign" style="margin-top:8px">Odebrat ze zakázky (výdaj zůstane v evidenci)</button>' : ''}</form>
+
+      ${history.length ? `<details style="margin-top:12px"><summary>Historie změn (${history.length})</summary><div class="list">${history.map((h) => `<div class="item small"><span class="grow"><b>${esc(HIST[h.action] || h.action)}</b> · ${esc(dmy(h.at))} ${esc(new Date(h.at).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }))}<br><span class="muted">${histText(h)}</span></span></div>`).join('')}</div></details>` : ''}
+      <button class="btn danger block" type="button" id="cdelete" style="margin-top:20px">Trvale smazat výdaj</button>`;
+    const reload = () => views['naklady/:id']({ id });
+    // doklady
+    app.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => docViewer(docs.find((d) => d.id === b.dataset.view))));
+    app.querySelectorAll('[data-dremove]').forEach((b) => b.addEventListener('click', () => run(async () => {
+      if (!confirm('Odstranit doklad z výdaje?\n\nOK = trvale smazat soubor.\nZrušit = nic nedělat.')) return;
+      await api('DELETE', `documents/${b.dataset.dremove}`); toast('Doklad smazán'); reload();
+    })));
+    app.querySelectorAll('[data-repl]').forEach((inp) => inp.addEventListener('change', () => run(async () => {
+      const f = inp.files[0]; if (!f) return;
+      if (!confirm(`Nahradit doklad souborem „${f.name}“? Původní soubor se smaže.`)) return;
+      const n = await attachDocs(id, [f], app.querySelector('#dinfo'));
+      if (n) { await api('DELETE', `documents/${inp.dataset.repl}`); toast('Doklad nahrazen'); }
+      reload();
+    })));
+    app.querySelector('#dadd').addEventListener('change', (e) => run(async () => {
+      const n = await attachDocs(id, [...e.target.files], app.querySelector('#dinfo'));
+      if (n) toast(n > 1 ? `Přidáno dokladů: ${n}` : 'Doklad přidán'); reload();
+    }));
+    app.querySelector('#dloose').addEventListener('toggle', (ev) => { if (!ev.target.open) return; run(async () => {
+      const { documents } = await api('GET', 'documents?volne=1');
+      const box = app.querySelector('#dlist');
+      box.innerHTML = documents.length ? `<div class="list">${documents.map((d) => `<div class="item"><span class="grow"><span class="t" style="display:block">${esc(d.filename || 'doklad')}</span><span class="small muted">${esc(dmy(d.created_at))} · ${fsize(d.size)}</span></span><a class="btn ghost sm" href="${docUrl(d.id)}" target="_blank" rel="noopener">Zobrazit</a><button class="btn sm" data-att="${esc(d.id)}">Připojit</button></div>`).join('')}</div>` : '<p class="small muted">Žádné nahrané doklady bez výdaje.</p>';
+      box.querySelectorAll('[data-att]').forEach((b) => b.addEventListener('click', () => run(async () => { await api('PUT', `documents/${b.dataset.att}`, { cost_id: id }); toast('Doklad připojen'); reload(); })));
+    }); });
+    // údaje
+    app.querySelector('#cedit').addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
+      const d = formData(e.target); d.estimate = e.target.estimate.checked; if (stockPart) delete d.amount_czk;
+      const r = await api('PUT', `costs/${id}`, d);
+      toast(r.changed?.length ? 'Uloženo – náklady, zisk a marže jsou přepočítané' : 'Beze změn'); reload();
+    }); });
+    // přiřazení
+    const af = app.querySelector('#cassign');
+    let tg = target;
+    const syncTg = () => { af.querySelectorAll('[data-tg]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.tg === tg)); af.querySelectorAll('[data-tgx]').forEach((el) => { el.hidden = el.dataset.tgx !== tg; }); };
+    af.querySelectorAll('[data-tg]').forEach((b) => b.addEventListener('click', () => { tg = b.dataset.tg; syncTg(); }));
+    syncTg();
+    af.addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
+      const body = { product_id: tg === 'hodinky' ? af.product_id.value : null, commission_id: tg === 'zakazka' ? af.commission_id.value : null };
+      if (tg !== 'provoz' && !body.product_id && !body.commission_id) throw new Error(tg === 'hodinky' ? 'Vyberte hodinky' : 'Vyberte zakázku');
+      await api('PUT', `costs/${id}`, body); toast('Přiřazení uloženo'); reload();
+    }); });
+    app.querySelector('#unassign')?.addEventListener('click', () => run(async () => { if (!confirm('Odebrat výdaj ze zakázky? V evidenci zůstane jako provozní náklad.')) return; await api('PUT', `costs/${id}`, { product_id: null, commission_id: null }); toast('Odebráno ze zakázky'); reload(); }));
+    // smazání
+    app.querySelector('#cdelete').addEventListener('click', () => run(async () => {
+      if (!confirm(`Trvale smazat výdaj „${c.description}“ (${czk(c.amount_czk)})? Přepočítá se ekonomika. Akci nelze vrátit.`)) return;
+      const withDocs = docs.length ? confirm(`Smazat i ${docs.length === 1 ? 'přiložený doklad' : `${docs.length} přiložené doklady`}?\n\nOK = smazat i soubory.\nZrušit = doklady ponechat (najdete je ve Výdajích → Doklady bez výdaje).`) : false;
+      await api('DELETE', `costs/${id}${withDocs ? '?doklady=1' : ''}`); toast('Výdaj smazán'); location.hash = back;
+    }));
   };
 
   // --- Nákupy a prodeje (E3b v2): nahrát → AI vyčte → kontrola jen u nejistých údajů ----------------
@@ -701,8 +861,8 @@
         ${d.review.map((x) => purchaseForm({ ...x, amount_czk: x.amount_czk || '' }, products, d)).join('')}${d.saleReview.map((x) => saleForm({ ...x, total_czk: x.total_czk || '' }, products, d)).join('')}` : ''}
       <details style="margin-top:16px"><summary>Zadat nákup ručně (i bez dokladu)</summary>${purchaseForm({}, products, d)}</details>
       <details style="margin-top:8px"><summary>Zadat prodej ručně</summary>${saleForm({}, products, d)}</details>
-      <h2 style="margin-top:16px">Poslední nákupy</h2><div class="list">${d.purchases.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br><span class="small muted">${esc(c.cost_date)}${c.platform ? ` · ${esc(d.platforms[c.platform] || c.platform)}` : ''}${c.currency && c.currency !== 'CZK' && c.amount_orig != null ? ` · ${c.amount_orig} ${esc(c.currency)}` : ''} · ${esc(CC[c.category] || '')}${c.product_title ? ` · ${esc(c.product_title)}` : ''}${c.part_id ? ' · sklad dílů' : ''}${c.doc_id ? ` · <a href="/api/admin/documents/${esc(c.doc_id)}/file" target="_blank" rel="noopener">doklad</a>` : ''}</span></span><b>${c.part_id ? '' : czk(c.amount_czk)}</b></div>`).join('') || '<p class="muted">Zatím nic.</p>'}</div>
-      <h2 style="margin-top:16px">Poslední prodeje</h2><div class="list">${d.sales.map((s) => `<div class="item"><span class="grow"><span class="t">${esc(s.number || 'bez čísla')} · ${esc(s.watch_model || s.buyer_name || '')}</span><br><span class="small muted">${esc(s.day)} · ${s.kind === 'faktura' ? 'faktura z Dante Time OS' : 'import / mimo e-shop'}${s.items ? ` · ${esc(s.items).slice(0, 60)}` : ''}${s.doc_id ? ` · <a href="/api/admin/documents/${esc(s.doc_id)}/file" target="_blank" rel="noopener">faktura</a>` : ''}</span></span><b>${czk(s.total)}</b></div>`).join('') || '<p class="muted">Zatím nic.</p>'}</div>
+      <h2 style="margin-top:16px">Poslední nákupy</h2><div class="list">${d.purchases.map((c) => costRow({ ...c, docs: c.doc_id ? 1 : 0 })).join('') || '<p class="muted">Zatím nic.</p>'}</div>
+      <h2 style="margin-top:16px">Poslední prodeje</h2><div class="list">${d.sales.map((s) => `<a class="item" href="${s.kind === 'faktura' ? `#/faktury/${esc(s.id)}` : `#/prodeje/${esc(s.id)}`}"><span class="grow"><span class="t">${esc(s.number || 'bez čísla')} · ${esc(s.watch_model || s.buyer_name || '')}</span><br><span class="small muted">${esc(s.day)} · ${s.kind === 'faktura' ? 'faktura z Dante Time OS' : 'import / mimo e-shop'}${s.items ? ` · ${esc(s.items).slice(0, 60)}` : ''}${s.doc_id ? ' · <span class="gold">📎 faktura</span>' : ''}</span></span><b>${czk(s.total)}</b></a>`).join('') || '<p class="muted">Zatím nic.</p>'}</div>
       ${d.imported ? `<details style="margin-top:16px"><summary>Začít import faktur znovu</summary><p class="small">Smaže všech ${d.imported} prodejů nahraných z faktur (uložené i ke kontrole) a jejich soubory. Faktury vystavené v Dante Time OS, nákupy ani e-shop se nezmění. Potom můžete všechny faktury nahrát znovu.</p><button class="btn" type="button" id="reset-sales">Smazat importované faktury</button></details>` : ''}`;
     app.querySelector('#reset-sales')?.addEventListener('click', () => run(async () => {
       const c = prompt('Opravdu smazat všechny importované faktury? Pro potvrzení napište SMAZAT'); if (c == null) return;
@@ -751,6 +911,24 @@
         setTimeout(() => { if (seq === navSeq) views.doklady(); }, stats.err || stats.review ? 6000 : 2000);
       }));
     }
+  };
+
+  views['prodeje/:id'] = async ({ id }) => {
+    const [{ sale: x, docs, history, pay }, { products }, inbox] = await Promise.all([api('GET', `sales/${id}`), api('GET', 'products'), api('GET', 'inbox')]);
+    app.innerHTML = `<p><a href="#/doklady">← Nákupy a prodeje</a></p><h1 style="font-size:24px">Prodej ${esc(x.number || 'bez čísla')}</h1>
+      <p class="small muted">${esc(dmy(x.issued_on))} · ${x.source === 'rucne' ? 'zadáno ručně' : 'import z faktury'}${x.status === 'ke_kontrole' ? ' · <b class="warnt">ke kontrole</b>' : ''}</p>
+      <h2>Doklady (${docs.length})</h2><div class="list">${docs.map((d) => `<div class="item doc"><button type="button" class="thumb" data-view="${esc(d.id)}" aria-label="Zobrazit">${d.mime === 'application/pdf' ? '<span class="pdf">PDF</span>' : `<img src="${docUrl(d.id, '?preview=1')}" alt="" loading="lazy">`}</button>
+        <span class="grow"><span class="t" style="display:block">${esc(d.filename || 'faktura')}</span><span class="small muted">${fsize(d.size)} · ${esc(dmy(d.created_at))}</span></span>
+        <a class="btn ghost sm" href="${docUrl(d.id, '?download=1')}" aria-label="Stáhnout originál">⤓</a></div>`).join('') || '<p class="small muted">Bez dokladu.</p>'}</div>
+      <h2>Údaje</h2>${saleForm(x, products, { ...inbox, pay })}
+      ${history.length ? `<details style="margin-top:12px"><summary>Historie (${history.length})</summary><div class="list">${history.map((h) => `<div class="item small"><span class="grow"><b>${esc(h.action.replace(/_/g, ' '))}</b> · ${esc(dmy(h.at))}</span></div>`).join('')}</div></details>` : ''}`;
+    app.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => docViewer(docs.find((d) => d.id === b.dataset.view))));
+    const f = app.querySelector('form.sform'); bindMoney(f);
+    f.addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `sales/${id}`, formData(f)); toast('Prodej uložen – přehledy jsou přepočítané'); views['prodeje/:id']({ id }); }); });
+    app.querySelector('[data-delsale]')?.addEventListener('click', () => run(async () => {
+      if (!confirm(`Trvale smazat prodej ${x.number || ''} (${czk(x.total_czk)})? Tržby se přepočítají. Soubor faktury zůstane uložený.${x.product_id ? '\n\nStav hodinek se nezmění – případně ho upravte u hodinek.' : ''}`)) return;
+      await api('DELETE', `sales/${id}`); toast('Prodej smazán'); location.hash = '#/doklady';
+    }));
   };
 
   const partForm = (x = {}, products = []) => `<form id="pf">${sel('kind', 'Druh', PK, x.kind || 'strojek')}${field('title', 'Název (např. PRIM kalibr 66)', x, 'required')}
@@ -941,6 +1119,7 @@
       ${i.photo_ids ? `<div class="photos">${i.photo_ids.split(',').map((f) => `<div class="photo"><a href="/api/admin/commission-photos/${esc(f)}/l" target="_blank"><img src="/api/admin/commission-photos/${esc(f)}/s" alt="Fotografie od zákazníka" loading="lazy"></a></div>`).join('')}</div>` : ''}
       <div class="row"><select data-s="${i.id}" style="flex:1">${Object.entries(L.inq).map(([v, t]) => `<option value="${v}" ${i.status === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
       ${['servis', 'renovace', 'zakazkova_vyroba', 'prestavba', 'jine', 'general'].includes(i.type) ? `<a class="btn" href="#/zakazky/nova?z=${encodeURIComponent(JSON.stringify({ type: ['servis', 'renovace', 'zakazkova_vyroba', 'prestavba'].includes(i.type) ? i.type : 'servis', customer_name: i.name, customer_email: i.email, customer_phone: i.phone, description: i.message, inquiry_id: i.id }))}">→ Zakázka</a>` : ''}</div>
+      ${i.commission_number ? `<p class="small muted">Převedeno na zakázku ${esc(i.commission_number)}</p>` : `<button class="btn danger sm" type="button" data-idel="${i.id}" style="margin-top:6px">Smazat poptávku</button>`}
       <details class="draft" data-draft="${i.id}" data-email="${esc(i.email)}"><summary>Návrh odpovědi (AI)</summary>
         <label>Pokyn pro návrh (nepovinné)<input name="note" maxlength="500" placeholder="např. cenu sdělím po prohlídce, termín cca 3 týdny"></label>
         <button class="btn" type="button" data-mk>Vytvořit návrh</button>
@@ -967,6 +1146,7 @@
       d.querySelector('[data-copy]').addEventListener('click', () => run(async () => { await navigator.clipboard.writeText(text.value); toast('Text zkopírován'); }));
     });
     app.querySelectorAll('[data-s]').forEach((s) => s.addEventListener('change', () => run(async () => { await api('PUT', `inquiries/${s.dataset.s}`, { status: s.value }); toast('Uloženo'); })));
+    app.querySelectorAll('[data-idel]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Trvale smazat poptávku včetně přiložených fotek? (např. spam nebo na žádost zákazníka)')) return; await api('DELETE', `inquiries/${b.dataset.idel}`); toast('Poptávka smazána'); views.poptavky(); })));
   };
 
   views.zakaznici = async (_, q) => {
@@ -1265,7 +1445,7 @@
   views.vice = async () => {
     app.innerHTML = `<h1>Více</h1><div class="list">
       <a class="item" href="#/ekonomika"><span class="grow">Ekonomika – tržby, náklady, zisk, export pro účetní</span></a>
-      <a class="item" href="#/naklady"><span class="grow">Náklady a provozní výdaje</span></a>
+      <a class="item" href="#/naklady"><span class="grow">Výdaje a doklady</span></a>
       <a class="item" href="#/doklady"><span class="grow">Nákupy a prodeje (nahrát doklady, import faktur)</span></a>
       <a class="item" href="#/dily"><span class="grow">Sklad dílů</span></a>
       <a class="item" href="#/system"><span class="grow">Systém Dante Time OS (role, kontroly, zálohy)</span></a>

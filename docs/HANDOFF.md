@@ -43,6 +43,21 @@ výchozí vypnuto), sledování podle dopravce (`PACKETA_/CPOST_/PPL_METHODS`). 
 - Testy `tests/unit/platby-doprava.test.mjs` (celý nákup kartou v EUR, dvojí prodej, nabídka podle země, štítky).
 **Další krok:** po schválení majitele: účet Stripe (nejdřív test), doplnění Zásad ochrany osobních údajů o platební bránu, tabulka „Doprava a platba“.
 **Pozor na:** úroveň 3 (platby) – PR slučuje jen majitel. Limit hodnoty zásilky Zásilkovny ověřit v klientské sekci.
+## 2026-11-27 – Claude – claude/sprava-vydaju
+**Hotovo:** jednotná správa výdajů v celé administraci (zadání majitele 27. 11.). Migrace 0027: `costs.note`,
+`costs.updated_at`, index `documents(sale_id)`.
+- Detail výdaje `#/naklady/:id` (z Výdajů, zakázky, hodinek i Nákupů – všude stejný řádek `costRow`): úprava všech
+  údajů (popis, druh, upřesnění, částka, datum, dodavatel, číslo dokladu, poznámka, odhad), přílohy (více dokladů,
+  náhled, celá obrazovka / PDF, stažení originálu, nahrazení, odstranění, připojení nahraného dokladu bez výdaje),
+  přiřazení (provoz / hodinky / zakázka; `PUT costs/:id` s oběma klíči = přesun), odebrání ze zakázky, historie změn
+  (audit `cost`, „z → na“), trvalé smazání (doklady se odpojí, nebo smažou s `?doklady=1`).
+- `FIN.updateCost` rozšířen (vrací `changed`), `FIN.getCost`, `FIN.deleteCost`. Nákup naskladněný jako díl: částku nelze
+  změnit u výdaje (počítá se u dílu) → bez dvojího započtení. Vše se přepočítává za běhu (žádné uložené součty).
+- Výdaje (seznam): hledání, období, druh, přiřazení, „jen bez dokladu“, součet; doklady bez výdaje.
+- Doklady: `?download=1` (originál), `?preview=1` (miniatura bez záznamu do historie), `PUT documents/:id` kind/note.
+- Detail prodeje mimo systém `#/prodeje/:id` (úprava, doklad, smazání). Smazání poptávky (ne převedené na zakázku) i s fotkami.
+**Kontrola modulů:** viz popis PR (co jde otevřít / upravit / smazat).
+**Pozor na:** vystavené faktury se dál neupravují ani nemažou (storno / dobropis) – záměr kvůli číselné řadě.
 
 ---
 
