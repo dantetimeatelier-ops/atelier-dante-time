@@ -56,7 +56,7 @@ ${advance ? `<tr><th>Uhrazená záloha${related ? ` (${esc(related.number)})` : 
 ${inv.pay_currency === 'EUR' && inv.pay_amount_cents ? `<tr><th>Uhrazeno v EUR (kurz ${esc(inv.eur_rate)} Kč/€)</th><td>${formatEur(inv.pay_amount_cents)}</td></tr>` : ''}
 </tbody></table>
 <section class="meta"><p class="state">Stav platby : <b>${status}</b></p><table><tbody>
-${metaRow('Datum vystavení', d(inv.issued_at))}${metaRow('Datum uskutečnění plnění', kind === 'zalohova' ? '' : d(inv.taxable_date))}
+${metaRow('Datum vystavení', d(inv.issued_at))}${OPERATOR.vatPayer && kind !== 'zalohova' ? metaRow('Datum uskutečnění plnění', d(inv.taxable_date)) : '' /* neplátce DPH: DUZP se na dokladu neuvádí */}
 ${metaRow(inv.paid_at ? 'Uhrazeno dne' : 'Datum splatnosti', d(inv.paid_at || inv.due_date))}${metaRow('Forma úhrady', esc(PAY[inv.payment_method] || inv.payment_method))}
 ${isTransfer ? `${metaRow('Variabilní symbol', esc(inv.variable_symbol || ''))}${metaRow('Bankovní účet', `${esc(bank.account)}<br>IBAN ${esc(bank.ibanPretty)}, BIC ${esc(bank.bic)}`)}` : ''}
 </tbody></table></section>

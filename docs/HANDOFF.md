@@ -4,6 +4,12 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/faktura-bez-duzp
+**Hotovo:** na faktuře se u neplátce DPH (`OPERATOR.vatPayer = false`) netiskne „Datum uskutečnění plnění“ (pokyn majitele;
+`taxable_date` se dál ukládá pro evidenci). Položka faktury ze zakázky = pole „Hodinky“ (+ kalibr), bez druhu zakázky a čísla.
+**Další krok:** –
+**Pozor na:** po registraci k DPH se DUZP zase zobrazí samo (přepnutím `vatPayer`).
+
 ## 2026-11-27 – Claude – claude/zakazky-kalibr-faktura
 **Hotovo:** u zakázky nové pole „Kalibr“ (migrace 0031 `commissions.caliber`, hledá se i podle něj).
 Faktura k zakázce se předvyplňuje z aktuálně uložené zakázky (`GET invoices/form` vrací `commission.buyer`,
