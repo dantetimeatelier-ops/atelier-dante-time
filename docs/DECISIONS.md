@@ -239,3 +239,25 @@ katalogu (`scripts/catalog.mjs`), generátoru popisů a pasech; migrace 0032 př
 v `src/shop/format.mjs`; pravidlo v `AGENTS.md` (sekce 6a) a `katalog/README.md`.
 **Upozornění předáno majiteli:** značky OMEGA, ROLEX a PRIM jsou ochranné známky jiných výrobců; zdůraznění značky
 v názvu zvyšuje riziko sporu, upozornění u přestaveb ho snižuje, ale nevylučuje (na vlastní odpovědnost, jako u R22).
+
+## R27 – Trvalý pokyn: autonomní rozvoj Dante Time OS (2026-11-27)
+**Rozhodl:** majitel („Tento pokyn ulož jako trvalé pravidlo celého projektu.“)
+**Rozhodnutí:**
+- Agenti pracují maximálně samostatně podle schváleného plánu. Co vyžaduje majitele, zapíší do `docs/STAV.md`
+  („Čeká na majitele“) a pokračují dalšími úkoly; vývoj se kvůli jednomu bodu nezastavuje. Otázky se sbírají do
+  jednoho seznamu, schválené postupy se znovu neschvalují, běžná technická a designová rozhodnutí dělá agent sám.
+- Pravidelná komplexní kontrola celého projektu (web, e-shop, inzeráty, mobil, administrace, fakturace, objednávky,
+  výdaje, sklad, platby, doprava, komunikace, certifikáty, pasy, SEO, marketing, bezpečnost, zálohy, výpočty,
+  duplicity). Funkčnost se skutečně testuje, nestačí konstatovat.
+- Aktivní hledání inovací (konkurence, technologie, automatizace) s cílem obratu 2 000 000 Kč. Jednoznačné, bezpečné
+  a smysluplné vylepšení smí agent rovnou připravit, otestovat a nasadit; žádné změny jen pro změnu.
+- Pokračovat ve skutečně funkčních agentech: Director, Developer, Business & Finance, Marketing, Sales, Scout,
+  Logistics, Guardian (kontroluje i Directora), Innovation.
+- **Bez výslovného souhlasu nikdy:** nové placené služby, předplatná a finanční závazky; změny prodejních cen, slev
+  a reklamních rozpočtů; zásadní změny právních a obchodních podmínek; nevratné mazání skutečných dat; změny
+  bankovních údajů a platebních nastavení; nové externí přístupy k citlivým údajům; závazná komunikace se zákazníky
+  mimo schválené automatizace. Před významnými změnami záloha / možnost návratu, test a kontrola Guardianem.
+- Evidence v `docs/STAV.md` (hotovo, rozpracováno, čeká na majitele, chyby, inovace, trvalá pravidla, priority).
+- Reporting stručně: hotovo, opraveno, přínos, na čem se pracuje, co čeká na rozhodnutí. E-mailový přehled posílá
+  DT Director (pondělí 7:00, bez placených služeb).
+**Vztah k dalším pravidlům:** upřesňuje mandát R10; úroveň 3 v `AGENTS.md` platí beze změny.
