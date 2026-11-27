@@ -46,6 +46,15 @@ výchozí vypnuto), sledování podle dopravce (`PACKETA_/CPOST_/PPL_METHODS`). 
 
 ---
 
+## 2026-11-27 – Claude – claude/koncepty-faktur
+**Hotovo:** koncepty faktur a adresa u zakázky (přání majitele). Migrace 0024: tabulka `invoice_drafts` (bez čísla –
+číslo se přidělí až při vystavení), `commissions.contact_street/city/zip`. API `invoice-drafts` (GET seznam, GET/:id,
+POST upsert, DELETE); `POST invoices` s `draft_id` koncept po vystavení smaže. Administrace: „Uložit koncept“ ve
+formuláři faktury, sekce Koncepty ve Fakturách, v zakázce „Pokračovat v konceptu faktury“; faktura ze zakázky se
+předvyplní jménem, e-mailem, adresou a cenou. `invoice_drafts` je v zálohách. Ověřeno v e2e.
+
+---
+
 ## 2026-11-27 – Claude – claude/bez-vlastni-prace
 **Hotovo:** majitel nepoužívá hodinovou sazbu → z administrace odstraněno zadávání vlastní práce (typ nákladu, hodiny,
 nastavení sazby, řádky „zisk po ocenění práce“). Backend (`own_work`, `hours`, `labor_rate_czk`) zůstává kvůli starším
