@@ -254,6 +254,7 @@
         <tr><th>Zákazník</th><td>${esc(o.name)}${o.company ? `<br>${esc(o.company)} (IČO ${esc(o.company_ico || '')})` : ''}</td></tr>
         <tr><th>Kontakt</th><td><a href="mailto:${esc(o.email)}">${esc(o.email)}</a><br><a href="tel:${esc(o.phone)}">${esc(o.phone)}</a></td></tr>
         <tr><th>Adresa</th><td>${esc(o.billing_street)}, ${esc(o.billing_zip)} ${esc(o.billing_city)}</td></tr>
+        ${o.tracking_number ? `<tr><th>Zásilka</th><td>${esc(o.tracking_number)}${o.shipping_method === 'zasilkovna' ? `<br><span id="trk">${o.tracking_status ? `${esc(o.tracking_status)}${o.tracking_at ? ` · ${date(o.tracking_at)}` : ''}` : '<span class="muted">stav zatím neověřen</span>'}</span> <button class="btn" type="button" data-trk style="min-height:36px;padding:4px 12px">Zjistit stav</button>` : ''}</td></tr>` : ''}
         <tr><th>Výdejní místo</th><td>${esc(o.pickup_point_name || '–')}${o.pickup_point_id ? ` (ID ${esc(o.pickup_point_id)})` : ''}</td></tr>
         ${o.customer_note ? `<tr><th>Poznámka</th><td>${esc(o.customer_note)}</td></tr>` : ''}
         <tr><th>Podmínky</th><td class="small">verze ${esc(o.terms_version)}, ${date(o.terms_accepted_at)}</td></tr>
@@ -262,12 +263,16 @@
         ${(o.status === 'awaiting_payment' && o.payment_method !== 'cod') || o.status === 'expired' ? '<button class="btn primary block" data-a="paid">✓ Platba přijata</button>' : ''}
         ${o.status === 'paid' || (o.status === 'awaiting_payment' && o.payment_method === 'cod') ? `<label>Číslo zásilky (nepovinné)<input id="tracking"></label><button class="btn primary block" data-a="shipped">Odesláno${o.payment_method === 'cod' ? ' na dobírku' : ''} – informovat zákazníka</button>` : ''}
         ${o.status === 'shipped' && o.payment_method === 'cod' ? '<button class="btn primary block" data-a="paid">✓ Dobírka zaplacena – vystavit fakturu</button>' : ''}
-        ${o.status === 'shipped' && o.payment_method !== 'cod' ? `<label>Datum převzetí zákazníkem<input id="delivered" type="date" value="${new Date().toISOString().slice(0, 10)}" max="${new Date().toISOString().slice(0, 10)}"></label><button class="btn block" data-a="delivered">Převzato zákazníkem – dokončit</button>` : ''}
+        ${o.status === 'shipped' && o.payment_method !== 'cod' ? `<label>Datum převzetí zákazníkem${o.tracking_code === 7 ? `<p class="small">Zásilkovna hlásí doručení${o.tracking_at ? ` ${date(o.tracking_at)}` : ''} – potvrďte převzetí.</p>` : ''}<input id="delivered" type="date" value="${(o.tracking_code === 7 && o.tracking_at ? new Date(o.tracking_at) : new Date()).toISOString().slice(0, 10)}" max="${new Date().toISOString().slice(0, 10)}"></label><button class="btn block" data-a="delivered">Převzato zákazníkem – dokončit</button>` : ''}
         ${o.status === 'completed' ? `<p class="small muted">Převzato: ${o.delivered_on ? new Date(o.delivered_on + 'T12:00:00Z').toLocaleDateString('cs-CZ') : '–'} (od tohoto dne běží záruka a zákonná práva)</p>` : ''}
         ${['paid', 'shipped', 'completed'].includes(o.status) ? '<button class="btn ghost block" data-a="withdrawn">Zákazník odstoupil – vrátit hodinky do prodeje</button>' : ''}
         ${o.status === 'awaiting_payment' ? '<button class="btn danger block" data-a="cancel">Zrušit objednávku a uvolnit hodinky</button>' : ''}
       </div>
       <h2>Interní poznámka</h2><form id="nf"><textarea name="note">${esc(o.internal_note)}</textarea><button class="btn block">Uložit poznámku</button></form>`;
+    app.querySelector('[data-trk]')?.addEventListener('click', (e) => run(async () => {
+      const b = e.currentTarget; b.disabled = true;
+      try { const r = await api('POST', `orders/${id}/tracking`); app.querySelector('#trk').textContent = `${r.text}${r.at ? ` · ${date(r.at)}` : ''}`; if (r.code === 7 && o.status === 'shipped') await views['objednavky/:id']({ id }); } finally { b.disabled = false; }
+    }));
     app.querySelectorAll('[data-a]').forEach((b) => b.addEventListener('click', () => run(async () => {
       const a = b.dataset.a;
       if (a === 'cancel' && !confirm('Zrušit objednávku?')) return;

@@ -7,6 +7,7 @@ import { sendEmail, ownerEmail } from './email.js';
 import { sendDueReminders } from './warranty.js';
 import { SITE } from '../src/site.mjs';
 import { today } from '../src/shop/warranty.mjs';
+import { refreshAll } from './packeta.js';
 
 // ---- Role a běhy --------------------------------------------------------------------------
 export async function roles(env) {
@@ -78,11 +79,16 @@ export async function aiBudget(env) {
 // ---- DT Logistics ---------------------------------------------------------------------------
 async function logistics(env) {
   const sent = await sendDueReminders(env, 'DT Logistics');
+  const track = await refreshAll(env).catch(() => null);
   const stuck = (await env.DB.prepare("SELECT COUNT(*) AS n FROM orders WHERE status='paid' AND paid_at < ?").bind(new Date(Date.now() - 4 * 86400000).toISOString()).first()).n;
   const parts = [];
   if (sent) parts.push(`odesláno ${sent} připomínek garanční prohlídky`);
   if (stuck) parts.push(`${stuck} zaplacených objednávek čeká na odeslání déle než 4 dny`);
-  return { status: stuck ? 'warning' : 'ok', summary: parts.join('; ') || 'nic k vyřízení' };
+  if (track?.checked) parts.push(`zkontrolováno ${track.checked} zásilek`);
+  if (track?.delivered.length) parts.push(`doručeno (potvrďte převzetí): ${track.delivered.join(', ')}`);
+  if (track?.problems.length) parts.push(`problém se zásilkou: ${track.problems.join('; ')}`);
+  if (track?.errors) parts.push(`${track.errors} zásilek se nepodařilo ověřit`);
+  return { status: stuck || track?.problems.length || track?.delivered.length ? 'warning' : 'ok', summary: parts.join('; ') || 'nic k vyřízení' };
 }
 
 // ---- DT Guardian (nezávislá kontrola, bez AI) --------------------------------------------------

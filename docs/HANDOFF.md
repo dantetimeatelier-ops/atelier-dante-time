@@ -4,6 +4,16 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/sledovani-zasilek
+**Hotovo:** DT Logistics – sledování zásilek Zásilkovny (`server/packeta.js`, REST/XML `packetStatus`, tajný klíč
+`PACKETA_API_PASSWORD` – majitel uložil 27. 11.). Migrace 0019 přidává do `orders` sloupce `tracking_code/status/at/checked_at`.
+Denní běh DT Logistics ověří odeslané zásilky Zásilkovny (bez doručených/vrácených), hlásí doručené a problémové.
+V detailu objednávky řádek „Zásilka“ s tlačítkem „Zjistit stav“; po doručení se předvyplní datum převzetí.
+**Pozor na:** převzetí (začátek lhůty pro odstoupení) se schválně nepotvrzuje automaticky – potvrdí majitel.
+Balíkovna (Česká pošta) zatím sledování nemá.
+
+---
+
 ## 2026-11-27 – Claude – claude/fotky-nova-zakazka
 **Hotovo:** fotky jde vybrat už na obrazovce „Nová zakázka“ (nahrají se hned po uložení). Opraveno přetékání polí s datem (Termín, Předáno) v administraci na iPhonu (`.grid` s `minmax(0,1fr)`, `input[type=date]` bez nativního vzhledu).
 
