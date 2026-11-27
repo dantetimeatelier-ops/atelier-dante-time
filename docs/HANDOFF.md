@@ -4,6 +4,19 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/elegantni-potvrzeni
+**Hotovo:** krátké černozlaté potvrzení objednávky (poděkování, číslo, fotka a název hodinek, doprava, platba, celkem,
+„Co bude dál“ podle platby/dopravy, tlačítko Zobrazit objednávku, kontakt, jedna věta o uzavření smlouvy a lhůtě 14 dnů).
+Obchodní podmínky, poučení o odstoupení se vzorovým formulářem a záruční list jdou jako **PDF přílohy** v platné verzi:
+`scripts/legal-pdf.mjs` je při každém buildu sází z `src/legal/*` do `dist/pravni/{cs,en}/…-v<verze>.pdf`
+(vlastní sazeč, písmo DejaVu zmenšené v `scripts/fonts`, bez nových závislostí). `sendEmail` umí `attachments`
+(čte z `env.ASSETS`, jinak Resend stáhne z URL) a `fallbackBody` – když přílohy selžou, odejde e-mail s plným zněním v textu.
+Všechny e-maily mají nový tmavý obal (tabulky, max. 600 px, mobil).
+**Pozor na:** obsah právních textů se neměnil, jen forma doručení (trvalý nosič = PDF příloha). Při nové verzi
+podmínek stačí změnit `LEGAL_VERSION` – PDF i názvy příloh se vygenerují samy.
+
+---
+
 ## 2026-11-27 – Claude – claude/sledovani-zasilek
 **Hotovo:** DT Logistics – sledování zásilek Zásilkovny (`server/packeta.js`, REST/XML `packetStatus`, tajný klíč
 `PACKETA_API_PASSWORD` – majitel uložil 27. 11.). Migrace 0019 přidává do `orders` sloupce `tracking_code/status/at/checked_at`.

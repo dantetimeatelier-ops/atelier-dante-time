@@ -105,7 +105,7 @@ export async function recordProtocol(env, id, p, actor) {
   await audit(env, actor, 'prohlidka_provedena', 'warranty_inspection', id, { doneOn, until, result: p.result });
   try { await onInspection(env, r, doneOn, p.result); } catch (e) { console.error('Pas: záznam prohlídky selhal', e?.message); }
   const ok = until > r.due_date;
-  const row = (l, v) => (v == null || v === '' ? '' : `<tr><td style="padding:4px 12px 4px 0;color:#555">${l}</td><td><strong>${v}</strong></td></tr>`);
+  const row = (l, v) => (v == null || v === '' ? '' : `<tr><td style="padding:4px 12px 4px 0;color:#9a9a9a">${l}</td><td><strong>${v}</strong></td></tr>`);
   const table = `<table style="border-collapse:collapse">${row(tr(r, 'Hodinky', 'Watch'), r.watch_title)}${row(tr(r, 'Datum prohlídky', 'Inspection date'), d(r, doneOn))}
 ${row(tr(r, 'Odchylka chodu', 'Rate'), p.rate_s_day != null ? `${p.rate_s_day > 0 ? '+' : ''}${p.rate_s_day} s/${tr(r, 'den', 'day')}` : '')}${row(tr(r, 'Amplituda', 'Amplitude'), p.amplitude_deg != null ? `${p.amplitude_deg}°` : '')}
 ${row(tr(r, 'Odchylka kroku', 'Beat error'), p.beat_error_ms != null ? `${p.beat_error_ms} ms` : '')}${row(tr(r, 'Výsledek', 'Result'), p.result === 'zavada' ? tr(r, 'zjištěna vada – viz poznámka', 'defect found – see note') : tr(r, 'v pořádku', 'in order'))}

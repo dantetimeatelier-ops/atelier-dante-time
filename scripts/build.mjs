@@ -70,6 +70,10 @@ if (PREVIEW) {
   await writeFile(hf, h.replace('/*\n', '/*\n  X-Robots-Tag: noindex, nofollow\n'));
 }
 await writeFile(path.join(DIST, 'robots.txt'), PREVIEW ? 'User-agent: *\nDisallow: /\n' : `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nDisallow: /kosik\nDisallow: /en/cart\nDisallow: /objednavka/\nDisallow: /faktura/\n\nSitemap: ${SITE.origin}/sitemap.xml\n`);
+// PDF právních dokumentů pro přílohy potvrzení objednávky (vždy z platného textu)
+const { buildLegalPdfs } = await import('./legal-pdf.mjs');
+const pdfs = await buildLegalPdfs(DIST);
+console.log(`📄 PDF právních dokumentů: ${pdfs.length} (${pdfs.map((p) => `${p.path.split('/').pop()} ${p.pages} s.`).join(', ')})`);
 await writeFile(path.join(DIST, 'build-info.json'), JSON.stringify({ mode: MODE, builtAt: new Date().toISOString(), pages: files.length }, null, 2));
 
 // Pojistka: v ostrém režimu nesmí na webu zůstat nevyplněné údaje
