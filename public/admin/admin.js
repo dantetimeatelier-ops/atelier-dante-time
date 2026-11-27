@@ -397,7 +397,7 @@
   // Rychlé druhy nákladů zakázky (mobil: jedno klepnutí → předvyplněný formulář)
   const JOB_COSTS = [
     ['nakup', 'Hodinky / strojek', 'nakup', 'strojek'], ['pouzdro', 'Pouzdro', 'dil', 'pouzdro'], ['remen', 'Řemínek', 'dil', 'remen'], ['sklo', 'Sklo', 'dil', 'sklo'],
-    ['dily', 'Náhradní díly', 'dil', 'jine'], ['hodinar', 'Práce hodináře', 'prace', ''], ['vlastni', 'Vlastní práce', 'prace', ''], ['jine', 'Ostatní', 'jine', ''],
+    ['dily', 'Náhradní díly', 'dil', 'jine'], ['hodinar', 'Práce hodináře', 'prace', ''], ['jine', 'Ostatní', 'jine', ''],
   ];
   const costLabel = (c) => `${c.own_work || (c.hours && !c.amount_czk && !c.estimate) ? 'Vlastní práce' : (c.part_kind && PK[c.part_kind] && c.part_kind !== 'jine' ? PK[c.part_kind] : CC[c.category])}`;
   const costAmount = (c) => (c.estimate ? czk(c.est) : c.paid ? czk(c.paid) : c.own ? czk(c.own) : `${c.hours || 0} h`);
@@ -458,8 +458,7 @@
           <div class="stat"><b class="${e.profit < 0 ? 'neg' : ''}">${czk(e.profit)}</b>zisk před zdaněním</div><div class="stat"><b class="${e.marginPct < 0 ? 'neg' : ''}">${e.marginPct != null ? `${String(e.marginPct).replace('.', ',')} %` : '–'}</b>marže</div></div>
         <div class="card" style="margin-top:10px"><table>
           ${e.partsCost ? `<tr><th>Z toho díly ze skladu</th><td>${czk(e.partsCost)}</td></tr>` : ''}
-          <tr><th>Vlastní práce${e.rate ? ` (${czk(e.rate)}/h)` : ''}</th><td>${czk(e.ownWork)} <span class="small muted">– není výdaj</span></td></tr>
-          <tr><th>Zisk po ocenění vlastní práce</th><td>${czk(e.profitAfterWork)}</td></tr>
+          ${e.ownWork ? `<tr><th>Vlastní práce (starší záznamy)</th><td>${czk(e.ownWork)} <span class="small muted">– není výdaj</span></td></tr>` : ''}
           ${e.estimate ? `<tr><th>Odhad dalších nákladů</th><td>${czk(e.estimate)}</td></tr><tr><th>Očekávaný zisk po odhadech</th><td>${czk(e.expectedProfit)}</td></tr>` : ''}
         </table></div>
         <div class="card"><b>Platby</b><table style="margin-top:6px">
@@ -484,14 +483,13 @@
         <details style="margin-top:12px" id="addc"><summary>+ Přidat náklad</summary>
           <div class="filters" id="cq">${JOB_COSTS.map(([key, t]) => `<button type="button" data-q="${key}" aria-pressed="false">${t}</button>`).join('')}</div>
           <form id="jcf">
-            <div class="seg" role="group" aria-label="Typ nákladu" id="ctype"><button type="button" data-t="paid" aria-pressed="true">Zaplaceno</button><button type="button" data-t="own" aria-pressed="false">Vlastní práce</button><button type="button" data-t="est" aria-pressed="false">Odhad</button></div>
+            <div class="seg" role="group" aria-label="Typ nákladu" id="ctype"><button type="button" data-t="paid" aria-pressed="true">Zaplaceno</button><button type="button" data-t="est" aria-pressed="false">Odhad</button></div>
             <div data-x="paid est">${sel('category', 'Druh', CC, 'dil')}</div>
             <div data-x="paid est"><label>Upřesnění<select name="part_kind"><option value="">–</option>${Object.entries(PK).map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></label></div>
             ${field('description', 'Popis', {}, 'required maxlength="300"')}
-            <div class="grid">${field('amount_czk', 'Částka (Kč)', {}, 'inputmode="numeric"')}<div data-x="own">${field('hours', 'Hodiny', {}, 'inputmode="decimal"')}</div></div>
+            ${field('amount_czk', 'Částka (Kč)', {}, 'inputmode="numeric" required')}
             <div class="grid">${field('cost_date', 'Datum', { cost_date: today() }, 'type="date"')}<div data-x="paid">${field('supplier', 'Dodavatel', {})}</div></div>
             <label data-x="paid">Fotka nebo PDF dokladu (nepovinné)<input type="file" name="file" accept="image/*,application/pdf"></label>
-            <p class="small muted" data-x="own">Vlastní práci zadejte v hodinách (ocení se sazbou z Ekonomiky) nebo přímo v Kč. Nezapočítává se do zaplacených výdajů.</p>
             <p class="small muted" data-x="est">Odhad se nepočítá do skutečných nákladů ani zisku. Až výdaj nastane, změňte ho na skutečný (⋯).</p>
             <button class="btn primary block">Přidat náklad</button></form></details>
         <details id="assign"><summary>Přiřadit už zapsaný výdaj</summary><div id="free"><p class="small muted">Načítám…</p></div></details>
@@ -517,12 +515,11 @@
       ebox.querySelectorAll('#cq button').forEach((b) => b.addEventListener('click', () => {
         const [key, t, cat, pk] = JOB_COSTS.find((x) => x[0] === b.dataset.q);
         ebox.querySelectorAll('#cq button').forEach((x) => x.setAttribute('aria-pressed', x === b));
-        type = key === 'vlastni' ? 'own' : (type === 'own' ? 'paid' : type); syncType();
+        syncType();
         jf.category.value = cat; jf.part_kind.value = pk; if (!jf.description.value) jf.description.value = t; jf.amount_czk.focus();
       }));
       jf.addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => {
-        const extra = { commission_id: id, estimate: type === 'est', own_work: type === 'own' };
-        if (type === 'own') { extra.category = 'prace'; jf.part_kind.value = ''; }
+        const extra = { commission_id: id, estimate: type === 'est' };
         if (type !== 'paid' && jf.file) jf.file.value = '';
         await saveCost(jf, extra); await econ();
       }); });
@@ -551,7 +548,7 @@
   const sel = (name, label, map, v) => `<label>${label}<select name="${name}">${Object.entries(map).map(([k, t]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>`;
   const today = () => new Date().toISOString().slice(0, 10);
   const costForm = (pre = {}) => `<form id="cf">${sel('category', 'Druh', CC, pre.category || 'dil')}${field('description', 'Popis', pre, 'required')}
-    <div class="grid">${field('amount_czk', 'Částka (Kč)', pre, 'inputmode="numeric"')}${field('hours', 'Hodiny práce', pre, 'inputmode="decimal"')}</div>
+    ${field('amount_czk', 'Částka (Kč)', pre, 'inputmode="numeric" required')}
     <div class="grid">${field('cost_date', 'Datum', { cost_date: today() }, 'type="date"')}${field('supplier', 'Dodavatel', pre)}</div>${field('document_ref', 'Číslo dokladu', pre)}
     <label>Fotka nebo PDF dokladu (nepovinné)<input type="file" name="file" accept="image/*,application/pdf"></label>
     <button class="btn primary block">Přidat náklad</button></form>`;
@@ -582,8 +579,6 @@
       <div class="grid"><div class="stat"><b>${czk(d.revenue)}</b>fakturováno (tržby)</div><div class="stat"><b>${czk(d.received)}</b>skutečně přijato</div>
         <div class="stat"><b>${czk(d.costs)}</b>zaplacené náklady</div><div class="stat"><b class="${d.profit < 0 ? 'neg' : ''}">${czk(d.profit)}</b>zisk před zdaněním</div></div>
       <div class="card" style="margin-top:12px"><table>
-        <tr><th>Vlastní práce${d.rate ? ` (${czk(d.rate)}/h)` : ''}</th><td>${czk(d.ownWork)} <span class="small muted">– není výdaj</span></td></tr>
-        <tr><th>Zisk po ocenění vlastní práce</th><td>${czk(d.profitAfterWork)}</td></tr>
         <tr><th>Peněžní zisk (přijato − náklady)</th><td>${czk(d.cashProfit)}</td></tr>
         <tr><th>Neuhrazené doklady</th><td>${czk(d.unpaid)}${d.overdue ? ` · <a class="warnt" href="#/faktury?status=po_splatnosti">po splatnosti ${czk(d.overdue)}</a>` : ''}</td></tr>
         <tr><th>Hodnota skladu (náklady)</th><td>${czk(d.stockValue)}</td></tr>
@@ -591,15 +586,13 @@
       <div class="card" style="margin-top:12px"><b>Cíl ${czk(d.goal)}</b><div style="height:10px;background:var(--line);border-radius:6px;margin:8px 0;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--gold)"></div></div><span class="small">${d.goalPct} % splněno</span></div>
       <div class="card" style="margin-top:12px;overflow-x:auto"><b>Po měsících</b><table class="mtab"><tr><th>Měsíc</th><td><b>Fakturováno</b></td><td><b>Přijato</b></td><td><b>Náklady</b></td><td><b>Zisk</b></td></tr>
         ${d.months.filter((m) => m.revenue || m.costs || m.received).map((m) => `<tr><th>${m.month.slice(5)}/${m.month.slice(0, 4)}</th><td>${czk(m.revenue)}</td><td>${czk(m.received)}</td><td>${czk(m.costs)}</td><td>${czk(m.profit)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Zatím žádné údaje.</td></tr>'}</table>
-        <p class="small muted">Fakturováno = vystavené faktury a dobropisy (ne zálohové) podle data vystavení – z toho se počítá cíl. Přijato = peníze podle data úhrady (zálohy, doplatky po odečtení záloh, zálohy bez dokladu). Náklady = skutečně zaplacené výdaje a nákup dílů; odhady a vlastní práce se nepočítají. Orientační přehled, rozhodující je účetnictví.</p></div>
+        <p class="small muted">Fakturováno = vystavené faktury a dobropisy (ne zálohové) podle data vystavení – z toho se počítá cíl. Přijato = peníze podle data úhrady (zálohy, doplatky po odečtení záloh, zálohy bez dokladu). Náklady = skutečně zaplacené výdaje a nákup dílů; odhady se nepočítají. Orientační přehled, rozhodující je účetnictví.</p></div>
       <div class="card" style="margin-top:12px"><b>Ziskovost zakázek</b>${d.jobs.length ? `<div class="list" style="margin-top:8px">${d.jobs.map((x) => `<a class="item" href="#/zakazky/${x.id}"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${esc(L.cstatus[x.status] || x.status)} · náklady ${czk(x.cost)} · cena ${czk(x.price)} · zisk <b class="${x.margin < 0 ? 'neg' : ''}">${czk(x.margin)}</b>${x.marginPct != null ? ` (${String(x.marginPct).replace('.', ',')} %)` : ''}${x.remaining > 0 ? ` · zbývá uhradit ${czk(x.remaining)}` : ''}</span></span></a>`).join('')}</div>` : '<p class="small muted">Náklady a faktury zapisujte v detailu zakázky.</p>'}</div>
       <div class="card" style="margin-top:12px"><b>Marže hodinek</b>${d.pieces.length ? `<div class="list" style="margin-top:8px">${d.pieces.map((x) => `<a class="item" href="#/marze/${x.id}"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${x.sold ? 'prodáno' : 'skladem'} · náklady ${czk(x.cost)} · cena ${czk(x.price)} · marže <b>${czk(x.margin)}</b>${x.marginPct != null ? ` (${x.marginPct} %)` : ''}${x.hasPurchase ? '' : ' · ⚠ chybí nákupní cena'}</span></span></a>`).join('')}</div>` : '<p class="small muted">Zapište u hodinek nákupní cenu a náklady (Hodinky → detail → Náklady a marže).</p>'}</div>
       <div class="card" style="margin-top:12px"><b>Podklady pro účetní (CSV pro Excel)</b>
         <div class="grid">${field('from', 'Od', { from: `${y}-01-01` }, 'type="date" id="ef"')}${field('to', 'Do', { to: `${y}-12-31` }, 'type="date" id="et"')}</div>
-        <div class="row"><button class="btn" data-x="naklady">Náklady</button><button class="btn" data-x="faktury">Vydané faktury</button></div></div>
-      <details style="margin-top:12px"><summary>Hodinová sazba práce</summary><form id="rf">${field('labor_rate_czk', 'Kč za hodinu (ocenění vlastní práce – není výdaj)', { labor_rate_czk: d.rate || '' }, 'inputmode="numeric"')}<button class="btn block">Uložit</button></form></details>`;
+        <div class="row"><button class="btn" data-x="naklady">Náklady</button><button class="btn" data-x="faktury">Vydané faktury</button></div></div>`;
     app.querySelectorAll('[data-x]').forEach((b) => b.addEventListener('click', () => { location.href = `/api/admin/finance/export?kind=${b.dataset.x}&from=${app.querySelector('[name=from]').value}&to=${app.querySelector('[name=to]').value}`; }));
-    app.querySelector('#rf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', 'finance/settings', formData(e.target)); toast('Uloženo'); views.ekonomika(_, q); }); });
   };
 
   views['marze/:id'] = async ({ id }) => {
@@ -608,7 +601,7 @@
       <div class="grid"><div class="stat"><b>${czk(e.total)}</b>náklady celkem</div><div class="stat"><b>${czk(e.expected)}</b>${e.sold ? `prodáno (${esc(e.saleOrder)})` : 'prodejní cena'}</div><div class="stat"><b>${czk(e.margin)}</b>marže${e.marginPct != null ? ` ${e.marginPct} %` : ''}</div>${e.ownWork ? `<div class="stat"><b>${czk(e.marginAfterWork)}</b>po ocenění vlastní práce</div>` : ''}</div>
       ${e.hasPurchase ? '' : '<div class="card warn small" style="margin-top:12px">Chybí nákupní cena hodinek – přidejte náklad druhu „Nákup hodinek“.</div>'}
       <div class="card" style="margin-top:12px"><table>${Object.entries(e.byCat).map(([k, v]) => `<tr><th>${esc(CC[k] || k)}</th><td>${czk(v)}</td></tr>`).join('')}
-        ${e.partsCost ? `<tr><th>Díly ze skladu</th><td>${czk(e.partsCost)}</td></tr>` : ''}${e.ownWork || e.hours ? `<tr><th>Vlastní práce${e.hours ? ` ${e.hours} h` : ''}${e.rate ? ` × ${czk(e.rate)}` : ''} <span class="small">(není výdaj)</span></th><td>${e.ownWork ? czk(e.ownWork) : '<span class="small muted">nastavte sazbu v Ekonomice</span>'}</td></tr>` : ''}${e.estimate ? `<tr><th>Odhad (nezapočteno)</th><td>${czk(e.estimate)}</td></tr>` : ''}</table></div>
+        ${e.partsCost ? `<tr><th>Díly ze skladu</th><td>${czk(e.partsCost)}</td></tr>` : ''}${e.ownWork ? `<tr><th>Vlastní práce (starší záznamy, není výdaj)</th><td>${czk(e.ownWork)}</td></tr>` : ''}${e.estimate ? `<tr><th>Odhad (nezapočteno)</th><td>${czk(e.estimate)}</td></tr>` : ''}</table></div>
       <h2 style="margin-top:16px">Zapsané náklady</h2><div class="list">${e.costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br><span class="small muted">${esc(CC[c.category])} · ${esc(c.cost_date)}${c.supplier ? ` · ${esc(c.supplier)}` : ''}${docTag(c)}</span></span><b>${c.amount_czk ? czk(c.amount_czk) : `${c.hours} h`}</b><button class="btn" data-del="${c.id}" aria-label="Smazat">✕</button></div>`).join('') || '<p class="muted">Zatím nic.</p>'}</div>
       ${e.parts.length ? `<h2 style="margin-top:16px">Použité díly</h2><div class="list">${e.parts.map((x) => `<div class="item"><span class="grow">${esc(x.title)} <span class="small muted">${esc(PK[x.kind])}${x.original ? ' · originál' : ''}</span></span><b>${czk((x.unit_cost_czk || 0) * (x.qty || 1))}</b></div>`).join('')}</div>` : ''}
       <details open style="margin-top:16px"><summary>Přidat náklad</summary>${costForm({ category: e.hasPurchase ? 'dil' : 'nakup' })}</details>`;
