@@ -4,6 +4,14 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/storno-oprava-odberatele
+**Hotovo:** tlačítko Storno v seznamu faktur posílalo storno bez důvodu (chyba „Vyplňte prosím důvod storna“) → dotaz na
+důvod (předvyplněno „Vystaveno omylem dvakrát“). Storno dokladu s aktivním dobropisem je blokované (nejdřív storno
+dobropisu). Nově `PUT invoices/:id/buyer` = oprava odběratele (jméno, firma, IČO, DIČ, adresa, e-mail) a splatnosti na
+vystaveném dokladu; číslo, položky a částky se nemění; historie „z → na“ (`odberatel_upraven`).
+
+---
+
 ## 2026-11-27 – Claude – claude/sprava-vydaju
 **Hotovo:** jednotná správa výdajů v celé administraci (zadání majitele 27. 11.). Migrace 0027: `costs.note`,
 `costs.updated_at`, index `documents(sale_id)`.
