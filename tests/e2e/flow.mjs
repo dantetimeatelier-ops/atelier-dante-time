@@ -392,6 +392,22 @@ try {
   const kk = kl.j.commissions.find((x) => x.id === kz.j.id);
   assert.equal(kk.customer_name, 'Instagram Zákazník'); assert.equal(kk.customer_email, null); assert.match(kk.customer_phone, /777 000 111.*@test_ig/);
   step('zakázka bez e-mailu uložena (jméno a kontakt u zakázky)');
+  // Adresa u zakázky a koncept faktury (bez čísla; po vystavení zmizí)
+  const ka = await api('PUT', `commissions/${kz.j.id}`, { contact_street: 'Testovací 1', contact_city: 'Praha', contact_zip: '11000' });
+  assert.equal(ka.s, 200, JSON.stringify(ka.j));
+  const dr = await api('POST', 'invoice-drafts', { commission_id: kz.j.id, total_czk: 7300, data: { fields: { kind: 'faktura', buyer_name: 'Instagram Zákazník', buyer_street: 'Testovací 1' }, items: [{ text: 'Renovace', qty: 1, price: 7300 }], flags: { paid: false } } });
+  assert.equal(dr.s, 200, JSON.stringify(dr.j));
+  const kl2 = await api('GET', 'commissions');
+  const kk2 = kl2.j.commissions.find((x) => x.id === kz.j.id);
+  assert.equal(kk2.invoice_draft_id, dr.j.id); assert.equal(kk2.contact_city, 'Praha');
+  const dl = await api('GET', 'invoice-drafts');
+  assert.ok(dl.j.drafts.some((x) => x.id === dr.j.id && x.total_czk === 7300));
+  const dg = await api('GET', `invoice-drafts/${dr.j.id}`);
+  assert.equal(dg.j.data.items[0].price, 7300);
+  const iv = await api('POST', 'invoices', { kind: 'faktura', channel: 'zakazka', commission_id: kz.j.id, buyer_name: 'Instagram Zákazník', buyer_street: 'Testovací 1', buyer_city: 'Praha', buyer_zip: '11000', items: [{ text: 'Renovace', qty: 1, price: 7300 }], payment_method: 'bank_transfer', draft_id: dr.j.id });
+  assert.equal(iv.s, 201, JSON.stringify(iv.j));
+  assert.ok(!(await api('GET', 'invoice-drafts')).j.drafts.some((x) => x.id === dr.j.id));
+  step('koncept faktury uložen, adresa ze zakázky, po vystavení koncept zmizel');
   const np = await api('POST', 'products', { title: 'Prim Classic Test LTD.01', brand: 'PRIM', serial_ref: '26-9.9', price_czk: 5000 });
   assert.equal(np.s, 201, JSON.stringify(np.j));
   const stockId = np.j.id;
