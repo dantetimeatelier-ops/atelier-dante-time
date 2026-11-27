@@ -39,6 +39,8 @@ Související: plán `ROADMAP.md`, rozhodnutí `DECISIONS.md`, agenti `DANTE-TIM
 
 ## Dokončeno (nejnovější nahoře)
 
+- 27. 11. Aktualizace testovacích nástrojů (Dependabot #4 → #68); oprava pole e-mail v pokladně podle nové kontroly HTML.
+- 27. 11. Stabilnější automatický test administrace (#66).
 - 27. 11. Produktový feed pro Google Nákupy `/feed/google.xml` (jen hodinky v prodeji s cenou a fotkou; zdarma).
 - 27. 11. Inzeráty: průměr pouzdra, kalibr 66 / PRIM typ 0111 a období výroby; Blanc balení sjednoceno (PR #59, #61, #63).
 - 27. 11. Limit DPH v Přehledu počítá i nahrané prodeje – stejné číslo jako Ekonomika (PR #57).

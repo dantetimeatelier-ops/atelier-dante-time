@@ -4,6 +4,11 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – večerní samostatná práce (R27)
+**Hotovo:** trvalý pokyn R27 + `docs/STAV.md`; feed Google Nákupů `/feed/google.xml` (#67); stabilita e2e (#66); nástroje z Dependabot #4 přes #68 (html-validate zakazuje `autocapitalize` u `type=email`).
+**Další krok:** komplexní kontrola – objednávky, faktury, pasy, mobil; DT Innovation.
+**Pozor na:** `docs/STAV.md` je hlavní seznam „Čeká na majitele“ – udržuj ho.
+
 ## 2026-11-27 – Claude – claude/nazvy-dt
 **Hotovo:** jednotné názvy hodinek „DT – ZNAČKA model označení“ (R26). Pravidlo `src/shop/naming.mjs` (`dtName`,
 idempotentní), použito v `productName` (web, košík, JSON-LD, popisy), při uložení hodinek v administraci, v katalogu
