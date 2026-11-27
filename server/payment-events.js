@@ -15,6 +15,14 @@ export async function applyPaymentStatus(env, order, st, origin, actor) {
       body: `<p>Brána ${actor} hlásí platbu ${st.cents / 100} ${st.currency}, objednávka čeká jinou částku. Objednávka nebyla označena jako zaplacená. Zkontrolujte ji prosím v administraci.</p>` });
     return 'mismatch';
   }
+  if (st.status === 'PAID' && st.testMode && env.SHOP_MODE === 'live') {
+    // Zkouška majitele testovací kartou na ostrém webu: nic se neprodá, nevystaví se faktura, kus se uvolní
+    if (order.status === 'awaiting_payment') await cancelOrder(env, order.id, actor);
+    await audit(env, actor, 'testovaci_platba_ok', 'order', order.id, { cents: st.cents });
+    await sendEmail(env, { to: ownerEmail(env), subject: `Test platby kartou proběhl v pořádku (${order.number})`, related: `order:${order.id}`,
+      body: `<p>Stripe potvrdil testovací platbu ${st.cents / 100} ${st.currency} za objednávku <strong>${order.number}</strong>.</p><p>Šlo o zkoušku bez skutečných peněz: objednávka se zrušila, hodinky jsou znovu v nabídce a faktura se nevystavila.</p>` });
+    return 'test';
+  }
   if (st.status === 'PAID') {
     try {
       await markPaid(env, order.id, actor, origin);

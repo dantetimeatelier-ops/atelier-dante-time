@@ -18,7 +18,7 @@ const ORIGIN = 'https://atelier-dante-time.cz';
 const set = (db, k, v) => db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(k, v);
 // Úprava dopravce v tabulce shipping_methods (jako by to majitel nastavil v administraci → Dopravci)
 const ship = (db, id, f) => { const k = Object.keys(f); db.prepare(`UPDATE shipping_methods SET ${k.map((x) => `${x} = ?`).join(', ')} WHERE id = ?`).run(...k.map((x) => (typeof f[x] === 'object' && f[x] !== null ? JSON.stringify(f[x]) : f[x])), id); };
-const STRIPE_TEST = { PAYMENT_GATEWAY: 'stripe', STRIPE_SECRET_KEY: 'sk_test_x', STRIPE_WEBHOOK_SECRET: 'whsec_test' };
+const STRIPE_TEST = { PAYMENT_GATEWAY: 'stripe', STRIPE_SECRET_KEY: 'sk_test_x', STRIPE_WEBHOOK_SECRET: 'whsec_test', ADMIN_TEST: true }; // ADMIN_TEST = nakupuje přihlášený majitel (jinak testovací klíč na ostrém webu nefunguje)
 const customer = { name: 'Jana Testovací', email: 'jana@example.cz', phone: '+420777000111', street: 'Dlouhá 12/3a', city: 'Praha', zip: '11000', terms: true };
 
 test('migrace 0024 jen přidává nastavení (žádná data se nemažou)', () => {
@@ -143,7 +143,9 @@ test('platba kartou: zobrazí se jen se skutečně nastavenou bránou, ostrý kl
   const P = await import('../../server/payments.js');
   assert.equal(P.cardPaymentsAvailable({}), false);
   assert.equal(P.cardPaymentsAvailable({ STRIPE_SECRET_KEY: 'sk_test_x' }), false); // bez klíče pro oznámení nefunguje potvrzení platby
-  assert.equal(P.cardPaymentsAvailable({ ...STRIPE_TEST, SHOP_MODE: 'live' }), true);
+  assert.equal(P.cardPaymentsAvailable(STRIPE_TEST), true); // zkušební verze webu
+  assert.equal(P.cardPaymentsAvailable({ ...STRIPE_TEST, SHOP_MODE: 'live', ADMIN_TEST: false }), false); // testovací klíč na ostrém webu zákazníci nevidí
+  assert.equal(P.cardPaymentsAvailable({ ...STRIPE_TEST, SHOP_MODE: 'live', ADMIN_TEST: true }), true); // jen přihlášený majitel
   assert.equal(P.cardPaymentsAvailable({ ...STRIPE_TEST, STRIPE_SECRET_KEY: 'sk_live_x', SHOP_MODE: 'live' }), false); // ostrý klíč bez souhlasu majitele
   assert.equal(P.cardPaymentsAvailable({ ...STRIPE_TEST, STRIPE_SECRET_KEY: 'sk_live_x', SHOP_MODE: 'live', PAYMENTS_LIVE: 'true' }), true);
   assert.equal(P.cardPaymentsAvailable({ ...STRIPE_TEST, SHOP_MODE: 'live', PAYMENTS_LIVE: 'true' }), false); // v ostrém provozu jen ostrý klíč
@@ -398,4 +400,36 @@ test('automatický štítek Zásilkovny po zaplacení: vznikne číslo zásilky,
   assert.equal(calls, 1);
   const r = db.prepare('SELECT status, tracking_number FROM orders WHERE id = ?').get(o.id);
   assert.deepEqual([r.status, r.tracking_number], ['paid', 'Z 493 0000 111']);
+});
+
+test('zkouška Stripe na ostrém webu: testovací klíč vidí jen přihlášený majitel; zaplacená testovací objednávka se zruší bez faktury', async () => {
+  const P = await import('../../server/payments.js');
+  const { checkoutEnv } = await import('../../server/auth.js');
+  const { shopConfig, createOrder } = await import('../../server/orders.js');
+  const { applyPaymentStatus } = await import('../../server/payment-events.js');
+  const { sha256Hex } = await import('../../server/db.js');
+  const { db, env } = makeEnv({ ...STRIPE_TEST, SHOP_MODE: 'live' }); // jen testovací klíč na ostrém webu
+  // Zákazník (bez přihlášení) platbu kartou nevidí a nemůže ji zvolit
+  const pub = await checkoutEnv(env, new Request(ORIGIN + '/api/config'));
+  assert.equal(P.cardPaymentsAvailable(pub), false);
+  assert.ok(!(await shopConfig(pub, 'cs', { country: 'CZ', itemsTotal: 9000 })).payment.some((p) => p.id === 'card'));
+  // Přihlášený majitel ji vidí
+  db.exec("INSERT INTO admin_users (id, email, password_hash, password_salt, password_iterations, totp_secret) VALUES ('u1', 'majitel@example.cz', 'x', 'x', 1, 'x')");
+  const token = 'a'.repeat(40);
+  db.prepare('INSERT INTO admin_sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)').run(await sha256Hex(token), 'u1', new Date(Date.now() + 3600e3).toISOString());
+  const adm = await checkoutEnv(env, new Request(ORIGIN + '/api/config', { headers: { Cookie: `__Host-dt_admin=${token}` } }));
+  assert.equal(P.cardPaymentsAvailable(adm), true);
+  // Ostrý klíč se tím nikdy neodemkne
+  assert.equal(P.cardPaymentsAvailable({ ...adm, STRIPE_SECRET_KEY: 'sk_live_x' }), false);
+  // Testovací nákup → Stripe potvrdí (livemode=false) → objednávka zrušena, kus zpět v nabídce, žádná faktura
+  db.exec("INSERT INTO products (id, slug, title, status, price_czk) VALUES ('t1', 't1', 'Prim T', 'available', 9000)");
+  const orig = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ id: 'cs_test_T', url: 'https://checkout.stripe.com/c/pay/cs_test_T' }));
+  try { await createOrder(adm, { ...customer, country: 'CZ', shipping: 'osobni', payment: 'card', items: ['t1'], lang: 'cs' }, ORIGIN); } finally { globalThis.fetch = orig; }
+  const o = db.prepare("SELECT * FROM orders WHERE payment_ref = 'cs_test_T'").get();
+  assert.equal(await applyPaymentStatus(env, o, { status: 'PAID', cents: o.total * 100, currency: 'CZK', testMode: true }, ORIGIN, 'stripe'), 'test');
+  assert.equal(db.prepare('SELECT status FROM orders WHERE id=?').get(o.id).status, 'cancelled');
+  assert.equal(db.prepare("SELECT status FROM products WHERE id='t1'").get().status, 'available');
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM invoices WHERE order_id = ?').get(o.id).n, 0);
+  assert.ok(db.prepare("SELECT 1 FROM emails WHERE subject LIKE 'Test platby kartou proběhl%'").get());
 });

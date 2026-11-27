@@ -87,6 +87,20 @@ export async function requireAdmin(env, request) {
   return row;
 }
 
+/** Je požadavek od přihlášeného majitele? Jen ke čtení (bez výjimky), nic nepovoluje kromě zkoušky platby kartou. */
+export async function isAdminRequest(env, request) {
+  const token = readCookie(request);
+  if (!token || !/^[A-Za-z0-9_-]{30,60}$/.test(token)) return false;
+  const row = await env.DB.prepare('SELECT 1 AS ok FROM admin_sessions WHERE token_hash = ? AND expires_at > ?').bind(await sha256Hex(token), now()).first();
+  return Boolean(row);
+}
+
+/** Prostředí pro pokladnu: majitel přihlášený do administrace smí na ostrém webu vyzkoušet testovací platbu Stripe. */
+export async function checkoutEnv(env, request) {
+  if (env.SHOP_MODE !== 'live' || !/^(sk|rk)_test_/.test(String(env.STRIPE_SECRET_KEY || '').trim()) || env.PAYMENTS_LIVE === 'true') return env;
+  return { ...env, ADMIN_TEST: await isAdminRequest(env, request) };
+}
+
 /** Omezení pokusů o přihlášení: 5 neúspěšných za 15 minut z jedné adresy. */
 export async function checkLoginRate(env, request) {
   const ip = clientIp(request);

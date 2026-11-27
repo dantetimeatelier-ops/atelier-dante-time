@@ -2,8 +2,10 @@ import { json, handle, readJson, assertSameOrigin, clientIp, HttpError } from '.
 import { rateLimit } from '../../server/db.js';
 import { isBot } from '../../server/validate.js';
 import { createOrder } from '../../server/orders.js';
+import { checkoutEnv } from '../../server/auth.js';
 
-export const onRequestPost = handle(async ({ env, request }) => {
+export const onRequestPost = handle(async ({ env: baseEnv, request }) => {
+  const env = await checkoutEnv(baseEnv, request);
   assertSameOrigin(request);
   const body = await readJson(request);
   if (isBot(body)) throw new HttpError('Požadavek byl odmítnut', 400);

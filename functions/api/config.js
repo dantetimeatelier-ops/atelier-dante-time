@@ -1,7 +1,9 @@
 import { json, handle } from '../../server/http.js';
 import { shopConfig, cartFacts } from '../../server/orders.js';
+import { checkoutEnv } from '../../server/auth.js';
 
-export const onRequestGet = handle(async ({ env, request }) => {
+export const onRequestGet = handle(async ({ env: baseEnv, request }) => {
+  const env = await checkoutEnv(baseEnv, request);
   const u = new URL(request.url);
   const lang = u.searchParams.get('lang') === 'en' ? 'en' : 'cs';
   const country = (u.searchParams.get('country') || 'CZ').toUpperCase();
