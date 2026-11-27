@@ -4,6 +4,13 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/zakazka-bez-emailu
+**Hotovo:** zakázku lze uložit bez e-mailu a telefonu (zákazníci z Instagramu). Migrace 0021: `commissions.contact_name`,
+`contact_info`. S e-mailem se zákazník dál ukládá do `customers`; bez něj zůstane jméno a kontakt (telefon, Instagram) u zakázky.
+Výpis zakázek bere `COALESCE(c.name, k.contact_name)`. Ověřeno v e2e testu.
+
+---
+
 ## 2026-11-27 – Claude – claude/hero-tablet
 **Hotovo:** úvodní fotka na tabletech. 881–1280 px (iPad na šířku, menší notebooky): fotka jen v pravých 64 % s maskou do tmy,
 text vlevo ji nepřekrývá, nižší výška. 600–880 px (iPad na výšku, rozdělená obrazovka): široká fotka 16:9 s celou scénou
