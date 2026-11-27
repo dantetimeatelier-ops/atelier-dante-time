@@ -426,6 +426,44 @@ try {
   assert.equal(iv.s, 201, JSON.stringify(iv.j));
   assert.ok(!(await api('GET', 'invoice-drafts')).j.drafts.some((x) => x.id === dr.j.id));
   step('koncept faktury uložen, adresa ze zakázky, po vystavení koncept zmizel');
+  // Duplicitní faktura, částečné platby, oprava platby, storno s důvodem, detail dokladu
+  const dup1 = await api('POST', 'invoices', { kind: 'faktura', channel: 'osobne', buyer_name: 'Duplicitní Zákazník', items: [{ text: 'Sestava', qty: 1, price: 13000 }], send_mode: 'ulozit' });
+  assert.equal(dup1.s, 201, JSON.stringify(dup1.j));
+  const dup2 = await api('POST', 'invoices', { kind: 'faktura', channel: 'osobne', buyer_name: 'Duplicitní Zákazník', items: [{ text: 'Sestava', qty: 1, price: 13000 }], send_mode: 'ulozit' });
+  assert.equal(dup2.s, 409); assert.equal(dup2.j.code, 'duplicate');
+  const dup3 = await api('POST', 'invoices', { kind: 'faktura', channel: 'osobne', buyer_name: 'Duplicitní Zákazník', items: [{ text: 'Sestava', qty: 1, price: 13000 }], send_mode: 'ulozit', allow_duplicate: true });
+  assert.equal(dup3.s, 201);
+  assert.equal((await api('POST', `invoices/${dup3.j.id}/cancel`, {})).s, 400, 'storno bez důvodu nejde');
+  assert.equal((await api('POST', `invoices/${dup3.j.id}/cancel`, { reason: 'vystaveno omylem dvakrát' })).s, 200);
+  const p1 = await api('POST', `invoices/${dup1.j.id}/payments`, { amount: 5000, paid_on: new Date().toISOString().slice(0, 10), method: 'cash', note: 'záloha' });
+  assert.equal(p1.s, 201); assert.equal(p1.j.state, 'castecne');
+  const p2 = await api('POST', `invoices/${dup1.j.id}/payments`, { amount: 50000 });
+  assert.equal(p2.j.state, 'preplaceno');
+  assert.equal((await api('POST', `invoice-payments/${p2.j.id}/cancel`, { reason: 'překlep' })).s, 200);
+  let det = (await api('GET', `invoices/${dup1.j.id}`)).j;
+  assert.deepEqual([det.state, det.paid, det.remaining, det.payments.length], ['castecne', 5000, 8000, 2]);
+  assert.ok(det.history.some((h) => h.action === 'platba_zrusena'));
+  const dupList = (await api('GET', 'invoices?q=Duplicitn')).j;
+  // (souhrn pohledávek počítá jen ostré doklady – v testovacím režimu kontrolujeme jednotlivé doklady)
+  assert.equal(dupList.invoices.find((x) => x.id === dup1.j.id).remaining, 8000, 'zbývá jen rozdíl po částečné platbě');
+  assert.ok(dupList.invoices.find((x) => x.id === dup3.j.id).cancelled_at, 'duplicita stornována');
+  await page.goto(`${BASE}/admin/#/faktury/${dup1.j.id}`);
+  await page.getByText('ČÁSTEČNĚ UHRAZENO', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Zapsat platbu' }).click(); // předvyplněný doplatek 8 000
+  await page.getByText('UHRAZENO', { exact: true }).waitFor();
+  await page.goto(`${BASE}/admin/#/faktury/${dup3.j.id}`);
+  await page.getByText('STORNOVÁNO', { exact: true }).waitFor(); await page.getByText('vystaveno omylem dvakrát').first().waitFor();
+  step('duplicita zachycena, částečná platba, oprava platby, doplatek, storno s důvodem');
+  // Bezpečné mazání: zakázka s fakturou ne (archiv), prázdná ano; historie změn
+  assert.equal((await api('DELETE', `commissions/${kz.j.id}`)).s, 409, 'zakázku s fakturou smazat nejde');
+  const empty = await api('POST', 'commissions', { type: 'servis', name: 'Omylem Založená' });
+  assert.equal((await api('DELETE', `commissions/${empty.j.id}`)).s, 200);
+  assert.ok(!(await api('GET', 'commissions')).j.commissions.some((x) => x.id === empty.j.id));
+  const hist = (await api('GET', `history/commission/${kz.j.id}`)).j.history;
+  assert.ok(hist.some((h) => h.action === 'zakazka_vytvorena'));
+  await page.goto(`${BASE}/admin/#/zakazky?f=vse&q=Instagram`);
+  await page.locator('.item', { hasText: 'Instagram Zákazník' }).first().waitFor();
+  step('mazání jen bez dokladů, filtr a hledání zakázek, historie');
   const np = await api('POST', 'products', { title: 'Prim Classic Test LTD.01', brand: 'PRIM', serial_ref: '26-9.9', price_czk: 5000 });
   assert.equal(np.s, 201, JSON.stringify(np.j));
   const stockId = np.j.id;
@@ -439,7 +477,8 @@ try {
   await page.locator('input[name=buyer_email]').fill('vinted@example.com');
   await page.locator('input[name=paid]').check();
   await page.getByRole('button', { name: 'Vystavit fakturu' }).click();
-  await page.getByRole('heading', { name: 'Faktury' }).waitFor();
+  await page.getByRole('heading', { name: /^Faktura DT-\d{4}-\d{4}$/ }).waitFor(); // po vystavení detail dokladu
+  await page.getByText('UHRAZENO', { exact: true }).waitFor();
   const list = (await api('GET', 'invoices?channel=vinted')).j.invoices;
   assert.equal(list.length, 1); assert.match(list[0].number, /^DT-\d{4}-\d{4}$/); assert.equal(list[0].total, 5150);
   assert.equal((await api('GET', `products/${stockId}`)).j.product.status, 'sold', 'hodinky musí být prodané');

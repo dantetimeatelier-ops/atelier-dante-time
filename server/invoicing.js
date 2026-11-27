@@ -10,6 +10,7 @@ import { METAL, formatCzk } from '../src/shop/format.mjs';
 import { INVOICE_KINDS, SALE_CHANNELS, INVOICE_PAY, invoiceNumber, invoiceVs, pragueYear, invoiceTotals } from '../src/shop/invoice.mjs';
 import { createFromProduct, addEvent } from './passport.js';
 import { createManual as createInspection } from './warranty.js';
+import { recordInitialPayment, paidSum, payState, dueOf, listPayments, STATE_LABEL } from './invoice-payments.js';
 
 /** Tržby = faktury a dobropisy (ne zálohové faktury), nestornované, ostrý režim. SQL podmínka pro tabulku invoices. */
 export const REVENUE_SQL = "cancelled_at IS NULL AND kind <> 'zalohova'";
@@ -49,6 +50,7 @@ export async function createInvoice(env, d) {
   };
   const keys = Object.keys(inv);
   await env.DB.prepare(`INSERT INTO invoices (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`).bind(...keys.map((k) => inv[k])).run();
+  await recordInitialPayment(env, inv, d.actor || 'system'); // uhrazeno už při vystavení → zápis platby
   return inv;
 }
 
@@ -103,6 +105,14 @@ export async function issueManual(env, b, actor, origin = SITE.origin) {
     if (!cashDeposit) throw new HttpError('Zakázka nemá žádnou neodečtenou zálohu bez dokladu');
   }
   if ((advance ? advance.total : 0) + cashDeposit > invoiceTotals(lines).total) throw new HttpError('Záloha je vyšší než faktura');
+  // Ochrana proti omylem vystavené duplicitě (stejný odběratel a částka do 30 dnů, nebo druhá faktura k téže zakázce)
+  if (!(b.allow_duplicate === true || b.allow_duplicate === 'true')) {
+    const total = invoiceTotals(lines).total;
+    const since = new Date(Date.now() - 30 * 86400000).toISOString();
+    const dup = await env.DB.prepare("SELECT number, issued_at, total FROM invoices WHERE cancelled_at IS NULL AND kind = ? AND ((lower(buyer_name) = lower(?) AND total = ? AND issued_at > ?) OR (? IS NOT NULL AND commission_id = ? AND kind = 'faktura')) ORDER BY issued_at DESC LIMIT 1")
+      .bind(kind, String(b.buyer_name || '').trim(), total, since, b.commission_id || null, b.commission_id || null).first();
+    if (dup) throw new HttpError(`Podobný doklad už existuje: ${dup.number} ze dne ${new Date(dup.issued_at).toLocaleDateString('cs-CZ', { timeZone: 'Europe/Prague' })} na ${formatCzk(dup.total)}. Opravdu vystavit další?`, 409, { code: 'duplicate', number: dup.number });
+  }
   // Ochrana unikátního kusu: hodinky se zaberou v jednom kroku DŘÍV, než vznikne doklad. Pokud je mezitím
   // rezervovala objednávka z e-shopu nebo je někdo prodal, prodej se nepovolí (nikdy dvojí prodej).
   let claimed = null;
@@ -131,7 +141,7 @@ export async function issueManual(env, b, actor, origin = SITE.origin) {
     due_date: paid ? null : new Date(Date.now() + dueDays * 86400000).toISOString(), note: str(b.note, { max: 500 }),
     advance_deducted: (advance ? advance.total : 0) + cashDeposit, related_invoice_id: advance?.id || null,
     product_id: product?.id || null, watch_model: str(b.watch_model, { max: 200 }) || product?.title || null,
-    serial_ref: str(b.serial_ref, { max: 120 }) || product?.serial_ref || null,
+    serial_ref: str(b.serial_ref, { max: 120 }) || product?.serial_ref || null, actor,
   });
   } catch (e) { await release(); throw e; }
   if (inv.total - inv.advance_deducted < 0) throw new HttpError('Záloha je vyšší než faktura');
@@ -190,7 +200,7 @@ export async function creditNote(env, id, b, actor) {
     buyer_street: orig.buyer_street, buyer_city: orig.buyer_city, buyer_zip: orig.buyer_zip, buyer_email: orig.buyer_email,
     items: [{ text: `Oprava faktury ${orig.number}: ${reason}`, qty: 1, price: -amount }],
     payment_method: orig.payment_method, related_invoice_id: orig.id, product_id: orig.product_id, watch_model: orig.watch_model, serial_ref: orig.serial_ref,
-    note: `Opravný doklad k faktuře ${orig.number}`, paid_at: b.refunded ? now() : null,
+    note: `Opravný doklad k faktuře ${orig.number}`, paid_at: b.refunded ? now() : null, actor,
   });
   if (amount === left && orig.product_id && b.restock !== false && b.restock !== 'false') {
     await env.DB.prepare("UPDATE products SET status = 'available', sold_at = NULL, updated_at = ? WHERE id = ? AND status = 'sold'").bind(now(), orig.product_id).run();
@@ -200,11 +210,18 @@ export async function creditNote(env, id, b, actor) {
 }
 
 /** Storno (chybně vystavený doklad). Hodinky prodané touto fakturou se vrátí na sklad. */
-export async function cancelInvoice(env, id, actor) {
+export async function cancelInvoice(env, id, actor, reason) {
   const inv = await env.DB.prepare('SELECT * FROM invoices WHERE id = ?').bind(id).first();
   if (!inv || inv.cancelled_at) return;
   if (inv.order_id && inv.kind === 'faktura') throw new HttpError('Fakturu z e-shopu opravte dobropisem');
-  await env.DB.prepare('UPDATE invoices SET cancelled_at = ? WHERE id = ? AND cancelled_at IS NULL').bind(now(), id).run();
+  const why = str(reason, { max: 300, required: true, name: 'důvod storna' });
+  const paid = await paidSum(env, id);
+  if (paid) throw new HttpError(`Doklad má zaznamenané platby (${formatCzk(paid)}). Pokud jde o chybně zadanou platbu, nejdřív ji v detailu dokladu zrušte; pokud peníze opravdu přišly, vystavte dobropis.`);
+  if (inv.kind === 'zalohova') {
+    const used = await env.DB.prepare("SELECT number FROM invoices WHERE related_invoice_id = ? AND kind = 'faktura' AND cancelled_at IS NULL").bind(id).first();
+    if (used) throw new HttpError(`Záloha je vyúčtovaná ve faktuře ${used.number} – nejdřív stornujte tu`);
+  }
+  await env.DB.prepare('UPDATE invoices SET cancelled_at = ?, cancelled_by = ?, cancel_reason = ? WHERE id = ? AND cancelled_at IS NULL').bind(now(), actor, why, id).run();
   await env.DB.prepare("UPDATE approvals SET status = 'zamitnuto', decided_at = ?, decided_by = ? WHERE kind = 'faktura_odeslani' AND payload = ? AND status = 'ceka'").bind(now(), actor, id).run();
   if (inv.kind === 'faktura' && inv.product_id) {
     await env.DB.prepare("UPDATE products SET status = 'available', sold_at = NULL, updated_at = ? WHERE id = ? AND status = 'sold'").bind(now(), inv.product_id).run();
@@ -213,7 +230,7 @@ export async function cancelInvoice(env, id, actor) {
   if (inv.kind === 'zalohova' && inv.product_id) {
     await env.DB.prepare("UPDATE products SET status = 'available', updated_at = ? WHERE id = ? AND status = 'reserved' AND reserved_order_id IS NULL").bind(now(), inv.product_id).run();
   }
-  await audit(env, actor, 'faktura_stornovana', 'invoice', id, { number: inv.number });
+  await audit(env, actor, 'faktura_stornovana', 'invoice', id, { number: inv.number, reason: why });
 }
 
 /** Pošle doklad zákazníkovi e-mailem (odkaz na fakturu, která jde uložit do PDF). */
@@ -246,7 +263,10 @@ export async function listInvoices(env, f = {}) {
   if (/^\d{4}$/.test(f.year || '')) { where.push('substr(issued_at,1,4) = ?'); binds.push(f.year); }
   if (SALE_CHANNELS[f.channel]) { where.push('channel = ?'); binds.push(f.channel); }
   if (INVOICE_KINDS[f.kind]) { where.push('kind = ?'); binds.push(f.kind); }
+  const PAID = '(SELECT COALESCE(SUM(p.amount_czk),0) FROM invoice_payments p WHERE p.invoice_id = invoices.id AND p.cancelled_at IS NULL)';
   if (f.status === 'neuhrazeno') where.push("paid_at IS NULL AND cancelled_at IS NULL AND kind <> 'dobropis'");
+  if (f.status === 'castecne') where.push(`paid_at IS NULL AND cancelled_at IS NULL AND kind <> 'dobropis' AND ${PAID} > 0`);
+  if (f.status === 'preplaceno') where.push(`cancelled_at IS NULL AND kind <> 'dobropis' AND ${PAID} > total - advance_deducted`);
   if (f.status === 'uhrazeno') where.push('paid_at IS NOT NULL AND cancelled_at IS NULL');
   if (f.status === 'storno') where.push('cancelled_at IS NOT NULL');
   if (f.status === 'po_splatnosti') { where.push("paid_at IS NULL AND cancelled_at IS NULL AND kind <> 'dobropis' AND due_date IS NOT NULL AND due_date < ?"); binds.push(now()); }
@@ -254,20 +274,58 @@ export async function listInvoices(env, f = {}) {
   if (f.commission_id) { where.push('commission_id = ?'); binds.push(String(f.commission_id).slice(0, 40)); }
   const sql = `SELECT id, number, public_token, kind, channel, source, buyer_name, buyer_company, buyer_email, total, advance_deducted, issued_at, due_date, paid_at, cancelled_at, sent_at, mode, order_id, commission_id, related_invoice_id, product_id, watch_model, serial_ref, payment_method,
     (SELECT 1 FROM approvals a WHERE a.kind = 'faktura_odeslani' AND a.payload = invoices.id AND a.status = 'ceka') AS awaiting_send,
-    (SELECT number FROM commissions k WHERE k.id = invoices.commission_id) AS commission_number
+    (SELECT number FROM commissions k WHERE k.id = invoices.commission_id) AS commission_number, ${PAID} AS paid_sum, cancel_reason
     FROM invoices ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY issued_at DESC LIMIT 500`;
   const { results } = await env.DB.prepare(sql).bind(...binds).all();
   const live = results.filter((r) => r.mode === 'live' && !r.cancelled_at);
   const revenue = live.filter((r) => r.kind !== 'zalohova').reduce((s, r) => s + r.total, 0);
-  const unpaid = live.filter((r) => !r.paid_at && r.kind !== 'dobropis').reduce((s, r) => s + r.total - (r.advance_deducted || 0), 0);
   const t = now();
-  const overdue = live.filter((r) => !r.paid_at && r.kind !== 'dobropis' && r.due_date && r.due_date < t).reduce((s, r) => s + r.total - (r.advance_deducted || 0), 0);
-  for (const r of results) r.overdue = !r.paid_at && !r.cancelled_at && r.kind !== 'dobropis' && r.due_date && r.due_date < t ? 1 : 0;
-  return { invoices: results, revenue, unpaid, overdue, kinds: INVOICE_KINDS, channels: SALE_CHANNELS, pay: INVOICE_PAY };
+  for (const r of results) {
+    r.remaining = Math.max(0, dueOf(r) - (r.paid_sum || 0)); // zbývá uhradit
+    r.overpaid = r.kind !== 'dobropis' ? Math.max(0, (r.paid_sum || 0) - dueOf(r)) : 0;
+    r.state = payState(r, r.paid_sum || 0); r.state_label = STATE_LABEL[r.state];
+    r.overdue = !r.paid_at && !r.cancelled_at && r.kind !== 'dobropis' && r.due_date && r.due_date < t ? 1 : 0;
+  }
+  const unpaid = live.filter((r) => !r.paid_at && r.kind !== 'dobropis').reduce((s, r) => s + r.remaining, 0);
+  const overdue = live.filter((r) => r.overdue).reduce((s, r) => s + r.remaining, 0);
+  return { invoices: results, revenue, unpaid, overdue, overpaid: live.reduce((s, r) => s + r.overpaid, 0), kinds: INVOICE_KINDS, channels: SALE_CHANNELS, pay: INVOICE_PAY };
 }
 
 /** Neuhrazené doklady po splatnosti (ostrý provoz) – pro denní souhrn majiteli. Zákazníkům se nic neposílá. */
 export async function overdueInvoices(env, at = now()) {
-  const { results } = await env.DB.prepare("SELECT i.id, i.number, i.kind, i.buyer_name, i.buyer_company, i.total, i.advance_deducted, i.due_date, i.sent_at, (SELECT number FROM commissions k WHERE k.id = i.commission_id) AS commission_number FROM invoices i WHERE i.cancelled_at IS NULL AND i.paid_at IS NULL AND i.kind <> 'dobropis' AND i.mode = 'live' AND i.due_date IS NOT NULL AND i.due_date < ? ORDER BY i.due_date").bind(at).all();
-  return results.map((r) => ({ ...r, due: r.total - (r.advance_deducted || 0), days: Math.floor((Date.parse(at) - Date.parse(r.due_date)) / 86400000) }));
+  const { results } = await env.DB.prepare("SELECT i.id, i.number, i.kind, i.buyer_name, i.buyer_company, i.total, i.advance_deducted, i.due_date, i.sent_at, (SELECT number FROM commissions k WHERE k.id = i.commission_id) AS commission_number, (SELECT COALESCE(SUM(p.amount_czk),0) FROM invoice_payments p WHERE p.invoice_id = i.id AND p.cancelled_at IS NULL) AS paid_sum FROM invoices i WHERE i.cancelled_at IS NULL AND i.paid_at IS NULL AND i.kind <> 'dobropis' AND i.mode = 'live' AND i.due_date IS NOT NULL AND i.due_date < ? ORDER BY i.due_date").bind(at).all();
+  return results.map((r) => ({ ...r, due: r.total - (r.advance_deducted || 0) - (r.paid_sum || 0), days: Math.floor((Date.parse(at) - Date.parse(r.due_date)) / 86400000) }));
+}
+
+/** Detail dokladu: položky, platby, navazující doklady a historie změn. */
+export async function invoiceDetail(env, id) {
+  const inv = await env.DB.prepare('SELECT * FROM invoices WHERE id = ?').bind(id).first();
+  if (!inv) throw new HttpError('Doklad nenalezen', 404);
+  const payments = await listPayments(env, id);
+  const paid = payments.filter((p) => !p.cancelled_at).reduce((a, p) => a + p.amount_czk, 0);
+  const { results: related } = await env.DB.prepare('SELECT id, number, kind, total, issued_at, cancelled_at FROM invoices WHERE (related_invoice_id = ? OR id = ?) AND id <> ? ORDER BY issued_at').bind(id, inv.related_invoice_id || '', id).all();
+  const { results: history } = await env.DB.prepare("SELECT at AS created_at, actor, action, details FROM audit_log WHERE entity = 'invoice' AND entity_id = ? ORDER BY id DESC LIMIT 50").bind(id).all();
+  const commission = inv.commission_id ? await env.DB.prepare('SELECT id, number FROM commissions WHERE id = ?').bind(inv.commission_id).first() : null;
+  const due = dueOf(inv);
+  return {
+    invoice: { ...inv, items: JSON.parse(inv.items || '[]') }, payments, paid, due,
+    remaining: inv.kind === 'dobropis' ? Math.min(0, due - paid) : Math.max(0, due - paid),
+    overpaid: inv.kind === 'dobropis' ? 0 : Math.max(0, paid - due),
+    state: payState(inv, paid), state_label: STATE_LABEL[payState(inv, paid)], related, history, commission,
+    kinds: INVOICE_KINDS, channels: SALE_CHANNELS, pay: INVOICE_PAY,
+  };
+}
+
+/** Kopie dokladu jako nový koncept (bez čísla) – např. opakovaná zakázka nebo oprava po stornu. */
+export async function copyToDraft(env, id, actor) {
+  const inv = await env.DB.prepare('SELECT * FROM invoices WHERE id = ?').bind(id).first();
+  if (!inv) throw new HttpError('Doklad nenalezen', 404);
+  if (inv.kind === 'dobropis') throw new HttpError('Dobropis nelze kopírovat');
+  const items = JSON.parse(inv.items || '[]').map((i) => ({ text: i.text, qty: i.qty || 1, price: i.price }));
+  const fields = { kind: inv.kind, channel: inv.channel, buyer_name: inv.buyer_name, buyer_email: inv.buyer_email || '', buyer_street: inv.buyer_street || '', buyer_city: inv.buyer_city || '', buyer_zip: inv.buyer_zip || '', buyer_company: inv.buyer_company || '', buyer_ico: inv.buyer_ico || '', payment_method: inv.payment_method, note: inv.note || '' };
+  const draftId = randomId();
+  await env.DB.prepare('INSERT INTO invoice_drafts (id, commission_id, buyer_name, total_czk, data) VALUES (?, ?, ?, ?, ?)')
+    .bind(draftId, inv.commission_id || null, inv.buyer_name, inv.total, JSON.stringify({ fields, items, flags: { paid: false, inspection: false } })).run();
+  await audit(env, actor, 'faktura_zkopirovana', 'invoice', id, { number: inv.number, draft: draftId });
+  return { draft_id: draftId };
 }

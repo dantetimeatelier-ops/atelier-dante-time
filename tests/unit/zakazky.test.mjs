@@ -16,6 +16,13 @@ function makeEnv(extra = {}) {
 }
 const Y = String(new Date().getUTCFullYear());
 const ORIGIN = 'https://atelier-dante-time.cz';
+// Úhrada dokladu přes evidenci plateb (zdroj pravdy pro „přijato“ od migrace 0025)
+async function payInvoice(env, id, iso) {
+  const INV = await import('../../server/invoicing.js');
+  const P = await import('../../server/invoice-payments.js');
+  const d = await INV.invoiceDetail(env, id);
+  await P.addPayment(env, id, { amount: d.remaining, paid_on: String(iso).slice(0, 10) }, 'test');
+}
 
 test('migrace 0022: nové sloupce, výchozí vypnuté automatické odesílání, dřívější „jen hodiny“ = vlastní práce', () => {
   const { db } = makeEnv();
@@ -68,7 +75,7 @@ test('zakázka: náklady, přiřazení výdaje, záloha (faktura i hotově), vy�
   // Zálohová faktura 3 000 Kč → uhrazena
   const adv = await INV.issueManual(env, { kind: 'zalohova', commission_id: 'k1', buyer_name: 'Pavel Testovací', items: [{ text: 'Záloha', qty: 1, price: 3000 }], send_mode: 'ulozit' }, 'test', ORIGIN);
   assert.equal(adv.channel, 'osobne'); assert.equal(adv.commission_id, 'k1');
-  db.prepare('UPDATE invoices SET paid_at = ? WHERE id = ?').run(`${Y}-04-01T10:00:00.000Z`, adv.id);
+  await payInvoice(env, adv.id, `${Y}-04-01T10:00:00.000Z`);
   e = await FIN.commissionEconomics(env, 'k1');
   assert.equal(e.received, 5000); assert.equal(e.invoiced, 0); assert.equal(e.price, 13000); // záloha není tržba
 
@@ -81,7 +88,7 @@ test('zakázka: náklady, přiřazení výdaje, záloha (faktura i hotově), vy�
   assert.equal(e.price, 13000); assert.equal(e.priceSource, 'faktura'); assert.equal(e.invoiced, 13000);
   assert.equal(e.received, 5000); assert.equal(e.remaining, 8000); assert.equal(e.depositCashLeft, 0);
   await assert.rejects(() => INV.issueManual(env, { commission_id: 'k1', buyer_name: 'P', items: [{ text: 'x', price: 100 }], deduct_cash_deposit: true }, 'test', ORIGIN), /neodečtenou zálohu/);
-  db.prepare('UPDATE invoices SET paid_at = ? WHERE id = ?').run(`${Y}-05-02T10:00:00.000Z`, fin.id);
+  await payInvoice(env, fin.id, `${Y}-05-02T10:00:00.000Z`);
   e = await FIN.commissionEconomics(env, 'k1');
   assert.equal(e.received, 13000); assert.equal(e.remaining, 0); assert.equal(e.profit, 7800);
 
@@ -125,7 +132,7 @@ test('faktura: jen uložit / schválit ručně / odeslat ihned – automatické 
   const INV = await import('../../server/invoicing.js');
   const { db, env } = makeEnv();
   const mails = () => db.prepare('SELECT to_addr, subject, status FROM emails').all();
-  const base = { buyer_name: 'Jana Testovací', buyer_email: 'jana@example.cz', items: [{ text: 'Servis', price: 1500 }] };
+  const base = { buyer_name: 'Jana Testovací', buyer_email: 'jana@example.cz', items: [{ text: 'Servis', price: 1500 }], allow_duplicate: true }; // test režimů odeslání – opakované doklady záměrně
   // 1) jen uložit
   const a = await INV.issueManual(env, { ...base, send_mode: 'ulozit' }, 't', ORIGIN);
   assert.equal(a.sendMode, 'ulozit'); assert.equal(mails().length, 0);
@@ -154,7 +161,7 @@ test('faktura: jen uložit / schválit ručně / odeslat ihned – automatické 
   // ruční schválení i při zapnutém nastavení; storno žádost zamítne
   const s = await INV.issueManual(env, { ...base, send_mode: 'schvalit' }, 't', ORIGIN);
   assert.equal(s.sendMode, 'schvalit'); assert.equal(mails().length, 2);
-  await INV.cancelInvoice(env, s.id, 't');
+  await INV.cancelInvoice(env, s.id, 't', 'test storna');
   assert.equal(db.prepare('SELECT status FROM approvals WHERE payload = ?').get(s.id).status, 'zamitnuto');
   await assert.rejects(() => INV.sendInvoice(env, s.id, 't', ORIGIN), /Stornovaný/);
   // testovací režim: předmět označený [TEST]
@@ -182,7 +189,7 @@ test('po splatnosti: stav ve fakturách, upozornění a denní souhrn jen majite
   assert.equal(mails.length, 1); assert.equal(mails[0].to_addr, 'majitel@example.cz');
   assert.match(mails[0].subject, /Faktury po splatnosti: 1/); assert.match(mails[0].html, /Zákazníkům nebyla odeslána žádná automatická upomínka/);
   assert.ok(!mails.some((m) => m.to_addr === 'petr@example.cz'));
-  db.prepare('UPDATE invoices SET paid_at = ? WHERE id = ?').run(new Date().toISOString(), inv.id);
+  await payInvoice(env, inv.id, new Date().toISOString());
   await OS.financeCheck(env);
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM os_findings WHERE check_key LIKE 'splatnost:%' AND resolved_at IS NULL").get().n, 0);
 });

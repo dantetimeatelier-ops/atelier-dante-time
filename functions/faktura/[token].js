@@ -21,17 +21,20 @@ export const onRequestGet = handle(async ({ env, params }) => {
   const { items, total } = invoiceTotals(JSON.parse(inv.items || '[]'));
   const advance = inv.advance_deducted || 0;
   const due = total - advance;
+  // Přijaté platby (i částečné) – zbývá uhradit jen rozdíl
+  const paid = (await env.DB.prepare('SELECT COALESCE(SUM(amount_czk),0) AS s FROM invoice_payments WHERE invoice_id = ? AND cancelled_at IS NULL').bind(inv.id).first().catch(() => ({ s: 0 }))).s || 0;
+  const left = kind === 'dobropis' ? 0 : Math.max(0, due - paid);
   const related = inv.related_invoice_id ? await env.DB.prepare('SELECT number FROM invoices WHERE id = ?').bind(inv.related_invoice_id).first() : null;
   const v = (key, label) => esc(OPERATOR[key]) || missing(label);
   const bank = docBank(inv); // účet uložený u faktury – pozdější změna účtu ji neovlivní
   const isTransfer = inv.payment_method === 'bank_transfer';
   // QR platba jen u neuhrazeného dokladu v Kč placeného převodem
   let qr = '';
-  if (!inv.paid_at && !inv.cancelled_at && kind !== 'dobropis' && isTransfer && due > 0 && inv.pay_currency !== 'EUR' && /^\d{1,10}$/.test(String(inv.variable_symbol || ''))) {
-    try { qr = qrSvg(spdString({ iban: bank.iban, amount: due, vs: inv.variable_symbol, message: `${TITLE[kind]} ${inv.number}`, recipient: SITE.name }), { label: 'QR platba' }); } catch { qr = ''; }
+  if (!inv.paid_at && !inv.cancelled_at && kind !== 'dobropis' && isTransfer && left > 0 && inv.pay_currency !== 'EUR' && /^\d{1,10}$/.test(String(inv.variable_symbol || ''))) {
+    try { qr = qrSvg(spdString({ iban: bank.iban, amount: left, vs: inv.variable_symbol, message: `${TITLE[kind]} ${inv.number}`, recipient: SITE.name }), { label: 'QR platba' }); } catch { qr = ''; }
   }
   const title = `${TITLE[kind] || 'Faktura'}${inv.cancelled_at ? ' – STORNOVÁNO' : ''}${inv.mode === 'test' ? ' (TEST – neplatný doklad)' : ''}`;
-  const status = inv.cancelled_at ? 'Stornováno' : kind === 'dobropis' ? (inv.paid_at ? 'Vráceno' : 'K vrácení') : inv.paid_at ? 'Uhrazeno' : 'Neuhrazeno';
+  const status = inv.cancelled_at ? `Stornováno${inv.cancel_reason ? ` (${esc(inv.cancel_reason)})` : ''}` : kind === 'dobropis' ? (inv.paid_at ? 'Vráceno' : 'K vrácení') : inv.paid_at ? (paid > due ? `Uhrazeno (přeplatek ${formatCzk(paid - due)})` : 'Uhrazeno') : paid > 0 ? `Částečně uhrazeno – uhrazeno ${formatCzk(paid)}, zbývá ${formatCzk(left)}` : 'Neuhrazeno';
   const metaRow = (l, val) => (val ? `<tr><th>${l}</th><td>${val}</td></tr>` : '');
   const page = `<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
 <title>${esc(TITLE[kind] || 'Faktura')} ${esc(inv.number)}</title><link rel="stylesheet" href="/assets/invoice.css"></head><body>
@@ -57,7 +60,7 @@ ${metaRow('Datum vystavení', d(inv.issued_at))}${metaRow('Datum uskutečnění 
 ${metaRow(inv.paid_at ? 'Uhrazeno dne' : 'Datum splatnosti', d(inv.paid_at || inv.due_date))}${metaRow('Forma úhrady', esc(PAY[inv.payment_method] || inv.payment_method))}
 ${isTransfer ? `${metaRow('Variabilní symbol', esc(inv.variable_symbol || ''))}${metaRow('Bankovní účet', `${esc(bank.account)}<br>IBAN ${esc(bank.ibanPretty)}, BIC ${esc(bank.bic)}`)}` : ''}
 </tbody></table></section>
-${qr ? `<div class="qr-pay">${qr}<p>QR platba – naskenujte v bankovní aplikaci<br>(účet ${esc(bank.account)}, VS ${esc(inv.variable_symbol)}, ${formatCzk(due)})</p></div>` : ''}
+${qr ? `<div class="qr-pay">${qr}<p>QR platba – naskenujte v bankovní aplikaci<br>(účet ${esc(bank.account)}, VS ${esc(inv.variable_symbol)}, ${formatCzk(left)})</p></div>` : ''}
 ${kind === 'zalohova' ? '<p class="note">Zálohová faktura je výzvou k platbě zálohy. Po zaplacení celé ceny vystavíme fakturu, ve které bude záloha odečtena.</p>' : ''}
 ${inv.note ? `<p class="note">${esc(inv.note)}</p>` : ''}
 <footer class="thanks"><p>Děkujeme za nákup a projevenou důvěru.<br>Na konci roku bude část zisku z produkce Dante Time věnována na podporu útulku pro zvířata.<br>Přejeme vám, aby vám hodinky dělaly radost po dlouhá léta a staly se součástí vašeho času.</p>

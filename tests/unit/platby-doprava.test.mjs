@@ -322,7 +322,7 @@ test('ruční prodej mimo e-shop: kus rezervovaný e-shopem nejde prodat, záloh
   assert.deepEqual([r2.status, r2.o], ['reserved', null]);
   await assert.rejects(() => createOrder(env, { ...customer, email: 'jiny@example.cz', country: 'CZ', shipping: 'osobni', payment: 'bank_transfer', items: ['r2'] }, ORIGIN), (e) => e.status === 409);
   // 3) Storno zálohy uvolní osobní rezervaci
-  await INV.cancelInvoice(env, adv.id, 'test');
+  await INV.cancelInvoice(env, adv.id, 'test', 'Zákazník od koupě ustoupil');
   assert.equal(db.prepare("SELECT status FROM products WHERE id='r2'").get().status, 'available');
   // 4) Ruční faktura na volný kus → prodáno; druhá faktura na týž kus neprojde
   await INV.issueManual(env, { product_id: 'r2', buyer_name: 'Pan Osobní', paid: true }, 'test');
