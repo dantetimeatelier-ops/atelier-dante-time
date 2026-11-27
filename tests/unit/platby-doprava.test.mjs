@@ -36,7 +36,7 @@ test('migrace 0026: dopravci převzali dosavadní nastavení, nové (neověřen�
   assert.equal(rows.zasilkovna.status, 'aktivni');
   assert.equal(rows.zasilkovna.max_value_czk, 20000);
   assert.equal(rows.balikovna.status, 'aktivni');
-  assert.equal(rows.balikovna.max_value_czk, 5000);
+  assert.equal(rows.balikovna.max_value_czk, 20000); // pokyn majitele 27. 11. (0029)
   assert.equal(rows.osobni.status, 'aktivni');
   assert.equal(rows.zasilkovna_adresa.status, 'pripraveno'); // zákazníkům skryto
   // 0028 (R25): zjednodušení – Cenná zásilka zapnutá bez dobírky, PPL a Balíkovna na adresu (Dohoda) se nepoužívají
@@ -53,7 +53,7 @@ test('doprava: filtr podle země, celkové hodnoty, materiálu pouzdra a stavu d
   const { db, env } = makeEnv();
   // Jen připravené (skryté) a vypnuté způsoby zákazník nevidí
   let cz = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 9000 });
-  assert.deepEqual(cz.shipping.map((s) => s.id), ['zasilkovna', 'pojistena', 'osobni']); // Balíkovna jen do 5 000 Kč
+  assert.deepEqual(cz.shipping.map((s) => s.id), ['zasilkovna', 'balikovna', 'pojistena', 'osobni']); // Balíkovna do 20 000 Kč
   assert.deepEqual(cz.payment.map((p) => p.id), ['bank_transfer', 'cod']); // převod první (výchozí)
   assert.deepEqual(cz.payment.find((p) => p.id === 'cod').onlyWith, ['zasilkovna']);
   assert.ok(!('cost' in cz.shipping[0])); // náklad dopravce se zákazníkovi neposílá
@@ -71,7 +71,7 @@ test('doprava: filtr podle země, celkové hodnoty, materiálu pouzdra a stavu d
   ship(db, 'pojistena', { status: 'aktivni', cod_enabled: 1, cod_fee_czk: 50 });
   ship(db, 'ppl_eu', { status: 'aktivni' });
   cz = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 9000 });
-  assert.deepEqual(cz.shipping.map((s) => s.id), ['zasilkovna', 'zasilkovna_adresa', 'pojistena', 'osobni']);
+  assert.deepEqual(cz.shipping.map((s) => s.id), ['zasilkovna', 'zasilkovna_adresa', 'balikovna', 'pojistena', 'osobni']);
   // Cenná zásilka: 190 Kč do 30 000 Kč, pak 14 Kč za každých započatých 10 000 Kč
   assert.equal(cz.shipping.find((s) => s.id === 'pojistena').price, 190);
   const omega = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 100000 });

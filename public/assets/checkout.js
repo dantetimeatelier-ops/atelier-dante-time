@@ -169,7 +169,8 @@
       return;
     }
     if (!config.packetaKey) return;
-    const q = new URLSearchParams({ apiKey: config.packetaKey, language: cs ? 'cs' : 'en', country: String(form.country.value || 'CZ').toLowerCase(), appIdentity: 'atelier-dante-time' });
+    // Stejné parametry jako oficiální knihovna Packeta: bez „referrer“ widget výběr nepošle zpět do stránky
+    const q = new URLSearchParams({ apiKey: config.packetaKey, language: cs ? 'cs' : 'en', country: String(form.country.value || 'CZ').toLowerCase(), appIdentity: 'atelier-dante-time', version: '6', loader: 'library-latest', referrer: location.origin, currentVersion: 'base' });
     openPicker('zasilkovna', `${PACKETA_ORIGIN}/v6/#/?${q.toString()}`, L('Mapa výdejních míst Zásilkovny', 'Packeta pickup point map'),
       L('Vyberte výdejní místo Zásilkovny a potvrďte ho tlačítkem Vybrat', 'Choose a Packeta pickup point and confirm it with the select button'));
   });
