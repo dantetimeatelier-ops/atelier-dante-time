@@ -4,7 +4,7 @@
   "model": "Classic Soleil LTD.01",
   "kind": "prestavba",
   "brand": "PRIM",
-  "movement": "originální strojek PRIM, 17 kamenů",
+  "movement": "originální strojek PRIM kalibr 66, 17 kamenů",
   "movement_type": "manual",
   "case_metal": "ocel",
   "case_material": "nové leštěné nerezové pouzdro Dante Time",
@@ -19,18 +19,50 @@
   "authenticity_parts": "strojek,cifernik,rucicky",
   "replaced_parts": "nové leštěné nerezové pouzdro Dante Time, safírové přední sklo, průhledné dýnko se safírovým sklem, černý kožený řemínek",
   "accessories": "dárková krabička, záruční list a certifikát Dante Time",
-  "description_cs": "Čistá klasika v tom nejlepším smyslu slova. Originální československý strojek PRIM s ručním nátahem a 17 kameny dostal v našem ateliéru druhý život v novém leštěném nerezovém pouzdře Dante Time, jehož měkké linie a zrcadlový lesk dávají hodinkám nadčasovou eleganci.\n\nPůvodní ciferník PRIM s jemným paprskovitým leskem si pohrává se světlem; aplikované indexy a tmavé ručičky zajišťují výbornou čitelnost a střídmý, vyvážený vzhled. Přední i zadní sklo je safírové; průhledným dýnkem je vidět práce mechanického strojku.\n\nStrojek prošel kompletním servisem – byl rozebrán, vyčištěn, promazán a seřízen. Hodinky nosí černý kožený řemínek s ražbou a jsou voděodolné do 3 ATM: zvládnou běžné nošení i stříkající vodu, nejsou však určeny ke koupání.\n\nKaždý kus existuje jen jednou. Originální součásti PRIM – strojek, ciferník a ručičky – kryje doživotní garance pravosti Dante Time. Hodinky dostanete v dárkové krabičce se záručním listem a certifikátem Dante Time a se zárukou 24 měsíců (ve druhém roce po garanční prohlídce).",
-  "description_en": "Pure classicism in the best sense of the word. An original Czechoslovak hand-wound PRIM movement with 17 jewels has been given a second life in our atelier, set in a new polished Dante Time stainless steel case whose soft lines and mirror finish lend the watch timeless elegance.\n\nThe original PRIM dial with a fine sunburst sheen plays with the light; applied indices and dark hands ensure excellent legibility and a restrained, balanced look. Both the front and rear crystals are sapphire; the exhibition caseback reveals the mechanical movement at work.\n\nThe movement has been fully serviced – dismantled, cleaned, lubricated and regulated. The watch wears a black embossed leather strap and is water resistant to 3 ATM: suitable for everyday wear and splashes, but not for swimming.\n\nEach piece exists only once. The original PRIM components – movement, dial and hands – are covered by the Dante Time lifetime authenticity guarantee. The watch comes in a Dante Time gift box with a warranty card, certificate and a 24-month warranty (second year after a warranty inspection).",
+  "description_cs": "Čistá klasika v tom nejlepším smyslu slova. Originální československý strojek PRIM kalibr 66 s ručním nátahem a 17 kameny (vyráběný v letech 1965–1993) dostal v našem ateliéru druhý život v novém leštěném nerezovém pouzdře Dante Time, jehož měkké linie a zrcadlový lesk dávají hodinkám nadčasovou eleganci.\n\nPůvodní ciferník PRIM s jemným paprskovitým leskem si pohrává se světlem; aplikované indexy a tmavé ručičky zajišťují výbornou čitelnost a střídmý, vyvážený vzhled. Přední i zadní sklo je safírové; průhledným dýnkem je vidět práce mechanického strojku.\n\nStrojek prošel kompletním servisem – byl rozebrán, vyčištěn, promazán a seřízen. Hodinky nosí černý kožený řemínek s ražbou a jsou voděodolné do 3 ATM: zvládnou běžné nošení i stříkající vodu, nejsou však určeny ke koupání.\n\nKaždý kus existuje jen jednou. Originální součásti PRIM – strojek, ciferník a ručičky – kryje doživotní garance pravosti Dante Time. Hodinky dostanete v dárkové krabičce se záručním listem a certifikátem Dante Time a se zárukou 24 měsíců (ve druhém roce po garanční prohlídce).",
+  "description_en": "Pure classicism in the best sense of the word. An original Czechoslovak hand-wound PRIM calibre 66 movement with 17 jewels (made 1965–1993) has been given a second life in our atelier, set in a new polished Dante Time stainless steel case whose soft lines and mirror finish lend the watch timeless elegance.\n\nThe original PRIM dial with a fine sunburst sheen plays with the light; applied indices and dark hands ensure excellent legibility and a restrained, balanced look. Both the front and rear crystals are sapphire; the exhibition caseback reveals the mechanical movement at work.\n\nThe movement has been fully serviced – dismantled, cleaned, lubricated and regulated. The watch wears a black embossed leather strap and is water resistant to 3 ATM: suitable for everyday wear and splashes, but not for swimming.\n\nEach piece exists only once. The original PRIM components – movement, dial and hands – are covered by the Dante Time lifetime authenticity guarantee. The watch comes in a Dante Time gift box with a warranty card, certificate and a 24-month warranty (second year after a warranty inspection).",
   "seo_title": "Prim Classic Soleil LTD.01 – PRIM 17 Jewels, leštěná nerez, safír",
   "seo_description": "Mechanické hodinky PRIM: originální strojek, ciferník a ručičky v novém leštěném nerezovém pouzdře, safírové sklo vpředu i vzadu, kožený řemínek.",
   "price_czk": 9000,
   "featured": 1,
   "fotky": [
-    { "soubor": "01", "alt": "Hodinky PRIM 17 Jewels v leštěném nerezovém pouzdře s černým koženým řemínkem", "width": 1086, "height": 1448 },
-    { "soubor": "02", "alt": "Hodinky PRIM v dárkové krabičce Dante Time", "width": 1500, "height": 2000 },
-    { "soubor": "03", "alt": "Hodinky PRIM s obálkou zapečetěnou pečetí Dante Time", "width": 1500, "height": 2000 },
-    { "soubor": "04", "alt": "Hodinky PRIM na zápěstí", "width": 1500, "height": 2000 },
-    { "soubor": "05", "alt": "Průhledné dýnko se strojkem PRIM", "width": 512, "height": 910 },
-    { "soubor": "06", "alt": "Dárková krabička Dante Time s logem", "width": 1500, "height": 2000 }
-  ]
+    {
+      "soubor": "01",
+      "alt": "Hodinky PRIM 17 Jewels v leštěném nerezovém pouzdře s černým koženým řemínkem",
+      "width": 1086,
+      "height": 1448
+    },
+    {
+      "soubor": "02",
+      "alt": "Hodinky PRIM v dárkové krabičce Dante Time",
+      "width": 1500,
+      "height": 2000
+    },
+    {
+      "soubor": "03",
+      "alt": "Hodinky PRIM s obálkou zapečetěnou pečetí Dante Time",
+      "width": 1500,
+      "height": 2000
+    },
+    {
+      "soubor": "04",
+      "alt": "Hodinky PRIM na zápěstí",
+      "width": 1500,
+      "height": 2000
+    },
+    {
+      "soubor": "05",
+      "alt": "Průhledné dýnko se strojkem PRIM",
+      "width": 512,
+      "height": 910
+    },
+    {
+      "soubor": "06",
+      "alt": "Dárková krabička Dante Time s logem",
+      "width": 1500,
+      "height": 2000
+    }
+  ],
+  "case_diameter_mm": 38,
+  "year": "1965–1993"
 }
