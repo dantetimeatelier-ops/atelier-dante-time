@@ -49,7 +49,7 @@ ${toc(L, [['t1', 'Introduction'], ['t2', 'Watches, components and materials'], [
 </ol>
 <h2 id="t5">5. Payment</h2>
 <ol>
-<li>Payment methods: <strong>bank transfer in advance</strong> (CZK with Czech QR payment, EUR with SEPA QR code), <strong>cash on delivery</strong> (Czechia only, at a pickup point or with Packeta home delivery) and <strong>card payment</strong> (Visa, Mastercard, Apple Pay, Google Pay) via the Stripe payment gateway, where offered in the cart. Card payments are charged in CZK. International orders are paid in advance.</li>
+<li>Payment methods: <strong>bank transfer in advance</strong> (CZK with Czech QR payment, EUR with SEPA QR code), <strong>cash on delivery</strong> (Czechia only, for the delivery methods where the cart offers it) and <strong>card payment</strong> (Visa, Mastercard, Apple Pay, Google Pay) via the Stripe payment gateway, where offered in the cart. Card payments are charged in CZK. International orders are paid in advance.</li>
 <li>Bank transfers are due within <strong>${T.paymentDueDays} days</strong> of the conclusion of the contract to the account ${OPERATOR.bankAccount} (IBAN ${OPERATOR.ibanPretty}, BIC ${OPERATOR.bic}, account holder ${OPERATOR.accountHolder}) with the reference given in the order confirmation.</li>
 <li>If the price is not paid by the due date, the reservation ends and the Seller may withdraw from the contract; the Buyer is informed by e-mail.</li>
 <li>For cash on delivery the price is payable on collection of the parcel.</li>
@@ -201,18 +201,18 @@ export const shipping = doc('shipping', '/en/shipping-payment', 'Shipping and Pa
 <tr><td><strong>Packeta (Zásilkovna)</strong> – pickup point or Z-BOX (map selection)</td><td>${priceEn(T.defaultPrices.zasilkovna)}</td></tr>
 <tr><td><strong>Balíkovna</strong> – pickup point (Czech Post map)</td><td>${priceEn(T.defaultPrices.balikovna)}</td></tr>
 <tr><td><strong>Packeta (Zásilkovna)</strong> – home delivery</td><td>shown in the cart before ordering</td></tr>
-<tr><td><strong>Insured shipment</strong> – valuable parcel for higher-value watches</td><td>shown in the cart before ordering</td></tr>
+<tr><td><strong>Delivery insured for the full value</strong> – for higher-value watches (Czech Post, Balíkovna home delivery with Valuable Contents, or PPL), against signature</td><td>price depending on the watch value, shown in the cart before ordering</td></tr>
 <tr><td><strong>Personal handover</strong> – only by prior individual arrangement (no retail shop)</td><td>free</td></tr>
 </tbody></table>
 <h2>Shipping to EU countries</h2>
-<p>We deliver to all 27 EU member states including Slovakia, mainly through the Packeta network to pickup points or to your address. The price depends on the destination country and available carrier and <strong>is shown in the cart after selecting the country, before the order is placed</strong>. For countries without a price yet, we will gladly prepare an offer.</p>
+<p>We deliver to all 27 EU member states including Slovakia, mainly through the Packeta network to pickup points or to your address; higher-value watches by insured PPL delivery. The price depends on the destination country and available carrier and <strong>is shown in the cart after selecting the country, before the order is placed</strong>. For countries without a price yet, we will gladly prepare an offer.</p>
 <h2>Dispatch</h2>
 <p>Available watches are dispatched within <strong>${T.dispatchWorkingDays} working days</strong> of receipt of payment, or of order confirmation for cash on delivery. As soon as the carrier takes over the parcel, you receive the tracking number by e-mail. <strong>Every watch is shipped insured for its full value.</strong> The cart therefore offers only carriers that are liable for the value of the particular piece; for higher-value watches this is an insured valuable parcel or personal handover by arrangement.</p>
 <h2>Payment</h2>
 <table><thead><tr><th>Method</th><th>Fee</th><th>Note</th></tr></thead><tbody>
 <tr><td><strong>Bank transfer in CZK</strong> with QR payment</td><td>free</td><td>due within ${T.paymentDueDays} days; details and QR code right after ordering</td></tr>
 <tr><td><strong>Bank transfer in EUR</strong> with SEPA QR code</td><td>no fee from the Atelier</td><td>IBAN ${OPERATOR.ibanPretty}, BIC ${OPERATOR.bic}. EUR amount at the Atelier’s rate, rounded up to a whole euro</td></tr>
-<tr><td><strong>Cash on delivery</strong> (Czechia only: Packeta pickup point or home delivery, Balíkovna)</td><td>${priceEn(T.defaultPrices.cod)}</td><td>the watch is reserved until dispatch</td></tr>
+<tr><td><strong>Cash on delivery</strong> (Czechia only, for carriers where the cart offers it)</td><td>${priceEn(T.defaultPrices.cod)}</td><td>the watch is reserved until dispatch</td></tr>
 <tr><td><strong>Card payment</strong> – Visa, Mastercard, Apple Pay, Google Pay</td><td>free</td><td>securely via the Stripe payment gateway, where offered in the cart. Charged in CZK; for cards in another currency your bank converts the amount. Card details are entered only at Stripe.</td></tr>
 </tbody></table>
 <p>International orders are paid in advance. ${vatText(L)} The invoice is sent by e-mail after payment.</p>

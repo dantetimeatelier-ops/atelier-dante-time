@@ -45,13 +45,19 @@ try {
   const bad = await page.evaluate(async (pw) => (await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'majitel@example.com', password: pw, code: '000000' }) })).status, PASS);
   assert.equal(bad, 401); step('přihlášení se špatným kódem odmítnuto');
 
-  // 2) Nastavení dopravy
-  await page.goto(`${BASE}/admin/#/nastaveni`);
-  await page.getByLabel(/Zásilkovna – cena/).fill('99');
-  // Pojištění na plnou hodnotu (R23): dražší kus než limit Zásilkovny (20 000 Kč) jde jen pojištěnou cennou zásilkou
-  await page.getByLabel('Cena pojištěné přepravy v ČR (Kč)').fill('450');
-  await page.getByRole('button', { name: 'Uložit nastavení' }).click();
+  // 2) Nastavení dopravy (administrace → Dopravci)
+  await page.goto(`${BASE}/admin/#/dopravci/zasilkovna`);
+  await page.getByLabel('Česko – cena').fill('99');
+  await page.getByRole('button', { name: 'Uložit', exact: true }).click();
   await page.locator('.toast', { hasText: 'Uloženo' }).waitFor();
+  // Pojištění na plnou hodnotu: dražší kus než limit Zásilkovny (20 000 Kč) jde jen Cennou zásilkou – majitel ji zapne
+  await page.goto(`${BASE}/admin/#/dopravci/pojistena`);
+  await page.getByLabel('Stav').selectOption('aktivni');
+  await page.getByLabel('Česko – cena').fill('450');
+  await page.getByRole('button', { name: 'Uložit', exact: true }).click();
+  await page.locator('.toast', { hasText: 'Uloženo' }).waitFor();
+  await page.goto(`${BASE}/admin/#/dopravci`);
+  await page.locator('#pvout', { hasText: 'Cenná zásilka' }).waitFor(); // náhled „co uvidí zákazník“
   step('nastavena cena dopravy');
 
   // 3) Přidání hodinek s fotografií
@@ -228,13 +234,13 @@ try {
   step('poptávka převedena na zakázku');
 
   // 9) Dobírka + výběr Balíkovny (okno České pošty nahrazeno testovací stránkou)
-  await page.goto(`${BASE}/admin/#/nastaveni`);
-  await page.getByLabel(/Balíkovna – cena/).fill('89');
-  // Majitel ověřil u České pošty podmínky pro hodinky → limit Balíkovny 50 000 Kč
-  await page.getByLabel('Balíkovna (Kč)', { exact: true }).fill('50000');
-  await page.getByLabel('Nabízet platbu dobírkou').check();
-  await page.getByLabel(/Příplatek za dobírku/).fill('40');
-  await page.getByRole('button', { name: 'Uložit nastavení' }).click();
+  await page.goto(`${BASE}/admin/#/dopravci/balikovna`);
+  await page.getByLabel('Česko – cena').fill('89');
+  // Majitel ověřil u České pošty podmínky pro hodinky → limit Balíkovny 50 000 Kč, dobírka 40 Kč
+  await page.getByLabel(/Max. krytá hodnota v ČR/).fill('50000');
+  await page.getByLabel('Nabízet dobírku').check();
+  await page.getByLabel(/Příplatek pro zákazníka/).fill('40');
+  await page.getByRole('button', { name: 'Uložit', exact: true }).click();
   await page.locator('.toast', { hasText: 'Uloženo' }).waitFor();
   await page.goto(`${BASE}/admin/#/hodinky/nove`);
   await page.getByLabel('Značka', { exact: true }).waitFor();

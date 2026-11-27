@@ -7,7 +7,7 @@ import { sendEmail, ownerEmail } from './email.js';
 import { sendDueReminders } from './warranty.js';
 import { SITE } from '../src/site.mjs';
 import { today } from '../src/shop/warranty.mjs';
-import { refreshAll, refreshOrder } from './packeta.js';
+import { refreshAll, refreshOrder, CPOST_METHODS, PACKETA_METHODS } from './packeta.js';
 import { markShipped } from './orders.js';
 import { recordMissingCardFees } from './payment-events.js';
 import { productEconomics, overview } from './finance.js';
@@ -102,7 +102,8 @@ export const handedOver = (st) => st && st.code >= 2 && ![9, 10, 11, 12, 999].in
 export async function handoverCheck(env, deps) {
   const s = await getSettings(env);
   if (s.ship_autonotify === '0') return { checked: 0, shipped: [] };
-  const methods = env.PACKETA_API_PASSWORD ? "('zasilkovna','zasilkovna_adresa','balikovna')" : "('balikovna')";
+  const list = [...CPOST_METHODS, ...(env.PACKETA_API_PASSWORD ? PACKETA_METHODS : [])];
+  const methods = `(${list.map((x) => `'${x}'`).join(',')})`;
   const { results } = await env.DB.prepare(`SELECT id, number, shipping_method, tracking_number FROM orders WHERE (status = 'paid' OR (status = 'awaiting_payment' AND payment_method = 'cod')) AND shipping_method IN ${methods} AND tracking_number IS NOT NULL AND tracking_number != '' ORDER BY created_at LIMIT 30`).all();
   const out = { checked: 0, shipped: [] };
   for (const o of results) {

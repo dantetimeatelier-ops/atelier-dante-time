@@ -4,6 +4,18 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/platby-doprava-eu (R24 dopravci)
+**Hotovo:** správa dopravců (migrace 0026 `shipping_methods`, `server/shipping.js` quote/offer/preview/saveMethod), administrace
+→ Dopravci (seznam, editor, náhled „co uvidí zákazník“), pokladna filtruje podle země, hodnoty košíku a materiálu pouzder
+(`cartFacts`, `/api/config?items=`), dobírka podle dopravce (`fees`, `cod_max`), náklad dopravy `orders.shipping_cost_czk` →
+náklad „doprava“ u hodinek při odeslání (`recordShippingCost`, oprava `PUT orders/:id/shipping-cost`), tržba hodinek
+včetně zaplacené dopravy (`productEconomics`), automatický štítek Zásilkovny po zaplacení (`autoLabel`, nastavení `auto_label`,
+výchozí vypnuto), sledování podle dopravce (`PACKETA_/CPOST_/PPL_METHODS`). E-maily dopravcům a postup Dohody: `docs/DOPRAVCI.md`.
+**Další krok:** odpovědi dopravců → úprava limitů/výluk → zapnutí připravených způsobů (jen se souhlasem majitele).
+**Pozor na:** staré klíče nastavení dopravy (shipping_*_czk, cover_*, packeta json) se už nepoužívají – převzala je migrace 0026.
+
+---
+
 ## 2026-11-27 – Claude – claude/platby-doprava-eu (R23)
 **Hotovo:** schválené úpravy majitele (R23, `docs/PLATBY-A-DOPRAVA.md`):
 - Stripe jen `payment_method_types=card`, vždy v Kč (`chargeCurrency`), bez placených doplňků; poplatek z balance transaction

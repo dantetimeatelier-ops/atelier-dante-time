@@ -36,7 +36,10 @@ export const SHIPPING = {
   balikovna: { cs: 'Balíkovna – výdejní místo', en: 'Balíkovna – pickup point' },
   osobni: { cs: 'Osobní předání po předchozí domluvě', en: 'Personal handover by prior arrangement' },
   eu: { cs: 'Doprava do zahraničí na adresu', en: 'International delivery to address' },
-  pojistena: { cs: 'Pojištěná přeprava kurýrem', en: 'Insured courier delivery' },
+  pojistena: { cs: 'Česká pošta – Cenná zásilka (pojištěno na plnou hodnotu)', en: 'Czech Post – insured valuable parcel' },
+  balikovna_adresa: { cs: 'Balíkovna na adresu – pojištěno na plnou hodnotu', en: 'Czech Post home delivery – insured' },
+  ppl_adresa: { cs: 'PPL – doručení na adresu, pojištěno', en: 'PPL – home delivery, insured' },
+  ppl_eu: { cs: 'PPL – doručení na adresu, pojištěno', en: 'PPL – home delivery, insured' },
 };
 export const PAYMENT = {
   bank_transfer: { cs: 'Bankovní převod (QR platba)', en: 'Bank transfer (QR payment)' },

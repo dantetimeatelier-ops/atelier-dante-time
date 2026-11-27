@@ -30,7 +30,7 @@ export function cart(lang) {
       </fieldset>
       <fieldset><legend>${L('Doprava', 'Shipping')}</legend><div data-shipping></div>
         <p class="notice" data-insured-note hidden style="margin-top:10px">${L('Hodinky vyšší hodnoty posíláme pouze pojištěnou přepravou na plnou hodnotu, případně je předáme osobně po domluvě.', 'Higher-value watches are sent only by fully insured shipment, or handed over personally by arrangement.')}</p>
-        <p class="notice" data-no-shipping hidden style="margin-top:10px">${L('Do zvolené země zatím nemáme stanovenou cenu dopravy. Napište nám a připravíme vám nabídku.', 'We have no shipping price for this country yet. Contact us and we will prepare an offer.')} <a href="${'/kontakt'}">${L('Kontakt', 'Contact')}</a></p>
+        <p class="notice" data-no-shipping hidden style="margin-top:10px">${L('Pro tuto zemi nebo hodnotu hodinek vám zásilku připravíme individuálně – napište nám, nebo zvolte osobní předání.', 'For this country or watch value we arrange shipping individually – contact us, or choose personal handover.')} <a href="${'/kontakt'}">${L('Kontakt', 'Contact')}</a></p>
         <div data-pickup hidden style="margin-top:12px">
           <button class="btn ghost" type="button" data-pick-point>${L('Vybrat výdejní místo', 'Choose pickup point')}</button>
           <p class="doc-meta" data-pickup-label style="margin-top:8px"></p>

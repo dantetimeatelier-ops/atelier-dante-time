@@ -15,6 +15,7 @@ import { createForOrder } from './warranty.js';
 import { onDelivered } from './passport.js';
 import { createInvoice } from './invoicing.js';
 import { trackingUrl } from './packeta.js';
+import { offer as offerShipping } from './shipping.js';
 
 // Texty e-mailů v jazyce objednávky (zákazníci z EU objednávají i anglicky)
 const tr = (o, cs, en) => (o?.lang === 'en' ? en : cs);
@@ -25,69 +26,17 @@ import { createCardPayment, cardPaymentsAvailable } from './payments.js';
 const num = (v) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null);
 
 /**
- * Nabídka dopravy, plateb a měn pro danou zemi a hodnotu zboží.
+ * Nabídka dopravy, plateb a měn pro danou zemi, hodnotu zboží a materiál pouzder.
+ * Dopravce se nastavuje v administraci (Dopravci); zákazník vidí jen to, co opravdu funguje a kryje celou hodnotu.
  * Konečná cena dopravy je vždy známá před odesláním objednávky.
  */
-export async function shopConfig(env, lang = 'cs', { country = 'CZ', itemsTotal = 0 } = {}) {
+export async function shopConfig(env, lang = 'cs', { country = 'CZ', itemsTotal = 0, metals = [] } = {}) {
   const m = mode(env);
   const s = await getSettings(env);
   const L = (cs, en) => (lang === 'cs' ? cs : en);
   const cc = EU_COUNTRIES[country] ? country : 'CZ';
-  const insuredFrom = num(s.insured_threshold_czk);
-  const insuredOnly = insuredFrom != null && itemsTotal >= insuredFrom;
-  let euPrices = {};
-  try { euPrices = JSON.parse(s.shipping_eu_json || '{}'); } catch { euPrices = {}; }
-  let euInsured = {};
-  try { euInsured = JSON.parse(s.shipping_eu_insured_json || '{}'); } catch { euInsured = {}; }
-
-  let packetaPickup = {}; try { packetaPickup = JSON.parse(s.shipping_packeta_pickup_json || '{}'); } catch { packetaPickup = {}; }
-  let packetaHome = {}; try { packetaHome = JSON.parse(s.shipping_packeta_home_json || '{}'); } catch { packetaHome = {}; }
-  const hasPacketaKey = Boolean(env.PACKETA_API_KEY);
-  const packetaName = cc === 'CZ' ? L('Zásilkovna', 'Packeta') : 'Packeta';
-
-  // Pojištění na plnou hodnotu (rozhodnutí majitele R23): způsob dopravy se nabídne jen tehdy,
-  // když dopravce podle svých podmínek odpovídá za celou hodnotu hodinek.
-  const eurRateForLimit = num(s.eur_rate) || 25;
-  const cover = {
-    packeta: cc === 'CZ' ? num(s.cover_packeta_czk) : (num(s.cover_packeta_eu_eur) != null ? Math.floor(num(s.cover_packeta_eu_eur) * eurRateForLimit) : null),
-    balikovna: num(s.cover_balikovna_czk),
-    insured: cc === 'CZ' ? num(s.cover_insured_czk) : num(s.cover_insured_eu_czk),
-  };
-  const covered = (limit) => limit != null && itemsTotal <= limit;
-  let hiddenByCover = false;
-  const offer = (opt, limit) => { if (covered(limit)) shipping.push(opt); else hiddenByCover = true; };
-
-  // Zobrazujeme jen skutečně funkční možnosti: každá musí mít nastavenou cenu
-  // a výběr výdejního místa v zahraničí funguje jen s mapou Zásilkovny (API klíč).
-  const shipping = [];
-  if (!insuredOnly) {
-    const pickupPrice = num(cc === 'CZ' ? s.shipping_zasilkovna_czk : packetaPickup[cc]);
-    if (pickupPrice != null && (cc === 'CZ' || hasPacketaKey)) {
-      offer({ id: 'zasilkovna', label: L(`${packetaName} – výdejní místo nebo Z-BOX`, 'Packeta – pickup point or Z-BOX'), price: pickupPrice, pickup: true, carrier: 'packeta' }, cover.packeta);
-    }
-    if (cc === 'CZ') {
-      const price = num(s.shipping_balikovna_czk);
-      if (price != null) offer({ id: 'balikovna', label: SHIPPING.balikovna[lang], price, pickup: true, carrier: 'balikovna' }, cover.balikovna);
-    }
-    const homePrice = num(packetaHome[cc]);
-    if (homePrice != null) {
-      offer({ id: 'zasilkovna_adresa', label: L(`${packetaName} – doručení na adresu`, 'Packeta – home delivery'), price: homePrice, address: true, carrier: 'packeta', note: L('Doručí kurýr na adresu uvedenou níže.', 'Delivered by courier to the address below.') }, cover.packeta);
-    }
-    // Původní obecná doprava do zahraničí (Zásilkovna a partneři) – jen pokud pro zemi není nastavena Packeta na adresu
-    if (cc !== 'CZ' && homePrice == null && num(euPrices[cc]) != null) {
-      offer({ id: 'eu', label: L(`Doprava do země ${countryName(cc, 'cs')} – doručení na adresu`, `Delivery to ${countryName(cc, 'en')} – to your address`), price: num(euPrices[cc]), address: true, note: L('Dopravce podle cílové země (Zásilkovna a její partneři).', 'Carrier depends on the destination country (Packeta and its partners).') }, cover.packeta);
-    }
-  }
-  // Pojištěná přeprava: když hodnotu nepokryje běžný dopravce (nebo nad hranicí nastavenou majitelem)
-  // (jen když žádný běžný dopravce hodnotu nepokryje; skrytí jednoho dopravce dobírku ani ostatní možnosti neruší)
-  const needInsured = insuredOnly || !shipping.length;
-  if (needInsured) {
-    const price = num(cc === 'CZ' ? s.insured_price_czk : (euInsured[cc] ?? s.insured_eu_price_czk));
-    if (price != null && covered(cover.insured)) shipping.push({ id: 'pojistena', label: L('Pojištěná přeprava na plnou hodnotu', 'Delivery insured for the full value'), price, address: true, note: L('Cenná zásilka pojištěná na plnou hodnotu hodinek, předání proti podpisu.', 'Valuable parcel insured for the full value of the watch, delivered against signature.') });
-  }
-  if (s.shipping_osobni_enabled === '1') {
-    shipping.push({ id: 'osobni', label: SHIPPING.osobni[lang], price: 0, note: L('Pouze po předchozí individuální domluvě. Nemáme kamennou prodejnu.', 'Only by prior individual arrangement. We have no retail shop.') });
-  }
+  const { shipping, hiddenByValue } = await offerShipping(env, { country: cc, value: itemsTotal, metals, lang });
+  const physical = shipping.filter((x) => x.id !== 'osobni');
 
   const payment = [];
   const iban = OPERATOR.iban;
@@ -95,14 +44,27 @@ export async function shopConfig(env, lang = 'cs', { country = 'CZ', itemsTotal 
   if (iban && isValidIban(iban)) payment.push({ id: 'bank_transfer', label: PAYMENT.bank_transfer[lang], currencies: ['CZK', 'EUR'], note: L('Platební údaje a QR kód obdržíte hned po objednávce. Splatnost 3 dny. Bez poplatků.', 'Payment details and a QR code are shown right after ordering. Due within 3 days. No fees.') });
   // Karta se vždy strhává v Kč (bez poplatku za převod měny); zákazníkovi z eurozóny přepočte částku jeho banka
   if (cardPaymentsAvailable(env)) payment.push({ id: 'card', label: PAYMENT.card[lang], badges: ['visa', 'mastercard', 'applepay', 'googlepay'], currencies: ['CZK', 'EUR'], chargeCurrency: 'CZK', note: L('Zabezpečená platba přes Stripe. Částka se strhne v Kč. Apple Pay a Google Pay se nabídnou na podporovaných zařízeních.', 'Secure payment via Stripe. The amount is charged in CZK (your bank converts it). Apple Pay and Google Pay are offered on supported devices.') });
-  // Dobírka jen v ČR (výdejní místo nebo Zásilkovna na adresu, rozhodnutí R23); do zahraničí jen platba předem
-  if (s.cod_enabled === '1' && cc === 'CZ' && !needInsured) {
-    payment.push({ id: 'cod', label: PAYMENT.cod[lang], currencies: ['CZK'], price: num(s.cod_fee_czk) || 0, onlyWith: ['zasilkovna', 'balikovna', 'zasilkovna_adresa'], note: L('Platíte při převzetí zásilky (jen v ČR).', 'Pay on delivery (Czech Republic only).') });
+  // Dobírka: jen v ČR a jen u dopravců, kteří ji umí do výše hodnoty objednávky (obchodní podmínky 1.2)
+  if (s.cod_enabled !== '0' && cc === 'CZ') {
+    const withCod = shipping.filter((x) => x.cod && (x.cod.max == null || itemsTotal + x.price + x.cod.fee <= x.cod.max));
+    if (withCod.length) {
+      const fees = Object.fromEntries(withCod.map((x) => [x.id, x.cod.fee]));
+      payment.push({ id: 'cod', label: PAYMENT.cod[lang], currencies: ['CZK'], price: Math.min(...Object.values(fees)), fees, onlyWith: withCod.map((x) => x.id), note: L('Platíte při převzetí zásilky (jen v ČR).', 'Pay on delivery (Czech Republic only).') });
+    }
   }
 
   const eurRate = num(s.eur_rate);
   const currencies = ['CZK', ...(eurRate ? ['EUR'] : [])];
-  return { mode: m, country: cc, insuredOnly: needInsured && (insuredOnly || hiddenByCover), insuredFrom, hiddenByCover, shipping, payment, currencies, eurRate, packetaKey: env.PACKETA_API_KEY || null, settings: s };
+  // Upozornění „posíláme jen pojištěné“: když se kvůli hodnotě nebo materiálu některý dopravce skryl
+  const insuredOnly = hiddenByValue && physical.length > 0 && physical.every((x) => x.insured);
+  return { mode: m, country: cc, insuredOnly, noCarrier: !physical.length, shipping: shipping.map(({ cost, cod, insured, ...x }) => x), shippingFull: shipping, payment, currencies, eurRate, packetaKey: env.PACKETA_API_KEY || null, settings: s };
+}
+
+/** Hodnota a materiály pouzder zboží v košíku (podle databáze, ne podle prohlížeče). */
+export async function cartFacts(env, ids) {
+  if (!ids.length) return { itemsTotal: 0, metals: [] };
+  const { results } = await env.DB.prepare(`SELECT price_czk, case_metal FROM products WHERE id IN (${ids.map(() => '?').join(',')})`).bind(...ids).all();
+  return { itemsTotal: results.reduce((a, r) => a + (r.price_czk || 0), 0), metals: [...new Set(results.map((r) => r.case_metal).filter(Boolean))] };
 }
 
 export async function createOrder(env, body, origin) {
@@ -116,10 +78,9 @@ export async function createOrder(env, body, origin) {
   const ids = Array.isArray(body.items) ? [...new Set(body.items.filter((x) => typeof x === 'string'))] : [];
   if (!ids.length || ids.length > 10) throw new HttpError('Košík je prázdný');
   await releaseExpired(env);
-  const ph0 = ids.map(() => '?').join(',');
-  const pre = await env.DB.prepare(`SELECT COALESCE(SUM(price_czk), 0) AS total FROM products WHERE id IN (${ph0})`).bind(...ids).first();
-  const cfg = await shopConfig(env, lang, { country, itemsTotal: pre.total });
-  const ship = cfg.shipping.find((x) => x.id === body.shipping);
+  const facts = await cartFacts(env, ids);
+  const cfg = await shopConfig(env, lang, { country, itemsTotal: facts.itemsTotal, metals: facts.metals });
+  const ship = cfg.shippingFull.find((x) => x.id === body.shipping);
   if (!ship) throw new HttpError('Zvolený způsob dopravy není dostupný');
   const pay = cfg.payment.find((x) => x.id === body.payment);
   if (!pay) throw new HttpError('Zvolený způsob platby není dostupný');
@@ -139,7 +100,7 @@ export async function createOrder(env, body, origin) {
   if (['zasilkovna', 'balikovna'].includes(ship.id) && !pickupName) throw new HttpError('Vyberte prosím výdejní místo');
   if (ship.id === 'balikovna' && pickupId && !/^[BP]\d{5}$/.test(pickupId)) throw new HttpError('Neplatné výdejní místo Balíkovny');
   if (ship.id === 'zasilkovna' && country !== 'CZ' && !/^(\d{1,10}|c\d{1,8}:[A-Za-z0-9._-]{1,30})$/.test(pickupId || '')) throw new HttpError('Vyberte prosím výdejní místo na mapě');
-  if (pay.onlyWith && !pay.onlyWith.includes(ship.id)) throw new HttpError('Dobírku lze zvolit jen se Zásilkovnou nebo Balíkovnou v ČR');
+  if (pay.onlyWith && !pay.onlyWith.includes(ship.id)) throw new HttpError('Dobírku lze zvolit jen u dopravců v ČR, kteří ji nabízejí');
   const chosen = body.currency === 'EUR' && cfg.currencies.includes('EUR') ? 'EUR' : 'CZK';
   if (!(pay.currencies || ['CZK']).includes(chosen)) throw new HttpError(chosen === 'EUR' ? 'Zvolenou platbu nelze provést v eurech' : 'Zvolenou platbu nelze provést v korunách');
   const currency = pay.chargeCurrency || chosen;
@@ -151,7 +112,9 @@ export async function createOrder(env, body, origin) {
   if (unavailable.length) throw new HttpError('Některé hodinky už nejsou k dispozici', 409, { unavailable });
 
   const itemsTotal = products.reduce((s, p) => s + p.price_czk, 0);
-  const codFee = pay.id === 'cod' ? (pay.price || 0) : 0;
+  const codFee = pay.id === 'cod' ? (pay.fees?.[ship.id] ?? pay.price ?? 0) : 0;
+  // Náklad dopravce (odhad z nastavení, majitel ho může v objednávce opravit) → zisk v Dante Time OS
+  const shippingCost = ship.cost == null ? null : ship.cost + (pay.id === 'cod' ? (ship.cod?.cost || 0) : 0);
   const total = itemsTotal + ship.price + codFee;
   const payCents = currency === 'EUR' ? czkToEurCents(total, cfg.eurRate) : total * 100;
   const seq = await nextCounter(env, 'order');
@@ -174,12 +137,12 @@ export async function createOrder(env, body, origin) {
     env.DB.prepare(`INSERT INTO orders (id, number, public_token, status, mode, customer_id, email, name, phone,
       billing_street, billing_city, billing_zip, company, company_ico, company_dic, shipping_method, pickup_point_id, pickup_point_name,
       payment_method, items_total, shipping_price, total, variable_symbol, customer_note, terms_version, terms_accepted_at, reserved_until, cod_fee,
-      billing_country, pay_currency, pay_amount_cents, eur_rate, lang, bank_account, bank_iban, bank_bic)
-      VALUES (?, ?, ?, 'awaiting_payment', ?, (SELECT id FROM customers WHERE email = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      billing_country, pay_currency, pay_amount_cents, eur_rate, lang, bank_account, bank_iban, bank_bic, shipping_cost_czk)
+      VALUES (?, ?, ?, 'awaiting_payment', ?, (SELECT id FROM customers WHERE email = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(orderId, number, token, m, customer.email, customer.email, customer.name, customer.phone, customer.street, customer.city, customer.zip,
         customer.company, customer.ico, customer.dic, ship.id, pickupId, pickupName, pay.id, itemsTotal, ship.price, total, vs, customer.note,
         LEGAL_VERSION, t, reservedUntil, codFee, country, currency, payCents, currency === 'EUR' ? cfg.eurRate : null, lang,
-        ...Object.values(bankDetails())),
+        ...Object.values(bankDetails()), shippingCost),
   ];
   for (const p of products) {
     stmts.push(env.DB.prepare(`UPDATE products SET status='reserved', reserved_order_id=?, reserved_until=?, updated_at=? WHERE id=? AND status='available'`).bind(orderId, reservedUntil, t, p.id));
@@ -202,6 +165,7 @@ export async function createOrder(env, body, origin) {
   await orderEmails(env, order, items, origin);
 
   let redirect = `/objednavka/${token}`;
+  if (pay.id === 'cod') await autoLabel(env, orderId); // dobírka se posílá hned
   if (pay.id === 'card') {
     try {
       redirect = await startCardPayment(env, order, origin);
@@ -363,6 +327,7 @@ export async function markPaid(env, orderId, actor, origin) {
   ]);
   const inv = await issueInvoice(env, orderId);
   await audit(env, actor, 'objednavka_zaplacena', 'order', orderId);
+  await autoLabel(env, orderId);
   const fresh = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();
   await sendEmail(env, {
     to: fresh.email, subject: tr(fresh, `Platba přijata – objednávka ${fresh.number}`, `Payment received – order ${fresh.number}`), related: `order:${orderId}`,
@@ -420,6 +385,7 @@ export async function markShipped(env, orderId, tracking, actor) {
   if (cod) stmts.push(env.DB.prepare("UPDATE products SET status='sold', sold_at=?, reserved_until=NULL, updated_at=? WHERE id IN (SELECT product_id FROM order_items WHERE order_id=?)").bind(t, t, orderId));
   await env.DB.batch(stmts);
   await audit(env, actor, 'objednavka_odeslana', 'order', orderId, { tracking });
+  try { await recordShippingCost(env, orderId, actor); } catch (e) { console.error('Náklad dopravy: zápis selhal', e?.message); }
   const turl = trackingUrl(order.shipping_method, tracking, order.lang);
   const trackCs = tracking ? ` Číslo zásilky: <strong>${tracking}</strong>.${turl ? ` <a href="${turl}">Sledovat zásilku</a>` : ''}` : '';
   const trackEn = tracking ? ` Tracking number: <strong>${tracking}</strong>.${turl ? ` <a href="${turl}">Track your parcel</a>` : ''}` : '';
@@ -442,3 +408,61 @@ export async function cancelOrder(env, orderId, actor) {
   await audit(env, actor, 'objednavka_zrusena', 'order', orderId);
 }
 export { orderEmails as orderEmailsForTest }; // jen pro jednotkové testy
+
+/**
+ * Náklad na dopravu → náklad „Doprava“ u prodaných hodinek (Dante Time OS / Ekonomika), aby zisk odpovídal skutečnosti.
+ * Více kusů: rozdělí se podle ceny. Opakované volání (oprava částky) jen přepíše dříve zapsané řádky.
+ */
+export async function recordShippingCost(env, orderId, actor = 'DT Finance') {
+  const o = await env.DB.prepare('SELECT id, number, shipping_method, shipping_cost_czk, shipped_at FROM orders WHERE id = ?').bind(orderId).first();
+  if (!o || o.shipping_cost_czk == null) return null;
+  const ref = `doprava:${o.id}`;
+  const { results: items } = await env.DB.prepare('SELECT product_id, price_czk FROM order_items WHERE order_id = ? AND product_id IS NOT NULL ORDER BY price_czk DESC').bind(orderId).all();
+  if (!items.length) return null;
+  const sum = items.reduce((a, i) => a + (i.price_czk || 0), 0) || 1;
+  let left = Math.max(0, Math.round(o.shipping_cost_czk));
+  const parts = items.map((i, n) => { const v = n === items.length - 1 ? left : Math.round((o.shipping_cost_czk * (i.price_czk || 0)) / sum); left -= v; return { product_id: i.product_id, amount: v }; });
+  const day = (o.shipped_at || now()).slice(0, 10);
+  const { addCost } = await import('./finance.js');
+  for (const p of parts) {
+    const ex = await env.DB.prepare('SELECT id FROM costs WHERE document_ref = ? AND product_id = ?').bind(ref, p.product_id).first();
+    if (ex) await env.DB.prepare('UPDATE costs SET amount_czk = ? WHERE id = ?').bind(p.amount, ex.id).run();
+    else if (p.amount > 0) await addCost(env, { product_id: p.product_id, category: 'doprava', description: `Doprava – objednávka ${o.number} (${SHIPPING[o.shipping_method]?.cs || o.shipping_method})`, amount_czk: p.amount, cost_date: day, document_ref: ref }, actor);
+  }
+  return o.shipping_cost_czk;
+}
+
+/** Oprava skutečné ceny dopravy u objednávky (podle faktury dopravce). */
+export async function setShippingCost(env, orderId, amount, actor) {
+  const v = Number.isFinite(Number(amount)) && Number(amount) >= 0 ? Math.round(Number(amount)) : null;
+  if (v == null) throw new HttpError('Zadejte cenu dopravy v Kč');
+  const o = await env.DB.prepare('SELECT status FROM orders WHERE id = ?').bind(orderId).first();
+  if (!o) throw new HttpError('Objednávka neexistuje', 404);
+  await env.DB.prepare('UPDATE orders SET shipping_cost_czk = ? WHERE id = ?').bind(v, orderId).run();
+  if (['shipped', 'completed'].includes(o.status)) await recordShippingCost(env, orderId, actor);
+  await audit(env, actor, 'naklad_dopravy', 'order', orderId, { amount: v });
+  return v;
+}
+
+/**
+ * Automatický přepravní štítek (jen dopravci s bezplatným API – Zásilkovna). Zapíná se v Nastavení (auto_label).
+ * Štítek NEoznačí objednávku jako odeslanou – to až převzetí dopravcem. Chyba nikdy nezastaví objednávku.
+ */
+export async function autoLabel(env, orderId) {
+  try {
+    const s = await getSettings(env);
+    if (s.auto_label !== '1' || !String(env.PACKETA_API_PASSWORD || '').trim()) return null;
+    const o = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();
+    if (!o || o.tracking_number) return null;
+    const { methodById } = await import('./shipping.js');
+    const m = await methodById(env, o.shipping_method);
+    if (m?.label_api !== 'packeta') return null;
+    const { createPacket } = await import('./packeta.js');
+    const r = await createPacket(env, o, { weightKg: Number(s.label_weight_kg) || 0.5, settings: s });
+    await audit(env, 'DT Logistics', 'stitek_automaticky', 'order', orderId, { tracking: r.tracking });
+    return r;
+  } catch (e) {
+    await audit(env, 'DT Logistics', 'stitek_chyba', 'order', orderId, { error: String(e?.message || e).slice(0, 200) }).catch(() => {});
+    return null;
+  }
+}

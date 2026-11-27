@@ -16,7 +16,8 @@
   if (!ids.length) { $('[data-cart-empty]').hidden = false; return; }
 
   const getConfig = async (country = 'CZ', total = 0) => {
-    try { return await (await fetch(`/api/config?lang=${cs ? 'cs' : 'en'}&country=${encodeURIComponent(country)}&total=${total}`)).json(); }
+    // Nabídka dopravy se počítá na serveru podle hodinek v košíku (hodnota, materiál pouzdra) a země
+    try { return await (await fetch(`/api/config?lang=${cs ? 'cs' : 'en'}&country=${encodeURIComponent(country)}&total=${total}&items=${encodeURIComponent(ids.join(','))}`)).json(); }
     catch { return { mode: 'preview' }; }
   };
   let config = await getConfig();
@@ -57,7 +58,7 @@
   function renderOptions() {
     const prevShip = form.shipping?.value; const prevPay = form.payment?.value;
     $('[data-shipping]').innerHTML = radio('shipping', config.shipping || [], (config.shipping || []).some((s) => s.id === prevShip) ? prevShip : null);
-    $('[data-no-shipping]').hidden = (config.shipping || []).length > 0;
+    $('[data-no-shipping]').hidden = !config.noCarrier;
     $('[data-insured-note]').hidden = !config.insuredOnly;
     const cur = $('[data-currency]'); const prevCur = cur.value;
     cur.innerHTML = (config.currencies || ['CZK']).map((c) => `<option value="${c}">${c === 'CZK' ? 'CZK (Kč)' : 'EUR (€)'}</option>`).join('');
@@ -68,7 +69,8 @@
   function renderPayments(prevPay) {
     const ship = shippingSel();
     const eur = form.currency.value === 'EUR';
-    const opts = (config.payment || []).filter((p) => (!p.onlyWith || p.onlyWith.includes(ship?.id)) && (p.currencies || ['CZK']).includes(eur ? 'EUR' : 'CZK'));
+    const opts = (config.payment || []).filter((p) => (!p.onlyWith || p.onlyWith.includes(ship?.id)) && (p.currencies || ['CZK']).includes(eur ? 'EUR' : 'CZK'))
+      .map((p) => (p.fees ? { ...p, price: p.fees[ship?.id] ?? p.price } : p)); // dobírka: příplatek podle dopravce
     $('[data-payment]').innerHTML = radio('payment', opts, opts.some((p) => p.id === (prevPay || form.payment?.value)) ? (prevPay || form.payment?.value) : null);
     update();
   }
@@ -88,7 +90,7 @@
     $('[data-address-legend]').textContent = s?.address ? L('Kontaktní údaje a doručovací adresa', 'Contact details and delivery address') : L('Kontaktní a fakturační údaje', 'Contact & billing details');
     const ship = s?.price ?? 0;
     const p = paymentSel();
-    const cod = p?.id === 'cod' ? (p.price || 0) : 0;
+    const cod = p?.id === 'cod' ? (p.fees?.[s?.id] ?? p.price ?? 0) : 0;
     const total = itemsTotal + ship + cod;
     // Karta se vždy strhává v Kč (bez poplatku za převod měny), částku v eurech přepočte banka zákazníka
     const cardCzk = p?.chargeCurrency === 'CZK' && form.currency.value === 'EUR';

@@ -107,12 +107,18 @@ export async function createPacket(env, order, { weightKg = 0.5, fetcher, settin
   return { id, tracking: text };
 }
 
+// Jak se sleduje který způsob dopravy (bez placených služeb: API Zásilkovny, veřejné sledování České pošty, odkaz PPL)
+export const PACKETA_METHODS = ['zasilkovna', 'zasilkovna_adresa'];
+export const CPOST_METHODS = ['balikovna', 'balikovna_adresa', 'pojistena'];
+export const PPL_METHODS = ['ppl_adresa', 'ppl_eu'];
+
 /** Veřejný odkaz na sledování zásilky pro zákazníka (nebo null). */
 export function trackingUrl(method, tracking, lang = 'cs') {
   const t = String(tracking || '').replace(/\s+/g, '');
   if (!t) return null;
-  if (['zasilkovna', 'zasilkovna_adresa'].includes(method) && packetId(t)) return `https://tracking.packeta.com/${lang === 'en' ? 'en' : 'cs'}/?id=Z${packetId(t)}`;
-  if (['balikovna', 'pojistena'].includes(method) && /^[A-Z]{2}\d{9}[A-Z]{2}$|^[A-Z0-9]{8,20}$/.test(t)) return `https://www.postaonline.cz/trackandtrace/-/zasilka/cislo?parcelNumbers=${encodeURIComponent(t)}`;
+  if (PACKETA_METHODS.includes(method) && packetId(t)) return `https://tracking.packeta.com/${lang === 'en' ? 'en' : 'cs'}/?id=Z${packetId(t)}`;
+  if (CPOST_METHODS.includes(method) && /^[A-Z0-9]{8,20}$/i.test(t)) return `https://www.postaonline.cz/trackandtrace/-/zasilka/cislo?parcelNumbers=${encodeURIComponent(t.toUpperCase())}`;
+  if (PPL_METHODS.includes(method) && /^\d{8,14}$/.test(t)) return `https://www.ppl.cz/vyhledat-zasilku?shipmentId=${encodeURIComponent(t)}`;
   return null;
 }
 
@@ -142,7 +148,8 @@ export async function packetStatus(env, tracking, { fetcher = fetch } = {}) {
 // Zjistí stav jedné objednávky a uloží ho
 export async function refreshOrder(env, order, deps) {
   if (!order.shipping_method) order = { ...order, ...(await env.DB.prepare('SELECT shipping_method FROM orders WHERE id = ?').bind(order.id).first()) };
-  const s = order.shipping_method === 'balikovna' ? await cpostStatus(order.tracking_number, deps) : await packetStatus(env, order.tracking_number, deps);
+  if (!CPOST_METHODS.includes(order.shipping_method) && !PACKETA_METHODS.includes(order.shipping_method)) throw new HttpError('Tuto zásilku nejde sledovat automaticky – stav ověřte na webu dopravce');
+  const s = CPOST_METHODS.includes(order.shipping_method) ? await cpostStatus(order.tracking_number, deps) : await packetStatus(env, order.tracking_number, deps);
   await env.DB.prepare('UPDATE orders SET tracking_code = ?, tracking_status = ?, tracking_at = ?, tracking_checked_at = ? WHERE id = ?')
     .bind(s.code, s.text, s.at, new Date().toISOString(), order.id).run();
   return s;
@@ -151,7 +158,8 @@ export async function refreshOrder(env, order, deps) {
 // Denní běh DT Logistics: odeslané zásilky Zásilkovny, které ještě nejsou doručené ani vrácené
 export async function refreshAll(env, deps) {
   // Zásilkovna jen s API heslem, Balíkovna (Česká pošta) vždy – její sledování je veřejné
-  const methods = env.PACKETA_API_PASSWORD ? "('zasilkovna','zasilkovna_adresa','balikovna')" : "('balikovna')";
+  const list = [...CPOST_METHODS, ...(env.PACKETA_API_PASSWORD ? PACKETA_METHODS : [])];
+  const methods = `(${list.map((x) => `'${x}'`).join(',')})`;
   const { results } = await env.DB.prepare(`SELECT id, number, shipping_method, tracking_number, tracking_code FROM orders WHERE status = 'shipped' AND shipping_method IN ${methods} AND tracking_number IS NOT NULL AND tracking_number != '' AND (tracking_code IS NULL OR tracking_code NOT IN (7, 10, 11, 12)) ORDER BY shipped_at LIMIT 40`).all();
   const out = { checked: 0, delivered: [], problems: [], errors: 0 };
   for (const o of results) {

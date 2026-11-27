@@ -60,7 +60,7 @@ ${toc(L, [['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky, součásti a materi
 
 <h2 id="op5">5. Platba</h2>
 <ol>
-<li>Způsoby platby: <strong>bankovní převod předem</strong> (v Kč s QR platbou, v EUR s QR kódem SEPA), <strong>dobírka</strong> (jen v ČR, na výdejní místo nebo při doručení Zásilkovnou na adresu) a <strong>platba kartou</strong> (Visa, Mastercard, Apple Pay, Google Pay) prostřednictvím platební brány Stripe, je-li v košíku nabízena. Platba kartou se provádí v Kč. Zahraniční objednávky se hradí předem.</li>
+<li>Způsoby platby: <strong>bankovní převod předem</strong> (v Kč s QR platbou, v EUR s QR kódem SEPA), <strong>dobírka</strong> (jen v ČR a jen u způsobů dopravy, u nichž je v košíku nabízena) a <strong>platba kartou</strong> (Visa, Mastercard, Apple Pay, Google Pay) prostřednictvím platební brány Stripe, je-li v košíku nabízena. Platba kartou se provádí v Kč. Zahraniční objednávky se hradí předem.</li>
 <li>Platba převodem je splatná do <strong>${T.paymentDueDays} dnů</strong> od uzavření smlouvy na účet ${OPERATOR.bankAccount} (IBAN ${OPERATOR.ibanPretty}, BIC ${OPERATOR.bic}, majitel ${OPERATOR.accountHolder}) s variabilním symbolem nebo zprávou uvedenou v potvrzení objednávky.</li>
 <li>Neuhradí-li kupující cenu ve lhůtě splatnosti, rezervace skončí a prodávající může od smlouvy odstoupit. Kupujícího o tom informuje e-mailem.</li>
 <li>Při dobírce je cena splatná při převzetí zásilky.</li>
@@ -297,18 +297,18 @@ export const shipping = doc('shipping', '/doprava-a-platba', 'Doprava a platba',
 <tr><td><strong>Zásilkovna</strong> – výdejní místo nebo Z-BOX (výběr na mapě)</td><td>${priceCs(T.defaultPrices.zasilkovna)}</td></tr>
 <tr><td><strong>Balíkovna</strong> – výdejní místo (výběr na mapě České pošty)</td><td>${priceCs(T.defaultPrices.balikovna)}</td></tr>
 <tr><td><strong>Zásilkovna</strong> – doručení na adresu</td><td>cena se zobrazí v košíku před objednáním</td></tr>
-<tr><td><strong>Pojištěná přeprava</strong> – cenná zásilka u hodinek vyšší hodnoty</td><td>cena se zobrazí v košíku před objednáním</td></tr>
+<tr><td><strong>Pojištěná přeprava na plnou hodnotu</strong> – u hodinek vyšší hodnoty (Česká pošta, Balíkovna na adresu s Cenným obsahem nebo PPL), předání proti podpisu</td><td>cena podle hodnoty hodinek se zobrazí v košíku před objednáním</td></tr>
 <tr><td><strong>Osobní předání</strong> – pouze po předchozí individuální domluvě (nemáme kamennou prodejnu)</td><td>zdarma</td></tr>
 </tbody></table>
 <h2>Doprava do zemí EU</h2>
-<p>Doručujeme do všech 27 členských států EU včetně Slovenska, zejména přes síť Zásilkovny (Packeta) na výdejní místa nebo na adresu. Cena dopravy se řídí cílovou zemí a dostupným dopravcem a <strong>zobrazí se v košíku po výběru země, ještě před odesláním objednávky</strong>. Do země, pro kterou cenu zatím nemáme, vám rádi připravíme nabídku.</p>
+<p>Doručujeme do všech 27 členských států EU včetně Slovenska, zejména přes síť Zásilkovny (Packeta) na výdejní místa nebo na adresu; hodinky vyšší hodnoty pojištěnou přepravou PPL. Cena dopravy se řídí cílovou zemí a dostupným dopravcem a <strong>zobrazí se v košíku po výběru země, ještě před odesláním objednávky</strong>. Do země, pro kterou cenu zatím nemáme, vám rádi připravíme nabídku.</p>
 <h2>Odeslání</h2>
 <p>Dostupné hodinky odesíláme do <strong>${T.dispatchWorkingDays} pracovních dnů</strong> od přijetí platby, u dobírky od potvrzení objednávky. Jakmile zásilku převezme dopravce, pošleme vám e-mail s číslem zásilky. <strong>Všechny hodinky posíláme pojištěné na plnou hodnotu.</strong> V košíku proto nabízíme jen ty způsoby dopravy, u kterých dopravce za hodnotu konkrétního kusu odpovídá; u dražších hodinek je to pojištěná cenná zásilka nebo osobní předání po domluvě.</p>
 <h2>Platba</h2>
 <table><thead><tr><th>Způsob</th><th>Poplatek</th><th>Poznámka</th></tr></thead><tbody>
 <tr><td><strong>Bankovní převod v Kč</strong> s QR platbou</td><td>zdarma</td><td>splatnost ${T.paymentDueDays} dny, údaje a QR kód hned po objednávce</td></tr>
 <tr><td><strong>Bankovní převod v EUR</strong> s QR kódem SEPA</td><td>zdarma ze strany ateliéru</td><td>IBAN ${OPERATOR.ibanPretty}, BIC ${OPERATOR.bic}. Částka v EUR podle kurzu ateliéru, zaokrouhlená nahoru na celé euro</td></tr>
-<tr><td><strong>Dobírka</strong> (jen ČR: Zásilkovna na výdejní místo i na adresu, Balíkovna)</td><td>${priceCs(T.defaultPrices.cod)}</td><td>hodinky jsou rezervovány do odeslání</td></tr>
+<tr><td><strong>Dobírka</strong> (jen ČR, u dopravců, u nichž ji košík nabízí)</td><td>${priceCs(T.defaultPrices.cod)}</td><td>hodinky jsou rezervovány do odeslání</td></tr>
 <tr><td><strong>Platba kartou</strong> – Visa, Mastercard, Apple Pay, Google Pay</td><td>zdarma</td><td>zabezpečeně přes platební bránu Stripe, je-li v košíku nabízena. Částka se strhne v Kč; u karty v jiné měně ji přepočte vaše banka. Údaje karty zadáváte jen u Stripe.</td></tr>
 </tbody></table>
 <p>Zahraniční objednávky se hradí předem. ${vatText(L)} Fakturu zasíláme e-mailem po zaplacení.</p>

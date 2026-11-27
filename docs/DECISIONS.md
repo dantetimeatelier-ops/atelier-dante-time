@@ -197,3 +197,13 @@ Upřesnění majitele:
 - Ochrana proti dvojímu prodeji i při ručním prodeji mimo e-shop.
 - Bez výslovného souhlasu majitele se neaktivuje žádná služba s pravidelnými poplatky.
 **Důsledky:** `docs/PLATBY-A-DOPRAVA.md`, PR „platby-doprava-eu“. Tajné klíče Stripe zadává majitel přímo v Cloudflare.
+
+## R24 – Správa dopravců a rozdělení dopravy podle hodnoty (2026-11-27)
+**Rozhodl:** majitel („Souhlasím s navrhovaným rozdělením dopravy. Pokračuj v implementaci.“)
+**Rozhodnutí:** Do 20 000 Kč Zásilkovna (výdejní místo, Z-BOX, adresa, dobírka), Balíkovna na výdejní místo jen do 5 000 Kč;
+nad 20 000 Kč v ČR pojištěná přeprava (Česká pošta – Cenná zásilka, Balíkovna na adresu s Cenným obsahem) s cenou podle hodnoty;
+Slovensko a EU Packeta do 700 €, nad to PPL Parcel Connect do 250 000 Kč; osobní předání zdarma po domluvě.
+Kompletní správa dopravců v administraci (ceny, příplatky, dobírka, země, max. hodnota, výluky, automatizace).
+Neověřené způsoby připravit, ale zákazníkům neaktivovat. Bezplatná Dohoda s Balíkovnou jen bez paušálu, minimálního odběru
+a pravidelných plateb. Bez placených smluv a předplatných bez souhlasu majitele.
+**Důsledky:** migrace 0026 (`shipping_methods`), `server/shipping.js`, administrace → Dopravci, `docs/DOPRAVCI.md`.

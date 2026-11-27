@@ -16,6 +16,8 @@ function makeEnv(extra = {}) {
 }
 const ORIGIN = 'https://atelier-dante-time.cz';
 const set = (db, k, v) => db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(k, v);
+// Úprava dopravce v tabulce shipping_methods (jako by to majitel nastavil v administraci → Dopravci)
+const ship = (db, id, f) => { const k = Object.keys(f); db.prepare(`UPDATE shipping_methods SET ${k.map((x) => `${x} = ?`).join(', ')} WHERE id = ?`).run(...k.map((x) => (typeof f[x] === 'object' && f[x] !== null ? JSON.stringify(f[x]) : f[x])), id); };
 const STRIPE_TEST = { PAYMENT_GATEWAY: 'stripe', STRIPE_SECRET_KEY: 'sk_test_x', STRIPE_WEBHOOK_SECRET: 'whsec_test' };
 const customer = { name: 'Jana Testovací', email: 'jana@example.cz', phone: '+420777000111', street: 'Dlouhá 12/3a', city: 'Praha', zip: '11000', terms: true };
 
@@ -27,48 +29,104 @@ test('migrace 0024 jen přidává nastavení (žádná data se nemažou)', () =>
   assert.doesNotMatch(sql, /DROP|DELETE|UPDATE/i);
 });
 
-test('doprava: nabídka podle země a pojištění na plnou hodnotu – jen funkční a plně krytý dopravce', async () => {
+test('migrace 0026: dopravci převzali dosavadní nastavení, nové (neověřené) jsou jen připravené', () => {
+  const { db } = makeEnv();
+  const rows = Object.fromEntries(db.prepare('SELECT id, status, prices_json, max_value_czk, excluded_metals, cod_enabled FROM shipping_methods').all().map((r) => [r.id, r]));
+  assert.deepEqual(JSON.parse(rows.zasilkovna.prices_json), { CZ: 99 }); // cena z dosavadního nastavení
+  assert.equal(rows.zasilkovna.status, 'aktivni');
+  assert.equal(rows.zasilkovna.max_value_czk, 20000);
+  assert.equal(rows.balikovna.status, 'aktivni');
+  assert.equal(rows.balikovna.max_value_czk, 5000);
+  assert.equal(rows.osobni.status, 'aktivni');
+  for (const id of ['balikovna_adresa', 'pojistena', 'ppl_adresa', 'ppl_eu', 'zasilkovna_adresa']) assert.equal(rows[id].status, 'pripraveno', id); // zákazníkům skryto
+  assert.equal(rows.ppl_eu.excluded_metals, 'zlato,stribro,platina');
+  const sql = readFileSync(new URL('../../migrations/0026_dopravci.sql', import.meta.url), 'utf8');
+  assert.doesNotMatch(sql, /DROP|DELETE|UPDATE /i);
+});
+
+test('doprava: filtr podle země, celkové hodnoty, materiálu pouzdra a stavu dopravce; cena podle hodnoty', async () => {
   const { shopConfig } = await import('../../server/orders.js');
   const { db, env } = makeEnv();
-  set(db, 'shipping_packeta_home_json', '{"CZ":139,"SK":169,"DE":249}');
-  set(db, 'shipping_packeta_pickup_json', '{"SK":129,"DE":189}');
-  set(db, 'eur_rate', '25');
-  // Levný kus (4 000 Kč): kryjí ho všichni
+  // Jen připravené (neověřené) způsoby zákazník nevidí
+  let cz = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 9000 });
+  assert.deepEqual(cz.shipping.map((s) => s.id), ['zasilkovna', 'osobni']); // Balíkovna jen do 5 000 Kč
+  assert.deepEqual(cz.payment.map((p) => p.id), ['bank_transfer', 'cod']); // převod první (výchozí)
+  assert.deepEqual(cz.payment.find((p) => p.id === 'cod').onlyWith, ['zasilkovna']);
+  assert.ok(!('cost' in cz.shipping[0])); // náklad dopravce se zákazníkovi neposílá
   const cheap = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 4000 });
-  assert.deepEqual(cheap.shipping.map((s) => s.id), ['zasilkovna', 'balikovna', 'zasilkovna_adresa', 'osobni']);
-  // 9 000 Kč: Balíkovna (cennosti nad 5 000 Kč jen s Cenným obsahem) se nenabídne, Zásilkovna do 20 000 Kč ano, dobírka zůstává
-  const cz = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 9000 });
-  assert.deepEqual(cz.shipping.map((s) => s.id), ['zasilkovna', 'zasilkovna_adresa', 'osobni']);
-  assert.equal(cz.insuredOnly, false);
-  assert.equal(cz.shipping.find((s) => s.id === 'zasilkovna_adresa').price, 139);
-  assert.deepEqual(cz.payment.map((p) => p.id), ['bank_transfer', 'cod']); // převod je první (výchozí); karta jen po vložení klíčů brány
-  assert.deepEqual(cz.payment.find((p) => p.id === 'cod').onlyWith, ['zasilkovna', 'balikovna', 'zasilkovna_adresa']); // R23: dobírka i na adresu v ČR
+  assert.deepEqual(cheap.shipping.map((s) => s.id), ['zasilkovna', 'balikovna', 'osobni']);
+  assert.equal(cheap.insuredOnly, false);
 
-  // Slovensko bez mapy Zásilkovny: výdejní místo se nenabízí (nešlo by vybrat), adresa ano, dobírka ne; limit 700 € × 25 = 17 500 Kč
+  // Majitel zapne Zásilkovnu na adresu, Cennou zásilku a PPL do EU
+  ship(db, 'zasilkovna_adresa', { status: 'aktivni', prices_json: { CZ: 139, SK: 169, DE: 249 } });
+  ship(db, 'pojistena', { status: 'aktivni', cod_enabled: 1, cod_fee_czk: 50 });
+  ship(db, 'ppl_eu', { status: 'aktivni' });
+  cz = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 9000 });
+  assert.deepEqual(cz.shipping.map((s) => s.id), ['zasilkovna', 'zasilkovna_adresa', 'pojistena', 'osobni']);
+  // Cenná zásilka: 190 Kč do 30 000 Kč, pak 14 Kč za každých započatých 10 000 Kč
+  assert.equal(cz.shipping.find((s) => s.id === 'pojistena').price, 190);
+  const omega = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 100000 });
+  assert.deepEqual(omega.shipping.map((s) => s.id), ['pojistena', 'osobni']); // Zásilkovna nad 20 000 Kč ne
+  assert.equal(omega.shipping[0].price, 190 + 7 * 14);
+  assert.equal(omega.insuredOnly, true);
+  assert.ok(!omega.payment.some((p) => p.id === 'cod')); // 100 000 Kč + doprava přesahuje max. dobírku 100 000 Kč
+  const omega90 = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 90000 });
+  const cod = omega90.payment.find((p) => p.id === 'cod');
+  assert.deepEqual([cod.onlyWith, cod.fees], [['pojistena'], { pojistena: 50 }]); // dobírka jen tam, kde ji dopravce umí, s jeho příplatkem
+  // Slovensko: Packeta do 700 € (17 000 Kč), dražší kus PPL s krytím do 250 000 Kč
   const sk = await shopConfig(env, 'cs', { country: 'SK', itemsTotal: 9000 });
-  assert.deepEqual(sk.shipping.map((s) => s.id), ['zasilkovna_adresa', 'osobni']);
-  assert.ok(!sk.payment.some((p) => p.id === 'cod'));
-  const skMap = await shopConfig({ ...env, PACKETA_API_KEY: 'k' }, 'en', { country: 'SK', itemsTotal: 9000 });
-  assert.deepEqual(skMap.shipping.map((s) => s.id), ['zasilkovna', 'zasilkovna_adresa', 'osobni']);
-  assert.match(skMap.shipping[0].label, /^Packeta/);
-  const skHigh = await shopConfig(env, 'cs', { country: 'SK', itemsTotal: 18000 });
-  assert.deepEqual(skHigh.shipping.map((s) => s.id), ['osobni']); // Packeta nekryje, pojištěná do EU není nastavena → nenabízí se nic nepojištěného
-  // Země bez ceny → nic kromě osobního předání
-  const fr = await shopConfig(env, 'cs', { country: 'FR', itemsTotal: 9000 });
-  assert.deepEqual(fr.shipping.map((s) => s.id), ['osobni']);
+  assert.deepEqual(sk.shipping.map((s) => s.id), ['zasilkovna_adresa', 'ppl_eu', 'osobni']);
+  assert.ok(!sk.payment.some((p) => p.id === 'cod')); // dobírka do zahraničí ne
+  const skRolex = await shopConfig(env, 'cs', { country: 'SK', itemsTotal: 180000 });
+  assert.deepEqual(skRolex.shipping.map((s) => s.id), ['ppl_eu', 'osobni']);
+  assert.equal(skRolex.shipping[0].price, 420 + 740); // nad 100 000 Kč příplatek za zvýšenou odpovědnost
+  // Zlaté pouzdro: PPL drahé kovy nepřepraví → jen osobní předání (nic nepojištěného se nenabídne)
+  const skGold = await shopConfig(env, 'cs', { country: 'SK', itemsTotal: 180000, metals: ['zlato'] });
+  assert.deepEqual(skGold.shipping.map((s) => s.id), ['osobni']);
+  assert.equal(skGold.noCarrier, true);
+  // Země bez ceny → jen osobní předání
+  assert.deepEqual((await shopConfig(env, 'cs', { country: 'FR', itemsTotal: 9000 })).shipping.map((s) => s.id), ['osobni']);
+  // Výdejní místa Packety v zahraničí jen s mapou (API klíč)
+  ship(db, 'zasilkovna', { prices_json: { CZ: 99, SK: 129 } });
+  assert.ok(!(await shopConfig(env, 'cs', { country: 'SK', itemsTotal: 9000 })).shipping.some((s) => s.id === 'zasilkovna'));
+  assert.ok((await shopConfig({ ...env, PACKETA_API_KEY: 'k' }, 'cs', { country: 'SK', itemsTotal: 9000 })).shipping.some((s) => s.id === 'zasilkovna'));
+});
 
-  // Drahé hodinky (Rolex, Omega) nad 20 000 Kč: jen pojištěná cenná zásilka nebo osobní předání, bez dobírky
-  set(db, 'insured_price_czk', '450');
-  const lux = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 180000 });
-  assert.deepEqual(lux.shipping.map((s) => s.id), ['pojistena', 'osobni']);
-  assert.equal(lux.insuredOnly, true);
-  assert.ok(!lux.payment.some((p) => p.id === 'cod'));
-  // Nad limit i pojištěné přepravy (1 000 000 Kč) → jen osobní předání
-  const over = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 1200000 });
-  assert.deepEqual(over.shipping.map((s) => s.id), ['osobni']);
-  // Majitel ověří u České pošty, že hodinky nejsou „cennost“, a zvýší limit Balíkovny → nabídne se
-  set(db, 'cover_balikovna_czk', '50000');
-  assert.ok((await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 9000 })).shipping.some((s) => s.id === 'balikovna'));
+test('administrace: úprava dopravce se ověří (země, ceny, výluky, dobírka u osobního předání nejde)', async () => {
+  const SHIP = await import('../../server/shipping.js');
+  const { db, env } = makeEnv();
+  await SHIP.saveMethod(env, 'ppl_adresa', { prices: { CZ: '310', XX: 5, SK: '' }, excluded: ['zlato', 'nesmysl'], max_value_czk: '300000', status: 'pripraveno' }, 'test');
+  const r = db.prepare("SELECT prices_json, excluded_metals, max_value_czk FROM shipping_methods WHERE id = 'ppl_adresa'").get();
+  assert.deepEqual([JSON.parse(r.prices_json), r.excluded_metals, r.max_value_czk], [{ CZ: 310 }, 'zlato', 300000]);
+  await SHIP.saveMethod(env, 'osobni', { cod_enabled: true }, 'test');
+  assert.equal(db.prepare("SELECT cod_enabled FROM shipping_methods WHERE id = 'osobni'").get().cod_enabled, 0);
+  const m = await SHIP.saveMethod(env, 'dpd_test', { name_cs: 'Test', name_en: 'Test', provider: 'jiny', kind: 'adresa' }, 'test', { create: true });
+  assert.equal(m.status, 'pripraveno'); // nový dopravce je vždy nejdřív skrytý
+  await assert.rejects(() => SHIP.saveMethod(env, 'dpd_test', { name_cs: 'X', name_en: 'X', provider: 'jiny' }, 'test', { create: true }), /už existuje/);
+  await assert.rejects(() => SHIP.saveMethod(env, 'neni', { status: 'aktivni' }, 'test'), /nenalezen/);
+  const pv = await SHIP.preview(env, { country: 'CZ', value: 50000, metals: [] });
+  assert.equal(pv.find((x) => x.id === 'zasilkovna').reason, 'hodnota nad 20000 Kč není krytá');
+  assert.match(pv.find((x) => x.id === 'pojistena').reason, /připraveno/);
+});
+
+test('náklad dopravy: odhad u objednávky, při odeslání do nákladů hodinek, oprava podle faktury dopravce; zisk počítá i zaplacenou dopravu', async () => {
+  const { createOrder, markShipped, setShippingCost } = await import('../../server/orders.js');
+  const FIN = await import('../../server/finance.js');
+  const { db, env } = makeEnv();
+  db.exec("INSERT INTO products (id, slug, title, status, price_czk) VALUES ('d1', 'd1', 'Prim D', 'available', 9000)");
+  await createOrder(env, { ...customer, country: 'CZ', shipping: 'zasilkovna', pickupPointId: '123', pickupPointName: 'Z-BOX Praha', payment: 'cod', items: ['d1'] }, ORIGIN);
+  const o = db.prepare("SELECT * FROM orders WHERE email = 'jana@example.cz'").get();
+  assert.equal(o.shipping_cost_czk, 91 + 25); // Zásilkovna + dobírka (náklad dopravce)
+  await markShipped(env, o.id, 'Z 123 4567 890', 'test');
+  let c = db.prepare("SELECT amount_czk, category FROM costs WHERE product_id = 'd1' AND category = 'doprava'").all();
+  assert.deepEqual(c.map((x) => x.amount_czk), [116]);
+  await setShippingCost(env, o.id, 102, 'test'); // skutečnost podle faktury Zásilkovny
+  c = db.prepare("SELECT amount_czk FROM costs WHERE product_id = 'd1' AND category = 'doprava'").all();
+  assert.deepEqual(c.map((x) => x.amount_czk), [102]); // přepsáno, ne zdvojeno
+  db.exec(`UPDATE orders SET status = 'completed' WHERE id = '${o.id}'`);
+  const e = await FIN.productEconomics(env, 'd1');
+  assert.equal(e.revenue, 9000 + o.shipping_price + o.cod_fee); // tržba včetně dopravy a dobírky, kterou zaplatil zákazník
+  assert.equal(e.byCat.doprava, 102);
 });
 
 test('platba kartou: zobrazí se jen se skutečně nastavenou bránou, ostrý klíč nikdy v testovacím režimu', async () => {
@@ -119,7 +177,7 @@ test('celý nákup kartou: zákazník z EU zvolí eura, strhne se v Kč → zapl
   const { createOrder } = await import('../../server/orders.js');
   const { applyPaymentStatus, recordCardFee } = await import('../../server/payment-events.js');
   const { db, env } = makeEnv({ ...STRIPE_TEST });
-  set(db, 'eur_rate', '25'); set(db, 'shipping_packeta_home_json', '{"DE":250}');
+  set(db, 'eur_rate', '25'); ship(db, 'zasilkovna_adresa', { status: 'aktivni', prices_json: { DE: 250 } });
   db.exec("INSERT INTO products (id, slug, title, status, price_czk) VALUES ('p1', 'prim-a', 'Prim Classic A', 'available', 12750)");
   const orig = globalThis.fetch;
   globalThis.fetch = async () => new Response(JSON.stringify({ id: 'cs_test_A', url: 'https://checkout.stripe.com/c/pay/cs_test_A' }));
@@ -204,12 +262,12 @@ test('ochrana unikátního kusu: druhá objednávka neprojde a pozdní platba po
 test('pokladna odmítne nedostupnou kombinaci (dobírka do zahraničí nebo s osobním předáním, karta bez brány, EUR u dobírky); dobírka na adresu v ČR projde', async () => {
   const { createOrder } = await import('../../server/orders.js');
   const { db, env } = makeEnv();
-  set(db, 'eur_rate', '25'); set(db, 'shipping_packeta_home_json', '{"CZ":139,"SK":169}');
+  set(db, 'eur_rate', '25'); ship(db, 'zasilkovna_adresa', { status: 'aktivni', prices_json: { CZ: 139, SK: 169 } });
   db.exec("INSERT INTO products (id, slug, title, status, price_czk) VALUES ('p2', 'prim-b', 'Prim B', 'available', 9000)");
   await assert.rejects(() => createOrder(env, { ...customer, country: 'SK', shipping: 'zasilkovna_adresa', payment: 'cod', items: ['p2'] }, ORIGIN), /platby není dostupný/);
   await assert.rejects(() => createOrder(env, { ...customer, country: 'CZ', shipping: 'zasilkovna_adresa', payment: 'card', items: ['p2'] }, ORIGIN), /platby není dostupný/);
   await assert.rejects(() => createOrder(env, { ...customer, country: 'CZ', currency: 'EUR', shipping: 'zasilkovna', pickupPointId: '123', pickupPointName: 'Z-BOX Praha', payment: 'cod', items: ['p2'] }, ORIGIN), /v eurech/);
-  await assert.rejects(() => createOrder(env, { ...customer, country: 'CZ', shipping: 'osobni', payment: 'cod', items: ['p2'] }, ORIGIN), /Zásilkovnou nebo Balíkovnou/);
+  await assert.rejects(() => createOrder(env, { ...customer, country: 'CZ', shipping: 'osobni', payment: 'cod', items: ['p2'] }, ORIGIN), /Dobírku lze zvolit jen/);
   const ok = await createOrder(env, { ...customer, country: 'CZ', shipping: 'zasilkovna_adresa', payment: 'cod', items: ['p2'] }, ORIGIN);
   assert.match(ok.redirect, /^\/objednavka\//);
 });
@@ -307,7 +365,27 @@ test('právní texty 1.2: dobírka i na adresu, platba kartou přes Stripe, Stri
     assert.match(t, /Stripe Payments Europe, Limited/);
     assert.doesNotMatch(t, /po (její )?aktivaci|once (the payment gateway is )?activated/);
   }
-  assert.match(cs, /při doručení Zásilkovnou na adresu/);
+  assert.match(cs, /u nichž je v košíku nabízena/);
   assert.match(cs, /Všechny hodinky posíláme pojištěné na plnou hodnotu/);
   assert.match(en, /Every watch is shipped insured for its full value/);
+});
+
+test('automatický štítek Zásilkovny po zaplacení: vznikne číslo zásilky, ale objednávka zůstane „zaplaceno“ až do převzetí dopravcem', async () => {
+  const { createOrder, markPaid } = await import('../../server/orders.js');
+  const { db, env } = makeEnv({ PACKETA_API_PASSWORD: 'h' });
+  db.exec("INSERT INTO products (id, slug, title, status, price_czk) VALUES ('a1', 'a1', 'Prim A1', 'available', 9000)");
+  await createOrder(env, { ...customer, country: 'CZ', shipping: 'zasilkovna', pickupPointId: '123', pickupPointName: 'Z-BOX Praha', payment: 'bank_transfer', items: ['a1'] }, ORIGIN);
+  const o = db.prepare('SELECT id FROM orders').get();
+  const orig = globalThis.fetch; let calls = 0;
+  globalThis.fetch = async () => { calls++; return new Response('<response><status>ok</status><result><id>4930000111</id><barcodeText>Z 493 0000 111</barcodeText></result></response>'); };
+  try {
+    await markPaid(env, o.id, 'test', ORIGIN); // vypnuto (výchozí) → žádný štítek
+    assert.equal(calls, 0);
+    db.exec(`UPDATE orders SET status = 'awaiting_payment' WHERE id = '${o.id}'`); db.exec("UPDATE products SET status = 'reserved' WHERE id = 'a1'");
+    set(db, 'auto_label', '1');
+    await markPaid(env, o.id, 'test', ORIGIN);
+  } finally { globalThis.fetch = orig; }
+  assert.equal(calls, 1);
+  const r = db.prepare('SELECT status, tracking_number FROM orders WHERE id = ?').get(o.id);
+  assert.deepEqual([r.status, r.tracking_number], ['paid', 'Z 493 0000 111']);
 });

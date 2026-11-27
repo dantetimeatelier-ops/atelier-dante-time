@@ -30,6 +30,10 @@ jsou karetní peněženky) – PayPal, Link ani jiné metody se nezobrazí. Kód
 
 ## 2. Doprava a pojištění na plnou hodnotu
 
+**Od R24 se vše nastavuje v administraci → Dopravci** (ceny podle zemí, příplatek podle hodnoty, dobírka, max. krytá
+hodnota, výluky materiálu pouzdra, štítek, sledování, náklad dopravce). Dotazy na dopravce a Dohoda s Balíkovnou: `docs/DOPRAVCI.md`.
+Tabulka níže popisuje výchozí hodnoty.
+
 Každý způsob dopravy má v Nastavení „do jaké hodnoty dopravce odpovídá“. Dražší kus se zákazníkovi tímto dopravcem
 **vůbec nenabídne**. Když nezbude žádný běžný dopravce, nabídne se pojištěná cenná zásilka (pokud má cenu) a osobní předání.
 
