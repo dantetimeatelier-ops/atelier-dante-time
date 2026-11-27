@@ -186,3 +186,21 @@ test('faktura: oprava odběratele (adresa, e-mail, splatnost) s historií; storn
   const ui = readFileSync(new URL('../../public/admin/admin.js', import.meta.url), 'utf8');
   assert.match(ui, /data-storno[\s\S]{0,400}prompt\([\s\S]{0,300}Vystaveno omylem dvakrát[\s\S]{0,200}cancel`, \{ reason/);
 });
+
+test('limit DPH: obrat = faktury z aplikace + nahrané prodeje, bez duplicit, záloh a storen', async () => {
+  const FIN = await import('../../server/finance.js');
+  const { db, env } = makeEnv();
+  const inv = (id, number, total, kind = 'faktura', cancelled = null) => db.prepare(`INSERT INTO invoices (id, number, public_token, source, buyer_name, items, total, payment_method, issued_at, kind, mode, cancelled_at) VALUES (?, ?, ?, 'manual', 'Test', '[]', ?, 'prevod', ?, ?, 'live', ?)`).run(id, number, `${id}-t`, total, `${Y}-05-01T10:00:00Z`, kind, cancelled);
+  inv('a', 'DT-1', 13000);
+  inv('z', 'DT-2', 5000, 'zalohova');
+  inv('s', 'DT-3', 9000, 'faktura', `${Y}-05-02`);
+  db.exec(`INSERT INTO sales (id, number, issued_on, total_czk, status, source) VALUES
+    ('p1', 'OLD-1', '${Y}-02-01', 250000, 'potvrzeno', 'ai'),
+    ('p2', NULL, '${Y}-03-01', 265200, 'potvrzeno', 'rucne'),
+    ('p3', 'DT-1', '${Y}-05-01', 13000, 'potvrzeno', 'import'),
+    ('p4', 'OLD-2', '${Y}-04-01', 7000, 'ke_kontrole', 'ai'),
+    ('p5', 'OLD-3', '${Number(Y) - 1}-12-01', 7000, 'potvrzeno', 'ai')`);
+  const t = await FIN.vatTurnover(env, Y);
+  assert.deepEqual(t, { invoices: 13000, imported: 515200, total: 528200 });
+  assert.equal((await FIN.overview(env, Y)).revenue, t.total); // stejné číslo jako „Fakturováno“ v Ekonomice
+});

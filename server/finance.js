@@ -273,6 +273,18 @@ export async function commissionEconomics(env, commissionId) {
  *  Náklady = skutečně zaplacené výdaje (bez odhadů a bez vlastní práce) + nákupy dílů na sklad.
  *  Vlastní práce se vykazuje zvlášť (není výdaj), zisk po ocenění práce také zvlášť.
  */
+/**
+ * Obrat pro limit DPH neplátce za kalendářní rok: faktury vystavené v aplikaci (ne zálohové, ne stornované)
+ * + potvrzené nahrané / ručně zapsané prodeje (bez duplicit s fakturami z aplikace) – stejně jako „Fakturováno“ v Ekonomice.
+ */
+export async function vatTurnover(env, year, { liveOnly = true } = {}) {
+  const y = String(year);
+  const live = liveOnly ? "AND mode = 'live'" : '';
+  const inv = await env.DB.prepare(`SELECT COALESCE(SUM(total),0) AS s FROM invoices WHERE cancelled_at IS NULL AND kind <> 'zalohova' AND substr(issued_at,1,4) = ? ${live}`).bind(y).first();
+  const sl = await env.DB.prepare(`SELECT COALESCE(SUM(total_czk),0) AS s FROM sales WHERE status = 'potvrzeno' AND substr(issued_on,1,4) = ? AND (number IS NULL OR number NOT IN (SELECT number FROM invoices WHERE number IS NOT NULL ${live}))`).bind(y).first();
+  return { invoices: Number(inv.s) || 0, imported: Number(sl.s) || 0, total: (Number(inv.s) || 0) + (Number(sl.s) || 0) };
+}
+
 export async function overview(env, year) {
   const y = /^\d{4}$/.test(String(year)) ? String(year) : String(new Date().getUTCFullYear());
   const s = await getSettings(env);
