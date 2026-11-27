@@ -42,7 +42,7 @@ export function cart(lang) {
       <fieldset><legend data-address-legend>${L('Kontaktní a fakturační údaje', 'Contact &amp; billing details')}</legend>
         <div class="form">
           <div class="row"><label>${L('Jméno a příjmení', 'Full name')}<input type="text" name="name" autocomplete="name" required maxlength="120"></label>
-          <label>E-mail<input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" required maxlength="200"></label></div>
+          <label>E-mail<input name="email" type="email" inputmode="email" autocomplete="email" spellcheck="false" required maxlength="200"></label></div>
           <label>${L('Telefon (pro dopravce)', 'Phone (for the carrier)')}<input name="phone" type="tel" autocomplete="tel" required maxlength="40"></label>
           <label>${L('Ulice a číslo', 'Street')}<input type="text" name="street" autocomplete="address-line1" required maxlength="200"></label>
           <div class="row"><label>${L('Město', 'City')}<input type="text" name="city" autocomplete="address-level2" required maxlength="120"></label>
@@ -82,7 +82,7 @@ export function withdrawalForm() {
   <form class="form" data-withdrawal-form novalidate>
     <div data-step="1">
       <div class="row"><label>Jméno a příjmení<input type="text" name="name" autocomplete="name" required maxlength="120"></label>
-      <label>E-mail použitý při objednávce<input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" required maxlength="200"></label></div>
+      <label>E-mail použitý při objednávce<input name="email" type="email" inputmode="email" autocomplete="email" spellcheck="false" required maxlength="200"></label></div>
       <label style="margin-top:14px">Číslo objednávky<input type="text" name="orderNumber" required maxlength="20" placeholder="např. 2026-0001"></label>
       <label style="margin-top:14px">Zboží, kterého se odstoupení týká (nepovinné, jinak celá objednávka)<input type="text" name="items" maxlength="500"></label>
       <label style="margin-top:14px">Číslo účtu pro vrácení peněz (nepovinné)<input type="text" name="account" maxlength="50"></label>
