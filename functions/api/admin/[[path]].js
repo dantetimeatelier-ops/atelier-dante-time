@@ -408,7 +408,7 @@ function commissionInput(body) {
   const d = {};
   if ('type' in body) d.type = oneOf(body.type, ['servis', 'renovace', 'zakazkova_vyroba', 'prestavba'], 'druh zakázky');
   if ('status' in body) d.status = oneOf(body.status, ['poptavka', 'nabidka', 'prijato', 'v_praci', 'ceka_na_dily', 'hotovo', 'predano', 'zruseno'], 'stav');
-  for (const [k, max] of [['contact_info', 200], ['contact_street', 120], ['contact_city', 80], ['contact_zip', 12], ['watch', 500], ['description', 4000], ['internal_note', 4000], ['due_date', 20], ['received_at', 20], ['returned_at', 20], ['deposit_received_on', 20]]) if (k in body) d[k] = str(body[k], { max });
+  for (const [k, max] of [['contact_info', 200], ['contact_street', 120], ['contact_city', 80], ['contact_zip', 12], ['watch', 500], ['caliber', 100], ['description', 4000], ['internal_note', 4000], ['due_date', 20], ['received_at', 20], ['returned_at', 20], ['deposit_received_on', 20]]) if (k in body) d[k] = str(body[k], { max });
   for (const k of ['estimate_czk', 'deposit_czk', 'final_price_czk']) if (k in body) d[k] = int(body[k], { max: 50000000, name: 'částka' });
   return d;
 }
@@ -586,6 +586,13 @@ route('GET', 'invoices', async ({ env, request }) => {
 route('GET', 'invoices/form', async ({ env, request }) => {
   const kid = new URL(request.url).searchParams.get('commission_id');
   const commission = kid ? await FIN.commissionEconomics(env, kid).then((e) => ({ id: kid, number: e.commission.number, depositCashLeft: e.depositCashLeft, advancesPaid: e.advancesPaid, price: e.price, received: e.received })).catch(() => null) : null;
+  // Aktuální údaje zakázky (odběratel, hodinky, cena) – faktura se předvyplní vždy z uloženého stavu, ne ze starého odkazu
+  if (commission) {
+    const k = await env.DB.prepare(`SELECT k.type, k.watch, k.caliber, k.final_price_czk, k.estimate_czk, k.contact_street, k.contact_city, k.contact_zip,
+        COALESCE(c.name, k.contact_name) AS name, c.email AS email FROM commissions k LEFT JOIN customers c ON c.id = k.customer_id WHERE k.id = ?`).bind(kid).first();
+    if (k) Object.assign(commission, { type: k.type, watch: k.watch, caliber: k.caliber, final_price_czk: k.final_price_czk, estimate_czk: k.estimate_czk,
+      buyer: { buyer_name: k.name || '', buyer_email: k.email || '', buyer_street: k.contact_street || '', buyer_city: k.contact_city || '', buyer_zip: k.contact_zip || '' } });
+  }
   const autosend = (await getSettings(env)).invoice_autosend === '1';
   const { results: products } = await env.DB.prepare("SELECT id, title, price_czk, serial_ref, status FROM products WHERE status IN ('available','in_progress','draft') OR (status = 'reserved' AND reserved_order_id IS NULL) ORDER BY title").all();
   const { results: advances } = await env.DB.prepare("SELECT a.id, a.number, a.buyer_name, a.total, a.commission_id FROM invoices a WHERE a.kind = 'zalohova' AND a.cancelled_at IS NULL AND a.paid_at IS NOT NULL AND NOT EXISTS (SELECT 1 FROM invoices f WHERE f.related_invoice_id = a.id AND f.kind = 'faktura' AND f.cancelled_at IS NULL) ORDER BY a.issued_at DESC").all();

@@ -4,6 +4,14 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/zakazky-kalibr-faktura
+**Hotovo:** u zakázky nové pole „Kalibr“ (migrace 0031 `commissions.caliber`, hledá se i podle něj).
+Faktura k zakázce se předvyplňuje z aktuálně uložené zakázky (`GET invoices/form` vrací `commission.buyer`,
+druh, hodinky, kalibr a cenu) – dřív se brala data z odkazu sestaveného při otevření zakázky, takže adresa
+doplněná a uložená až potom do faktury nepřešla. U konceptu se doplní jen prázdné údaje odběratele.
+**Další krok:** –
+**Pozor na:** odkaz „Vystavit fakturu“ nese už jen `commission_id` (a `kind`), vše ostatní dotahuje formulář faktury.
+
 ## 2026-11-27 – Claude – claude/oprava-vydejni-mista
 **Hotovo:** Výběr Zásilkovny na mapě se nepropsal do pokladny → okno mapy dostává stejné parametry jako oficiální knihovna Packeta (`referrer`, `version`, `loader`, `currentVersion`). Balíkovna zpět i pro hodinky do 20 000 Kč (migrace 0029, výslovný pokyn majitele).
 **Pozor na:** Poštovní podmínky Balíkovny (cennosti nad 5 000 Kč) – majitel o riziku ví; limit lze změnit v administraci → Dopravci.
