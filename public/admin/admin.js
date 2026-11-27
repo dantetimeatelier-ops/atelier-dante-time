@@ -1198,10 +1198,17 @@
     const { methods } = await api('GET', 'shipping-methods');
     app.innerHTML = `<p><a href="#/nastaveni">← Nastavení</a></p><h1>Dopravci</h1>
       <p class="small muted">Zákazník uvidí jen aktivní způsoby, které doručují do zvolené země, pokryjí celou hodnotu objednávky a nevylučují materiál pouzdra. Vše ostatní se řeší automaticky.</p>
-      <div class="list">${methods.map((m) => { const st = SM_STATUS[m.status] || [m.status, '']; const cz = m.prices.CZ ?? m.prices['*']; const countries = Object.keys(m.prices).filter((c) => c !== '*'); return `<a class="item" href="#/dopravci/${esc(m.id)}"><span class="grow"><span class="t">${esc(m.name_cs)}</span><br><span class="small muted">${esc(SM_KIND[m.kind] || m.kind)} · ${m.prices['*'] != null ? 'všechny země' : esc(countries.join(', ') || 'žádná země')} · od ${czkOr(cz)} · krytí ${m.max_value_czk ? `do ${czk(m.max_value_czk)}` : m.kind === 'osobni' ? 'osobně' : 'bez limitu'}${m.cod_enabled ? ' · dobírka' : ''}${m.excluded.length ? ` · nepřepraví: ${m.excluded.map((x) => METAL_CS[x]).join(', ')}` : ''}</span></span><span class="chip ${st[1]}">${esc(st[0])}</span></a>`; }).join('')}</div>
+      <div class="list">${methods.map((m) => {
+        const st = { aktivni: ['Aktivní', 'available'], pripraveno: ['Skryto', 'reserved'], vypnuto: ['Vypnuto', ''] }[m.status] || [m.status, ''];
+        const countries = Object.keys(m.prices).filter((c) => c !== '*');
+        const from = m.prices.CZ ?? m.prices['*'] ?? (countries.length ? Math.min(...countries.map((c) => m.prices[c])) : null);
+        const max = m.prices.CZ != null ? m.max_value_czk : (m.max_value_abroad_czk ?? m.max_value_czk);
+        return `<a class="item" href="#/dopravci/${esc(m.id)}"><span class="grow" style="min-width:0"><span class="t" style="display:block">${esc(m.name_cs)}</span><span class="small muted">${esc(SM_KIND[m.kind] || m.kind)} · ${m.prices['*'] != null ? 'všechny země' : esc(countries.join(', ') || 'žádná země')} · od ${czkOr(from)} · ${m.kind === 'osobni' ? 'osobně' : max ? `krytí do ${czk(max)}` : 'bez limitu'}${m.cod_enabled ? ' · dobírka' : ''}${m.excluded.length ? ` · ne: ${m.excluded.map((x) => METAL_CS[x]).join(', ')}` : ''}</span></span><span class="chip ${st[1]}" style="flex:none">${esc(st[0])}</span></a>`;
+      }).join('')}</div>
+      <p class="small muted">Aktivní = zákazníci vidí · Skryto = připraveno, čeká na ověření podmínek · Vypnuto.</p>
       <a class="btn block" href="#/dopravci/novy" style="margin-top:12px">+ Přidat dopravce</a>
       <div class="card" style="margin-top:18px"><h2 style="margin-top:0">Co uvidí zákazník</h2>
-        <div class="grid"><label>Země<select id="pvc">${EU.map(([c, nm]) => `<option value="${c}">${nm}</option>`).join('')}</select></label><label>Hodnota hodinek (Kč)<input id="pvv" inputmode="numeric" value="25000"></label></div>
+        <div class="grid"><label>Země<select id="pvc">${EU.map(([c, nm]) => `<option value="${c}" ${c === 'CZ' ? 'selected' : ''}>${nm}</option>`).join('')}</select></label><label>Hodnota hodinek (Kč)<input id="pvv" inputmode="numeric" value="25000"></label></div>
         <label>Materiál pouzdra<select id="pvm"><option value="">ocel / pozlacené / jiné</option><option value="zlato">zlato</option><option value="stribro">stříbro</option><option value="platina">platina</option></select></label>
         <div id="pvout" style="margin-top:10px"></div></div>`;
     const pv = () => run(async () => {
@@ -1257,7 +1264,11 @@
       d.cod_enabled = f.cod_enabled.checked;
       for (const k of Object.keys(d)) if (k.startsWith('ex_')) delete d[k];
       if (nu) { await api('POST', 'shipping-methods', d); toast('Dopravce přidán'); location.hash = `#/dopravci/${d.id}`; }
-      else { await api('PUT', `shipping-methods/${id}`, d); toast('Uloženo'); await views['dopravci/:id']({ id }); }
+      else {
+        const here = location.hash;
+        await api('PUT', `shipping-methods/${id}`, d); toast('Uloženo');
+        if (location.hash === here) await views['dopravci/:id']({ id }); // nepřekreslovat, když uživatel mezitím odešel
+      }
     }); });
   };
 
