@@ -47,11 +47,13 @@ try {
 
   // 2) Nastavení dopravy (administrace → Dopravci)
   await page.goto(`${BASE}/admin/#/dopravci/zasilkovna`);
+  await page.getByRole('heading', { name: /Zásilkovna/ }).first().waitFor();
   await page.getByLabel('Česko – cena').fill('99');
   await page.getByRole('button', { name: 'Uložit', exact: true }).click();
   await page.locator('.toast', { hasText: 'Uloženo' }).waitFor();
   // Pojištění na plnou hodnotu: dražší kus než limit Zásilkovny (20 000 Kč) jde jen Cennou zásilkou – majitel ji zapne
   await page.goto(`${BASE}/admin/#/dopravci/pojistena`);
+  await page.getByRole('heading', { name: /Cenná zásilka/ }).waitFor(); // počkat, až se místo Zásilkovny vykreslí editor Cenné zásilky
   await page.getByLabel('Stav').selectOption('aktivni');
   await page.getByLabel('Česko – cena').fill('450');
   const [put] = await Promise.all([
@@ -241,6 +243,7 @@ try {
 
   // 9) Dobírka + výběr Balíkovny (okno České pošty nahrazeno testovací stránkou)
   await page.goto(`${BASE}/admin/#/dopravci/balikovna`);
+  await page.getByRole('heading', { name: /Balíkovna/ }).first().waitFor();
   await page.getByLabel('Česko – cena').fill('89');
   // Majitel ověřil u České pošty podmínky pro hodinky → limit Balíkovny 50 000 Kč, dobírka 40 Kč
   await page.getByLabel(/Max. krytá hodnota v ČR/).fill('50000');

@@ -1317,6 +1317,7 @@
   views['dopravci/:id'] = async ({ id }) => {
     const nu = id === 'novy';
     const data = await api('GET', 'shipping-methods');
+    if (!location.hash.startsWith(`#/dopravci/${id}`)) return; // uživatel mezitím přešel jinam – nepřepisovat novou stránku
     const m = nu ? { id: '', provider: 'jiny', kind: 'adresa', name_cs: '', name_en: '', status: 'pripraveno', prices: {}, costs: {}, excluded: [], value_free_czk: 0, value_step_czk: 10000, value_step_price_czk: 0, cost_step_price_czk: 0, cod_enabled: false, cod_fee_czk: 0, cost_cod_czk: 0, sort_order: 100 } : data.methods.find((x) => x.id === id);
     if (!m) { app.innerHTML = '<p>Dopravce nenalezen.</p>'; return; }
     const num = (name, label, v, hint = '') => `<label>${label}<input name="${name}" inputmode="numeric" value="${esc(v ?? '')}">${hint ? `<span class="small muted">${hint}</span>` : ''}</label>`;
