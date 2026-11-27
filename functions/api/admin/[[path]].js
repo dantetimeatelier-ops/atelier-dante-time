@@ -384,7 +384,7 @@ function commissionInput(body) {
   const d = {};
   if ('type' in body) d.type = oneOf(body.type, ['servis', 'renovace', 'zakazkova_vyroba', 'prestavba'], 'druh zakázky');
   if ('status' in body) d.status = oneOf(body.status, ['poptavka', 'nabidka', 'prijato', 'v_praci', 'ceka_na_dily', 'hotovo', 'predano', 'zruseno'], 'stav');
-  for (const [k, max] of [['contact_info', 200], ['watch', 500], ['description', 4000], ['internal_note', 4000], ['due_date', 20], ['received_at', 20], ['returned_at', 20], ['deposit_received_on', 20]]) if (k in body) d[k] = str(body[k], { max });
+  for (const [k, max] of [['contact_info', 200], ['contact_street', 120], ['contact_city', 80], ['contact_zip', 12], ['watch', 500], ['description', 4000], ['internal_note', 4000], ['due_date', 20], ['received_at', 20], ['returned_at', 20], ['deposit_received_on', 20]]) if (k in body) d[k] = str(body[k], { max });
   for (const k of ['estimate_czk', 'deposit_czk', 'final_price_czk']) if (k in body) d[k] = int(body[k], { max: 50000000, name: 'částka' });
   return d;
 }
@@ -392,7 +392,8 @@ route('GET', 'commissions', async ({ env }) => {
   // Hlavní fotka: zvolená, jinak první fotka „po“, jinak první nahraná (i od zákazníka z poptávky)
   const { results } = await env.DB.prepare(`SELECT k.*, COALESCE(c.name, k.contact_name) AS customer_name, c.email AS customer_email, COALESCE(c.phone, k.contact_info) AS customer_phone,
       COALESCE((SELECT p.id FROM commission_photos p WHERE p.id = k.main_photo_id),
-        (SELECT p.id FROM commission_photos p WHERE p.commission_id = k.id OR (k.inquiry_id IS NOT NULL AND p.inquiry_id = k.inquiry_id) ORDER BY CASE p.phase WHEN 'po' THEN 0 ELSE 1 END, p.created_at LIMIT 1)) AS cover_photo_id
+        (SELECT p.id FROM commission_photos p WHERE p.commission_id = k.id OR (k.inquiry_id IS NOT NULL AND p.inquiry_id = k.inquiry_id) ORDER BY CASE p.phase WHEN 'po' THEN 0 ELSE 1 END, p.created_at LIMIT 1)) AS cover_photo_id,
+      (SELECT d.id FROM invoice_drafts d WHERE d.commission_id = k.id ORDER BY d.updated_at DESC LIMIT 1) AS invoice_draft_id
     FROM commissions k LEFT JOIN customers c ON c.id = k.customer_id ORDER BY CASE k.status WHEN \'predano\' THEN 1 WHEN \'zruseno\' THEN 2 ELSE 0 END, k.updated_at DESC LIMIT 300`).all();
   return json({ commissions: results });
 });
@@ -532,10 +533,41 @@ route('GET', 'invoices/form', async ({ env, request }) => {
   const { results: advances } = await env.DB.prepare("SELECT a.id, a.number, a.buyer_name, a.total, a.commission_id FROM invoices a WHERE a.kind = 'zalohova' AND a.cancelled_at IS NULL AND a.paid_at IS NOT NULL AND NOT EXISTS (SELECT 1 FROM invoices f WHERE f.related_invoice_id = a.id AND f.kind = 'faktura' AND f.cancelled_at IS NULL) ORDER BY a.issued_at DESC").all();
   return json({ products, advances, kinds: INVOICE_KINDS, channels: SALE_CHANNELS, pay: INVOICE_PAY, commission, autosend });
 });
+// Koncepty faktur (bez čísla; číslo se přidělí až při vystavení)
+route('GET', 'invoice-drafts', async ({ env }) => {
+  const { results } = await env.DB.prepare('SELECT d.id, d.commission_id, d.buyer_name, d.total_czk, d.updated_at, k.number AS commission_number FROM invoice_drafts d LEFT JOIN commissions k ON k.id = d.commission_id ORDER BY d.updated_at DESC LIMIT 50').all();
+  return json({ drafts: results });
+});
+route('GET', 'invoice-drafts/:id', async ({ env, params }) => {
+  const d = await env.DB.prepare('SELECT * FROM invoice_drafts WHERE id = ?').bind(params.id).first();
+  if (!d) throw new HttpError('Koncept nenalezen', 404);
+  return json({ id: d.id, commission_id: d.commission_id, data: JSON.parse(d.data) });
+});
+route('POST', 'invoice-drafts', async ({ env, body, user }) => {
+  const data = JSON.stringify(body.data || {});
+  if (data.length > 50000) throw new HttpError('Koncept je příliš velký');
+  const buyer = str(body.data?.fields?.buyer_name, { max: 120 }) || null;
+  const total = int(body.total_czk, { max: 50000000, name: 'částka' }) ?? null;
+  const kid = body.commission_id ? str(body.commission_id, { max: 40 }) : null;
+  let id = body.id ? str(body.id, { max: 40 }) : null;
+  if (id && await env.DB.prepare('SELECT id FROM invoice_drafts WHERE id = ?').bind(id).first()) {
+    await env.DB.prepare('UPDATE invoice_drafts SET data = ?, buyer_name = ?, total_czk = ?, commission_id = ?, updated_at = ? WHERE id = ?').bind(data, buyer, total, kid, now(), id).run();
+  } else {
+    id = randomId();
+    await env.DB.prepare('INSERT INTO invoice_drafts (id, commission_id, buyer_name, total_czk, data) VALUES (?, ?, ?, ?, ?)').bind(id, kid, buyer, total, data).run();
+    await audit(env, user.email, 'koncept_faktury', 'invoice_draft', id);
+  }
+  return json({ id });
+});
+route('DELETE', 'invoice-drafts/:id', async ({ env, params }) => {
+  await env.DB.prepare('DELETE FROM invoice_drafts WHERE id = ?').bind(params.id).run();
+  return json({ ok: true });
+});
 route('POST', 'invoices', async ({ env, body, user, request }) => {
   let commission = null;
   if (body.commission_id) commission = await env.DB.prepare('SELECT number FROM commissions WHERE id = ?').bind(body.commission_id).first();
   const inv = await INV.issueManual(env, { ...body, channel: body.channel || (commission ? 'zakazka' : 'osobne'), note: body.note || (commission ? `Zakázka ${commission.number}` : null) }, user.email, new URL(request.url).origin);
+  if (body.draft_id) await env.DB.prepare('DELETE FROM invoice_drafts WHERE id = ?').bind(String(body.draft_id)).run(); // koncept je vystaven
   return json({ id: inv.id, number: inv.number, token: inv.public_token, done: inv.done, sendMode: inv.sendMode }, 201);
 });
 route('POST', 'invoices/:id/paid', async ({ env, params, user }) => {
