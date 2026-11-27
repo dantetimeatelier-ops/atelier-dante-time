@@ -4,6 +4,16 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/os-sales-finance-director
+**Hotovo:** podle zadání Dante Time OS oživeny role **DT Sales** a **DT Finance** (migrace 0020, `salesCheck`, `financeCheck`
+v `server/os.js`, denně 8:00, bez AI). Sales: poptávky bez odpovědi 2+ dny (bez jmen), nabídky bez reakce 7+ dní, zakázky
+po termínu / do 3 dnů, rezervace převodem končící do 24 h, inzeráty bez průměru pouzdra. Finance: doklady a prodeje ke kontrole,
+hodinky bez nákupní ceny. **DT Director** týdně přidává náklady, zisk, hodnotu skladu, AI útratu, co se udělalo (poslední běhy rolí)
+a upozornění po rolích. Stav agentů zapsán v `docs/DANTE-TIME-OS.md`.
+**Další krok:** DT Innovation (týdně, AI v limitu) po pár týdnech provozu; Marketing a Scout čekají na podklady majitele.
+
+---
+
 ## 2026-11-27 – Claude – claude/zasilkovna-expedice
 **Hotovo:** DT Logistics – expedice. V detailu zaplacené objednávky (nebo dobírky) se Zásilkovnou: hmotnost + „Založit zásilku
 v Zásilkovně“ (`createPacket`: výdejní místo z objednávky, hodnota = cena, dobírka u COD, volitelně `PACKETA_SENDER`).

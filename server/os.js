@@ -8,6 +8,7 @@ import { sendDueReminders } from './warranty.js';
 import { SITE } from '../src/site.mjs';
 import { today } from '../src/shop/warranty.mjs';
 import { refreshAll } from './packeta.js';
+import { productEconomics, overview } from './finance.js';
 
 // ---- Role a běhy --------------------------------------------------------------------------
 export async function roles(env) {
@@ -89,6 +90,51 @@ async function logistics(env) {
   if (track?.problems.length) parts.push(`problém se zásilkou: ${track.problems.join('; ')}`);
   if (track?.errors) parts.push(`${track.errors} zásilek se nepodařilo ověřit`);
   return { status: stuck || track?.problems.length || track?.delivered.length ? 'warning' : 'ok', summary: parts.join('; ') || 'nic k vyřízení' };
+}
+
+// ---- DT Sales (bez AI): nic nezapadne ------------------------------------------------------------
+const TYPE_CS = { servis: 'servis', renovace: 'renovace', zakazkova_vyroba: 'zakázková sestava', prestavba: 'přestavba', jine: 'dotaz', product: 'zájem o hodinky', general: 'dotaz' };
+const dCs = (iso) => new Date(iso).toLocaleDateString('cs-CZ', { timeZone: 'Europe/Prague' });
+export async function salesCheck(env, at = Date.now()) {
+  const seen = new Set();
+  const f = async (key, sev, title, detail) => { seen.add(key); await finding(env, 'sales', key, sev, title, detail); };
+  const q = (sql, ...b) => env.DB.prepare(sql).bind(...b).all().then((r) => r.results);
+  const iso = (h) => new Date(at - h * 3600000).toISOString();
+  const day = new Date(at).toISOString().slice(0, 10);
+  // Poptávky bez odpovědi déle než 2 dny (bez jmen – jen druh a datum)
+  const inq = await q("SELECT id, type, created_at FROM inquiries WHERE status = 'nova' AND created_at < ? ORDER BY created_at", iso(48));
+  for (const i of inq) await f(`poptavka:${i.id}`, 'warning', `Poptávka (${TYPE_CS[i.type] || i.type}) z ${dCs(i.created_at)} čeká na odpověď`, 'Poptávky → Návrh odpovědi (AI) nebo odpovězte e-mailem a označte „Vyřizuje se“.');
+  // Zakázky: nabídka bez reakce 7+ dní, termín v ohrožení nebo prošlý
+  for (const k of await q("SELECT id, number, updated_at FROM commissions WHERE status = 'nabidka' AND updated_at < ?", iso(7 * 24))) await f(`nabidka:${k.id}`, 'info', `Nabídka ${k.number} je bez reakce od ${dCs(k.updated_at)}`, 'Zvažte připomenutí zákazníkovi.');
+  for (const k of await q("SELECT id, number, due_date FROM commissions WHERE due_date IS NOT NULL AND due_date <> '' AND status NOT IN ('hotovo','predano','zruseno','poptavka')")) {
+    if (k.due_date < day) await f(`termin:${k.id}`, 'warning', `Zakázka ${k.number} je po termínu (${dCs(k.due_date)})`, 'Domluvte se zákazníkem nový termín.');
+    else if (k.due_date <= new Date(at + 3 * 86400000).toISOString().slice(0, 10)) await f(`termin:${k.id}`, 'info', `Zakázka ${k.number} má termín ${dCs(k.due_date)}`, '');
+  }
+  // Rezervace hodinek převodem, které do 24 h vyprší
+  for (const o of await q("SELECT id, number, reserved_until FROM orders WHERE status = 'awaiting_payment' AND payment_method = 'bank_transfer' AND reserved_until BETWEEN ? AND ?", new Date(at).toISOString(), new Date(at + 24 * 3600000).toISOString())) await f(`rezervace:${o.id}`, 'info', `Rezervace objednávky ${o.number} vyprší ${new Date(o.reserved_until).toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' })}`, 'Platba zatím nedorazila – případně zákazníkovi připomeňte.');
+  // Inzeráty: chybějící údaje, které zákazníci u hodinek hledají
+  for (const p of await q("SELECT id, title FROM products WHERE status = 'available' AND (case_diameter_mm IS NULL OR case_diameter_mm = 0)")) await f(`prumer:${p.id}`, 'info', `Inzerát bez průměru pouzdra: ${p.title}`, 'Hodinky → upravit → Průměr pouzdra (mm).');
+  await resolveMissing(env, 'sales', seen);
+  return { status: inq.length ? 'warning' : 'ok', summary: seen.size ? `${seen.size} připomínek (${inq.length} poptávek čeká na odpověď)` : 'vše vyřízeno' };
+}
+
+// ---- DT Finance (bez AI): úplná a správná čísla -----------------------------------------------------
+export async function financeCheck(env) {
+  const seen = new Set();
+  const f = async (key, sev, title, detail) => { seen.add(key); await finding(env, 'finance', key, sev, title, detail); };
+  const one = (sql, ...b) => env.DB.prepare(sql).bind(...b).first();
+  const costs = (await one("SELECT COUNT(*) AS n FROM costs WHERE status = 'ke_kontrole'")).n;
+  if (costs) await f('doklady-kontrola', 'warning', `${costs} nákladových dokladů čeká na kontrolu`, 'Ekonomika → Doklady ke kontrole: potvrďte nebo opravte údaje vytěžené z dokladů.');
+  const sales = (await one("SELECT COUNT(*) AS n FROM sales WHERE status = 'ke_kontrole'").catch(() => ({ n: 0 }))).n;
+  if (sales) await f('prodeje-kontrola', 'warning', `${sales} prodejních dokladů čeká na kontrolu`, 'Ekonomika → Prodeje ke kontrole.');
+  const { results: prods } = await env.DB.prepare("SELECT id, title, status FROM products WHERE status IN ('available','reserved','sold')").all();
+  let missing = 0;
+  for (const p of prods) {
+    const e = await productEconomics(env, p.id);
+    if (!e.hasPurchase) { missing++; await f(`nakup:${p.id}`, p.status === 'sold' ? 'warning' : 'info', `Hodinky bez nákupní ceny: ${p.title}`, 'Bez nákupní ceny nejde spočítat marže a zisk. Hodinky → Ekonomika kusu → přidat náklad „Nákup“.'); }
+  }
+  await resolveMissing(env, 'finance', seen);
+  return { status: costs || sales ? 'warning' : 'ok', summary: seen.size ? `${costs + sales} dokladů ke kontrole, ${missing} hodinek bez nákupní ceny` : 'evidence je úplná' };
 }
 
 // ---- DT Guardian (nezávislá kontrola, bez AI) --------------------------------------------------
@@ -182,30 +228,42 @@ export async function backup(env) {
 export async function directorSummary(env) {
   const q = (sql, ...b) => env.DB.prepare(sql).bind(...b).first();
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-  const year = `${new Date().getUTCFullYear()}-01-01`;
   const wk = await q("SELECT COUNT(*) AS n, COALESCE(SUM(total),0) AS s FROM invoices WHERE cancelled_at IS NULL AND kind <> 'zalohova' AND issued_at > ? AND mode = 'live'", weekAgo);
-  const yr = await q("SELECT COALESCE(SUM(total),0) AS s FROM invoices WHERE cancelled_at IS NULL AND kind <> 'zalohova' AND issued_at >= ? AND mode = 'live'", year);
+  const fin = await overview(env).catch(() => null); // tržby, náklady, zisk letos (DT Finance)
   const orders = await q('SELECT COUNT(*) AS n FROM orders WHERE created_at > ?', weekAgo);
   const toShip = await q("SELECT COUNT(*) AS n FROM orders WHERE status='paid'");
   const inq = await q("SELECT COUNT(*) AS n FROM inquiries WHERE status='nova'");
+  const newInq = await q('SELECT COUNT(*) AS n FROM inquiries WHERE created_at > ?', weekAgo);
   const appr = await q("SELECT COUNT(*) AS n FROM approvals WHERE status='ceka'");
   const insp = await q("SELECT COUNT(*) AS n FROM warranty_inspections WHERE status IN ('planovana','objednana') AND window_from <= ? AND window_to >= ?", today(), today());
+  const done = await q("SELECT COUNT(*) AS n FROM orders WHERE completed_at > ?", weekAgo);
+  const shipped = await q("SELECT COUNT(*) AS n FROM orders WHERE shipped_at > ?", weekAgo);
+  const ai = await aiBudget(env);
   const findings = await openFindings(env);
-  const goal = 2000000;
-  const pct = Math.round((yr.s / goal) * 1000) / 10;
-  const kc = (n) => `${Number(n).toLocaleString('cs-CZ')} Kč`;
+  const { results: runs } = await env.DB.prepare("SELECT r.name, a.task, a.status, a.summary FROM agent_runs a JOIN agent_roles r ON r.id = a.role_id WHERE a.started_at > ? AND a.status <> 'skipped' AND a.started_at = (SELECT MAX(b.started_at) FROM agent_runs b WHERE b.role_id = a.role_id AND b.task = a.task) ORDER BY r.name").bind(weekAgo).all();
+  const kc = (n) => `${Math.round(Number(n)).toLocaleString('cs-CZ')} Kč`;
   const li = (t) => `<li>${t}</li>`;
+  const h = (t) => `<h3 style="font-family:Georgia,serif;font-weight:normal;color:#f2f2f2;margin:22px 0 6px">${t}</h3>`;
+  const icon = { critical: '🔴', warning: '🟡', info: '·' };
+  const byRole = (r) => findings.filter((x) => x.role_id === r);
+  const list = (arr) => (arr.length ? `<ul>${arr.slice(0, 8).map((x) => li(`${icon[x.severity] || '·'} ${x.title}`)).join('')}${arr.length > 8 ? li(`… a dalších ${arr.length - 8}`) : ''}</ul>` : '<p style="color:#9a9a9a">Nic.</p>');
   const body = `<p>Dobrý den,</p><p>stručný týdenní přehled Dante Time:</p>
-<h3 style="font-family:Georgia,serif;font-weight:normal">Výsledky</h3><ul>
-${li(`Tržby za 7 dní: <b>${kc(wk.s)}</b> (${wk.n} faktur)`)}${li(`Tržby letos: <b>${kc(yr.s)}</b> – ${pct} % z cíle ${kc(goal)}`)}${li(`Nové objednávky za 7 dní: ${orders.n}`)}</ul>
-<h3 style="font-family:Georgia,serif;font-weight:normal">Co čeká na vás</h3><ul>
-${li(`K odeslání: <b>${toShip.n}</b> objednávek`)}${li(`Nové poptávky: <b>${inq.n}</b>`)}${li(`Ke schválení: <b>${appr.n}</b>`)}${li(`Garanční prohlídky v termínu: ${insp.n}`)}</ul>
-<h3 style="font-family:Georgia,serif;font-weight:normal">Problémy (DT Guardian)</h3>
-${findings.length ? `<ul>${findings.slice(0, 10).map((x) => li(`${x.severity === 'critical' ? '🔴' : '🟡'} ${x.title}`)).join('')}</ul>` : '<p>Žádné otevřené problémy.</p>'}
+${h('Stav firmy')}<ul>
+${li(`Tržby za 7 dní: <b>${kc(wk.s)}</b> (${wk.n} faktur), nové objednávky: ${orders.n}, nové poptávky: ${newInq.n}`)}
+${fin ? `${li(`Letos: tržby <b>${kc(fin.revenue)}</b> · náklady ${kc(fin.costs)} · <b>zisk ${kc(fin.profit)}</b>`)}${li(`Cíl ${kc(fin.goal)}: splněno <b>${fin.goalPct} %</b>${fin.stockValue ? ` · hodnota skladu (náklady neprodaných kusů) ${kc(fin.stockValue)}` : ''}`)}` : ''}
+${li(`AI tento měsíc: ${kc(ai.spent)} z limitu ${kc(ai.limit)}`)}</ul>
+${h('Co se tento týden udělalo')}<ul>
+${li(`Odesláno ${shipped.n} a dokončeno ${done.n} objednávek`)}
+${runs.map((r) => li(`${r.name} – ${r.task}: ${r.summary || r.status}`)).join('')}</ul>
+${h('Co čeká na vás')}<ul>
+${li(`K odeslání: <b>${toShip.n}</b> objednávek`)}${li(`Poptávky bez odpovědi: <b>${inq.n}</b>`)}${li(`Ke schválení: <b>${appr.n}</b>`)}${li(`Garanční prohlídky v termínu: ${insp.n}`)}</ul>
+${h('Obchod (DT Sales)')}${list(byRole('sales'))}
+${h('Ekonomika (DT Finance)')}${list(byRole('finance'))}
+${h('Zjištěné problémy (DT Guardian)')}${list(findings.filter((x) => !['sales', 'finance'].includes(x.role_id)))}
 <p><a href="${SITE.origin}/admin/#/system">Otevřít přehled systému</a></p><p>DT Director</p>`;
   const res = await sendEmail(env, { to: ownerEmail(env), subject: `Týdenní přehled Dante Time – ${new Date().toLocaleDateString('cs-CZ')}`, body, related: 'os:director' });
   await env.DB.prepare("INSERT INTO settings (key, value) VALUES ('director_last_summary', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").bind(now()).run();
-  return { status: res?.failed ? 'error' : 'ok', summary: `souhrn odeslán (tržby letos ${kc(yr.s)}, ${findings.length} nálezů)` };
+  return { status: res?.failed ? 'error' : 'ok', summary: `souhrn odeslán (tržby letos ${kc(fin?.revenue || 0)}, ${findings.length} upozornění)` };
 }
 
 // ---- Časovač: jeden „tik“ za hodinu ------------------------------------------------------------
@@ -223,6 +281,8 @@ export async function tick(env, { force = false } = {}) {
   const olderThan = (t, h) => !t || Date.now() - Date.parse(t) > h * 3600000;
 
   if (force || (hour >= 8 && olderThan(await lastRun('logistics', 'denní kontrola'), 20))) out.logistics = await runRole(env, 'logistics', 'denní kontrola', () => logistics(env));
+  if (force || (hour >= 8 && olderThan(await lastRun('sales', 'denní kontrola'), 20))) out.sales = await runRole(env, 'sales', 'denní kontrola', () => salesCheck(env));
+  if (force || (hour >= 8 && olderThan(await lastRun('finance', 'denní kontrola'), 20))) out.finance = await runRole(env, 'finance', 'denní kontrola', () => financeCheck(env));
   if (force || olderThan(await lastRun('guardian', 'záloha'), 20)) out.backup = await runRole(env, 'guardian', 'záloha', () => backup(env));
   out.guardian = await runRole(env, 'guardian', 'kontrola', () => guardian(env));
   if ((dow === 1 && hour >= 7 && olderThan(s.director_last_summary, 6 * 24)) || (force === 'director')) out.director = await runRole(env, 'director', 'týdenní souhrn', () => directorSummary(env));

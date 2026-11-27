@@ -420,3 +420,31 @@ test('DT Logistics – expedice: založení zásilky v Zásilkovně a štítek',
   const pdf = await P.labelPdf(env, 'Z 493 0000 123', { fetcher: async (u, q) => { assert.match(q.body, /<packetLabelPdf>.*<packetId>4930000123<\/packetId>/); return new Response('<response><status>ok</status><result>JVBERg==</result></response>'); } });
   assert.deepEqual([...pdf], [37, 80, 68, 70]);
 });
+
+test('Dante Time OS: DT Sales a DT Finance denně připomínají, DT Director posílá úplný přehled', async () => {
+  const OS = await import('../../server/os.js');
+  const db = new DatabaseSync(':memory:');
+  for (const f of readdirSync(new URL('../../migrations/', import.meta.url)).sort()) { try { db.exec(readFileSync(new URL(`../../migrations/${f}`, import.meta.url), 'utf8')); } catch { /* část schématu mimo SQLite */ } }
+  const stmt = (sql) => { let a = []; const o = { bind: (...b) => { a = b; return o; }, run: async () => db.prepare(sql).run(...a), first: async () => db.prepare(sql).get(...a) ?? null, all: async () => ({ results: db.prepare(sql).all(...a) }) }; return o; };
+  const env = { DB: { prepare: stmt, batch: async (l) => { for (const s of l) await s.run(); } } };
+  assert.equal(db.prepare("SELECT active FROM agent_roles WHERE id='sales'").get().active, 1);
+  const at = Date.parse('2026-11-27T09:00:00Z');
+  db.exec("INSERT INTO inquiries (id, type, name, email, message, created_at) VALUES ('q1','prestavba','Jan Tajný','j@example.cz','x','2026-11-20T10:00:00Z'), ('q2','servis','B','b@example.cz','y','2026-11-27T08:00:00Z')");
+  db.exec("INSERT INTO commissions (id, number, type, status, due_date, updated_at) VALUES ('k1','Z-1','prestavba','v_praci','2026-11-20','2026-11-01'), ('k2','Z-2','servis','nabidka',NULL,'2026-11-10T00:00:00Z')");
+  db.exec("INSERT INTO products (id, slug, title, status, price_czk) VALUES ('p1','prim-a','PRIM A','available',9000)");
+  const s = await OS.salesCheck(env, at);
+  const titles = db.prepare("SELECT title FROM os_findings WHERE role_id='sales' AND resolved_at IS NULL").all().map((r) => r.title).join('\n');
+  assert.match(titles, /Poptávka \(přestavba\) z 20\. 11\. 2026 čeká na odpověď/); assert.doesNotMatch(titles, /servis\)|Jan Tajný/);
+  assert.match(titles, /Zakázka Z-1 je po termínu/); assert.match(titles, /Nabídka Z-2 je bez reakce/); assert.match(titles, /bez průměru pouzdra: PRIM A/);
+  assert.equal(s.status, 'warning');
+  db.exec("UPDATE inquiries SET status='vyrizena' WHERE id='q1'");
+  await OS.salesCheck(env, at);
+  assert.doesNotMatch(db.prepare("SELECT group_concat(title) AS t FROM os_findings WHERE role_id='sales' AND resolved_at IS NULL").get().t, /Poptávka/); // vyřízené zmizí
+  const fr = await OS.runRole(env, 'finance', 'denní kontrola', () => OS.financeCheck(env));
+  assert.match(fr.summary, /1 hodinek bez nákupní ceny/);
+  const mails = [];
+  const env2 = { DB: { prepare: (sql) => { const o = stmt(sql); if (/INSERT INTO emails/.test(sql)) { const b = o.bind; o.bind = (...a) => { mails.push(a[3]); return b(...a); }; } return o; }, batch: env.DB.batch } };
+  const d = await OS.directorSummary(env2);
+  assert.equal(d.status, 'ok');
+  for (const t of ['Stav firmy', 'zisk', 'Co se tento týden udělalo', 'Co čeká na vás', 'Obchod (DT Sales)', 'Ekonomika (DT Finance)', 'DT Finance – denní kontrola', 'Hodinky bez nákupní ceny: PRIM A']) assert.ok(mails[0].includes(t), `v přehledu chybí: ${t}`);
+});
