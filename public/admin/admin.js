@@ -301,11 +301,34 @@
 
   views['zakazky/nova'] = async (_, q) => {
     const pre = q.get('z') ? JSON.parse(decodeURIComponent(q.get('z'))) : {};
-    app.innerHTML = `<p><a href="#/zakazky">← Zakázky</a></p><h1>Nová zakázka</h1>${commissionForm(pre)}`;
+    app.innerHTML = `<p><a href="#/zakazky">← Zakázky</a></p><h1>Nová zakázka</h1>
+      <h2>Fotografie</h2>
+      <div class="photos"><label class="upload">+ Přidat fotky<br>(fotoaparát nebo galerie)<input type="file" accept="image/*" multiple id="kfiles"></label></div>
+      <p class="small muted" id="kpick">Fotky se nahrají po uložení zakázky.</p>
+      ${commissionForm(pre)}`;
+    const picker = app.querySelector('#kfiles'); const pick = app.querySelector('#kpick');
+    picker.addEventListener('change', () => { pick.textContent = picker.files.length ? `Vybráno fotek: ${picker.files.length} – nahrají se po uložení.` : 'Fotky se nahrají po uložení zakázky.'; });
     app.querySelector('#kf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
-      const { id } = await api('POST', 'commissions', { ...formData(e.target), inquiry_id: pre.inquiry_id }); toast('Zakázka vytvořena'); location.hash = `#/zakazky/${id}`;
+      const files = [...picker.files];
+      const { id } = await api('POST', 'commissions', { ...formData(e.target), inquiry_id: pre.inquiry_id });
+      if (files.length) { try { await uploadCommissionPhotos(id, files, pick); } catch (err) { toast(`Zakázka uložena, fotky se nenahrály: ${err.message}`, true); location.hash = `#/zakazky/${id}`; return; } }
+      toast('Zakázka vytvořena'); location.hash = `#/zakazky/${id}`;
     }); });
   };
+
+  // Nahrání fotek k zakázce (telefon je zmenší: velká 2000 px + náhled 600 px)
+  async function uploadCommissionPhotos(id, files, info) {
+    try {
+      for (const [n, file] of files.entries()) {
+        info.textContent = `Nahrávám fotku ${n + 1} z ${files.length}…`;
+        const large = await resize(file, 2000); const small = await resize(file, 600);
+        const fd = new FormData(); const ext = (b) => (b.type === 'image/webp' ? 'webp' : 'jpg');
+        fd.append('large', large.blob, `l.${ext(large.blob)}`); fd.append('small', small.blob, `s.${ext(small.blob)}`);
+        fd.append('width', large.w); fd.append('height', large.h);
+        await api('POST', `commissions/${id}/photos`, fd);
+      }
+    } finally { info.textContent = ''; }
+  }
 
   views['zakazky/:id'] = async ({ id }) => {
     const { commissions } = await api('GET', 'commissions');
@@ -326,18 +349,7 @@
         <label class="upload">+ Přidat fotky<br>(fotoaparát nebo galerie)<input type="file" accept="image/*" multiple id="kfiles"></label>`;
       box.querySelectorAll('[data-kdel]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat fotografii?')) return; await api('DELETE', `commission-photos/${b.dataset.kdel}`); await draw(); })));
       box.querySelector('#kfiles').addEventListener('change', (e) => run(async () => {
-        const files = [...e.target.files]; const info = app.querySelector('#kupl');
-        try {
-          for (const [n, file] of files.entries()) {
-            info.textContent = `Nahrávám ${n + 1} z ${files.length}…`;
-            const large = await resize(file, 2000); const small = await resize(file, 600);
-            const fd = new FormData(); const ext = (b) => (b.type === 'image/webp' ? 'webp' : 'jpg');
-            fd.append('large', large.blob, `l.${ext(large.blob)}`); fd.append('small', small.blob, `s.${ext(small.blob)}`);
-            fd.append('width', large.w); fd.append('height', large.h);
-            await api('POST', `commissions/${id}/photos`, fd);
-          }
-          toast('Fotografie nahrány');
-        } finally { info.textContent = ''; await draw(); }
+        try { await uploadCommissionPhotos(id, [...e.target.files], app.querySelector('#kupl')); toast('Fotografie nahrány'); } finally { await draw(); }
       }));
     };
     run(draw);

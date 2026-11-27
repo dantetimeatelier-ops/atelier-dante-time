@@ -4,6 +4,11 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/fotky-nova-zakazka
+**Hotovo:** fotky jde vybrat už na obrazovce „Nová zakázka“ (nahrají se hned po uložení). Opraveno přetékání polí s datem (Termín, Předáno) v administraci na iPhonu (`.grid` s `minmax(0,1fr)`, `input[type=date]` bez nativního vzhledu).
+
+---
+
 ## 2026-11-26 – Claude – claude/dt-sales-navrh-odpovedi
 **Hotovo:** E4 – DT Sales. V Poptávkách je u každé poptávky „Návrh odpovědi (AI)“: volitelný pokyn majitele, návrh
 předmětu a textu (vykání, do 120 slov, bez cen, termínů a závazků – co doplnit, vypíše zvlášť), tlačítka „Otevřít
