@@ -36,7 +36,7 @@ test('migrace 0026: dopravci převzali dosavadní nastavení, nové (neověřen�
   assert.equal(rows.zasilkovna.status, 'aktivni');
   assert.equal(rows.zasilkovna.max_value_czk, 20000);
   assert.equal(rows.balikovna.status, 'aktivni');
-  assert.equal(rows.balikovna.max_value_czk, 20000); // pokyn majitele 27. 11. (0029)
+  assert.equal(rows.balikovna.max_value_czk, 50000); // pokyn majitele 27. 11. (0030)
   assert.equal(rows.osobni.status, 'aktivni');
   assert.equal(rows.zasilkovna_adresa.status, 'pripraveno'); // zákazníkům skryto
   // 0028 (R25): zjednodušení – Cenná zásilka zapnutá bez dobírky, PPL a Balíkovna na adresu (Dohoda) se nepoužívají
