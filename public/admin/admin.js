@@ -303,7 +303,7 @@
   const commissionForm = (k = {}) => `<form id="kf">
     <label>Druh<select name="type">${Object.entries(L.ctype).map(([v, t]) => `<option value="${v}" ${k.type === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
     <label>Stav<select name="status">${Object.entries(L.cstatus).map(([v, t]) => `<option value="${v}" ${(k.status || 'poptavka') === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
-    <details open><summary>Zákazník</summary>${field('name', 'Jméno', { name: k.customer_name }, 'required')}${field('email', 'E-mail', { email: k.customer_email }, 'type="email" required')}${field('phone', 'Telefon', { phone: k.customer_phone }, 'type="tel"')}</details>
+    <details open><summary>Zákazník</summary>${field('name', 'Jméno', { name: k.customer_name }, 'required')}${field('email', 'E-mail (nepovinné)', { email: k.customer_email }, 'type="email"')}${field('phone', 'Telefon (nepovinné)', { phone: k.customer_email ? k.customer_phone : '' }, 'type="tel"')}${field('contact_info', 'Jiný kontakt (např. Instagram @jmeno)', { contact_info: k.contact_info })}</details>
     <details open><summary>Zakázka</summary>${field('watch', 'Hodinky (značka, model, stav)', k)}${area('description', 'Co se má udělat', k)}
       <div class="grid">${field('estimate_czk', 'Orientační cena (Kč)', k, 'inputmode="numeric"')}${field('deposit_czk', 'Záloha (Kč)', k, 'inputmode="numeric"')}</div>
       <div class="grid">${field('final_price_czk', 'Konečná cena (Kč)', k, 'inputmode="numeric"')}${field('due_date', 'Termín', k, 'type="date"')}</div>

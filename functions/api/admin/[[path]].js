@@ -373,22 +373,30 @@ async function upsertCustomer(env, body) {
     .bind(randomId(), email, name, str(body.phone, { max: 40 }), now()).run();
   return (await env.DB.prepare('SELECT id FROM customers WHERE email = ?').bind(email).first()).id;
 }
+// Bez e-mailu se telefon uloží ke kontaktu zakázky (jinak k zákazníkovi)
+function contactWithoutEmail(body, d) {
+  const phone = str(body.phone, { max: 40 });
+  if (!String(body.email || '').trim() && phone) d.contact_info = [phone, d.contact_info ?? str(body.contact_info, { max: 200 })].filter(Boolean).join(', ');
+}
 function commissionInput(body) {
   const d = {};
   if ('type' in body) d.type = oneOf(body.type, ['servis', 'renovace', 'zakazkova_vyroba', 'prestavba'], 'druh zakázky');
   if ('status' in body) d.status = oneOf(body.status, ['poptavka', 'nabidka', 'prijato', 'v_praci', 'ceka_na_dily', 'hotovo', 'predano', 'zruseno'], 'stav');
-  for (const [k, max] of [['watch', 500], ['description', 4000], ['internal_note', 4000], ['due_date', 20], ['received_at', 20], ['returned_at', 20]]) if (k in body) d[k] = str(body[k], { max });
+  for (const [k, max] of [['contact_info', 200], ['watch', 500], ['description', 4000], ['internal_note', 4000], ['due_date', 20], ['received_at', 20], ['returned_at', 20]]) if (k in body) d[k] = str(body[k], { max });
   for (const k of ['estimate_czk', 'deposit_czk', 'final_price_czk']) if (k in body) d[k] = int(body[k], { max: 50000000, name: 'částka' });
   return d;
 }
 route('GET', 'commissions', async ({ env }) => {
-  const { results } = await env.DB.prepare('SELECT k.*, c.name AS customer_name, c.email AS customer_email, c.phone AS customer_phone FROM commissions k LEFT JOIN customers c ON c.id = k.customer_id ORDER BY CASE k.status WHEN \'predano\' THEN 1 WHEN \'zruseno\' THEN 2 ELSE 0 END, k.updated_at DESC LIMIT 300').all();
+  const { results } = await env.DB.prepare('SELECT k.*, COALESCE(c.name, k.contact_name) AS customer_name, c.email AS customer_email, COALESCE(c.phone, k.contact_info) AS customer_phone FROM commissions k LEFT JOIN customers c ON c.id = k.customer_id ORDER BY CASE k.status WHEN \'predano\' THEN 1 WHEN \'zruseno\' THEN 2 ELSE 0 END, k.updated_at DESC LIMIT 300').all();
   return json({ commissions: results });
 });
 route('POST', 'commissions', async ({ env, body, user }) => {
   const d = commissionInput(body);
   if (!d.type) throw new HttpError('Zvolte druh zakázky');
-  d.customer_id = await upsertCustomer(env, body);
+  d.contact_name = str(body.name, { max: 120, required: true, name: 'jméno zákazníka' });
+  // E-mail je nepovinný (zákazníci z Instagramu) – do evidence zákazníků jen s e-mailem
+  if (String(body.email || '').trim()) d.customer_id = await upsertCustomer(env, body);
+  contactWithoutEmail(body, d);
   d.number = `Z-${new Date().getFullYear()}-${String(await nextCounter(env, 'commission')).padStart(3, '0')}`;
   if (body.inquiry_id) { d.inquiry_id = str(body.inquiry_id, { max: 40 }); await env.DB.prepare("UPDATE inquiries SET status='vyrizuje_se' WHERE id = ?").bind(d.inquiry_id).run(); }
   const id = randomId(); const keys = Object.keys(d);
@@ -399,7 +407,9 @@ route('POST', 'commissions', async ({ env, body, user }) => {
 });
 route('PUT', 'commissions/:id', async ({ env, params, body, user }) => {
   const d = commissionInput(body);
-  if (body.email) d.customer_id = await upsertCustomer(env, body);
+  if ('name' in body) d.contact_name = str(body.name, { max: 120, required: true, name: 'jméno zákazníka' });
+  if (String(body.email || '').trim()) d.customer_id = await upsertCustomer(env, body);
+  contactWithoutEmail(body, d);
   d.updated_at = now();
   const keys = Object.keys(d);
   await env.DB.prepare(`UPDATE commissions SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`).bind(...keys.map((k) => d[k]), params.id).run();

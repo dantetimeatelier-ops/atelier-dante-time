@@ -383,6 +383,13 @@ try {
 
   // Centrální fakturace: prodej hodinek ze skladu mimo e-shop (Vinted) → sklad, pas, tržba, marže; záloha; dobropis
   const api = (method, p, body) => page.evaluate(async ([m, u, b]) => { const r = await fetch(`/api/admin/${u}`, { method: m, headers: { 'Content-Type': 'application/json', 'X-DT-Admin': '1' }, body: b ? JSON.stringify(b) : undefined }); return { s: r.status, j: await r.json().catch(() => ({})) }; }, [method, p, body]);
+  // Zakázka bez e-mailu (zákazník z Instagramu) – jméno a kontakt přímo u zakázky
+  const kz = await api('POST', 'commissions', { type: 'renovace', status: 'v_praci', name: 'Instagram Zákazník', email: '', phone: '+420 777 000 111', contact_info: '@test_ig', watch: 'Glashütte 17 Rubis' });
+  assert.equal(kz.s, 201, JSON.stringify(kz.j));
+  const kl = await api('GET', 'commissions');
+  const kk = kl.j.commissions.find((x) => x.id === kz.j.id);
+  assert.equal(kk.customer_name, 'Instagram Zákazník'); assert.equal(kk.customer_email, null); assert.match(kk.customer_phone, /777 000 111.*@test_ig/);
+  step('zakázka bez e-mailu uložena (jméno a kontakt u zakázky)');
   const np = await api('POST', 'products', { title: 'Prim Classic Test LTD.01', brand: 'PRIM', serial_ref: '26-9.9', price_czk: 5000 });
   assert.equal(np.s, 201, JSON.stringify(np.j));
   const stockId = np.j.id;
