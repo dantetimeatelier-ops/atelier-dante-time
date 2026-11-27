@@ -4,6 +4,10 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/oprava-vydejni-mista
+**Hotovo:** Výběr Zásilkovny na mapě se nepropsal do pokladny → okno mapy dostává stejné parametry jako oficiální knihovna Packeta (`referrer`, `version`, `loader`, `currentVersion`). Balíkovna zpět i pro hodinky do 20 000 Kč (migrace 0029, výslovný pokyn majitele).
+**Pozor na:** Poštovní podmínky Balíkovny (cennosti nad 5 000 Kč) – majitel o riziku ví; limit lze změnit v administraci → Dopravci.
+
 ## 2026-11-27 – Claude – claude/platby-doprava-eu (R25 zjednodušení dopravy)
 **Hotovo:** migrace 0028 (Cenná zásilka aktivní 190 Kč + 14 Kč/10 000 Kč nad 30 000, bez dobírky; PPL a Balíkovna
 na adresu vypnuté), administrace → Dopravci skrývá vypnuté pod „Nepoužívané“, text Doprava a platba (CZ/EN) bez PPL,
