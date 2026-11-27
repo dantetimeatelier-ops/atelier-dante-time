@@ -45,8 +45,6 @@ export const cardPaymentsAvailable = (env) => {
   return g === 'comgate';
 };
 
-/** Měny, ve kterých lze platit kartou (obě brány umí CZK i EUR). */
-export const cardCurrencies = (env) => (cardPaymentsAvailable(env) ? ['CZK', 'EUR'] : []);
 
 /** Částka k úhradě v nejmenších jednotkách (haléře / centy) a měna objednávky. */
 export function orderAmount(order) {
@@ -115,6 +113,9 @@ export async function createCardPayment(env, order, origin, { fetcher } = {}) {
     const expiresAt = Math.min(Math.floor(Date.now() / 1000) + 23 * 3600, Math.max(until, Math.floor(Date.now() / 1000) + 31 * 60));
     const s = await stripeCall(env, 'POST', 'checkout/sessions', {
       mode: 'payment',
+      // Jen karty: Visa, Mastercard a peněženky Apple Pay / Google Pay (jsou součástí karet). Žádný PayPal, Link ani placené doplňky
+      // (bez automatic_tax a invoice_creation – fakturu vystavuje vlastní systém).
+      payment_method_types: ['card'],
       locale: order.lang === 'en' ? 'en' : 'cs',
       customer_email: order.email,
       client_reference_id: order.number,
@@ -146,6 +147,19 @@ export async function createCardPayment(env, order, origin, { fetcher } = {}) {
  * Stav platby ověřený přímo u brány (nevěříme jen datům z oznámení).
  * @returns {{status:'PAID'|'PENDING'|'CANCELLED', cents:number, currency:string, ref:string}}
  */
+/**
+ * Skutečný poplatek brány za zaplacenou platbu v Kč (haléřích), nebo null, pokud ho brána zatím neuvádí.
+ * Stripe: poplatek z „balance transaction“ zaplacené platby (obsahuje i případný převod měny).
+ */
+export async function paymentFee(env, transId, { fetcher } = {}) {
+  if (gateway(env) !== 'stripe') return null;
+  const s = await stripeCall(env, 'GET', `checkout/sessions/${encodeURIComponent(transId)}?expand[]=payment_intent.latest_charge.balance_transaction`, null, fetcher);
+  const bt = s?.payment_intent?.latest_charge?.balance_transaction;
+  if (!bt || typeof bt !== 'object' || !Number.isInteger(bt.fee)) return null;
+  if (String(bt.currency).toLowerCase() !== 'czk') return null; // účet Stripe vede poplatky v Kč
+  return bt.fee;
+}
+
 export async function paymentStatus(env, transId, { fetcher } = {}) {
   if (gateway(env) === 'stripe') {
     const s = await stripeCall(env, 'GET', `checkout/sessions/${encodeURIComponent(transId)}`, null, fetcher);

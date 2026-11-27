@@ -20,7 +20,7 @@ import { trackingUrl } from './packeta.js';
 const tr = (o, cs, en) => (o?.lang === 'en' ? en : cs);
 const dt = (o, iso) => new Date(iso).toLocaleString(o?.lang === 'en' ? 'en-GB' : 'cs-CZ', { timeZone: 'Europe/Prague', day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 import { productName } from '../src/shop/describe.mjs';
-import { createCardPayment, cardPaymentsAvailable, cardCurrencies } from './payments.js';
+import { createCardPayment, cardPaymentsAvailable } from './payments.js';
 
 const num = (v) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null);
 
@@ -45,30 +45,45 @@ export async function shopConfig(env, lang = 'cs', { country = 'CZ', itemsTotal 
   const hasPacketaKey = Boolean(env.PACKETA_API_KEY);
   const packetaName = cc === 'CZ' ? L('Zásilkovna', 'Packeta') : 'Packeta';
 
+  // Pojištění na plnou hodnotu (rozhodnutí majitele R23): způsob dopravy se nabídne jen tehdy,
+  // když dopravce podle svých podmínek odpovídá za celou hodnotu hodinek.
+  const eurRateForLimit = num(s.eur_rate) || 25;
+  const cover = {
+    packeta: cc === 'CZ' ? num(s.cover_packeta_czk) : (num(s.cover_packeta_eu_eur) != null ? Math.floor(num(s.cover_packeta_eu_eur) * eurRateForLimit) : null),
+    balikovna: num(s.cover_balikovna_czk),
+    insured: cc === 'CZ' ? num(s.cover_insured_czk) : num(s.cover_insured_eu_czk),
+  };
+  const covered = (limit) => limit != null && itemsTotal <= limit;
+  let hiddenByCover = false;
+  const offer = (opt, limit) => { if (covered(limit)) shipping.push(opt); else hiddenByCover = true; };
+
   // Zobrazujeme jen skutečně funkční možnosti: každá musí mít nastavenou cenu
   // a výběr výdejního místa v zahraničí funguje jen s mapou Zásilkovny (API klíč).
   const shipping = [];
   if (!insuredOnly) {
     const pickupPrice = num(cc === 'CZ' ? s.shipping_zasilkovna_czk : packetaPickup[cc]);
     if (pickupPrice != null && (cc === 'CZ' || hasPacketaKey)) {
-      shipping.push({ id: 'zasilkovna', label: L(`${packetaName} – výdejní místo nebo Z-BOX`, 'Packeta – pickup point or Z-BOX'), price: pickupPrice, pickup: true, carrier: 'packeta' });
+      offer({ id: 'zasilkovna', label: L(`${packetaName} – výdejní místo nebo Z-BOX`, 'Packeta – pickup point or Z-BOX'), price: pickupPrice, pickup: true, carrier: 'packeta' }, cover.packeta);
     }
     if (cc === 'CZ') {
       const price = num(s.shipping_balikovna_czk);
-      if (price != null) shipping.push({ id: 'balikovna', label: SHIPPING.balikovna[lang], price, pickup: true, carrier: 'balikovna' });
+      if (price != null) offer({ id: 'balikovna', label: SHIPPING.balikovna[lang], price, pickup: true, carrier: 'balikovna' }, cover.balikovna);
     }
     const homePrice = num(packetaHome[cc]);
     if (homePrice != null) {
-      shipping.push({ id: 'zasilkovna_adresa', label: L(`${packetaName} – doručení na adresu`, 'Packeta – home delivery'), price: homePrice, address: true, carrier: 'packeta', note: L('Doručí kurýr na adresu uvedenou níže.', 'Delivered by courier to the address below.') });
+      offer({ id: 'zasilkovna_adresa', label: L(`${packetaName} – doručení na adresu`, 'Packeta – home delivery'), price: homePrice, address: true, carrier: 'packeta', note: L('Doručí kurýr na adresu uvedenou níže.', 'Delivered by courier to the address below.') }, cover.packeta);
     }
-    // Původní obecná doprava do zahraničí (jen pokud pro zemi není nastavena Packeta na adresu)
+    // Původní obecná doprava do zahraničí (Zásilkovna a partneři) – jen pokud pro zemi není nastavena Packeta na adresu
     if (cc !== 'CZ' && homePrice == null && num(euPrices[cc]) != null) {
-      shipping.push({ id: 'eu', label: L(`Doprava do země ${countryName(cc, 'cs')} – doručení na adresu`, `Delivery to ${countryName(cc, 'en')} – to your address`), price: num(euPrices[cc]), address: true, note: L('Dopravce podle cílové země (např. Zásilkovna a její partneři).', 'Carrier depends on the destination country (e.g. Packeta and its partners).') });
+      offer({ id: 'eu', label: L(`Doprava do země ${countryName(cc, 'cs')} – doručení na adresu`, `Delivery to ${countryName(cc, 'en')} – to your address`), price: num(euPrices[cc]), address: true, note: L('Dopravce podle cílové země (Zásilkovna a její partneři).', 'Carrier depends on the destination country (Packeta and its partners).') }, cover.packeta);
     }
   }
-  if (insuredOnly) {
+  // Pojištěná přeprava: když hodnotu nepokryje běžný dopravce (nebo nad hranicí nastavenou majitelem)
+  // (jen když žádný běžný dopravce hodnotu nepokryje; skrytí jednoho dopravce dobírku ani ostatní možnosti neruší)
+  const needInsured = insuredOnly || !shipping.length;
+  if (needInsured) {
     const price = num(cc === 'CZ' ? s.insured_price_czk : (euInsured[cc] ?? s.insured_eu_price_czk));
-    if (price != null) shipping.push({ id: 'pojistena', label: L('Pojištěná přeprava na plnou hodnotu', 'Delivery insured for the full value'), price, address: true, note: L('Hodinky vyšší hodnoty posíláme jen jako cennou zásilku pojištěnou na plnou hodnotu, předání proti podpisu.', 'Higher-value watches are sent only as a valuable parcel insured for the full value, delivered against signature.') });
+    if (price != null && covered(cover.insured)) shipping.push({ id: 'pojistena', label: L('Pojištěná přeprava na plnou hodnotu', 'Delivery insured for the full value'), price, address: true, note: L('Cenná zásilka pojištěná na plnou hodnotu hodinek, předání proti podpisu.', 'Valuable parcel insured for the full value of the watch, delivered against signature.') });
   }
   if (s.shipping_osobni_enabled === '1') {
     shipping.push({ id: 'osobni', label: SHIPPING.osobni[lang], price: 0, note: L('Pouze po předchozí individuální domluvě. Nemáme kamennou prodejnu.', 'Only by prior individual arrangement. We have no retail shop.') });
@@ -76,16 +91,18 @@ export async function shopConfig(env, lang = 'cs', { country = 'CZ', itemsTotal 
 
   const payment = [];
   const iban = OPERATOR.iban;
+  // Výchozí (první) možnost = bankovní převod s QR kódem (rozhodnutí majitele)
   if (iban && isValidIban(iban)) payment.push({ id: 'bank_transfer', label: PAYMENT.bank_transfer[lang], currencies: ['CZK', 'EUR'], note: L('Platební údaje a QR kód obdržíte hned po objednávce. Splatnost 3 dny. Bez poplatků.', 'Payment details and a QR code are shown right after ordering. Due within 3 days. No fees.') });
-  if (cardPaymentsAvailable(env)) payment.push({ id: 'card', label: PAYMENT.card[lang], badges: ['visa', 'mastercard', 'applepay', 'googlepay'], currencies: cardCurrencies(env), note: L('Zabezpečená platba přes platební bránu. Apple Pay a Google Pay se nabídnou na podporovaných zařízeních.', 'Secure payment via the payment gateway. Apple Pay and Google Pay are offered on supported devices.') });
-  // Dobírka jen v ČR a jen s výdejním místem; zahraniční objednávky pouze s platbou předem
-  if (s.cod_enabled === '1' && cc === 'CZ' && !insuredOnly) {
-    payment.push({ id: 'cod', label: PAYMENT.cod[lang], currencies: ['CZK'], price: num(s.cod_fee_czk) || 0, onlyWith: ['zasilkovna', 'balikovna'], note: L('Platíte při převzetí na výdejním místě (jen v ČR).', 'Pay on collection at a pickup point (Czech Republic only).') });
+  // Karta se vždy strhává v Kč (bez poplatku za převod měny); zákazníkovi z eurozóny přepočte částku jeho banka
+  if (cardPaymentsAvailable(env)) payment.push({ id: 'card', label: PAYMENT.card[lang], badges: ['visa', 'mastercard', 'applepay', 'googlepay'], currencies: ['CZK', 'EUR'], chargeCurrency: 'CZK', note: L('Zabezpečená platba přes Stripe. Částka se strhne v Kč. Apple Pay a Google Pay se nabídnou na podporovaných zařízeních.', 'Secure payment via Stripe. The amount is charged in CZK (your bank converts it). Apple Pay and Google Pay are offered on supported devices.') });
+  // Dobírka jen v ČR (výdejní místo nebo Zásilkovna na adresu, rozhodnutí R23); do zahraničí jen platba předem
+  if (s.cod_enabled === '1' && cc === 'CZ' && !needInsured) {
+    payment.push({ id: 'cod', label: PAYMENT.cod[lang], currencies: ['CZK'], price: num(s.cod_fee_czk) || 0, onlyWith: ['zasilkovna', 'balikovna', 'zasilkovna_adresa'], note: L('Platíte při převzetí zásilky (jen v ČR).', 'Pay on delivery (Czech Republic only).') });
   }
 
   const eurRate = num(s.eur_rate);
   const currencies = ['CZK', ...(eurRate ? ['EUR'] : [])];
-  return { mode: m, country: cc, insuredOnly, insuredFrom, shipping, payment, currencies, eurRate, packetaKey: env.PACKETA_API_KEY || null, settings: s };
+  return { mode: m, country: cc, insuredOnly: needInsured && (insuredOnly || hiddenByCover), insuredFrom, hiddenByCover, shipping, payment, currencies, eurRate, packetaKey: env.PACKETA_API_KEY || null, settings: s };
 }
 
 export async function createOrder(env, body, origin) {
@@ -122,8 +139,10 @@ export async function createOrder(env, body, origin) {
   if (['zasilkovna', 'balikovna'].includes(ship.id) && !pickupName) throw new HttpError('Vyberte prosím výdejní místo');
   if (ship.id === 'balikovna' && pickupId && !/^[BP]\d{5}$/.test(pickupId)) throw new HttpError('Neplatné výdejní místo Balíkovny');
   if (ship.id === 'zasilkovna' && country !== 'CZ' && !/^(\d{1,10}|c\d{1,8}:[A-Za-z0-9._-]{1,30})$/.test(pickupId || '')) throw new HttpError('Vyberte prosím výdejní místo na mapě');
-  if (pay.onlyWith && !pay.onlyWith.includes(ship.id)) throw new HttpError('Dobírku lze zvolit jen s výdejním místem Zásilkovny nebo Balíkovny v ČR');
-  const currency = body.currency === 'EUR' && cfg.currencies.includes('EUR') ? 'EUR' : 'CZK';
+  if (pay.onlyWith && !pay.onlyWith.includes(ship.id)) throw new HttpError('Dobírku lze zvolit jen se Zásilkovnou nebo Balíkovnou v ČR');
+  const chosen = body.currency === 'EUR' && cfg.currencies.includes('EUR') ? 'EUR' : 'CZK';
+  if (!(pay.currencies || ['CZK']).includes(chosen)) throw new HttpError(chosen === 'EUR' ? 'Zvolenou platbu nelze provést v eurech' : 'Zvolenou platbu nelze provést v korunách');
+  const currency = pay.chargeCurrency || chosen;
   if (!(pay.currencies || ['CZK']).includes(currency)) throw new HttpError(currency === 'EUR' ? 'Zvolenou platbu nelze provést v eurech' : 'Zvolenou platbu nelze provést v korunách');
 
   const ph = ids.map(() => '?').join(',');

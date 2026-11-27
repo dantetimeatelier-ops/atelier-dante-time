@@ -7,7 +7,9 @@ import { sendEmail, ownerEmail } from './email.js';
 import { sendDueReminders } from './warranty.js';
 import { SITE } from '../src/site.mjs';
 import { today } from '../src/shop/warranty.mjs';
-import { refreshAll } from './packeta.js';
+import { refreshAll, refreshOrder } from './packeta.js';
+import { markShipped } from './orders.js';
+import { recordMissingCardFees } from './payment-events.js';
 import { productEconomics, overview } from './finance.js';
 import { overdueInvoices } from './invoicing.js';
 
@@ -91,6 +93,25 @@ async function logistics(env) {
   if (track?.problems.length) parts.push(`problém se zásilkou: ${track.problems.join('; ')}`);
   if (track?.errors) parts.push(`${track.errors} zásilek se nepodařilo ověřit`);
   return { status: stuck || track?.problems.length || track?.delivered.length ? 'warning' : 'ok', summary: parts.join('; ') || 'nic k vyřízení' };
+}
+
+// ---- DT Logistics: předání dopravci (každou hodinu) ------------------------------------------------
+// Objednávka se označí „odesláno“ a zákazník dostane e-mail s číslem zásilky až ve chvíli, kdy dopravce
+// zásilku skutečně převezme (rozhodnutí R23) – ne při vytvoření štítku.
+export const handedOver = (st) => st && st.code >= 2 && ![9, 10, 11, 12, 999].includes(st.code) && !/data|elektronick/i.test(String(st.text || ''));
+export async function handoverCheck(env, deps) {
+  const s = await getSettings(env);
+  if (s.ship_autonotify === '0') return { checked: 0, shipped: [] };
+  const methods = env.PACKETA_API_PASSWORD ? "('zasilkovna','zasilkovna_adresa','balikovna')" : "('balikovna')";
+  const { results } = await env.DB.prepare(`SELECT id, number, shipping_method, tracking_number FROM orders WHERE (status = 'paid' OR (status = 'awaiting_payment' AND payment_method = 'cod')) AND shipping_method IN ${methods} AND tracking_number IS NOT NULL AND tracking_number != '' ORDER BY created_at LIMIT 30`).all();
+  const out = { checked: 0, shipped: [] };
+  for (const o of results) {
+    try {
+      const st = await refreshOrder(env, o, deps); out.checked++;
+      if (handedOver(st)) { await markShipped(env, o.id, o.tracking_number, 'DT Logistics'); out.shipped.push(o.number); }
+    } catch { /* zkusí se za hodinu */ }
+  }
+  return out;
 }
 
 // ---- DT Sales (bez AI): nic nezapadne ------------------------------------------------------------
@@ -300,6 +321,9 @@ export async function tick(env, { force = false } = {}) {
   const lastRun = async (roleId, task) => (await env.DB.prepare("SELECT MAX(started_at) AS t FROM agent_runs WHERE role_id = ? AND task = ? AND status <> 'skipped'").bind(roleId, task).first()).t;
   const olderThan = (t, h) => !t || Date.now() - Date.parse(t) > h * 3600000;
 
+  // Každou hodinu, bez AI a zdarma: předání zásilek dopravci a doplnění poplatků platební brány do nákladů
+  try { const h = await handoverCheck(env); if (h.checked) out.handover = h; } catch (e) { out.handover = { error: String(e?.message || e) }; }
+  try { const f = await recordMissingCardFees(env); if (f) out.cardFees = f; } catch (e) { out.cardFees = { error: String(e?.message || e) }; }
   if (force || (hour >= 8 && olderThan(await lastRun('logistics', 'denní kontrola'), 20))) out.logistics = await runRole(env, 'logistics', 'denní kontrola', () => logistics(env));
   if (force || (hour >= 8 && olderThan(await lastRun('sales', 'denní kontrola'), 20))) out.sales = await runRole(env, 'sales', 'denní kontrola', () => salesCheck(env));
   if (force || (hour >= 8 && olderThan(await lastRun('finance', 'denní kontrola'), 20))) out.finance = await runRole(env, 'finance', 'denní kontrola', () => financeCheck(env));

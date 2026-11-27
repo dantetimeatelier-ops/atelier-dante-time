@@ -60,7 +60,7 @@ ${toc(L, [['op1', 'Úvodní ustanovení'], ['op2', 'Hodinky, součásti a materi
 
 <h2 id="op5">5. Platba</h2>
 <ol>
-<li>Způsoby platby: <strong>bankovní převod předem</strong> (v Kč s QR platbou, v EUR s QR kódem SEPA), <strong>dobírka</strong> (jen v ČR a jen s výdejním místem) a po aktivaci platební brány <strong>platba kartou</strong>. Zahraniční objednávky se hradí předem.</li>
+<li>Způsoby platby: <strong>bankovní převod předem</strong> (v Kč s QR platbou, v EUR s QR kódem SEPA), <strong>dobírka</strong> (jen v ČR, na výdejní místo nebo při doručení Zásilkovnou na adresu) a <strong>platba kartou</strong> (Visa, Mastercard, Apple Pay, Google Pay) prostřednictvím platební brány Stripe, je-li v košíku nabízena. Platba kartou se provádí v Kč. Zahraniční objednávky se hradí předem.</li>
 <li>Platba převodem je splatná do <strong>${T.paymentDueDays} dnů</strong> od uzavření smlouvy na účet ${OPERATOR.bankAccount} (IBAN ${OPERATOR.ibanPretty}, BIC ${OPERATOR.bic}, majitel ${OPERATOR.accountHolder}) s variabilním symbolem nebo zprávou uvedenou v potvrzení objednávky.</li>
 <li>Neuhradí-li kupující cenu ve lhůtě splatnosti, rezervace skončí a prodávající může od smlouvy odstoupit. Kupujícího o tom informuje e-mailem.</li>
 <li>Při dobírce je cena splatná při převzetí zásilky.</li>
@@ -290,25 +290,26 @@ export const custom = doc('custom', '/zakazkova-vyroba', 'Zakázková výroba, s
 
 // ---------------------------------------------------------------------------
 export const shipping = doc('shipping', '/doprava-a-platba', 'Doprava a platba',
-  'Doprava v ČR i do celé EU, platba převodem (CZK, EUR), dobírkou v ČR. Atelier Dante Time.',
+  'Doprava v ČR i do celé EU, pojištění na plnou hodnotu, platba převodem (CZK, EUR), kartou nebo dobírkou v ČR. Atelier Dante Time.',
   () => `${head(L)}
 <h2>Doprava v České republice</h2>
 <table><thead><tr><th>Způsob</th><th>Cena</th></tr></thead><tbody>
 <tr><td><strong>Zásilkovna</strong> – výdejní místo nebo Z-BOX (výběr na mapě)</td><td>${priceCs(T.defaultPrices.zasilkovna)}</td></tr>
 <tr><td><strong>Balíkovna</strong> – výdejní místo (výběr na mapě České pošty)</td><td>${priceCs(T.defaultPrices.balikovna)}</td></tr>
-<tr><td><strong>Pojištěná přeprava</strong> – u hodinek vyšší hodnoty</td><td>cena se zobrazí v košíku před objednáním</td></tr>
+<tr><td><strong>Zásilkovna</strong> – doručení na adresu</td><td>cena se zobrazí v košíku před objednáním</td></tr>
+<tr><td><strong>Pojištěná přeprava</strong> – cenná zásilka u hodinek vyšší hodnoty</td><td>cena se zobrazí v košíku před objednáním</td></tr>
 <tr><td><strong>Osobní předání</strong> – pouze po předchozí individuální domluvě (nemáme kamennou prodejnu)</td><td>zdarma</td></tr>
 </tbody></table>
 <h2>Doprava do zemí EU</h2>
-<p>Doručujeme do všech 27 členských států EU včetně Slovenska. Cena dopravy se řídí cílovou zemí a dostupným dopravcem a <strong>zobrazí se v košíku po výběru země, ještě před odesláním objednávky</strong>. Do země, pro kterou cenu zatím nemáme, vám rádi připravíme nabídku.</p>
+<p>Doručujeme do všech 27 členských států EU včetně Slovenska, zejména přes síť Zásilkovny (Packeta) na výdejní místa nebo na adresu. Cena dopravy se řídí cílovou zemí a dostupným dopravcem a <strong>zobrazí se v košíku po výběru země, ještě před odesláním objednávky</strong>. Do země, pro kterou cenu zatím nemáme, vám rádi připravíme nabídku.</p>
 <h2>Odeslání</h2>
-<p>Dostupné hodinky odesíláme do <strong>${T.dispatchWorkingDays} pracovních dnů</strong> od přijetí platby, u dobírky od potvrzení objednávky. O odeslání vás informujeme e-mailem s číslem zásilky. Hodinky vyšší hodnoty posíláme jen pojištěnou přepravou odpovídající jejich hodnotě, nebo je předáme osobně po domluvě.</p>
+<p>Dostupné hodinky odesíláme do <strong>${T.dispatchWorkingDays} pracovních dnů</strong> od přijetí platby, u dobírky od potvrzení objednávky. Jakmile zásilku převezme dopravce, pošleme vám e-mail s číslem zásilky. <strong>Všechny hodinky posíláme pojištěné na plnou hodnotu.</strong> V košíku proto nabízíme jen ty způsoby dopravy, u kterých dopravce za hodnotu konkrétního kusu odpovídá; u dražších hodinek je to pojištěná cenná zásilka nebo osobní předání po domluvě.</p>
 <h2>Platba</h2>
 <table><thead><tr><th>Způsob</th><th>Poplatek</th><th>Poznámka</th></tr></thead><tbody>
 <tr><td><strong>Bankovní převod v Kč</strong> s QR platbou</td><td>zdarma</td><td>splatnost ${T.paymentDueDays} dny, údaje a QR kód hned po objednávce</td></tr>
 <tr><td><strong>Bankovní převod v EUR</strong> s QR kódem SEPA</td><td>zdarma ze strany ateliéru</td><td>IBAN ${OPERATOR.ibanPretty}, BIC ${OPERATOR.bic}. Částka v EUR podle kurzu ateliéru, zaokrouhlená nahoru na celé euro</td></tr>
-<tr><td><strong>Dobírka</strong> (jen ČR, Zásilkovna a Balíkovna)</td><td>${priceCs(T.defaultPrices.cod)}</td><td>hodinky jsou rezervovány do odeslání</td></tr>
-<tr><td><strong>Platba kartou</strong></td><td>–</td><td>bude k dispozici po aktivaci platební brány</td></tr>
+<tr><td><strong>Dobírka</strong> (jen ČR: Zásilkovna na výdejní místo i na adresu, Balíkovna)</td><td>${priceCs(T.defaultPrices.cod)}</td><td>hodinky jsou rezervovány do odeslání</td></tr>
+<tr><td><strong>Platba kartou</strong> – Visa, Mastercard, Apple Pay, Google Pay</td><td>zdarma</td><td>zabezpečeně přes platební bránu Stripe, je-li v košíku nabízena. Částka se strhne v Kč; u karty v jiné měně ji přepočte vaše banka. Údaje karty zadáváte jen u Stripe.</td></tr>
 </tbody></table>
 <p>Zahraniční objednávky se hradí předem. ${vatText(L)} Fakturu zasíláme e-mailem po zaplacení.</p>
 <p>Majitel účtu: ${OPERATOR.accountHolder}, ${OPERATOR.bankName}, číslo účtu ${OPERATOR.bankAccount}.</p>`);
@@ -338,7 +339,7 @@ export const privacy = doc('privacy', '/privacy', 'Zásady ochrany osobních úd
 <li><strong>Anthropic PBC</strong> (USA) – zpracování dokladů pomocí umělé inteligence při vedení evidence prodejů a nákupů a příprava návrhů odpovědí na poptávky (text poptávky bez kontaktních údajů; odpověď vždy kontroluje a odesílá provozovatel),</li>
 <li><strong>Zásilkovna s.r.o.</strong>, <strong>Česká pošta, s.p.</strong> a další dopravci podle cílové země – doručení zásilky,</li>
 <li><strong>Česká spořitelna, a.s.</strong> – příjem plateb (jako samostatný správce),</li>
-<li>poskytovatel platební brány – až po její aktivaci (doplníme sem jeho název),</li>
+<li><strong>Stripe Payments Europe, Limited</strong> (Irsko) – zpracování plateb kartou (Visa, Mastercard, Apple Pay, Google Pay). Údaje o kartě zadáváte přímo u Stripe, my je nevidíme ani neukládáme; od nás Stripe dostává číslo objednávky, částku a e-mail. Stripe zpracovává údaje zčásti jako samostatný správce (prevence podvodů, povinnosti podle předpisů o platebních službách) a může je předávat do USA na základě rámce EU–USA pro ochranu osobních údajů nebo standardních smluvních doložek,</li>
 <li>orgány veřejné moci, ukládá-li to zákon.</li>
 </ul>
 <h2>4. Předání mimo EU</h2>
@@ -363,7 +364,7 @@ export const cookies = doc('cookies', '/cookies', 'Zásady používání cookies
 <h2>Služby třetích stran</h2>
 <ul>
 <li><strong>Mapa výdejních míst</strong> Zásilkovny nebo Balíkovny se načte až po vašem kliknutí v košíku. Dopravce může použít vlastní technická úložiště. Polohu mapa použije jen s vaším souhlasem v prohlížeči.</li>
-<li><strong>Platba kartou</strong> (po aktivaci) probíhá na stránce platební brány s jejími nezbytnými cookies.</li>
+<li><strong>Platba kartou</strong> probíhá na zabezpečené stránce platební brány Stripe s jejími nezbytnými cookies.</li>
 <li>Instagram, TikTok a Facebook jsou jen odkazy, na našem webu se nenačítají.</li>
 </ul>
 <h2>Správa souhlasů</h2>
@@ -388,7 +389,7 @@ export const eu = doc('eu', '/prodej-do-eu', 'Prodej do zemí EU',
 <ol>
 <li><strong>Kam doručujeme:</strong> do všech 27 členských států Evropské unie. Cena dopravy se zobrazí podle země před odesláním objednávky.</li>
 <li><strong>Stejné podmínky pro celou EU:</strong> v souladu s nařízením (EU) 2018/302 (geoblocking) nabízíme zákazníkům ze všech států EU stejné ceny a obchodní podmínky bez ohledu na jejich státní příslušnost nebo bydliště.</li>
-<li><strong>Platba:</strong> zahraniční objednávky se hradí předem bankovním převodem v EUR (QR kód SEPA) nebo v Kč, po aktivaci i kartou. Dobírku do zahraničí nenabízíme.</li>
+<li><strong>Platba:</strong> zahraniční objednávky se hradí předem bankovním převodem v EUR (QR kód SEPA) nebo v Kč, případně kartou (strhává se v Kč). Dobírku do zahraničí nenabízíme.</li>
 <li><strong>Daně a clo:</strong> ${vatText(L)} V rámci EU se neplatí clo.</li>
 <li><strong>Vaše práva:</strong> ${warrantyShortCs()}, zákonná práva z vadného plnění (${T.liabilityMonths} měsíců), ${T.withdrawalDays} dní na odstoupení u hotových hodinek a doživotní garance pravosti platí stejně pro celou EU. Smlouva se řídí českým právem, ale spotřebitel neztrácí ochranu, kterou mu poskytují kogentní předpisy státu jeho bydliště (čl. 6 nařízení Řím I).</li>
 <li><strong>Vrácení ze zahraničí:</strong> náklady na vrácení hodinek nese spotřebitel a mohou být vyšší než v ČR. Doporučujeme pojištěnou zásilku.</li>

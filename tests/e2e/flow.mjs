@@ -48,6 +48,8 @@ try {
   // 2) Nastavení dopravy
   await page.goto(`${BASE}/admin/#/nastaveni`);
   await page.getByLabel(/Zásilkovna – cena/).fill('99');
+  // Pojištění na plnou hodnotu (R23): dražší kus než limit Zásilkovny (20 000 Kč) jde jen pojištěnou cennou zásilkou
+  await page.getByLabel('Cena pojištěné přepravy v ČR (Kč)').fill('450');
   await page.getByRole('button', { name: 'Uložit nastavení' }).click();
   await page.locator('.toast', { hasText: 'Uloženo' }).waitFor();
   step('nastavena cena dopravy');
@@ -112,7 +114,9 @@ try {
   await shop.getByRole('button', { name: 'Vložit do košíku' }).click();
   await shop.getByRole('heading', { name: 'Košík' }).waitFor();
   await shop.locator('[data-cart-items] .cart-item').waitFor();
-  await shop.getByLabel('Výdejní místo (název a adresa)').fill('Z-BOX Praha 7, Dukelských hrdinů 1');
+  // Omega za 38 900 Kč: Zásilkovna ani Balíkovna ji na plnou hodnotu nepojistí → nabídne se jen pojištěná přeprava a osobní předání
+  assert.equal(await shop.getByLabel(/Zásilkovna – výdejní místo/).count(), 0);
+  await shop.getByLabel(/Pojištěná přeprava na plnou hodnotu/).check();
   await shop.getByLabel('Jméno a příjmení').fill('Jana Testovací');
   await shop.getByLabel('E-mail').fill('jana@example.com');
   await shop.getByLabel(/Telefon/).fill('+420 600 000 000');
@@ -154,7 +158,7 @@ try {
   await shot(invPage, '5-faktura');
   step('faktura vystavena');
   await page.getByLabel(/Číslo zásilky/).fill('Z1234567890');
-  await page.getByRole('button', { name: /Odesláno/ }).click();
+  await page.getByRole('button', { name: /Předáno dopravci/ }).click();
   await page.locator('.chip.shipped').waitFor();
   step('odeslání označeno');
   const orderUrl = page.url();
@@ -226,6 +230,8 @@ try {
   // 9) Dobírka + výběr Balíkovny (okno České pošty nahrazeno testovací stránkou)
   await page.goto(`${BASE}/admin/#/nastaveni`);
   await page.getByLabel(/Balíkovna – cena/).fill('89');
+  // Majitel ověřil u České pošty podmínky pro hodinky → limit Balíkovny 50 000 Kč
+  await page.getByLabel('Balíkovna (Kč)', { exact: true }).fill('50000');
   await page.getByLabel('Nabízet platbu dobírkou').check();
   await page.getByLabel(/Příplatek za dobírku/).fill('40');
   await page.getByRole('button', { name: 'Uložit nastavení' }).click();
@@ -260,7 +266,7 @@ try {
   step('dobírka s výběrem Balíkovny na mapě');
   await page.goto(`${BASE}/admin/#/objednavky`);
   await page.locator('.item', { hasText: 'Karel Dobírka' }).click();
-  await page.getByRole('button', { name: /Odesláno na dobírku/ }).click();
+  await page.getByRole('button', { name: /Předáno dopravci \(dobírka\)/ }).click();
   await page.locator('.chip.shipped').waitFor();
   await page.getByRole('button', { name: /Dobírka zaplacena/ }).click();
   await page.locator('.chip.completed').waitFor();

@@ -225,15 +225,19 @@ route('PUT', 'products/:id', async ({ env, params, body, user }) => {
       const o = await env.DB.prepare("SELECT number FROM orders WHERE id=? AND status='awaiting_payment'").bind(old.reserved_order_id).first();
       if (o) throw new HttpError(`Hodinky jsou rezervované objednávkou ${o.number}. Nejdřív ji vyřiďte nebo zrušte.`, 409);
     }
-    if (d.status === 'reserved') throw new HttpError('Rezervaci vytváří jen objednávka', 400);
+    // Osobní rezervace (prodej mimo e-shop se domlouvá): kus zmizí z nabídky, e-shop ho nepředá jinému zákazníkovi
+    if (d.status === 'reserved') { d.reserved_order_id = null; d.reserved_until = null; }
     if (old.status === 'draft' && !old.published_at) d.published_at = now();
     if (d.status === 'sold') d.sold_at = now();
     if (d.status !== 'reserved') { d.reserved_order_id = null; d.reserved_until = null; }
   }
+  // Změna stavu jen pokud se stav mezitím nezměnil (např. objednávka z e-shopu ve stejnou chvíli) – ochrana proti dvojímu prodeji
+  const guard = d.status && d.status !== old.status;
   if (old.status === 'draft' && (body.brand || body.model || body.year) && !old.published_at) d.slug = await uniqueSlug(env, [d.brand ?? old.brand, d.model ?? old.model, d.year ?? old.year].filter(Boolean).join(' ') || d.title, params.id);
   d.updated_at = now();
   const keys = Object.keys(d);
-  await env.DB.prepare(`UPDATE products SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`).bind(...keys.map((k) => d[k]), params.id).run();
+  const upd = await env.DB.prepare(`UPDATE products SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?${guard ? ' AND status = ?' : ''}`).bind(...keys.map((k) => d[k]), params.id, ...(guard ? [old.status] : [])).run();
+  if (guard && !upd?.meta?.changes) throw new HttpError('Stav hodinek se mezitím změnil (např. objednávka z e-shopu). Obnovte stránku.', 409);
   const changed = keys.filter((k) => k !== 'updated_at' && String(old[k] ?? '') !== String(d[k] ?? ''));
   await audit(env, user.email, 'hodinky_upraveny', 'product', params.id, { changed, ...(changed.includes('price_czk') ? { price: [old.price_czk, d.price_czk] } : {}) });
   return json({ ok: true });
@@ -319,9 +323,8 @@ route('POST', 'orders/:id/packeta', async ({ env, params, body, user }) => {
   const settings = await getSettings(env);
   const r = await createPacket(env, o, { weightKg: body.weight, settings });
   await audit(env, user.email, 'zasilka_zalozena', 'order', o.id, { tracking: r.tracking });
-  // Automaticky: objednávka „odesláno“ a zákazníkovi e-mail s číslem a odkazem pro sledování
-  const notify = body.notify ?? settings.ship_autonotify === '1';
-  if (notify && o.status !== 'shipped') { await markShipped(env, o.id, r.tracking, user.email); r.shipped = true; }
+  // Štítek ≠ odeslání: objednávka se označí „odesláno“ (a zákazník dostane e-mail) až když dopravce zásilku převezme
+  // (hodinová kontrola DT Logistics) nebo když majitel klepne na „Předáno dopravci“.
   return json(r, 201);
 });
 route('GET', 'orders/:id/packeta-label', async ({ env, params }) => {
@@ -555,7 +558,8 @@ route('POST', 'invoices/:id/send', async ({ env, params, user, request }) => { a
 // --- Nastavení, e-maily, historie ------------------------------------------------------
 const SETTINGS = { shipping_zasilkovna_czk: 'int', shipping_balikovna_czk: 'int', shipping_osobni_enabled: 'bool', reservation_hours_bank: 'int', reservation_minutes_card: 'int', cod_enabled: 'bool', cod_fee_czk: 'int',
   eur_rate: 'num', punc_notified: 'bool', shipping_eu_insured_json: 'json', insured_threshold_czk: 'int', insured_price_czk: 'int', insured_eu_price_czk: 'int', shipping_eu_json: 'json', invoice_autosend: 'bool',
-  shipping_packeta_pickup_json: 'json', shipping_packeta_home_json: 'json', packeta_home_carriers_json: 'json', ship_autonotify: 'bool' };
+  shipping_packeta_pickup_json: 'json', shipping_packeta_home_json: 'json', packeta_home_carriers_json: 'json', ship_autonotify: 'bool',
+  cover_packeta_czk: 'int', cover_packeta_eu_eur: 'int', cover_balikovna_czk: 'int', cover_insured_czk: 'int', cover_insured_eu_czk: 'int' };
 // U těchto nastavení smí být i ČR (doručení na adresu v ČR)
 const JSON_WITH_CZ = new Set(['shipping_packeta_home_json', 'packeta_home_carriers_json']);
 route('GET', 'settings', async ({ env }) => {

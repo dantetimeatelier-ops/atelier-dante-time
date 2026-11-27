@@ -90,8 +90,10 @@
     const p = paymentSel();
     const cod = p?.id === 'cod' ? (p.price || 0) : 0;
     const total = itemsTotal + ship + cod;
-    const eur = form.currency.value === 'EUR' && config.eurRate;
-    $('[data-summary]').innerHTML = `<div><span>${L('Hodinky', 'Watches')}</span><span>${fmt(itemsTotal)}</span></div><div><span>${L('Doprava', 'Shipping')}</span><span>${s ? (ship === 0 ? L('zdarma', 'free') : fmt(ship)) : '–'}</span></div>${p?.id === 'cod' ? `<div><span>${L('Dobírka', 'Cash on delivery')}</span><span>${cod === 0 ? L('zdarma', 'free') : fmt(cod)}</span></div>` : ''}<div class="total"><span>${L('Celkem', 'Total')}</span><strong>${fmt(total)}</strong></div>${eur ? `<div><span>${L('K úhradě v eurech', 'To pay in euros')}</span><strong>${fmtEur(Math.ceil(total / config.eurRate) * 100)}</strong></div><p class="doc-meta">${L('Kurz', 'Rate')} ${config.eurRate} Kč/€</p>` : ''}`;
+    // Karta se vždy strhává v Kč (bez poplatku za převod měny), částku v eurech přepočte banka zákazníka
+    const cardCzk = p?.chargeCurrency === 'CZK' && form.currency.value === 'EUR';
+    const eur = form.currency.value === 'EUR' && config.eurRate && !cardCzk;
+    $('[data-summary]').innerHTML = `<div><span>${L('Hodinky', 'Watches')}</span><span>${fmt(itemsTotal)}</span></div><div><span>${L('Doprava', 'Shipping')}</span><span>${s ? (ship === 0 ? L('zdarma', 'free') : fmt(ship)) : '–'}</span></div>${p?.id === 'cod' ? `<div><span>${L('Dobírka', 'Cash on delivery')}</span><span>${cod === 0 ? L('zdarma', 'free') : fmt(cod)}</span></div>` : ''}<div class="total"><span>${L('Celkem', 'Total')}</span><strong>${fmt(total)}</strong></div>${eur ? `<div><span>${L('K úhradě v eurech', 'To pay in euros')}</span><strong>${fmtEur(Math.ceil(total / config.eurRate) * 100)}</strong></div><p class="doc-meta">${L('Kurz', 'Rate')} ${config.eurRate} Kč/€</p>` : ''}${cardCzk ? `<p class="doc-meta">${L('Platba kartou proběhne v Kč, přepočet provede vaše banka.', 'The card is charged in CZK; your bank converts the amount.')}</p>` : ''}`;
     submitBtn.disabled = !s || !p;
     const bar = $('[data-mobile-total]');
     if (bar) bar.textContent = eur ? `${fmtEur(Math.ceil(total / config.eurRate) * 100)}` : fmt(total);

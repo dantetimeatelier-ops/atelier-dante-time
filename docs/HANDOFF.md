@@ -4,6 +4,19 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/platby-doprava-eu (R23)
+**Hotovo:** schválené úpravy majitele (R23, `docs/PLATBY-A-DOPRAVA.md`):
+- Stripe jen `payment_method_types=card`, vždy v Kč (`chargeCurrency`), bez placených doplňků; poplatek z balance transaction
+  → náklad „poplatky“ u hodinek (`server/payment-events.js` `recordCardFee`, hodinově `recordMissingCardFees`), `orders.card_fee_czk`.
+- Pojištění na plnou hodnotu: `cover_*` nastavení (migrace 0025), `shopConfig` nenabídne dopravce, který hodnotu nekryje.
+- Odesláno až při předání dopravci: `handoverCheck` v `server/os.js` (každou hodinu), štítek už neodesílá e-mail.
+- Dobírka i na `zasilkovna_adresa`; právní dokumenty 1.2 (CZ+EN): dobírka, Stripe v zásadách, pojištění, tabulka Doprava a platba.
+- Dvojí prodej mimo e-shop: `issueManual` zabírá kus atomicky, záloha = osobní rezervace, `inbox` sale confirm a PUT hodinek s podmínkou stavu.
+**Další krok:** majitel založí Stripe a vloží klíče; po testu ostrý provoz. Limit Balíkovny ověřit u České pošty.
+**Pozor na:** úroveň 3 – PR slučuje jen majitel. Datum účinnosti podmínek 1.2 = 27. 11. 2026 (upravit, pokud se PR sloučí později).
+
+---
+
 ## 2026-11-27 – Claude – claude/platby-doprava-eu
 **Hotovo:** rozšíření objednávek podle zadání majitele (podklady a ceny: `docs/PLATBY-A-DOPRAVA.md`).
 - Platby: `server/payments.js` = jedno rozhraní pro **Stripe** (Checkout přes REST, bez knihovny) i Comgate; karta v CZK i EUR;

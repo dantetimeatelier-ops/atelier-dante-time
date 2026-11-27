@@ -181,3 +181,19 @@ Upřesnění majitele:
 - U každého nového inzerátu z fotografií navrhne agent jméno modelu automaticky (postup v `katalog/README.md`).
 - Upozornění předáno majiteli: „Prim“ je ochranná známka jiného výrobce; majitel zvolil variantu A (na vlastní odpovědnost).
 
+
+## R23 – Platby kartou přes Stripe, doprava po EU, pojištění na plnou hodnotu (2026-11-27)
+**Rozhodl:** majitel („Schvaluji Stripe Standard a navržené rozšíření plateb a dopravy.“)
+**Rozhodnutí:**
+- Platební brána **Stripe Standard**: nulový měsíční paušál, nulový aktivační poplatek, žádná placená předplatná ani placené
+  doplňky Stripe (fakturace je vlastní). Akceptovány jen transakční poplatky za uskutečněné platby.
+- Aktivovat Visa, Mastercard, Apple Pay a Google Pay **po dokončení registrace a testování**. PayPal vypnutý.
+- Bankovní převod s QR kódem zůstává výchozí možností.
+- Poplatky brány se automaticky evidují v nákladech konkrétních prodaných hodinek.
+- Dobírka rozšířena na doručení Zásilkovnou na adresu v ČR; schválena aktualizace právních podmínek (verze 1.2):
+  dobírka, platba kartou přes Stripe (včetně Zásad ochrany osobních údajů), pojištění na plnou hodnotu.
+- Doprava po celé EU podle skutečných možností dopravců. **Všechny hodinky kryté na plnou hodnotu**, nejen kusy nad 20 000 Kč.
+- Objednávka se označí jako odeslaná až při skutečném předání dopravci, ne při vytvoření štítku.
+- Ochrana proti dvojímu prodeji i při ručním prodeji mimo e-shop.
+- Bez výslovného souhlasu majitele se neaktivuje žádná služba s pravidelnými poplatky.
+**Důsledky:** `docs/PLATBY-A-DOPRAVA.md`, PR „platby-doprava-eu“. Tajné klíče Stripe zadává majitel přímo v Cloudflare.
