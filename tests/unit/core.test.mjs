@@ -402,3 +402,21 @@ test('PDF právních dokumentů: čeština, formulář, číslování stran, pla
   assert.match(s, new RegExp(`/Count ${pages}`)); assert.match(s, /\/ToUnicode/); assert.match(s, /\/FontFile2/);
   const xref = +s.match(/startxref\n(\d+)/)[1]; assert.equal(s.slice(xref, xref + 4), 'xref');
 });
+
+test('DT Logistics – expedice: založení zásilky v Zásilkovně a štítek', async () => {
+  const P = await import('../../server/packeta.js');
+  const upd = [];
+  const env = { PACKETA_API_PASSWORD: 'h', DB: { prepare: (sql) => { const o = { bind: (...a) => { upd.push({ sql, a }); return o; }, run: async () => ({}) }; return o; } } };
+  const order = { id: 'o1', number: 'DT-7', name: 'Jan Petr Novák', email: 'jan@example.cz', phone: '+420777000111', shipping_method: 'zasilkovna', pickup_point_id: '12345', payment_method: 'cod', total: 18999, tracking_number: null };
+  let body;
+  const r = await P.createPacket(env, order, { weightKg: '0,8', fetcher: async (u, q) => { body = q.body; return new Response('<response><status>ok</status><result><id>4930000123</id><barcode>Z4930000123</barcode><barcodeText>Z 493 0000 123</barcodeText></result></response>'); } });
+  assert.equal(r.tracking, 'Z 493 0000 123');
+  for (const s of ['<createPacket>', '<number>DT-7</number>', '<name>Jan</name>', '<surname>Petr Novák</surname>', '<addressId>12345</addressId>', '<cod>18999</cod>', '<value>18999</value>', '<weight>0.80</weight>']) assert.ok(body.includes(s), `chybí ${s}`);
+  assert.ok(!body.includes('<eshop>'));
+  assert.equal(upd[0].a[0], 'Z 493 0000 123');
+  await assert.rejects(() => P.createPacket(env, { ...order, tracking_number: 'Z1' }), /už je založená/);
+  await assert.rejects(() => P.createPacket(env, { ...order, shipping_method: 'balikovna' }), /Zásilkovnou/);
+  await assert.rejects(() => P.createPacket(env, { ...order, payment_method: 'bank_transfer' }, { fetcher: async () => new Response('<response><status>fault</status><fault>PacketAttributesFault</fault><detail><attributes><fault><attributeFault><name>addressId</name><fault>Neplatné výdejní místo</fault></attributeFault></fault></attributes></detail></response>') }), /neplatné údaje zásilky \(addressId: Neplatné výdejní místo\)/);
+  const pdf = await P.labelPdf(env, 'Z 493 0000 123', { fetcher: async (u, q) => { assert.match(q.body, /<packetLabelPdf>.*<packetId>4930000123<\/packetId>/); return new Response('<response><status>ok</status><result>JVBERg==</result></response>'); } });
+  assert.deepEqual([...pdf], [37, 80, 68, 70]);
+});

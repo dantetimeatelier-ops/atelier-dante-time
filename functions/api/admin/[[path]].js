@@ -20,7 +20,7 @@ import { INVOICE_KINDS, SALE_CHANNELS, INVOICE_PAY } from '../../../src/shop/inv
 import * as INB from '../../../server/inbox.js';
 import * as CPH from '../../../server/commission-photos.js';
 import { draftReply } from '../../../server/sales.js';
-import { refreshOrder } from '../../../server/packeta.js';
+import { refreshOrder, createPacket, labelPdf } from '../../../server/packeta.js';
 import { aiStatus } from '../../../server/ai.js';
 import { html } from '../../../server/http.js';
 
@@ -308,6 +308,21 @@ route('GET', 'orders/:id', async ({ env, params }) => {
   return json({ order, items, withdrawals, invoices });
 });
 route('POST', 'orders/:id/paid', async ({ env, params, user, request }) => json({ order: await markPaid(env, params.id, user.email, new URL(request.url).origin) }));
+// DT Logistics – expedice: založení zásilky v Zásilkovně a štítek k tisku (jen na pokyn majitele)
+route('POST', 'orders/:id/packeta', async ({ env, params, body, user }) => {
+  const o = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(params.id).first();
+  if (!o) throw new HttpError('Objednávka nenalezena', 404);
+  if (!['paid', 'awaiting_payment', 'shipped'].includes(o.status) || (o.status === 'awaiting_payment' && o.payment_method !== 'cod')) throw new HttpError('Zásilku lze založit jen u zaplacené objednávky nebo dobírky');
+  const r = await createPacket(env, o, { weightKg: body.weight });
+  await audit(env, user.email, 'zasilka_zalozena', 'order', o.id, { tracking: r.tracking });
+  return json(r, 201);
+});
+route('GET', 'orders/:id/packeta-label', async ({ env, params }) => {
+  const o = await env.DB.prepare('SELECT number, tracking_number FROM orders WHERE id = ?').bind(params.id).first();
+  if (!o?.tracking_number) throw new HttpError('Objednávka nemá číslo zásilky', 404);
+  const pdf = await labelPdf(env, o.tracking_number);
+  return new Response(pdf, { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="stitek-${o.number}.pdf"`, 'Cache-Control': 'private, no-store' } });
+});
 // DT Logistics: aktuální stav zásilky Zásilkovny
 route('POST', 'orders/:id/tracking', async ({ env, params }) => {
   const o = await env.DB.prepare('SELECT id, tracking_number FROM orders WHERE id = ?').bind(params.id).first();
