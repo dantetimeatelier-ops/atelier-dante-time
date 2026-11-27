@@ -7,6 +7,17 @@
   const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const czk = (n) => (n == null || n === '' ? '–' : `${new Intl.NumberFormat('cs-CZ').format(n)} Kč`);
   const date = (iso) => (iso ? new Date(iso).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '');
+  // Datum v českém formátu DD.MM.RRRR (u data bez času bez posunu časového pásma)
+  const dmy = (v) => {
+    if (!v) return '';
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v));
+    if (m) return `${m[3]}.${m[2]}.${m[1]}`;
+    const d = new Date(v); if (Number.isNaN(+d)) return String(v);
+    const [y, mo, da] = d.toLocaleDateString('sv-SE', { timeZone: 'Europe/Prague' }).split('-');
+    return `${da}.${mo}.${y}`;
+  };
+  // Neutrální ikona hodinek (zakázka bez fotografie)
+  const WATCH_ICON = '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M9 3h6l.6 3.2M9 3l-.6 3.2M9 21h6l.6-3.2M9 21l-.6-3.2"/><circle cx="12" cy="12" r="6"/><path d="M12 9v3l2 1.5"/><path d="M18.2 11h.8v2h-.8"/></svg>';
   const L = {
     product: { draft: 'Koncept', available: 'Skladem', reserved: 'Rezervováno', sold: 'Prodáno', in_progress: 'V přípravě', archived: 'Archiv' },
     order: { awaiting_payment: 'Čeká na platbu', paid: 'Zaplaceno', shipped: 'Odesláno', completed: 'Dokončeno', cancelled: 'Zrušeno', expired: 'Vypršelo', withdrawn: 'Odstoupeno' },
@@ -114,6 +125,8 @@
         <a class="stat" href="#/objednavky"><b>${d.ordersToShip}</b>k odeslání</a>
         <a class="stat" href="#/poptavky"><b>${d.inquiriesNew}</b>nových poptávek</a>
         <a class="stat" href="#/zakazky"><b>${d.commissionsActive}</b>zakázek v běhu</a>
+        ${d.invoicesOverdue ? `<a class="stat warn" href="#/faktury?status=po_splatnosti"><b>${d.invoicesOverdue}</b>faktur po splatnosti</a>` : ''}
+        ${d.invoicesToApprove ? `<a class="stat" href="#/faktury?status=ke_schvaleni"><b>${d.invoicesToApprove}</b>faktur ke schválení odeslání</a>` : ''}
         <a class="stat" href="#/hodinky"><b>${p.available || 0}</b>skladem</a>
         <a class="stat" href="#/hodinky"><b>${(p.draft || 0) + (p.in_progress || 0)}</b>v přípravě</a>
         <a class="stat" href="#/prohlidky"><b>${d.warranty?.remind || 0}</b>připomenout prohlídku</a>
@@ -296,8 +309,10 @@
 
   views.zakazky = async () => {
     const { commissions } = await api('GET', 'commissions');
+    const short = (k) => { const t = k.watch || k.description || ''; return t.length > 90 ? `${t.slice(0, 88)}…` : t; };
     app.innerHTML = `<div class="row" style="justify-content:space-between"><h1>Zakázky</h1><a class="btn primary" href="#/zakazky/nova">+ Nová</a></div>
-      <div class="list">${commissions.map((k) => `<a class="item" href="#/zakazky/${k.id}"><span class="grow"><span class="t">${esc(k.number)} · ${esc(k.customer_name || '')}</span><br>${chip('cstatus', k.status)} <span class="small muted">${esc(L.ctype[k.type])}${k.due_date ? ` · do ${esc(k.due_date)}` : ''}</span><br><span class="small muted">${esc(k.watch || '')}</span></span></a>`).join('') || '<p class="muted">Zatím žádné zakázky.</p>'}</div>`;
+      <div class="list">${commissions.map((k) => `<a class="item" href="#/zakazky/${k.id}">${k.cover_photo_id ? `<img src="/api/admin/commission-photos/${esc(k.cover_photo_id)}/s" alt="" loading="lazy" width="56" height="70">` : `<span class="ph watchph">${WATCH_ICON}</span>`}<span class="grow"><span class="t">${esc(k.number)} · ${esc(k.customer_name || '')}</span><br>
+        ${chip('cstatus', k.status)} <span class="small muted">${esc(L.ctype[k.type] || '')}${k.due_date ? ` · termín ${esc(dmy(k.due_date))}` : ''}</span><br><span class="small muted clamp">${esc(short(k))}</span></span></a>`).join('') || '<p class="muted">Zatím žádné zakázky.</p>'}</div>`;
   };
 
   const commissionForm = (k = {}) => `<form id="kf">
@@ -305,9 +320,11 @@
     <label>Stav<select name="status">${Object.entries(L.cstatus).map(([v, t]) => `<option value="${v}" ${(k.status || 'poptavka') === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
     <details open><summary>Zákazník</summary>${field('name', 'Jméno', { name: k.customer_name }, 'required')}${field('email', 'E-mail (nepovinné)', { email: k.customer_email }, 'type="email"')}${field('phone', 'Telefon (nepovinné)', { phone: k.customer_email ? k.customer_phone : '' }, 'type="tel"')}${field('contact_info', 'Jiný kontakt (např. Instagram @jmeno)', { contact_info: k.contact_info })}</details>
     <details open><summary>Zakázka</summary>${field('watch', 'Hodinky (značka, model, stav)', k)}${area('description', 'Co se má udělat', k)}
-      <div class="grid">${field('estimate_czk', 'Orientační cena (Kč)', k, 'inputmode="numeric"')}${field('deposit_czk', 'Záloha (Kč)', k, 'inputmode="numeric"')}</div>
-      <div class="grid">${field('final_price_czk', 'Konečná cena (Kč)', k, 'inputmode="numeric"')}${field('due_date', 'Termín', k, 'type="date"')}</div>
-      <div class="grid">${field('received_at', 'Převzato', k, 'type="date"')}${field('returned_at', 'Předáno', k, 'type="date"')}</div>
+      <div class="grid">${field('estimate_czk', 'Orientační cena (Kč)', k, 'inputmode="numeric"')}${field('final_price_czk', 'Konečná cena (Kč)', k, 'inputmode="numeric"')}</div>
+      <div class="grid">${field('deposit_czk', 'Záloha přijatá bez zálohové faktury (Kč)', k, 'inputmode="numeric"')}${field('deposit_received_on', 'Záloha přijata dne', k, 'type="date"')}</div>
+      <p class="small muted" style="margin-top:-4px">Např. hotově. Zálohu přes zálohovou fakturu sem nepište – započítá se sama.</p>
+      <div class="grid">${field('due_date', 'Termín', k, 'type="date"')}${field('received_at', 'Převzato', k, 'type="date"')}</div>
+      <div class="grid">${field('returned_at', 'Předáno', k, 'type="date"')}<span></span></div>
       ${area('internal_note', 'Interní poznámka', k)}</details>
     <div class="sticky-save"><button class="btn primary block">Uložit</button></div></form>`;
 
@@ -329,42 +346,185 @@
   };
 
   // Nahrání fotek k zakázce (telefon je zmenší: velká 2000 px + náhled 600 px)
-  async function uploadCommissionPhotos(id, files, info) {
+  async function uploadCommissionPhotos(id, files, info, phase = '') {
     try {
       for (const [n, file] of files.entries()) {
         info.textContent = `Nahrávám fotku ${n + 1} z ${files.length}…`;
         const large = await resize(file, 2000); const small = await resize(file, 600);
         const fd = new FormData(); const ext = (b) => (b.type === 'image/webp' ? 'webp' : 'jpg');
         fd.append('large', large.blob, `l.${ext(large.blob)}`); fd.append('small', small.blob, `s.${ext(small.blob)}`);
-        fd.append('width', large.w); fd.append('height', large.h);
+        fd.append('width', large.w); fd.append('height', large.h); if (phase) fd.append('phase', phase);
         await api('POST', `commissions/${id}/photos`, fd);
       }
     } finally { info.textContent = ''; }
   }
 
+  const PHASE = { pred: 'Před', behem: 'Během', po: 'Po' };
+  const phaseFor = (st) => (['hotovo', 'predano'].includes(st) ? 'po' : ['v_praci', 'ceka_na_dily'].includes(st) ? 'behem' : 'pred');
+  const photoUrl = (pid, size) => `/api/admin/commission-photos/${encodeURIComponent(pid)}/${size}`;
+
+  // Fotografie na celou obrazovku: listování šipkami i přejetím prstem, akce dole
+  function lightbox(photos, start, { onMain, onPhase, onDelete }) {
+    let i = start;
+    const el = document.createElement('div');
+    el.className = 'lightbox'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Fotografie');
+    const close = () => { el.remove(); document.removeEventListener('keydown', key); window.removeEventListener('hashchange', close); };
+    const draw = () => {
+      const f = photos[i];
+      el.innerHTML = `<button class="lb-x" aria-label="Zavřít">✕</button>
+        <div class="lb-img"><img src="${photoUrl(f.id, 'l')}" alt="Fotografie ${i + 1} z ${photos.length}"></div>
+        ${photos.length > 1 ? '<button class="lb-prev" aria-label="Předchozí">‹</button><button class="lb-next" aria-label="Další">›</button>' : ''}
+        <div class="lb-bar"><span class="small muted">${i + 1} / ${photos.length}${f.source === 'zakaznik' ? ' · od zákazníka' : ''}</span>
+          <div class="seg" role="group" aria-label="Fáze">${Object.entries(PHASE).map(([k, t]) => `<button type="button" data-ph="${k}" aria-pressed="${f.phase === k}">${t}</button>`).join('')}</div>
+          <div class="row" style="justify-content:center"><button class="btn" type="button" data-lmain ${f.main ? 'disabled' : ''}>${f.main ? '★ Hlavní fotka' : '☆ Nastavit jako hlavní'}</button><button class="btn danger" type="button" data-ldel>🗑 Smazat</button></div></div>`;
+      el.querySelector('.lb-x').onclick = close;
+      el.querySelector('.lb-prev')?.addEventListener('click', () => { i = (i - 1 + photos.length) % photos.length; draw(); });
+      el.querySelector('.lb-next')?.addEventListener('click', () => { i = (i + 1) % photos.length; draw(); });
+      el.querySelectorAll('[data-ph]').forEach((b) => b.addEventListener('click', () => run(async () => { const v = f.phase === b.dataset.ph ? '' : b.dataset.ph; await onPhase(f, v); f.phase = v || null; draw(); })));
+      el.querySelector('[data-lmain]').onclick = () => run(async () => { await onMain(f); photos.forEach((x) => { x.main = x === f ? 1 : 0; }); draw(); });
+      el.querySelector('[data-ldel]').onclick = () => run(async () => { if (!(await onDelete(f))) return; photos.splice(i, 1); if (!photos.length) { close(); return; } i = Math.min(i, photos.length - 1); draw(); });
+    };
+    const key = (e) => { if (e.key === 'Escape') close(); if (e.key === 'ArrowLeft') el.querySelector('.lb-prev')?.click(); if (e.key === 'ArrowRight') el.querySelector('.lb-next')?.click(); };
+    let x0 = null;
+    el.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    el.addEventListener('touchend', (e) => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) el.querySelector(dx > 0 ? '.lb-prev' : '.lb-next')?.click(); });
+    document.addEventListener('keydown', key); window.addEventListener('hashchange', close);
+    document.body.appendChild(el); draw(); el.querySelector('.lb-x').focus();
+  }
+
+  // Rychlé druhy nákladů zakázky (mobil: jedno klepnutí → předvyplněný formulář)
+  const JOB_COSTS = [
+    ['nakup', 'Hodinky / strojek', 'nakup', 'strojek'], ['pouzdro', 'Pouzdro', 'dil', 'pouzdro'], ['remen', 'Řemínek', 'dil', 'remen'], ['sklo', 'Sklo', 'dil', 'sklo'],
+    ['dily', 'Náhradní díly', 'dil', 'jine'], ['hodinar', 'Práce hodináře', 'prace', ''], ['vlastni', 'Vlastní práce', 'prace', ''], ['jine', 'Ostatní', 'jine', ''],
+  ];
+  const costLabel = (c) => `${c.own_work || (c.hours && !c.amount_czk && !c.estimate) ? 'Vlastní práce' : (c.part_kind && PK[c.part_kind] && c.part_kind !== 'jine' ? PK[c.part_kind] : CC[c.category])}`;
+  const costAmount = (c) => (c.estimate ? czk(c.est) : c.paid ? czk(c.paid) : c.own ? czk(c.own) : `${c.hours || 0} h`);
+
   views['zakazky/:id'] = async ({ id }) => {
     const { commissions } = await api('GET', 'commissions');
     const k = commissions.find((x) => x.id === id);
     if (!k) { app.innerHTML = '<p>Zakázka nenalezena.</p>'; return; }
-    app.innerHTML = `<p><a href="#/zakazky">← Zakázky</a></p><h1>${esc(k.number)}</h1><p class="small muted">Vytvořeno ${date(k.created_at)}</p>
-      <a class="btn block" style="margin-bottom:12px" href="#/faktury/nova?z=${encodeURIComponent(JSON.stringify({ commission_id: k.id, buyer_name: k.customer_name, buyer_email: k.customer_email, items: [{ text: `${L.ctype[k.type]} – ${k.watch || 'hodinky'} (zakázka ${k.number})`, price: k.final_price_czk ?? k.estimate_czk ?? '' }] }))}">Vystavit fakturu</a>
+    const z = (o) => `#/faktury/nova?z=${encodeURIComponent(JSON.stringify(o))}`;
+    const base = { commission_id: k.id, buyer_name: k.customer_name, buyer_email: k.customer_email };
+    const what = `${L.ctype[k.type]} – ${k.watch || 'hodinky'} (zakázka ${k.number})`;
+    app.innerHTML = `<p><a href="#/zakazky">← Zakázky</a></p><h1>${esc(k.number)}</h1><p class="small muted">${esc(k.customer_name || '')} · vytvořeno ${esc(dmy(k.created_at))}${k.due_date ? ` · termín ${esc(dmy(k.due_date))}` : ''}</p>
+      <div class="grid" style="margin-bottom:12px"><a class="btn" href="${z({ ...base, items: [{ text: what, price: k.final_price_czk ?? k.estimate_czk ?? '' }] })}">Vystavit fakturu</a><a class="btn ghost" href="${z({ ...base, kind: 'zalohova', items: [{ text: `Záloha – ${what}`, price: '' }] })}">Zálohová faktura</a></div>
       <h2>Fotografie</h2>
+      <div class="seg" role="group" aria-label="Nové fotky přidat jako" id="kphase">${Object.entries(PHASE).map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="${v === phaseFor(k.status)}">${t}</button>`).join('')}</div>
       <div class="photos" id="kphotos"><p class="small muted">Načítám…</p></div>
       <p class="small muted" id="kupl"></p>
+      <div id="kecon"><p class="small muted">Načítám ekonomiku…</p></div>
       ${commissionForm(k)}`;
-    app.querySelector('#kf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `commissions/${id}`, formData(e.target)); toast('Uloženo'); }); });
+    let phase = phaseFor(k.status);
+    app.querySelectorAll('#kphase button').forEach((b) => b.addEventListener('click', () => { phase = b.dataset.v; app.querySelectorAll('#kphase button').forEach((x) => x.setAttribute('aria-pressed', x === b)); }));
+    app.querySelector('#kf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `commissions/${id}`, formData(e.target)); toast('Uloženo'); await econ(); }); });
+
+    // --- Fotografie ---
     const box = app.querySelector('#kphotos');
+    let photos = [];
+    const acts = {
+      onMain: async (f) => { await api('PUT', `commissions/${id}/main-photo`, { photo_id: f.id }); toast('Hlavní fotka nastavena'); await draw(); },
+      onPhase: async (f, v) => { await api('PUT', `commission-photos/${f.id}`, { phase: v }); await draw(); },
+      onDelete: async (f) => { if (!confirm('Opravdu smazat tuto fotografii? Tuto akci nelze vrátit.')) return false; await api('DELETE', `commission-photos/${f.id}`); toast('Fotografie smazána'); await draw(); return true; },
+    };
     const draw = async () => {
-      const { photos } = await api('GET', `commissions/${id}/photos`);
-      box.innerHTML = `${photos.map((f) => `<div class="photo">${f.source === 'zakaznik' ? '<span class="first">Od zákazníka</span>' : ''}<a href="/api/admin/commission-photos/${esc(f.id)}/l" target="_blank"><img src="/api/admin/commission-photos/${esc(f.id)}/s" alt="Fotografie zakázky" loading="lazy"></a>
-        <div class="act"><span></span><button data-kdel="${esc(f.id)}" aria-label="Smazat">🗑</button></div></div>`).join('')}
+      ({ photos } = await api('GET', `commissions/${id}/photos`));
+      const hasMain = photos.some((f) => f.main);
+      box.innerHTML = `${photos.map((f, n) => `<div class="photo${f.main || (!hasMain && n === 0) ? ' main' : ''}">
+          <button type="button" class="open" data-open="${n}" aria-label="Zobrazit fotografii ${n + 1} na celou obrazovku"><img src="${photoUrl(f.id, 's')}" alt="" loading="lazy"></button>
+          <span class="tags">${f.main ? '<span class="first">Hlavní</span>' : ''}${f.phase ? `<span class="tag">${PHASE[f.phase]}</span>` : ''}${f.source === 'zakaznik' ? '<span class="tag">Od zákazníka</span>' : ''}</span>
+          <div class="act"><button type="button" data-main="${n}" aria-label="Nastavit jako hlavní fotku" aria-pressed="${!!f.main}">${f.main ? '★' : '☆'}</button><button type="button" class="del" data-kdel="${n}" aria-label="Smazat fotografii">🗑<span>Smazat</span></button></div></div>`).join('')}
         <label class="upload">+ Přidat fotky<br>(fotoaparát nebo galerie)<input type="file" accept="image/*" multiple id="kfiles"></label>`;
-      box.querySelectorAll('[data-kdel]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat fotografii?')) return; await api('DELETE', `commission-photos/${b.dataset.kdel}`); await draw(); })));
+      box.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => lightbox(photos, +b.dataset.open, acts)));
+      box.querySelectorAll('[data-main]').forEach((b) => b.addEventListener('click', () => run(() => acts.onMain(photos[+b.dataset.main]))));
+      box.querySelectorAll('[data-kdel]').forEach((b) => b.addEventListener('click', () => run(() => acts.onDelete(photos[+b.dataset.kdel]))));
       box.querySelector('#kfiles').addEventListener('change', (e) => run(async () => {
-        try { await uploadCommissionPhotos(id, [...e.target.files], app.querySelector('#kupl')); toast('Fotografie nahrány'); } finally { await draw(); }
+        try { await uploadCommissionPhotos(id, [...e.target.files], app.querySelector('#kupl'), phase); toast(`Fotografie nahrány (${PHASE[phase]})`); } finally { await draw(); }
       }));
     };
     run(draw);
+
+    // --- Ekonomika, faktury, zálohy, náklady ---
+    const ebox = app.querySelector('#kecon');
+    const econ = async () => {
+      const e = await api('GET', `commissions/${id}/economics`);
+      const src = { faktura: 'fakturováno', konecna: 'konečná cena', orientacni: 'orientační cena' }[e.priceSource] || 'cena zatím není';
+      const invSt = (v) => (v.cancelled_at ? 'storno' : v.kind === 'dobropis' ? 'dobropis' : v.paid_at ? 'uhrazeno' : v.due_date && v.due_date < new Date().toISOString() ? 'po splatnosti' : 'neuhrazeno');
+      const KIND = { faktura: 'Faktura', zalohova: 'Zálohová faktura', dobropis: 'Dobropis' };
+      ebox.innerHTML = `<h2>Ekonomika zakázky</h2>
+        <div class="grid"><div class="stat"><b>${czk(e.price)}</b>cena (${src})</div><div class="stat"><b>${czk(e.paid)}</b>zaplacené náklady</div>
+          <div class="stat"><b class="${e.profit < 0 ? 'neg' : ''}">${czk(e.profit)}</b>zisk před zdaněním</div><div class="stat"><b class="${e.marginPct < 0 ? 'neg' : ''}">${e.marginPct != null ? `${String(e.marginPct).replace('.', ',')} %` : '–'}</b>marže</div></div>
+        <div class="card" style="margin-top:10px"><table>
+          <tr><th>Vlastní práce${e.rate ? ` (${czk(e.rate)}/h)` : ''}</th><td>${czk(e.ownWork)} <span class="small muted">– není výdaj</span></td></tr>
+          <tr><th>Zisk po ocenění vlastní práce</th><td>${czk(e.profitAfterWork)}</td></tr>
+          ${e.estimate ? `<tr><th>Odhad dalších nákladů</th><td>${czk(e.estimate)}</td></tr><tr><th>Očekávaný zisk po odhadech</th><td>${czk(e.expectedProfit)}</td></tr>` : ''}
+        </table></div>
+        <div class="card"><b>Platby</b><table style="margin-top:6px">
+          ${e.advancesPaid ? `<tr><th>Uhrazené zálohové faktury</th><td>${czk(e.advancesPaid)}</td></tr>` : ''}${e.advancesOpen ? `<tr><th>Zálohové faktury neuhrazené</th><td>${czk(e.advancesOpen)}</td></tr>` : ''}
+          ${e.depositCash ? `<tr><th>Záloha bez dokladu</th><td>${czk(e.depositCash)}${e.depositCashLeft ? '' : ' <span class="small muted">(odečtena ve faktuře)</span>'}</td></tr>` : ''}
+          ${e.paidInvoices ? `<tr><th>Uhrazené faktury (po odečtení záloh)</th><td>${czk(e.paidInvoices)}</td></tr>` : ''}
+          <tr><th><b>Přijato celkem</b></th><td><b>${czk(e.received)}</b></td></tr>
+          <tr><th><b>${e.remaining < 0 ? 'Přeplatek' : 'Zbývá uhradit'}</b></th><td><b>${czk(e.remaining == null ? null : Math.abs(e.remaining))}</b></td></tr></table>
+          ${e.remaining < 0 ? '<p class="small warn" style="padding:8px;border-radius:8px">Přijato je víc než cena – zkontrolujte, zda je záloha odečtena ve faktuře.</p>' : ''}</div>
+        <h2>Faktury</h2><div class="list">${e.invoices.map((v) => `<div class="item"><span class="grow"><span class="t">${esc(v.number)} · ${KIND[v.kind] || 'Faktura'}</span><br>
+          <span class="small muted">${czk(v.total - (v.advance_deducted || 0))} · ${esc(dmy(v.issued_at))} · <b class="${invSt(v) === 'po splatnosti' ? 'warnt' : ''}">${invSt(v)}</b>${v.sent_at ? ' · odesláno' : v.awaiting_send ? ' · <b class="warnt">čeká na schválení odeslání</b>' : ''}</span><br>
+          <span class="row" style="gap:4px;margin-top:6px"><a class="btn ghost sm" href="/faktura/${esc(v.public_token)}" target="_blank">Zobrazit</a>
+          ${v.awaiting_send && !v.cancelled_at ? `<button class="btn sm" data-isend="${v.id}">Schválit a odeslat</button>` : ''}
+          ${!v.paid_at && !v.cancelled_at && v.kind !== 'dobropis' ? `<button class="btn ghost sm" data-ipaid="${v.id}">Uhrazeno</button>` : ''}</span></span></div>`).join('') || '<p class="small muted">Zatím žádná faktura.</p>'}</div>
+        <h2>Náklady</h2><div class="list">${e.costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br>
+          <span class="small muted">${esc(costLabel(c))} · ${esc(dmy(c.cost_date))}${c.supplier ? ` · ${esc(c.supplier)}` : ''}${docTag(c)}</span>
+          ${c.estimate ? ' <span class="chip">odhad</span>' : c.own ? ' <span class="chip">vlastní práce</span>' : ''}</span>
+          <b>${costAmount(c)}</b><button class="btn ghost sm" data-cmenu="${c.id}" aria-label="Možnosti nákladu">⋯</button></div>
+          <div class="row cmenu" data-for="${c.id}" hidden>${c.estimate ? `<button class="btn sm" data-real="${c.id}" data-amt="${c.amount_czk}">Změnit na skutečný</button>` : ''}<button class="btn ghost sm" data-unassign="${c.id}">Odebrat ze zakázky</button><button class="btn danger sm" data-cdel="${c.id}">Smazat</button></div>`).join('') || '<p class="small muted">Zatím žádné náklady.</p>'}</div>
+        <details style="margin-top:12px" id="addc"><summary>+ Přidat náklad</summary>
+          <div class="filters" id="cq">${JOB_COSTS.map(([key, t]) => `<button type="button" data-q="${key}" aria-pressed="false">${t}</button>`).join('')}</div>
+          <form id="jcf">
+            <div class="seg" role="group" aria-label="Typ nákladu" id="ctype"><button type="button" data-t="paid" aria-pressed="true">Zaplaceno</button><button type="button" data-t="own" aria-pressed="false">Vlastní práce</button><button type="button" data-t="est" aria-pressed="false">Odhad</button></div>
+            <div data-x="paid est">${sel('category', 'Druh', CC, 'dil')}</div>
+            <div data-x="paid est"><label>Upřesnění<select name="part_kind"><option value="">–</option>${Object.entries(PK).map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></label></div>
+            ${field('description', 'Popis', {}, 'required maxlength="300"')}
+            <div class="grid">${field('amount_czk', 'Částka (Kč)', {}, 'inputmode="numeric"')}<div data-x="own">${field('hours', 'Hodiny', {}, 'inputmode="decimal"')}</div></div>
+            <div class="grid">${field('cost_date', 'Datum', { cost_date: today() }, 'type="date"')}<div data-x="paid">${field('supplier', 'Dodavatel', {})}</div></div>
+            <label data-x="paid">Fotka nebo PDF dokladu (nepovinné)<input type="file" name="file" accept="image/*,application/pdf"></label>
+            <p class="small muted" data-x="own">Vlastní práci zadejte v hodinách (ocení se sazbou z Ekonomiky) nebo přímo v Kč. Nezapočítává se do zaplacených výdajů.</p>
+            <p class="small muted" data-x="est">Odhad se nepočítá do skutečných nákladů ani zisku. Až výdaj nastane, změňte ho na skutečný (⋯).</p>
+            <button class="btn primary block">Přidat náklad</button></form></details>
+        <details id="assign"><summary>Přiřadit už zapsaný výdaj</summary><div id="free"><p class="small muted">Načítám…</p></div></details>`;
+      // typ nákladu
+      const jf = ebox.querySelector('#jcf');
+      let type = 'paid';
+      const syncType = () => { ebox.querySelectorAll('#ctype button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.t === type)); jf.querySelectorAll('[data-x]').forEach((el) => { el.hidden = !el.dataset.x.split(' ').includes(type); }); };
+      ebox.querySelectorAll('#ctype button').forEach((b) => b.addEventListener('click', () => { type = b.dataset.t; syncType(); }));
+      syncType();
+      ebox.querySelectorAll('#cq button').forEach((b) => b.addEventListener('click', () => {
+        const [key, t, cat, pk] = JOB_COSTS.find((x) => x[0] === b.dataset.q);
+        ebox.querySelectorAll('#cq button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+        type = key === 'vlastni' ? 'own' : (type === 'own' ? 'paid' : type); syncType();
+        jf.category.value = cat; jf.part_kind.value = pk; if (!jf.description.value) jf.description.value = t; jf.amount_czk.focus();
+      }));
+      jf.addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => {
+        const extra = { commission_id: id, estimate: type === 'est', own_work: type === 'own' };
+        if (type === 'own') { extra.category = 'prace'; jf.part_kind.value = ''; }
+        if (type !== 'paid' && jf.file) jf.file.value = '';
+        await saveCost(jf, extra); await econ();
+      }); });
+      ebox.querySelectorAll('[data-cmenu]').forEach((b) => b.addEventListener('click', () => { const m = ebox.querySelector(`.cmenu[data-for="${b.dataset.cmenu}"]`); m.hidden = !m.hidden; }));
+      ebox.querySelectorAll('[data-real]').forEach((b) => b.addEventListener('click', () => run(async () => {
+        const a = prompt('Skutečná částka v Kč:', b.dataset.amt || ''); if (a == null) return;
+        await api('PUT', `costs/${b.dataset.real}`, { estimate: false, amount_czk: a, cost_date: today() }); toast('Změněno na skutečný náklad'); await econ();
+      })));
+      ebox.querySelectorAll('[data-unassign]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Odebrat náklad ze zakázky? V evidenci nákladů zůstane jako provozní.')) return; await api('PUT', `costs/${b.dataset.unassign}`, { commission_id: null }); await econ(); })));
+      ebox.querySelectorAll('[data-cdel]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat náklad úplně (i z evidence nákladů)?')) return; await api('DELETE', `costs/${b.dataset.cdel}`); await econ(); })));
+      ebox.querySelectorAll('[data-isend]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Odeslat fakturu zákazníkovi e-mailem?')) return; await api('POST', `invoices/${b.dataset.isend}/send`, {}); toast('Odesláno'); await econ(); })));
+      ebox.querySelectorAll('[data-ipaid]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Označit doklad jako uhrazený?')) return; await api('POST', `invoices/${b.dataset.ipaid}/paid`, {}); await econ(); })));
+      ebox.querySelector('#assign').addEventListener('toggle', (ev) => { if (!ev.target.open) return; run(async () => {
+        const { costs } = await api('GET', 'costs?volne=1');
+        const fb = ebox.querySelector('#free');
+        fb.innerHTML = costs.length ? `<p class="small muted">Nepřiřazené výdaje (provozní). Přiřazením se nic nezadává znovu a náklad se počítá jen jednou.</p><div class="list">${costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br><span class="small muted">${esc(CC[c.category])} · ${esc(dmy(c.cost_date))}${c.supplier ? ` · ${esc(c.supplier)}` : ''}</span></span><b>${czk(c.amount_czk)}</b><button class="btn sm" data-as="${c.id}">Přiřadit</button></div>`).join('')}</div>` : '<p class="small muted">Žádné nepřiřazené výdaje.</p>';
+        fb.querySelectorAll('[data-as]').forEach((b) => b.addEventListener('click', () => run(async () => { await api('PUT', `costs/${b.dataset.as}`, { commission_id: id }); toast('Přiřazeno k zakázce'); await econ(); })));
+      }); });
+    };
+    run(econ);
   };
 
   // --- Ekonomika (E2) ---------------------------------------------------------------------
@@ -401,16 +561,25 @@
     const d = await api('GET', `finance/overview?year=${y}`);
     const pct = Math.min(100, d.goalPct);
     app.innerHTML = `<div class="row" style="justify-content:space-between"><h1>Ekonomika ${esc(d.year)}</h1><span><a href="#/ekonomika?y=${+y - 1}">‹ ${+y - 1}</a> · <a href="#/ekonomika?y=${+y + 1}">${+y + 1} ›</a></span></div>
-      <div class="grid"><div class="stat"><b>${czk(d.revenue)}</b>tržby</div><div class="stat"><b>${czk(d.costs)}</b>náklady</div><div class="stat"><b>${czk(d.profit)}</b>zisk</div><div class="stat"><b>${czk(d.stockValue)}</b>hodnota skladu (náklady)</div></div>
+      <div class="grid"><div class="stat"><b>${czk(d.revenue)}</b>fakturováno (tržby)</div><div class="stat"><b>${czk(d.received)}</b>skutečně přijato</div>
+        <div class="stat"><b>${czk(d.costs)}</b>zaplacené náklady</div><div class="stat"><b class="${d.profit < 0 ? 'neg' : ''}">${czk(d.profit)}</b>zisk před zdaněním</div></div>
+      <div class="card" style="margin-top:12px"><table>
+        <tr><th>Vlastní práce${d.rate ? ` (${czk(d.rate)}/h)` : ''}</th><td>${czk(d.ownWork)} <span class="small muted">– není výdaj</span></td></tr>
+        <tr><th>Zisk po ocenění vlastní práce</th><td>${czk(d.profitAfterWork)}</td></tr>
+        <tr><th>Peněžní zisk (přijato − náklady)</th><td>${czk(d.cashProfit)}</td></tr>
+        <tr><th>Neuhrazené doklady</th><td>${czk(d.unpaid)}${d.overdue ? ` · <a class="warnt" href="#/faktury?status=po_splatnosti">po splatnosti ${czk(d.overdue)}</a>` : ''}</td></tr>
+        <tr><th>Hodnota skladu (náklady)</th><td>${czk(d.stockValue)}</td></tr>
+        <tr><th>Rozpracované zakázky (náklady)</th><td>${czk(d.wipValue)}</td></tr></table></div>
       <div class="card" style="margin-top:12px"><b>Cíl ${czk(d.goal)}</b><div style="height:10px;background:var(--line);border-radius:6px;margin:8px 0;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--gold)"></div></div><span class="small">${d.goalPct} % splněno</span></div>
-      <div class="card" style="margin-top:12px;overflow-x:auto"><b>Po měsících</b><table><tr><th>Měsíc</th><td><b>Tržby</b></td><td><b>Náklady</b></td><td><b>Zisk</b></td></tr>
-        ${d.months.filter((m) => m.revenue || m.costs).map((m) => `<tr><th>${m.month.slice(5)}/${m.month.slice(0, 4)}</th><td>${czk(m.revenue)}</td><td>${czk(m.costs)}</td><td>${czk(m.profit)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Zatím žádné údaje.</td></tr>'}</table>
-        <p class="small muted">Tržby = vystavené faktury (ostrý provoz). Náklady = zapsané náklady včetně nákupu hodinek a dílů${d.rate ? ` a práce (${czk(d.rate)}/h)` : ''}. Orientační přehled, rozhodující je účetnictví.</p></div>
+      <div class="card" style="margin-top:12px;overflow-x:auto"><b>Po měsících</b><table class="mtab"><tr><th>Měsíc</th><td><b>Fakturováno</b></td><td><b>Přijato</b></td><td><b>Náklady</b></td><td><b>Zisk</b></td></tr>
+        ${d.months.filter((m) => m.revenue || m.costs || m.received).map((m) => `<tr><th>${m.month.slice(5)}/${m.month.slice(0, 4)}</th><td>${czk(m.revenue)}</td><td>${czk(m.received)}</td><td>${czk(m.costs)}</td><td>${czk(m.profit)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Zatím žádné údaje.</td></tr>'}</table>
+        <p class="small muted">Fakturováno = vystavené faktury a dobropisy (ne zálohové) podle data vystavení – z toho se počítá cíl. Přijato = peníze podle data úhrady (zálohy, doplatky po odečtení záloh, zálohy bez dokladu). Náklady = skutečně zaplacené výdaje a nákup dílů; odhady a vlastní práce se nepočítají. Orientační přehled, rozhodující je účetnictví.</p></div>
+      <div class="card" style="margin-top:12px"><b>Ziskovost zakázek</b>${d.jobs.length ? `<div class="list" style="margin-top:8px">${d.jobs.map((x) => `<a class="item" href="#/zakazky/${x.id}"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${esc(L.cstatus[x.status] || x.status)} · náklady ${czk(x.cost)} · cena ${czk(x.price)} · zisk <b class="${x.margin < 0 ? 'neg' : ''}">${czk(x.margin)}</b>${x.marginPct != null ? ` (${String(x.marginPct).replace('.', ',')} %)` : ''}${x.remaining > 0 ? ` · zbývá uhradit ${czk(x.remaining)}` : ''}</span></span></a>`).join('')}</div>` : '<p class="small muted">Náklady a faktury zapisujte v detailu zakázky.</p>'}</div>
       <div class="card" style="margin-top:12px"><b>Marže hodinek</b>${d.pieces.length ? `<div class="list" style="margin-top:8px">${d.pieces.map((x) => `<a class="item" href="#/marze/${x.id}"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${x.sold ? 'prodáno' : 'skladem'} · náklady ${czk(x.cost)} · cena ${czk(x.price)} · marže <b>${czk(x.margin)}</b>${x.marginPct != null ? ` (${x.marginPct} %)` : ''}${x.hasPurchase ? '' : ' · ⚠ chybí nákupní cena'}</span></span></a>`).join('')}</div>` : '<p class="small muted">Zapište u hodinek nákupní cenu a náklady (Hodinky → detail → Náklady a marže).</p>'}</div>
       <div class="card" style="margin-top:12px"><b>Podklady pro účetní (CSV pro Excel)</b>
         <div class="grid">${field('from', 'Od', { from: `${y}-01-01` }, 'type="date" id="ef"')}${field('to', 'Do', { to: `${y}-12-31` }, 'type="date" id="et"')}</div>
         <div class="row"><button class="btn" data-x="naklady">Náklady</button><button class="btn" data-x="faktury">Vydané faktury</button></div></div>
-      <details style="margin-top:12px"><summary>Hodinová sazba práce</summary><form id="rf">${field('labor_rate_czk', 'Kč za hodinu (pro výpočet nákladů na vlastní práci)', { labor_rate_czk: d.rate || '' }, 'inputmode="numeric"')}<button class="btn block">Uložit</button></form></details>`;
+      <details style="margin-top:12px"><summary>Hodinová sazba práce</summary><form id="rf">${field('labor_rate_czk', 'Kč za hodinu (ocenění vlastní práce – není výdaj)', { labor_rate_czk: d.rate || '' }, 'inputmode="numeric"')}<button class="btn block">Uložit</button></form></details>`;
     app.querySelectorAll('[data-x]').forEach((b) => b.addEventListener('click', () => { location.href = `/api/admin/finance/export?kind=${b.dataset.x}&from=${app.querySelector('[name=from]').value}&to=${app.querySelector('[name=to]').value}`; }));
     app.querySelector('#rf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', 'finance/settings', formData(e.target)); toast('Uloženo'); views.ekonomika(_, q); }); });
   };
@@ -418,10 +587,10 @@
   views['marze/:id'] = async ({ id }) => {
     const [{ product: p }, e] = await Promise.all([api('GET', `products/${id}`), api('GET', `finance/products/${id}`)]);
     app.innerHTML = `<p><a href="#/hodinky/${esc(id)}">← ${esc(p.title)}</a></p><h1 style="font-size:22px">Náklady a marže</h1><p class="small muted">Interní údaje – na webu se nikdy nezobrazují.</p>
-      <div class="grid"><div class="stat"><b>${czk(e.total)}</b>náklady celkem</div><div class="stat"><b>${czk(e.expected)}</b>${e.sold ? `prodáno (${esc(e.saleOrder)})` : 'prodejní cena'}</div><div class="stat"><b>${czk(e.margin)}</b>marže${e.marginPct != null ? ` ${e.marginPct} %` : ''}</div></div>
+      <div class="grid"><div class="stat"><b>${czk(e.total)}</b>náklady celkem</div><div class="stat"><b>${czk(e.expected)}</b>${e.sold ? `prodáno (${esc(e.saleOrder)})` : 'prodejní cena'}</div><div class="stat"><b>${czk(e.margin)}</b>marže${e.marginPct != null ? ` ${e.marginPct} %` : ''}</div>${e.ownWork ? `<div class="stat"><b>${czk(e.marginAfterWork)}</b>po ocenění vlastní práce</div>` : ''}</div>
       ${e.hasPurchase ? '' : '<div class="card warn small" style="margin-top:12px">Chybí nákupní cena hodinek – přidejte náklad druhu „Nákup hodinek“.</div>'}
       <div class="card" style="margin-top:12px"><table>${Object.entries(e.byCat).map(([k, v]) => `<tr><th>${esc(CC[k] || k)}</th><td>${czk(v)}</td></tr>`).join('')}
-        ${e.partsCost ? `<tr><th>Díly ze skladu</th><td>${czk(e.partsCost)}</td></tr>` : ''}${e.hours ? `<tr><th>Práce ${e.hours} h${e.rate ? ` × ${czk(e.rate)}` : ''}</th><td>${e.rate ? czk(e.laborCost) : '<span class="small muted">nastavte sazbu v Ekonomice</span>'}</td></tr>` : ''}</table></div>
+        ${e.partsCost ? `<tr><th>Díly ze skladu</th><td>${czk(e.partsCost)}</td></tr>` : ''}${e.ownWork || e.hours ? `<tr><th>Vlastní práce${e.hours ? ` ${e.hours} h` : ''}${e.rate ? ` × ${czk(e.rate)}` : ''} <span class="small">(není výdaj)</span></th><td>${e.ownWork ? czk(e.ownWork) : '<span class="small muted">nastavte sazbu v Ekonomice</span>'}</td></tr>` : ''}${e.estimate ? `<tr><th>Odhad (nezapočteno)</th><td>${czk(e.estimate)}</td></tr>` : ''}</table></div>
       <h2 style="margin-top:16px">Zapsané náklady</h2><div class="list">${e.costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br><span class="small muted">${esc(CC[c.category])} · ${esc(c.cost_date)}${c.supplier ? ` · ${esc(c.supplier)}` : ''}${docTag(c)}</span></span><b>${c.amount_czk ? czk(c.amount_czk) : `${c.hours} h`}</b><button class="btn" data-del="${c.id}" aria-label="Smazat">✕</button></div>`).join('') || '<p class="muted">Zatím nic.</p>'}</div>
       ${e.parts.length ? `<h2 style="margin-top:16px">Použité díly</h2><div class="list">${e.parts.map((x) => `<div class="item"><span class="grow">${esc(x.title)} <span class="small muted">${esc(PK[x.kind])}${x.original ? ' · originál' : ''}</span></span><b>${czk((x.unit_cost_czk || 0) * (x.qty || 1))}</b></div>`).join('')}</div>` : ''}
       <details open style="margin-top:16px"><summary>Přidat náklad</summary>${costForm({ category: e.hasPurchase ? 'dil' : 'nakup' })}</details>`;
@@ -433,7 +602,7 @@
     const { costs } = await api('GET', 'costs');
     app.innerHTML = `<h1>Náklady</h1><p class="small muted">Společné provozní náklady (krabičky, nářadí, reklama, hosting…). Náklady konkrétních hodinek zapisujte u hodinek. <a href="#/doklady">Doklady</a></p>
       <details><summary>Přidat provozní náklad</summary>${costForm({ category: 'provoz' })}</details>
-      <div class="list" style="margin-top:12px">${costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br><span class="small muted">${esc(CC[c.category])} · ${esc(c.cost_date)}${c.product_title ? ` · ${esc(c.product_title)}` : ' · provoz'}${docTag(c)}</span></span><b>${c.amount_czk ? czk(c.amount_czk) : `${c.hours} h`}</b><button class="btn" data-del="${c.id}" aria-label="Smazat">✕</button></div>`).join('') || '<p class="muted">Zatím žádné náklady.</p>'}</div>`;
+      <div class="list" style="margin-top:12px">${costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br><span class="small muted">${esc(CC[c.category])} · ${esc(c.cost_date)}${c.product_title ? ` · ${esc(c.product_title)}` : c.commission_number ? ` · <a href="#/zakazky/${esc(c.commission_id)}">zakázka ${esc(c.commission_number)}</a>` : ' · provoz'}${c.estimate ? ' · odhad' : ''}${c.own_work ? ' · vlastní práce' : ''}${docTag(c)}</span></span><b>${c.amount_czk ? czk(c.amount_czk) : `${c.hours} h`}</b><button class="btn" data-del="${c.id}" aria-label="Smazat">✕</button></div>`).join('') || '<p class="muted">Zatím žádné náklady.</p>'}</div>`;
     app.querySelector('#cf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => { await saveCost(ev.target); views.naklady(); }); });
     app.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat náklad?')) return; await api('DELETE', `costs/${b.dataset.del}`); views.naklady(); })));
   };
@@ -786,28 +955,29 @@
 
   views.faktury = async (_, q) => {
     const params = new URLSearchParams();
-    for (const k of ['q', 'year', 'channel', 'kind', 'status']) if (q.get(k)) params.set(k, q.get(k));
+    for (const k of ['q', 'year', 'channel', 'kind', 'status', 'commission_id']) if (q.get(k)) params.set(k, q.get(k));
     const d = await api('GET', `invoices?${params}`);
     const opts = (map, v, all) => `<option value="">${all}</option>${Object.entries(map).map(([k, t]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${esc(t)}</option>`).join('')}`;
     const y = new Date().getFullYear();
-    const st = (v) => (v.cancelled_at ? 'storno' : v.kind === 'dobropis' ? 'dobropis' : v.paid_at ? 'uhrazeno' : 'neuhrazeno');
+    const st = (v) => (v.cancelled_at ? 'storno' : v.kind === 'dobropis' ? 'dobropis' : v.paid_at ? 'uhrazeno' : v.overdue ? 'po splatnosti' : 'neuhrazeno');
     app.innerHTML = `<div class="row" style="justify-content:space-between"><h1>Faktury</h1><a class="btn primary" href="#/faktury/nova">+ Nová</a></div>
       <p class="small muted">Faktury z e-shopu se vystavují samy po zaplacení. Zde vystavíte fakturu k prodeji na Vinted, Aukru, Instagramu, osobně nebo k zakázce. Čísla jdou automaticky: DT-${y}-0001, DT-${y}-0002…</p>
       <form id="ff" class="card" style="margin-bottom:12px"><input name="q" placeholder="Hledat: číslo, zákazník, model, výrobní číslo" value="${esc(q.get('q') || '')}">
         <div class="grid" style="margin-top:8px"><select name="year">${opts(Object.fromEntries([y, y - 1].map((x) => [String(x), String(x)])), q.get('year') || '', 'Všechny roky')}</select>
-        <select name="status">${opts({ neuhrazeno: 'Neuhrazené', uhrazeno: 'Uhrazené', storno: 'Stornované' }, q.get('status') || '', 'Všechny stavy')}</select></div>
+        <select name="status">${opts({ neuhrazeno: 'Neuhrazené', po_splatnosti: 'Po splatnosti', ke_schvaleni: 'Čeká na schválení odeslání', uhrazeno: 'Uhrazené', storno: 'Stornované' }, q.get('status') || '', 'Všechny stavy')}</select></div>
         <div class="grid"><select name="channel">${opts(d.channels, q.get('channel') || '', 'Všechny kanály')}</select><select name="kind">${opts(d.kinds, q.get('kind') || '', 'Všechny doklady')}</select></div>
         <button class="btn block">Filtrovat</button></form>
-      <div class="grid"><div class="stat"><b>${czk(d.revenue)}</b>tržby (výběr)</div><div class="stat"><b>${czk(d.unpaid)}</b>neuhrazeno</div></div>
+      <div class="grid"><div class="stat"><b>${czk(d.revenue)}</b>fakturováno (výběr)</div><div class="stat"><b>${czk(d.unpaid)}</b>neuhrazeno</div></div>
+      ${d.overdue ? `<a class="card warn" style="display:block;margin-top:10px" href="#/faktury?status=po_splatnosti">Po splatnosti: <b>${czk(d.overdue)}</b></a>` : ''}
       <div class="list" style="margin-top:12px">${d.invoices.map((v) => `<div class="item"><span class="grow"><span class="t">${esc(v.number)} · ${esc(v.buyer_company || v.buyer_name)}</span><br>
-        <span class="small muted">${esc(d.kinds[v.kind] || 'Faktura')} · ${esc(d.channels[v.channel] || '')} · ${czk(v.total - (v.advance_deducted || 0))} · ${date(v.issued_at)} · <b>${st(v)}</b>${v.watch_model ? ` · ${esc(v.watch_model)}` : ''}${v.sent_at ? ' · odesláno' : ''}${v.mode === 'test' ? ' · test' : ''}</span><br>
+        <span class="small muted">${esc(d.kinds[v.kind] || 'Faktura')} · ${esc(d.channels[v.channel] || '')} · ${czk(v.total - (v.advance_deducted || 0))} · ${date(v.issued_at)} · <b class="${v.overdue && !v.cancelled_at ? 'warnt' : ''}">${st(v)}</b>${v.watch_model ? ` · ${esc(v.watch_model)}` : ''}${v.commission_number ? ` · <a href="#/zakazky/${esc(v.commission_id)}">zakázka ${esc(v.commission_number)}</a>` : ''}${v.sent_at ? ' · odesláno' : v.awaiting_send && !v.cancelled_at ? ' · <b class="warnt">čeká na schválení odeslání</b>' : ''}${v.mode === 'test' ? ' · test' : ''}</span><br>
         <span class="row" style="gap:4px;flex-wrap:wrap;margin-top:6px"><a class="btn ghost" style="min-height:38px;padding:8px 12px" href="/faktura/${esc(v.public_token)}" target="_blank">Zobrazit / PDF</a>
         ${!v.paid_at && !v.cancelled_at && v.kind !== 'dobropis' ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-paid="${v.id}">Uhrazeno</button>` : ''}
-        ${v.buyer_email && !v.cancelled_at ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-send="${v.id}">${v.sent_at ? 'Poslat znovu' : 'Poslat e-mailem'}</button>` : ''}
+        ${v.buyer_email && !v.cancelled_at ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-send="${v.id}">${v.sent_at ? 'Poslat znovu' : v.awaiting_send ? 'Schválit a odeslat' : 'Poslat e-mailem'}</button>` : ''}
         ${v.kind === 'faktura' && !v.cancelled_at ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-credit="${v.id}" data-total="${v.total}">Dobropis</button>` : ''}
         ${!v.cancelled_at && !(v.order_id && v.kind === 'faktura') ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-storno="${v.id}">Storno</button>` : ''}</span></span></div>`).join('') || '<p class="muted">Žádné doklady.</p>'}</div>`;
     app.querySelector('#ff').addEventListener('submit', (e) => { e.preventDefault(); const p = new URLSearchParams(Object.entries(formData(e.target)).filter(([, v]) => v)); location.hash = `#/faktury?${p}`; });
-    app.querySelectorAll('[data-paid]').forEach((b) => b.addEventListener('click', () => run(async () => { await api('POST', `invoices/${b.dataset.paid}/paid`, {}); views.faktury(_, q); })));
+    app.querySelectorAll('[data-paid]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Označit doklad jako uhrazený?')) return; await api('POST', `invoices/${b.dataset.paid}/paid`, {}); views.faktury(_, q); })));
     app.querySelectorAll('[data-send]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Poslat doklad zákazníkovi e-mailem?')) return; await api('POST', `invoices/${b.dataset.send}/send`, {}); toast('Odesláno'); views.faktury(_, q); })));
     app.querySelectorAll('[data-storno]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Stornovat doklad? Použijte jen u chybně vystaveného dokladu. Hodinky prodané touto fakturou se vrátí na sklad.')) return; await api('POST', `invoices/${b.dataset.storno}/cancel`, {}); views.faktury(_, q); })));
     app.querySelectorAll('[data-credit]').forEach((b) => b.addEventListener('click', () => run(async () => {
@@ -820,12 +990,15 @@
 
   views['faktury/nova'] = async (_, q) => {
     const pre = q.get('z') ? JSON.parse(decodeURIComponent(q.get('z'))) : {};
-    const f = await api('GET', 'invoices/form');
+    const f = await api('GET', `invoices/form${pre.commission_id ? `?commission_id=${encodeURIComponent(pre.commission_id)}` : ''}`);
+    const kc = f.commission;
+    const myAdv = kc ? f.advances.find((a) => a.commission_id === kc.id) : null;
     const lines = pre.items?.length ? pre.items : [];
     const lineHtml = (l = {}) => `<div class="grid line" style="grid-template-columns:1fr 70px 110px"><input name="text" placeholder="Položka (např. Servis, řemínek)" value="${esc(l.text)}"><input name="qty" inputmode="numeric" placeholder="Ks" value="${esc(l.qty || 1)}"><input name="price" inputmode="numeric" placeholder="Cena/ks Kč" value="${esc(l.price)}"></div>`;
     const sel = (name, label, map, v) => `<label>${label}<select name="${name}">${Object.entries(map).map(([k, t]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
     app.innerHTML = `<p><a href="#/faktury">← Faktury</a></p><h1>Nová faktura</h1><form id="if">
-      <div class="grid">${sel('kind', 'Doklad', { faktura: 'Faktura', zalohova: 'Zálohová faktura' }, 'faktura')}${sel('channel', 'Zdroj prodeje', f.channels, pre.commission_id ? 'zakazka' : 'osobne')}</div>
+      ${kc ? `<p class="small muted">K zakázce <a href="#/zakazky/${esc(kc.id)}">${esc(kc.number)}</a>. Faktura se k zakázce i zákazníkovi přiřadí automaticky.</p>` : ''}
+      <div class="grid">${sel('kind', 'Doklad', { faktura: 'Faktura', zalohova: 'Zálohová faktura' }, pre.kind === 'zalohova' ? 'zalohova' : 'faktura')}${sel('channel', 'Zdroj prodeje', f.channels, pre.commission_id ? 'zakazka' : 'osobne')}</div>
       <details open><summary>Hodinky ze skladu</summary>
         <label>Hodinky<select name="product_id"><option value="">– bez hodinek ze skladu –</option>${f.products.map((p) => `<option value="${p.id}" data-price="${p.price_czk ?? ''}">${esc(p.title)}${p.price_czk ? ` · ${czk(p.price_czk)}` : ''}</option>`).join('')}</select></label>
         <div class="grid">${field('product_price', 'Prodejní cena hodinek (Kč)', {}, 'inputmode="numeric"')}${field('shipping_czk', 'Doprava (Kč)', {}, 'inputmode="numeric"')}</div>
@@ -841,9 +1014,15 @@
         ${sel('payment_method', 'Způsob úhrady', f.pay, 'bank_transfer')}
         <label class="row"><input type="checkbox" name="paid" style="width:22px;min-height:22px"> Již uhrazeno</label>
         <div class="grid"><label>Splatnost (dní)<input name="due_days" inputmode="numeric" value="14"></label>${field('taxable_date', 'Datum prodeje (DUZP)', { taxable_date: today() }, 'type="date"')}</div>
-        ${f.advances.length ? `<label>Odečíst uhrazenou zálohu<select name="advance_id"><option value="">–</option>${f.advances.map((a) => `<option value="${a.id}">${esc(a.number)} · ${esc(a.buyer_name)} · ${czk(a.total)}</option>`).join('')}</select></label>` : ''}
+        ${f.advances.length ? `<label data-k="faktura">Odečíst uhrazenou zálohovou fakturu<select name="advance_id"><option value="">–</option>${f.advances.map((a) => `<option value="${a.id}" ${myAdv?.id === a.id ? 'selected' : ''}>${esc(a.number)} · ${esc(a.buyer_name)} · ${czk(a.total)}</option>`).join('')}</select></label>` : ''}
+        ${kc?.depositCashLeft ? `<label class="row" data-k="faktura"><input type="checkbox" name="deduct_cash_deposit" checked style="width:22px;min-height:22px"> Odečíst zálohu přijatou bez dokladu (${czk(kc.depositCashLeft)})</label>` : ''}
         ${field('note', 'Poznámka na faktuře', pre)}
-        <label class="row"><input type="checkbox" name="send" style="width:22px;min-height:22px"> Po vystavení poslat zákazníkovi e-mailem</label></details>
+        </details>
+      <details open><summary>Po vystavení</summary>
+        <label class="row"><input type="radio" name="send_mode" value="ulozit" ${f.autosend ? '' : 'checked'} style="width:22px;min-height:22px"> Jen uložit (bez odeslání)</label>
+        <label class="row"><input type="radio" name="send_mode" value="schvalit" style="width:22px;min-height:22px"> Zkontroluji a odeslání schválím ručně</label>
+        <label class="row"><input type="radio" name="send_mode" value="odeslat" ${f.autosend ? 'checked' : 'disabled'} style="width:22px;min-height:22px"> Odeslat zákazníkovi ihned</label>
+        <p class="small muted">${f.autosend ? 'Automatické odesílání je zapnuté – odešle se jen při platném e-mailu zákazníka.' : 'Okamžité odeslání je vypnuté. Zapnete ho v <a href="#/nastaveni">Nastavení → Faktury</a>.'}</p></details>
       <p class="small" id="sum"></p>
       <div class="sticky-save"><button class="btn primary block">Vystavit fakturu</button></div></form>`;
     const form = app.querySelector('#if');
@@ -854,14 +1033,20 @@
     };
     form.product_id.addEventListener('change', () => { const o = form.product_id.selectedOptions[0]; if (o?.dataset.price && !form.product_price.value) form.product_price.value = o.dataset.price; recalc(); });
     form.addEventListener('input', recalc);
+    const syncKind = () => form.querySelectorAll('[data-k]').forEach((el) => { el.hidden = form.kind.value !== el.dataset.k; });
+    form.kind.addEventListener('change', syncKind); syncKind();
     app.querySelector('#addl').addEventListener('click', () => app.querySelector('#lines').insertAdjacentHTML('beforeend', lineHtml()));
     form.addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
       const d = formData(form);
       d.items = [...form.querySelectorAll('.line')].map((l) => ({ text: l.querySelector('[name=text]').value, qty: l.querySelector('[name=qty]').value || 1, price: l.querySelector('[name=price]').value })).filter((i) => i.text.trim());
       delete d.text; delete d.qty; delete d.price;
-      d.paid = form.paid.checked; d.send = form.send.checked; d.inspection = form.inspection.checked; d.commission_id = pre.commission_id;
+      d.paid = form.paid.checked; d.inspection = form.inspection.checked; d.commission_id = pre.commission_id;
+      d.deduct_cash_deposit = !!form.deduct_cash_deposit?.checked && form.kind.value === 'faktura';
+      if (form.kind.value !== 'faktura') delete d.advance_id;
       const r = await api('POST', 'invoices', d);
-      toast(`Faktura ${r.number} vystavena${r.done?.length ? ` – ${r.done.join(', ')}` : ''}`); window.open(`/faktura/${r.token}`, '_blank'); location.hash = '#/faktury';
+      toast(`${form.kind.value === 'zalohova' ? 'Zálohová faktura' : 'Faktura'} ${r.number} vystavena${r.done?.length ? ` – ${r.done.join(', ')}` : ''}`);
+      location.hash = pre.commission_id ? `#/zakazky/${pre.commission_id}` : '#/faktury';
+      if (r.sendMode !== 'odeslat') window.open(`/faktura/${r.token}`, '_blank'); // ke kontrole
     }); });
   };
 
@@ -895,6 +1080,9 @@
         <h2>Puncovní úřad</h2>
         <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="punc_notified" ${s.punc_notified === '1' ? 'checked' : ''} style="width:22px;min-height:22px"> Obchod s hodinkami z drahých kovů a e-shop jsem oznámil Puncovnímu úřadu</label>
         <p class="small muted">Nutné jen pro pouzdra ze zlata, stříbra nebo platiny. Nerezová a pozlacená pouzdra oznámení nevyžadují. Bez zaškrtnutí nelze hodinky z drahého kovu zveřejnit.</p>
+        <h2>Faktury</h2>
+        <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="invoice_autosend" ${s.invoice_autosend === '1' ? 'checked' : ''} style="width:22px;min-height:22px"> Povolit automatické odeslání faktury ihned po vystavení</label>
+        <p class="small muted">Odešle se jen zákazníkovi s platným e-mailem. U každé faktury můžete dál zvolit „jen uložit“ nebo „schválím ručně“. Upomínky zákazníkům se automaticky neposílají.</p>
         <h2>Rezervace</h2>
         <div class="grid"><label>Převod – hodin<input name="reservation_hours_bank" inputmode="numeric" value="${esc(s.reservation_hours_bank)}"></label><label>Karta – minut<input name="reservation_minutes_card" inputmode="numeric" value="${esc(s.reservation_minutes_card)}"></label></div>
         <button class="btn primary block">Uložit nastavení</button></form>
@@ -906,7 +1094,7 @@
         <tr><th>Odesílání e-mailů</th><td>${yes(i.email)}</td></tr>
       </table><p class="small muted">Integrace se zapínají v Cloudflare podle návodu docs/INTEGRATIONS.md. Ostrý režim a ostré platby jen po vašem rozhodnutí.</p></div>`;
     app.querySelector('#setf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
-      const d = formData(e.target); d.shipping_osobni_enabled = e.target.shipping_osobni_enabled.checked; d.cod_enabled = e.target.cod_enabled.checked; d.punc_notified = e.target.punc_notified.checked;
+      const d = formData(e.target); d.shipping_osobni_enabled = e.target.shipping_osobni_enabled.checked; d.cod_enabled = e.target.cod_enabled.checked; d.punc_notified = e.target.punc_notified.checked; d.invoice_autosend = e.target.invoice_autosend.checked;
       d.shipping_eu_insured_json = Object.fromEntries([...e.target.querySelectorAll('[data-eu-ins]')].map((x) => [x.dataset.euIns, x.value.trim()]));
       d.shipping_eu_json = Object.fromEntries([...e.target.querySelectorAll('[data-eu]')].map((x) => [x.dataset.eu, x.value.trim()]));
       await api('PUT', 'settings', d); toast('Uloženo');

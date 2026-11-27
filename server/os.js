@@ -9,6 +9,7 @@ import { SITE } from '../src/site.mjs';
 import { today } from '../src/shop/warranty.mjs';
 import { refreshAll } from './packeta.js';
 import { productEconomics, overview } from './finance.js';
+import { overdueInvoices } from './invoicing.js';
 
 // ---- Role a běhy --------------------------------------------------------------------------
 export async function roles(env) {
@@ -133,8 +134,27 @@ export async function financeCheck(env) {
     const e = await productEconomics(env, p.id);
     if (!e.hasPurchase) { missing++; await f(`nakup:${p.id}`, p.status === 'sold' ? 'warning' : 'info', `Hodinky bez nákupní ceny: ${p.title}`, 'Bez nákupní ceny nejde spočítat marže a zisk. Hodinky → Ekonomika kusu → přidat náklad „Nákup“.'); }
   }
+  // Faktury po splatnosti: upozornění v přehledu a jednou denně souhrn e-mailem POUZE majiteli (zákazníkům nic)
+  const overdue = await overdueInvoices(env).catch(() => []);
+  for (const i of overdue) await f(`splatnost:${i.id}`, 'warning', `Faktura ${i.number} je ${i.days} ${i.days === 1 ? 'den' : i.days < 5 ? 'dny' : 'dní'} po splatnosti (${kcz(i.due)})`, `${i.buyer_company || i.buyer_name}${i.commission_number ? ` · zakázka ${i.commission_number}` : ''}. Upomínku zákazníkovi posíláte sami.`);
+  if (overdue.length) await overdueDigest(env, overdue);
   await resolveMissing(env, 'finance', seen);
-  return { status: costs || sales ? 'warning' : 'ok', summary: seen.size ? `${costs + sales} dokladů ke kontrole, ${missing} hodinek bez nákupní ceny` : 'evidence je úplná' };
+  return { status: costs || sales || overdue.length ? 'warning' : 'ok', summary: seen.size ? `${costs + sales} dokladů ke kontrole, ${missing} hodinek bez nákupní ceny, ${overdue.length} faktur po splatnosti` : 'evidence je úplná' };
+}
+
+const kcz = (n) => `${Math.round(Number(n)).toLocaleString('cs-CZ')} Kč`;
+
+/** Denní souhrn neuhrazených faktur po splatnosti – jen majiteli, nejvýš jednou za den. */
+export async function overdueDigest(env, list) {
+  const day = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Prague' });
+  const s = await getSettings(env);
+  if (s.overdue_digest_last === day || !list.length) return false;
+  const total = list.reduce((a, i) => a + i.due, 0);
+  const rows = list.map((i) => `<li><b>${i.number}</b> · ${i.buyer_company || i.buyer_name}${i.commission_number ? ` · zakázka ${i.commission_number}` : ''} · ${kcz(i.due)} · ${i.days} dní po splatnosti${i.sent_at ? '' : ' · <i>zákazníkovi zatím neodesláno</i>'}</li>`).join('');
+  await sendEmail(env, { to: ownerEmail(env), related: 'os:splatnost', subject: `Faktury po splatnosti: ${list.length} (${kcz(total)})`,
+    body: `<p>Dobrý den,</p><p>tyto faktury jsou neuhrazené po splatnosti:</p><ul>${rows}</ul><p>Celkem <b>${kcz(total)}</b>. Zákazníkům nebyla odeslána žádná automatická upomínka.</p><p><a href="${SITE.origin}/admin/#/faktury?status=po_splatnosti">Otevřít faktury po splatnosti</a></p><p>DT Finance</p>` });
+  await env.DB.prepare("INSERT INTO settings (key, value) VALUES ('overdue_digest_last', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").bind(day).run();
+  return true;
 }
 
 // ---- DT Guardian (nezávislá kontrola, bez AI) --------------------------------------------------
@@ -161,7 +181,7 @@ async function guardian(env) {
   try {
     const noCost = (await q("SELECT COUNT(*) AS n FROM products p WHERE p.status = 'sold' AND NOT EXISTS (SELECT 1 FROM costs c WHERE c.product_id = p.id AND c.category = 'nakup')"))[0].n;
     if (noCost) await f('ekonomika-nakup', 'info', `${noCost} prodaných hodinek nemá zapsanou nákupní cenu`, 'Bez ní nelze spočítat skutečný zisk. Hodinky → Náklady a marže.');
-    for (const x of await q("SELECT p.id, p.title, (SELECT i.price_czk FROM order_items i JOIN orders o ON o.id = i.order_id WHERE i.product_id = p.id AND o.status IN ('paid','shipped','completed') LIMIT 1) AS sale, (SELECT COALESCE(SUM(amount_czk),0) FROM costs c WHERE c.product_id = p.id) AS cost FROM products p WHERE p.status = 'sold'")) {
+    for (const x of await q("SELECT p.id, p.title, (SELECT i.price_czk FROM order_items i JOIN orders o ON o.id = i.order_id WHERE i.product_id = p.id AND o.status IN ('paid','shipped','completed') LIMIT 1) AS sale, (SELECT COALESCE(SUM(amount_czk),0) FROM costs c WHERE c.product_id = p.id AND c.estimate = 0 AND c.own_work = 0 AND c.status = 'potvrzeno') AS cost FROM products p WHERE p.status = 'sold'")) {
       if (x.sale != null && x.cost > x.sale) await f(`marze:${x.id}`, 'warning', `Záporná marže: ${x.title}`, `prodej ${x.sale} Kč, náklady ${x.cost} Kč`);
     }
   } catch { /* tabulka costs v této verzi není */ }
