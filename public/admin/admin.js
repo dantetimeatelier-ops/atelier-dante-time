@@ -317,7 +317,7 @@
     const F = { aktivni: ['Rozpracované', (k) => !['hotovo', 'predano', 'zruseno'].includes(k.status)], hotove: ['Hotové a předané', (k) => ['hotovo', 'predano'].includes(k.status)], archiv: ['Zrušené (archiv)', (k) => k.status === 'zruseno'], vse: ['Vše', () => true] };
     const f = F[q.get('f')] ? q.get('f') : 'aktivni';
     const term = (q.get('q') || '').toLowerCase();
-    const commissions = all.filter(F[f][1]).filter((k) => !term || [k.number, k.customer_name, k.watch, k.description, k.contact_info].some((x) => String(x || '').toLowerCase().includes(term)));
+    const commissions = all.filter(F[f][1]).filter((k) => !term || [k.number, k.customer_name, k.watch, k.caliber, k.description, k.contact_info].some((x) => String(x || '').toLowerCase().includes(term)));
     app.innerHTML = `<div class="row" style="justify-content:space-between"><h1>Zakázky</h1><a class="btn primary" href="#/zakazky/nova">+ Nová</a></div>
       <form id="kq" style="margin-bottom:8px"><input name="q" type="search" placeholder="Hledat: číslo, zákazník, hodinky" value="${esc(q.get('q') || '')}"></form>
       <div class="seg" role="group" aria-label="Filtr zakázek" style="margin-bottom:12px">${Object.entries(F).map(([k, [t, fn]]) => `<a href="#/zakazky?f=${k}${term ? `&q=${encodeURIComponent(term)}` : ''}" role="button" aria-pressed="${k === f}">${t} (${all.filter(fn).length})</a>`).join('')}</div>
@@ -330,7 +330,7 @@
     <label>Druh<select name="type">${Object.entries(L.ctype).map(([v, t]) => `<option value="${v}" ${k.type === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
     <label>Stav<select name="status">${Object.entries(L.cstatus).map(([v, t]) => `<option value="${v}" ${(k.status || 'poptavka') === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
     <details open><summary>Zákazník</summary>${field('name', 'Jméno', { name: k.customer_name }, 'required')}${field('email', 'E-mail (nepovinné)', { email: k.customer_email }, 'type="email"')}${field('phone', 'Telefon (nepovinné)', { phone: k.customer_email ? k.customer_phone : '' }, 'type="tel"')}${field('contact_info', 'Jiný kontakt (např. Instagram @jmeno)', { contact_info: k.contact_info })}${field('contact_street', 'Ulice (pro fakturu)', { contact_street: k.contact_street })}<div class="grid">${field('contact_city', 'Město', { contact_city: k.contact_city })}${field('contact_zip', 'PSČ', { contact_zip: k.contact_zip })}</div></details>
-    <details open><summary>Zakázka</summary>${field('watch', 'Hodinky (značka, model, stav)', k)}${area('description', 'Co se má udělat', k)}
+    <details open><summary>Zakázka</summary>${field('watch', 'Hodinky (značka, model, stav)', k)}${field('caliber', 'Kalibr (strojek, např. PRIM 66)', k)}${area('description', 'Co se má udělat', k)}
       <div class="grid">${field('estimate_czk', 'Orientační cena (Kč)', k, 'inputmode="numeric"')}${field('final_price_czk', 'Konečná cena (Kč)', k, 'inputmode="numeric"')}</div>
       <div class="grid">${field('deposit_czk', 'Záloha přijatá bez zálohové faktury (Kč)', k, 'inputmode="numeric"')}${field('deposit_received_on', 'Záloha přijata dne', k, 'type="date"')}</div>
       <p class="small muted" style="margin-top:-4px">Např. hotově. Zálohu přes zálohovou fakturu sem nepište – započítá se sama.</p>
@@ -417,10 +417,10 @@
     const k = commissions.find((x) => x.id === id);
     if (!k) { app.innerHTML = '<p>Zakázka nenalezena.</p>'; return; }
     const z = (o) => `#/faktury/nova?z=${encodeURIComponent(JSON.stringify(o))}`;
-    const base = { commission_id: k.id, buyer_name: k.customer_name, buyer_email: k.customer_email, buyer_street: k.contact_street, buyer_city: k.contact_city, buyer_zip: k.contact_zip };
-    const what = `${L.ctype[k.type]} – ${k.watch || 'hodinky'} (zakázka ${k.number})`;
+    // Odběratel, položka a cena se do faktury načtou z aktuálně uložené zakázky (i po úpravě bez obnovení stránky)
+    const base = { commission_id: k.id };
     app.innerHTML = `<p><a href="#/zakazky">← Zakázky</a></p><h1>${esc(k.number)}</h1><p class="small muted">${esc(k.customer_name || '')} · vytvořeno ${esc(dmy(k.created_at))}${k.due_date ? ` · termín ${esc(dmy(k.due_date))}` : ''}</p>
-      <div class="grid" style="margin-bottom:12px">${k.invoice_draft_id ? `<a class="btn" href="#/faktury/nova?draft=${esc(k.invoice_draft_id)}">Pokračovat v konceptu faktury</a>` : `<a class="btn" href="${z({ ...base, items: [{ text: what, price: k.final_price_czk ?? k.estimate_czk ?? '' }] })}">Vystavit fakturu</a>`}<a class="btn ghost" href="${z({ ...base, kind: 'zalohova', items: [{ text: `Záloha – ${what}`, price: '' }] })}">Zálohová faktura</a></div>
+      <div class="grid" style="margin-bottom:12px">${k.invoice_draft_id ? `<a class="btn" href="#/faktury/nova?draft=${esc(k.invoice_draft_id)}">Pokračovat v konceptu faktury</a>` : `<a class="btn" href="${z(base)}">Vystavit fakturu</a>`}<a class="btn ghost" href="${z({ ...base, kind: 'zalohova' })}">Zálohová faktura</a></div>
       <h2>Fotografie</h2>
       <div class="seg" role="group" aria-label="Nové fotky přidat jako" id="kphase">${Object.entries(PHASE).map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="${v === phaseFor(k.status)}">${t}</button>`).join('')}</div>
       <div class="photos" id="kphotos"><p class="small muted">Načítám…</p></div>
@@ -1299,6 +1299,13 @@
     const pre = draft ? { ...draft.data.fields, items: draft.data.items, kind: draft.data.fields?.kind, commission_id: draft.commission_id || undefined } : q.get('z') ? JSON.parse(decodeURIComponent(q.get('z'))) : {};
     const f = await api('GET', `invoices/form${pre.commission_id ? `?commission_id=${encodeURIComponent(pre.commission_id)}` : ''}`);
     const kc = f.commission;
+    if (kc?.buyer && !draft) { // nová faktura k zakázce: odběratel a položka z aktuálně uložené zakázky
+      for (const [k, v] of Object.entries(kc.buyer)) if (!pre[k]) pre[k] = v;
+      if (!pre.items?.length) {
+        const what = `${L.ctype[kc.type] || 'Zakázka'} – ${kc.watch || 'hodinky'}${kc.caliber ? `, kalibr ${kc.caliber}` : ''} (zakázka ${kc.number})`;
+        pre.items = [pre.kind === 'zalohova' ? { text: `Záloha – ${what}`, price: '' } : { text: what, price: kc.final_price_czk ?? kc.estimate_czk ?? '' }];
+      }
+    }
     const myAdv = kc ? f.advances.find((a) => a.commission_id === kc.id) : null;
     const lines = pre.items?.length ? pre.items : [];
     const lineHtml = (l = {}) => `<div class="grid line" style="grid-template-columns:1fr 70px 110px"><input name="text" placeholder="Položka (např. Servis, řemínek)" value="${esc(l.text)}"><input name="qty" inputmode="numeric" placeholder="Ks" value="${esc(l.qty || 1)}"><input name="price" inputmode="numeric" placeholder="Cena/ks Kč" value="${esc(l.price)}"></div>`;
@@ -1347,6 +1354,7 @@
     if (draft) { // obnovit výběry, zaškrtávátka a volby z konceptu
       for (const [k, v] of Object.entries(draft.data.fields || {})) { const el = form.elements[k]; if (el && !(el instanceof RadioNodeList) && el.type !== 'checkbox') el.value = v; else if (el instanceof RadioNodeList) el.value = v; }
       for (const k of ['paid', 'inspection', 'deduct_cash_deposit']) if (form[k] && k in (draft.data.flags || {})) form[k].checked = !!draft.data.flags[k];
+      for (const [k, v] of Object.entries(kc?.buyer || {})) if (form[k] && !form[k].value.trim() && v) form[k].value = v; // prázdné údaje odběratele doplnit ze zakázky
       syncKind(); recalc();
     }
     const snapshot = () => {
