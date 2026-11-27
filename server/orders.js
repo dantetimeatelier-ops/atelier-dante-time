@@ -9,6 +9,7 @@ import { SHIPPING, PAYMENT, METAL, formatCzk } from '../src/shop/format.mjs';
 import { isValidIban } from '../src/shop/spd.mjs';
 import { EU_COUNTRIES, countryName, czkToEurCents, formatEur } from '../src/shop/eu.mjs';
 import { legalDoc, LEGAL_VERSION } from '../src/legal/docs.mjs';
+import { legalPdfs } from '../src/legal/pdf-files.mjs';
 import { TERMS } from '../src/terms.mjs';
 import { createForOrder } from './warranty.js';
 import { onDelivered } from './passport.js';
@@ -158,7 +159,7 @@ export async function createOrder(env, body, origin) {
   }
 
   const order = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(orderId).first();
-  const items = products.map((p) => ({ title: productName(p), price_czk: p.price_czk }));
+  const items = products.map((p) => ({ id: p.id, title: productName(p), price_czk: p.price_czk }));
   await audit(env, 'zakaznik', 'objednavka_vytvorena', 'order', orderId, { number, total, mode: m });
   await orderEmails(env, order, items, origin);
 
@@ -177,42 +178,92 @@ function legalAttachment(order) {
   const terms = legalDoc('terms', en ? 'en' : 'cs');
   const withdrawal = legalDoc('withdrawal', en ? 'en' : 'cs');
   const warranty = legalDoc('warranty', en ? 'en' : 'cs');
-  const h = (t) => `<h2 style="font-family:Georgia,serif;font-weight:normal;font-size:18px">${t}</h2>`;
+  const h = (t) => `<h2 style="font-family:Georgia,serif;font-weight:normal;font-size:18px;color:#f2f2f2">${t}</h2>`;
   // Záruční list v textové podobě (§ 2174a OZ) je součástí potvrzení objednávky
   return `${h(en ? `General Terms and Conditions (version ${order.terms_version})` : `Obchodní podmínky (verze ${order.terms_version})`)}
-<div style="font-size:12px;color:#444">${terms.body()}</div>
+<div style="font-size:12px;color:#b9b9b9">${terms.body()}</div>
 ${h(en ? 'Withdrawal information and model form' : 'Poučení o odstoupení od smlouvy')}
-<div style="font-size:12px;color:#444">${withdrawal.body()}</div>
+<div style="font-size:12px;color:#b9b9b9">${withdrawal.body()}</div>
 ${h(en ? 'Warranty statement and authenticity guarantee (warranty card)' : 'Prohlášení o záruce a garance pravosti (záruční list)')}
-<div style="font-size:12px;color:#444">${warranty.body()}</div>`;
+<div style="font-size:12px;color:#b9b9b9">${warranty.body()}</div>`;
+}
+
+// Další postup po objednávce podle způsobu platby a dopravy (krátce, bez právních formulací)
+function nextSteps(order) {
+  const en = order.lang === 'en';
+  const pickup = ['zasilkovna', 'balikovna'].includes(order.shipping_method);
+  const handover = order.shipping_method === 'osobni';
+  const steps = [];
+  if (order.payment_method === 'bank_transfer') steps.push(en ? `Pay by bank transfer – payment details and a QR code are on the order page. The watch is reserved for you until ${dt(order, order.reserved_until)}.` : `Uhraďte objednávku převodem – platební údaje a QR kód najdete na stránce objednávky. Hodinky jsou pro vás rezervovány do ${dt(order, order.reserved_until)}.`);
+  if (order.payment_method === 'card') steps.push(en ? 'Once the card payment is confirmed, we will send you the invoice.' : 'Jakmile se potvrdí platba kartou, pošleme vám fakturu.');
+  if (order.payment_method === 'cod') steps.push(en ? 'You pay on delivery. The watch is reserved for you.' : 'Zaplatíte při převzetí. Hodinky jsou pro vás rezervovány.');
+  steps.push(handover
+    ? (en ? 'We will contact you to arrange the handover in person.' : 'Ozveme se vám a domluvíme osobní předání.')
+    : (en ? 'We will carefully check, pack and insure the watch and send it within a few working days.' : 'Hodinky pečlivě zkontrolujeme, zabalíme a do několika pracovních dnů odešleme.'));
+  if (!handover) steps.push(pickup
+    ? (en ? 'You will receive an e-mail with the tracking number; the carrier will let you know when the parcel is ready for pickup.' : 'Pošleme vám e-mail s číslem zásilky a dopravce vás vyrozumí, až bude připravena k vyzvednutí.')
+    : (en ? 'You will receive an e-mail with the tracking number.' : 'Pošleme vám e-mail s číslem zásilky.'));
+  return steps;
 }
 
 async function orderEmails(env, order, items, origin) {
-  const rows = items.map((i) => `<tr><td style="padding:6px 0">${i.title}</td><td style="text-align:right">${formatCzk(i.price_czk)}</td></tr>`).join('');
-  const table = `<table style="width:100%;border-collapse:collapse">${rows}
-<tr><td style="padding:6px 0">${tr(order, 'Doprava', 'Shipping')}: ${SHIPPING[order.shipping_method]?.[order.lang === 'en' ? 'en' : 'cs'] || SHIPPING[order.shipping_method]?.cs || order.shipping_method}${order.pickup_point_name ? ` (${order.pickup_point_name})` : ''}</td><td style="text-align:right">${formatCzk(order.shipping_price)}</td></tr>
-${order.cod_fee ? `<tr><td style="padding:6px 0">Dobírka</td><td style="text-align:right">${formatCzk(order.cod_fee)}</td></tr>` : ''}
-<tr><td style="padding:8px 0;border-top:1px solid #ddd"><strong>Celkem</strong></td><td style="text-align:right;border-top:1px solid #ddd"><strong>${formatCzk(order.total)}</strong>${order.pay_currency === 'EUR' ? `<br>k úhradě ${formatEur(order.pay_amount_cents)}` : ''}</td></tr></table>`;
+  const en = order.lang === 'en';
+  const lang = en ? 'en' : 'cs';
+  const ship = SHIPPING[order.shipping_method]?.[lang] || SHIPPING[order.shipping_method]?.cs || order.shipping_method;
+  const pay = PAYMENT[order.payment_method]?.[lang] || PAYMENT[order.payment_method]?.cs || order.payment_method;
   const link = `${origin}/objednavka/${order.public_token}`;
+  // Hlavní fotografie každého kusu (náhled 800 px z veřejného úložiště fotek)
+  const ids = items.map((i) => i.id).filter(Boolean);
+  const imgs = new Map();
+  if (ids.length) {
+    const { results } = await env.DB.prepare(`SELECT product_id, key_small FROM product_images WHERE product_id IN (${ids.map(() => '?').join(',')}) AND key_small IS NOT NULL ORDER BY sort_order, created_at`).bind(...ids).all().catch(() => ({ results: [] }));
+    for (const r of results) if (!imgs.has(r.product_id)) imgs.set(r.product_id, `${SITE.origin}/media/${r.key_small}`);
+  }
+  const F = "font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+  const S = "font-family:Georgia,'Times New Roman',serif";
+  const line = '<tr><td colspan="2" style="padding:0;border-top:1px solid #2a2a2a;font-size:0;line-height:0">&nbsp;</td></tr>';
+  const row = (l, v, strong) => `<tr><td style="padding:10px 12px 10px 0;color:#9a9a9a;font-size:14px;vertical-align:top">${l}</td><td align="right" style="padding:10px 0;color:${strong ? '#c8a24a' : '#e6e6e6'};font-size:${strong ? '19px' : '14px'};vertical-align:top;${strong ? S : ''}">${v}</td></tr>`;
+  const watches = items.map((i) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px"><tr>
+${imgs.get(i.id) ? `<td width="96" style="width:96px;padding:0 16px 0 0;vertical-align:middle"><img src="${imgs.get(i.id)}" width="96" height="120" alt="${i.title}" style="display:block;width:96px;height:120px;object-fit:cover;border-radius:12px;border:1px solid #2a2418;background:#0b0b0b"></td>` : ''}
+<td style="vertical-align:middle"><div style="${S};font-size:18px;line-height:1.35;color:#f2f2f2">${i.title}</div><div style="${F};font-size:14px;color:#c8a24a;margin-top:6px">${formatCzk(i.price_czk)}</div></td></tr></table>`).join('');
+  const summary = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="${F};margin:6px 0 4px">
+${line}${row(en ? 'Delivery' : 'Doprava', `${ship}${order.pickup_point_name ? `<br><span style="color:#9a9a9a;font-size:13px">${order.pickup_point_name}</span>` : ''}${order.shipping_price ? `<br><span style="color:#9a9a9a;font-size:13px">${formatCzk(order.shipping_price)}</span>` : ''}`)}
+${line}${row(en ? 'Payment' : 'Platba', `${pay}${order.cod_fee ? `<br><span style="color:#9a9a9a;font-size:13px">${en ? 'COD fee' : 'Dobírka'} ${formatCzk(order.cod_fee)}</span>` : ''}`)}
+${line}${row(en ? 'Total' : 'Celkem', `${formatCzk(order.total)}${order.pay_currency === 'EUR' ? `<br><span style="${F};color:#9a9a9a;font-size:13px">${en ? 'to pay' : 'k úhradě'} ${formatEur(order.pay_amount_cents)}</span>` : ''}`, true)}
+${line}</table>`;
+  const steps = nextSteps(order).map((t, n) => `<tr><td width="28" style="width:28px;vertical-align:top;padding:4px 0;${S};color:#c8a24a;font-size:15px">${n + 1}.</td><td style="vertical-align:top;padding:4px 0;color:#d6d6d6;font-size:14px">${t}</td></tr>`).join('');
+  const button = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:26px auto 8px"><tr><td bgcolor="#c8a24a" style="background:#c8a24a;border-radius:999px"><a href="${link}" style="display:inline-block;padding:14px 34px;${F};font-size:15px;font-weight:600;letter-spacing:.04em;color:#070707;text-decoration:none;border-radius:999px">${en ? 'View order' : 'Zobrazit objednávku'}</a></td></tr></table>`;
+  const pdfs = legalPdfs(lang, order.terms_version || LEGAL_VERSION);
+  const legal = `<p style="margin:26px 0 0;padding-top:18px;border-top:1px solid #2a2a2a;${F};font-size:12px;line-height:1.6;color:#8c8c8c">${en
+    ? `This confirmation concludes the purchase contract. Attached you will find the Terms and Conditions (version ${order.terms_version}), the withdrawal information with a model withdrawal form and the warranty card. As a consumer you may withdraw within ${TERMS.withdrawalDays} days of receiving the watch – simply via <a href="${origin}/en/withdrawal" style="color:#c8a24a">this form</a>.`
+    : `Tímto potvrzením je kupní smlouva uzavřena. V příloze najdete obchodní podmínky (verze ${order.terms_version}), poučení o odstoupení od smlouvy se vzorovým formulářem a záruční list. Jako spotřebitel můžete od smlouvy odstoupit do ${TERMS.withdrawalDays} dnů od převzetí hodinek – jednoduše přes <a href="${origin}/odstoupeni" style="color:#c8a24a">tento formulář</a>.`}</p>`;
+  const contact = `<p style="margin:16px 0 0;${F};font-size:13px;line-height:1.7;color:#b9b9b9">${en ? 'Any questions? Simply reply to this e-mail.' : 'Máte dotaz? Stačí odpovědět na tento e-mail.'}<br><span style="color:#f2f2f2">${SITE.name}</span> · ${OPERATOR.name}<br><a href="mailto:${SITE.email}" style="color:#c8a24a;text-decoration:none">${SITE.email}</a> · <a href="${SITE.origin}" style="color:#c8a24a;text-decoration:none">${SITE.origin.replace('https://', '')}</a></p>`;
+  const body = `<h1 class="dt-h1" style="margin:0 0 6px;${S};font-weight:normal;font-size:28px;line-height:1.25;color:#f2f2f2">${en ? 'Thank you for your order' : 'Děkujeme za vaši objednávku'}</h1>
+<p style="margin:0 0 22px;${F};font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#c8a24a">${en ? 'Order' : 'Objednávka'} ${order.number}</p>
+<p style="margin:0 0 22px;color:#d6d6d6">${en ? `Dear ${order.name}, we are delighted that you have chosen a watch from our atelier.` : `Dobrý den, ${order.name}, děkujeme, že jste si vybrali hodinky z našeho ateliéru.`}</p>
+${watches}
+${summary}
+<h2 style="margin:26px 0 8px;${S};font-weight:normal;font-size:18px;color:#f2f2f2">${en ? 'What happens next' : 'Co bude dál'}</h2>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="${F}">${steps}</table>
+${button}
+${contact}
+${legal}`;
   await sendEmail(env, {
     to: order.email,
-    subject: tr(order, `Potvrzení objednávky ${order.number}`, `Order confirmation ${order.number}`),
+    lang,
+    subject: tr(order, `Potvrzení objednávky ${order.number} – Dante Time`, `Order confirmation ${order.number} – Dante Time`),
     related: `order:${order.id}`,
-    body: `<h1 style="font-family:Georgia,serif;font-weight:normal">${tr(order, 'Děkujeme za objednávku', 'Thank you for your order')}</h1>
-<p>${tr(order, 'Dobrý den', 'Dear')} ${order.name},</p>
-<p>${tr(order, `potvrzujeme přijetí vaší objednávky <strong>${order.number}</strong>. Tímto potvrzením je kupní smlouva uzavřena.`, `we confirm receipt of your order <strong>${order.number}</strong>. With this confirmation the purchase contract is concluded.`)}</p>
-${table}
-<p>${tr(order, 'Platba', 'Payment')}: ${PAYMENT[order.payment_method]?.[order.lang === 'en' ? 'en' : 'cs'] || PAYMENT[order.payment_method]?.cs}. ${order.payment_method === 'cod' ? tr(order, 'Částku zaplatíte při převzetí zásilky. Hodinky jsou pro vás rezervovány.', 'You pay on delivery. The watch is reserved for you.') : ''} ${order.payment_method === 'bank_transfer' ? tr(order, `Platební údaje a QR kód najdete na stránce objednávky. Hodinky jsou pro vás rezervovány do ${dt(order, order.reserved_until)}.`, `Payment details and a QR code are on the order page. The watch is reserved for you until ${dt(order, order.reserved_until)}.`) : ''}</p>
-<p><a href="${link}" style="display:inline-block;background:#c8a24a;color:#000;padding:10px 18px;border-radius:999px;text-decoration:none">${tr(order, 'Zobrazit objednávku', 'View order')}</a></p>
-<p style="font-size:13px;color:#555">${tr(order, `Od kupní smlouvy můžete jako spotřebitel odstoupit do ${TERMS.withdrawalDays} dnů od převzetí hodinek, např. pomocí funkce <a href="${origin}/odstoupeni">Odstoupit od smlouvy</a>.`, `As a consumer you may withdraw from the purchase contract within ${TERMS.withdrawalDays} days of receiving the watch, e.g. using the <a href="${origin}/odstoupeni">withdrawal function</a>.`)}</p>
-<hr style="border:none;border-top:1px solid #ddd;margin:24px 0">
-${legalAttachment(order)}`,
+    body,
+    attachments: pdfs.map((p) => ({ filename: p.filename, path: p.path })),
+    // Kdyby přílohy nešly připojit, dokumenty půjdou v plném znění přímo v e-mailu (zákonná povinnost)
+    fallbackBody: `${body}<hr style="border:none;border-top:1px solid #2a2a2a;margin:24px 0">${legalAttachment(order)}`,
   });
+  const ownerRows = items.map((i) => `<tr><td style="padding:4px 0">${i.title}</td><td style="text-align:right">${formatCzk(i.price_czk)}</td></tr>`).join('');
   await sendEmail(env, {
     to: ownerEmail(env),
     subject: `Nová objednávka ${order.number} – ${formatCzk(order.total)}`,
     related: `order:${order.id}`,
-    body: `<p>Nová objednávka <strong>${order.number}</strong> (${order.mode === 'test' ? 'TEST' : 'ostrá'}).</p>${table}<p>Zákazník: ${order.name}, ${order.email}, ${order.phone || ''}</p><p><a href="${origin}/admin/#/objednavky/${order.id}">Otevřít v administraci</a></p>`,
+    body: `<p>Nová objednávka <strong>${order.number}</strong> (${order.mode === 'test' ? 'TEST' : 'ostrá'}).</p><table style="width:100%;border-collapse:collapse">${ownerRows}<tr><td style="padding:4px 0">Doprava: ${ship}${order.pickup_point_name ? ` (${order.pickup_point_name})` : ''}</td><td style="text-align:right">${formatCzk(order.shipping_price)}</td></tr>${order.cod_fee ? `<tr><td>Dobírka</td><td style="text-align:right">${formatCzk(order.cod_fee)}</td></tr>` : ''}<tr><td style="padding:6px 0;border-top:1px solid #2a2a2a"><strong>Celkem</strong> · ${pay}</td><td style="text-align:right;border-top:1px solid #2a2a2a"><strong>${formatCzk(order.total)}</strong></td></tr></table><p>Zákazník: ${order.name}, ${order.email}, ${order.phone || ''}</p><p><a href="${origin}/admin/#/objednavky/${order.id}">Otevřít v administraci</a></p>`,
   });
 }
 
@@ -336,3 +387,4 @@ export async function cancelOrder(env, orderId, actor) {
   ]);
   await audit(env, actor, 'objednavka_zrusena', 'order', orderId);
 }
+export { orderEmails as orderEmailsForTest }; // jen pro jednotkové testy

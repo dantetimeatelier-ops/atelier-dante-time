@@ -350,3 +350,55 @@ test('DT Logistics: stav zásilky Zásilkovny – číslo, XML odpověď, chyby,
   assert.equal(again.checked, 0); // doručené a vrácené se už neověřují
   assert.equal(await P.refreshAll({ DB: env.DB }), null); // bez hesla nic
 });
+
+test('Potvrzení objednávky: krátký e-mail, fotka, PDF přílohy v platné verzi, záloha s plným zněním', async () => {
+  const { orderEmailsForTest } = await import('../../server/orders.js');
+  const { legalPdfs } = await import('../../src/legal/pdf-files.mjs');
+  const { LEGAL_VERSION } = await import('../../src/legal/docs.mjs');
+  const mails = [];
+  const env = { DB: { prepare: (sql) => { let a = []; const o = { bind: (...b) => { a = b; return o; }, run: async () => { if (/INSERT INTO emails/.test(sql)) mails.push({ to: a[1], subject: a[2], html: a[3] }); return {}; }, first: async () => null, all: async () => ({ results: /product_images/.test(sql) ? [{ product_id: 'p1', key_small: 'products/x-s.webp' }] : [] }) }; return o; } } };
+  const order = { id: 'o1', number: 'DT-1', public_token: 'tok', email: 'jan@example.cz', name: 'Jan', lang: 'cs', shipping_method: 'zasilkovna', pickup_point_name: 'Z-BOX', shipping_price: 99, payment_method: 'bank_transfer', total: 1099, reserved_until: '2026-11-30T12:00:00Z', terms_version: LEGAL_VERSION, mode: 'live' };
+  await orderEmailsForTest(env, order, [{ id: 'p1', title: 'PRIM Sport', price_czk: 1000 }], 'https://atelier-dante-time.cz');
+  const c = mails[0];
+  assert.equal(c.to, 'jan@example.cz');
+  assert.ok(c.html.length < 15000, `e-mail je dlouhý: ${c.html.length}`);
+  for (const s of ['Děkujeme za vaši objednávku', 'DT-1', 'PRIM Sport', '/media/products/x-s.webp', 'Zásilkovna', 'Bankovní převod', 'Co bude dál', 'Zobrazit objednávku', '/objednavka/tok', 'dante.time.atelier@gmail.com', 'kupní smlouva uzavřena', '#070707']) assert.ok(c.html.includes(s), `chybí: ${s}`);
+  assert.match(c.html, /1[\s\u00a0\u202f]099/);
+  assert.doesNotMatch(c.html, /Úvodní ustanovení|Vzorový formulář pro odstoupení/); // plné znění jen v příloze
+  for (const p of legalPdfs('cs')) assert.ok(c.html.includes(p.path), `chybí příloha ${p.path}`);
+  assert.equal(legalPdfs('cs').length, 3); assert.match(legalPdfs('en')[0].path, new RegExp(`^/pravni/en/.+-v${LEGAL_VERSION.replace('.', '\\.')}\\.pdf$`));
+  assert.match(mails[1].subject, /Nová objednávka DT-1/);
+});
+
+test('E-mail: přílohy z nasazených souborů (base64), při chybě záložní e-mail s plným zněním', async () => {
+  const { sendEmail } = await import('../../server/email.js');
+  const db = { prepare: () => { const o = { bind: () => o, run: async () => ({}) }; return o; } };
+  const calls = [];
+  const realFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async (url, r) => { const b = JSON.parse(r.body); calls.push(b); return calls.length === 1 && b.attachments && fail ? new Response('{"message":"attachment error"}', { status: 422 }) : new Response('{"id":"m1"}'); };
+    let fail = false;
+    const env = { DB: db, EMAIL_PROVIDER: 'resend', RESEND_API_KEY: 'k', EMAIL_FROM: 'a@b.cz', ASSETS: { fetch: async () => new Response(new Uint8Array([37, 80, 68, 70])) } };
+    const r = await sendEmail(env, { to: 'x@example.cz', subject: 'S', body: '<p>krátký</p>', attachments: [{ filename: 'OP.pdf', path: '/pravni/cs/op.pdf' }], fallbackBody: '<p>plné znění</p>' });
+    assert.ok(r.sent); assert.equal(calls[0].attachments[0].content, 'JVBERg=='); assert.equal(calls[0].attachments[0].filename, 'OP.pdf');
+    calls.length = 0; fail = true;
+    const r2 = await sendEmail({ ...env, ASSETS: undefined }, { to: 'x@example.cz', subject: 'S', body: '<p>krátký</p>', attachments: [{ filename: 'OP.pdf', path: '/pravni/cs/op.pdf' }], fallbackBody: '<p>plné znění</p>' });
+    assert.ok(r2.sent); assert.equal(calls[0].attachments[0].path, 'https://atelier-dante-time.cz/pravni/cs/op.pdf');
+    assert.ok(!calls[1].attachments && calls[1].html.includes('plné znění'));
+  } finally { globalThis.fetch = realFetch; }
+});
+
+test('PDF právních dokumentů: čeština, formulář, číslování stran, platná struktura', async () => {
+  const { htmlBlocks, renderPdf } = await import('../../scripts/legal-pdf.mjs');
+  const { legalDoc } = await import('../../src/legal/docs.mjs');
+  const blocks = htmlBlocks(legalDoc('withdrawal', 'cs').body(), { origin: 'https://atelier-dante-time.cz' });
+  const text = blocks.map((b) => b.runs.map((r) => r.text).join('')).join('\n');
+  assert.match(text, /Vzorový formulář/); assert.match(text, /Oznamuji, že tímto odstupuji/);
+  assert.ok(blocks.some((b) => b.box), 'formulář je v rámečku');
+  assert.match(text, /\(atelier-dante-time\.cz\/odstoupeni\)/); // relativní odkaz jako adresa
+  const { pdf, pages } = renderPdf({ lang: 'cs', title: 'Žluťoučký kůň', docLabel: 'Test', metaLine: 'Verze 1', footer: 'Zápatí', blocks });
+  const s = pdf.toString('latin1');
+  assert.ok(s.startsWith('%PDF-1.7')); assert.ok(s.trimEnd().endsWith('%%EOF')); assert.ok(pages >= 1);
+  assert.match(s, new RegExp(`/Count ${pages}`)); assert.match(s, /\/ToUnicode/); assert.match(s, /\/FontFile2/);
+  const xref = +s.match(/startxref\n(\d+)/)[1]; assert.equal(s.slice(xref, xref + 4), 'xref');
+});
