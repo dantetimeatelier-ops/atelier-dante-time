@@ -47,6 +47,13 @@ export const PAYMENT = {
   cod: { cs: 'Dobírka (platba při převzetí)', en: 'Cash on delivery' },
 };
 
+// Upozornění u přestaveb (rozhodnutí R26): název „DT – ZNAČKA …“ nesmí působit jako nový model původního výrobce
+export const REBUILD_NOTE = {
+  cs: 'Jde o nezávislou přestavbu ateliéru Dante Time s využitím originálních historických komponentů, nikoli o oficiální nový model původního výrobce.',
+  en: 'This is an independent rebuild by Atelier Dante Time using original historic components, not an official new model of the original manufacturer.',
+};
+export const hasRebuildNote = (text) => /nezávislou přestavbu ateliéru Dante Time|independent rebuild by Atelier Dante Time/i.test(String(text || ''));
+
 // Druh kusu – rozhoduje o popisu i o právním režimu (viz právní dokumenty)
 export const KIND = {
   original: { cs: 'Originální hodinky', en: 'Original watch', note: { cs: 'Původní hodinky po servisu nebo renovaci v ateliéru.', en: 'Original watch, serviced or restored in the atelier.' } },

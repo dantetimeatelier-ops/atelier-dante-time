@@ -6,6 +6,7 @@ import { str, oneOf } from './validate.js';
 import { qrSvg } from './qr.js';
 import { SITE, OPERATOR } from '../src/site.mjs';
 import { AUTH_PARTS } from '../src/shop/describe.mjs';
+import { dtName } from '../src/shop/naming.mjs';
 import { esc } from '../src/layout.mjs';
 
 export const EVENT_KINDS = { renovace: 'Renovace', servis: 'Servis', prohlidka: 'Garanční prohlídka', predani: 'Předání majiteli', overeni: 'Ověření pravosti', jine: 'Jiné' };
@@ -32,6 +33,7 @@ function input(b) {
     d.authenticity_parts = parts.length ? [...new Set(parts)].join(',') : null;
   }
   if ('issued_on' in b) d.issued_on = ymd(b.issued_on);
+  if (d.title) d.title = dtName({ brand: d.brand ?? b.brand, title: d.title }); // jednotný název DT – ZNAČKA … (R26)
   if ('status' in b) d.status = oneOf(b.status, ['platny', 'zruseny'], 'stav');
   return d;
 }
@@ -45,7 +47,7 @@ export async function createFromProduct(env, productId, actor) {
   const id = randomId();
   await env.DB.prepare(`INSERT OR IGNORE INTO watch_passports (id, code, product_id, title, brand, model, reference, year, movement, case_material, hallmark, serial_ref, authenticity_parts, original_parts, replaced_parts, issued_on)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(id, newCode(), p.id, p.title, p.brand, p.model, p.reference, p.year, p.movement, p.case_material, p.hallmark ?? null, p.serial_ref ?? null, p.authenticity_parts ?? null, p.original_parts, p.replaced_parts, now().slice(0, 10)).run();
+    .bind(id, newCode(), p.id, dtName(p) || p.title, p.brand, p.model, p.reference, p.year, p.movement, p.case_material, p.hallmark ?? null, p.serial_ref ?? null, p.authenticity_parts ?? null, p.original_parts, p.replaced_parts, now().slice(0, 10)).run();
   const row = await env.DB.prepare('SELECT id FROM watch_passports WHERE product_id = ?').bind(productId).first();
   if (row.id === id) {
     if (p.service_done) await addEvent(env, id, { kind: 'renovace', event_date: (p.published_at || now()).slice(0, 10), text_cs: String(p.service_done).slice(0, 1000), ref: `product:${p.id}:renovace` });

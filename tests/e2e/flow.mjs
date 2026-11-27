@@ -87,7 +87,7 @@ try {
   await page.getByRole('button', { name: /Vygenerovat popis/ }).click();
   await page.locator('.toast', { hasText: 'Popis vygenerován' }).waitFor();
   const desc = await page.getByLabel('Popis (česky)').inputValue();
-  assert.match(desc, /Omega Genève z roku 1968/); assert.match(desc, /garance pravosti/);
+  assert.match(desc, /DT – OMEGA Genève z roku 1968/); assert.match(desc, /garance pravosti/);
   step('popis a SEO vygenerovány z parametrů');
   // Pojistka: zlaté pouzdro bez puncu nelze zveřejnit
   await page.locator('summary', { hasText: 'Pouzdro a punc' }).click();
@@ -475,6 +475,7 @@ try {
   const np = await api('POST', 'products', { title: 'Prim Classic Test LTD.01', brand: 'PRIM', serial_ref: '26-9.9', price_czk: 5000 });
   assert.equal(np.s, 201, JSON.stringify(np.j));
   const stockId = np.j.id;
+  assert.equal((await api('GET', `products/${stockId}`)).j.product.title, 'DT – PRIM Classic Test LTD.01', 'jednotný název DT – ZNAČKA … (R26)');
   await page.goto(`${BASE}/admin/#/faktury/nova`);
   await page.getByRole('heading', { name: 'Nová faktura' }).waitFor();
   await page.locator('select[name=product_id]').selectOption(stockId);
@@ -488,7 +489,7 @@ try {
   await page.getByRole('button', { name: 'Náhled', exact: true }).click();
   const nf = page.frameLocator('iframe[title="Náhled faktury"]');
   await nf.getByText(/NÁHLED – doklad ještě není vystavený/).waitFor();
-  await nf.getByText(/Prim Classic Test LTD\.01/).first().waitFor();
+  await nf.getByText(/DT – PRIM Classic Test LTD\.01/).first().waitFor();
   assert.equal((await api('GET', 'invoices?channel=vinted')).j.invoices.length, 0, 'náhled nesmí vystavit doklad');
   await page.getByRole('button', { name: 'Zavřít náhled' }).click();
   step('náhled faktury bez vystavení');
@@ -503,7 +504,7 @@ try {
   assert.equal(econ.sold, true); assert.equal(econ.revenue, 5000, 'tržba hodinek bez dopravy');
   const vp = await ctx.newPage(); await vp.goto(`${BASE}/faktura/${list[0].public_token}`);
   const vh = await vp.content(); await vp.close();
-  assert.match(vh, /Neplátce DPH/); assert.match(vh, /<!--email_off-->/); assert.doesNotMatch(vh, /uskutečnění plnění/); assert.match(vh, /Model: Prim Classic Test LTD.01/); assert.match(vh, /Serial no: 26-9.9/); assert.match(vh, /Děkujeme za nákup/); assert.match(vh, /útulku pro zvířata/);
+  assert.match(vh, /Neplátce DPH/); assert.match(vh, /<!--email_off-->/); assert.doesNotMatch(vh, /uskutečnění plnění/); assert.match(vh, /Model: DT – PRIM Classic Test LTD\.01/); assert.match(vh, /Serial no: 26-9.9/); assert.match(vh, /Děkujeme za nákup/); assert.match(vh, /útulku pro zvířata/);
   // Záloha 2 000 Kč → vyúčtování 9 000 Kč (zbývá 7 000), záloha se nezapočítá do tržeb dvakrát
   const adv = await api('POST', 'invoices', { kind: 'zalohova', channel: 'zakazka', buyer_name: 'Zálohový Zákazník', items: [{ text: 'Záloha na zakázkovou sestavu', qty: 1, price: 2000 }], paid: true, payment_method: 'bank_transfer' });
   assert.equal(adv.s, 201);

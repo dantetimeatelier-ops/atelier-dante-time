@@ -8,7 +8,7 @@ import { media } from '../../../server/media.js';
 import { markPaid, markShipped, markDelivered, cancelOrder, shopConfig, createInvoice } from '../../../server/orders.js';
 import { describe, productName } from '../../../src/shop/describe.mjs';
 import { puncCheck } from '../../../src/shop/punc.mjs';
-import { slugify } from '../../../src/shop/format.mjs';
+import { slugify, REBUILD_NOTE, hasRebuildNote } from '../../../src/shop/format.mjs';
 import { OPERATOR } from '../../../src/site.mjs';
 import * as W from '../../../server/warranty.js';
 import * as OS from '../../../server/os.js';
@@ -186,8 +186,15 @@ function productInput(body, existing = {}, settings = {}) {
   const merged = { ...existing, ...d };
   // Název se skládá automaticky ze značky a modelu, pokud majitel nezadal vlastní
   const autoOld = productName({ ...existing, title: null });
-  if (!merged.title || merged.title === 'Hodinky' || merged.title === autoOld) merged.title = productName({ ...merged, title: null });
+  if (!merged.title || ['Hodinky', 'DT – Hodinky', autoOld].includes(merged.title)) merged.title = productName({ ...merged, title: null });
+  // Jednotný název „DT – ZNAČKA model označení“ (R26) – doplní se vždy automaticky, i když majitel napíše jen „Prim Classic …“
+  merged.title = productName(merged);
   d.title = merged.title;
+  // Přestavba: popis vždy s upozorněním, že nejde o oficiální nový model původního výrobce (R26)
+  if (merged.kind === 'prestavba') {
+    if ('description_cs' in d && d.description_cs && !hasRebuildNote(d.description_cs)) d.description_cs = `${d.description_cs}\n\n${REBUILD_NOTE.cs}`;
+    if ('description_en' in d && d.description_en && !hasRebuildNote(d.description_en)) d.description_en = `${d.description_en}\n\n${REBUILD_NOTE.en}`;
+  }
   if (d.status === 'available' && merged.price_czk == null) throw new HttpError('Pro zveřejnění „Skladem“ vyplňte cenu');
   // Puncovní zákon: drahé kovy jen s puncem, hmotností a po oznámení; obecné kovy bez klamavých výrazů
   const puncErr = puncCheck(merged, settings);

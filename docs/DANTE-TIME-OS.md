@@ -88,6 +88,12 @@ Administrace zůstane jedna, v současném prémiovém stylu, pro telefon i poč
 
 ---
 
+### Jednotné pojmenování hodinek (R26)
+Všichni agenti (DT Sales, DT Marketing, DT Finance i vývojoví agenti) používají pro hodinky výhradně tvar
+**`DT – ZNAČKA <název modelu a označení>`** – v inzerátech, odpovědích zákazníkům, příspěvcích na sociální sítě,
+dokladech i přehledech. Zdroj pravdy je název na kartě hodinek (vzniká automaticky přes `src/shop/naming.mjs`).
+U přestaveb vždy uvádět, že jde o nezávislou přestavbu ateliéru Dante Time, ne o oficiální model původního výrobce.
+
 ## 3. Agenti: oprávnění, komunikace, spouštění
 
 **Společná pravidla (zapsaná v kódu, ne jen v textu):**

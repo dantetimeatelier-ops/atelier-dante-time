@@ -22,7 +22,7 @@ test('IBAN a QR platba (SPD)', () => {
 
 test('automatický popis nic nevymýšlí', () => {
   const d = describe({ brand: 'PRIM', model: 'Sport', year: '1968', movement_type: 'manual', original_parts: 'strojek, ciferník', authenticity_parts: 'strojek,cifernik' });
-  assert.match(d.description_cs, /PRIM Sport z roku 1968/);
+  assert.match(d.description_cs, /DT – PRIM Sport z roku 1968/);
   assert.match(d.description_cs, /ručním nátahem/);
   assert.match(d.description_cs, /garance pravosti/);
   assert.match(d.description_cs, /nejsou určeny ke kontaktu s vodou/);
@@ -34,7 +34,7 @@ test('automatický popis nic nevymýšlí', () => {
   assert.doesNotMatch(part.description_cs + part.description_en, /undefined|null|false/i);
   assert.match(part.description_cs, /pozlacené – obecný kov, není z drahého kovu, 20 µm/);
   assert.match(part.description_cs, /Ateliérová přestavba Dante Time/);
-  assert.equal(productName({ brand: 'Omega', model: 'Genève' }), 'Omega Genève');
+  assert.equal(productName({ brand: 'Omega', model: 'Genève' }), 'DT – OMEGA Genève', 'jednotný název R26');
 });
 
 test('strukturovaná data: prodané hodinky nemají nabídku', () => {
@@ -525,4 +525,32 @@ test('Fakturace: částečné platby, přeplatek, oprava platby, storno s důvod
   // Vystavení s „Již uhrazeno“ zapíše platbu automaticky
   const p = await INV.issueManual(env, { ...base, buyer_name: 'Jiný', paid: true }, 'test@dt');
   assert.equal(await PAY.paidSum(env, p.id), 13000);
+});
+
+test('jednotné názvy hodinek „DT – ZNAČKA model označení“ (R26)', async () => {
+  const { dtName, isDtName } = await import('../../src/shop/naming.mjs');
+  assert.equal(dtName({ brand: 'PRIM', title: 'Prim Classic Soleil LTD.01' }), 'DT – PRIM Classic Soleil LTD.01');
+  assert.equal(dtName({ brand: 'PRIM', title: 'DT – PRIM Classic Soleil LTD.01' }), 'DT – PRIM Classic Soleil LTD.01', 'idempotentní');
+  assert.equal(dtName({ brand: 'Omega', model: 'Genève' }), 'DT – OMEGA Genève');
+  assert.equal(dtName({ brand: 'Rolex', title: 'Cellini 0-05' }), 'DT – ROLEX Cellini 0-05');
+  assert.equal(dtName({ brand: 'PRIM', title: 'Primavera' }), 'DT – PRIM Primavera', 'značka jen jako celé slovo');
+  assert.equal(dtName({ brand: 'PRIM', title: 'DT: Prim Classic Rose LTD 01' }), 'DT – PRIM Classic Rose LTD 01');
+  assert.equal(productName({ brand: 'PRIM', model: 'Heritage 0-01' }), 'DT – PRIM Heritage 0-01');
+  assert.ok(isDtName({ brand: 'PRIM', title: 'DT – PRIM Heritage 0-01' }));
+  const { loadCatalog } = await import('../../scripts/catalog.mjs');
+  for (const w of loadCatalog()) {
+    assert.ok(isDtName(w), `katalog/${w.slug}: ${w.title}`);
+    if (w.seo_title) assert.ok(w.seo_title.startsWith(w.title), `katalog/${w.slug}: SEO titulek začíná názvem`);
+    if (w.kind === 'prestavba') assert.match(w.description_cs, /nezávislou přestavbu ateliéru Dante Time/);
+  }
+  const d = describe({ kind: 'prestavba', brand: 'PRIM', model: 'Classic 0-02', movement_type: 'manual' });
+  assert.match(d.description_cs, /^DT – PRIM Classic 0-02/); assert.match(d.description_cs, /nikoli o oficiální nový model původního výrobce/);
+  assert.match(d.seo_title, /^DT – PRIM Classic 0-02/);
+});
+
+test('zástupný název „Hodinky“ se po doplnění značky nahradí jménem modelu', async () => {
+  const { dtName } = await import('../../src/shop/naming.mjs');
+  assert.equal(dtName({ title: 'Hodinky' }), '');
+  assert.equal(productName({ title: 'Hodinky' }), 'Hodinky');
+  assert.equal(productName({ brand: 'Omega', model: 'Genève', title: null }), 'DT – OMEGA Genève');
 });

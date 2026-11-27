@@ -217,3 +217,25 @@ dopravce umožňují (Packeta do 700 €). Žádné měsíční poplatky, minim�
 **Důsledky:** migrace 0028 (Cenná zásilka aktivní bez dobírky, PPL a Balíkovna na adresu vypnuté), administrace →
 Dopravci skrývá nepoužívané, `docs/DOPRAVCI.md` přepsán, text Doprava a platba bez PPL.
 
+
+## R26 – Jednotný systém pojmenování hodinek „DT – ZNAČKA …“ (2026-11-27)
+**Rozhodl:** majitel („Chci zavést jednotný systém pojmenování všech hodinek ateliéru Dante Time… Ulož tento systém
+pojmenování jako trvalé pravidlo projektu Dante Time OS.“)
+**Rozhodnutí:**
+- Závazný tvar názvu všech hodinek: **`DT – ZNAČKA <název modelu a jeho označení>`**, značka VELKÝMI písmeny.
+  Příklady tvaru: DT – PRIM Heritage 0-01, DT – OMEGA Renaissance 0-04, DT – ROLEX Cellini 0-05.
+- U existujících hodinek zůstávají skutečná jména modelů, modelová označení a evidenční čísla (LTD.01 apod.),
+  mění se jen tvar: DT – PRIM Classic Soleil LTD.01, DT – PRIM Classic Diamant LTD.01, DT – PRIM Classic Blanc LTD.01,
+  DT – PRIM Heritage Date LTD.01. Navazuje na R22 (jméno modelu), které dál platí.
+- Platí všude: inzeráty, katalog a detail, administrace a databáze, košík a nové objednávky, faktury, certifikáty,
+  záruční dokumenty a e-maily (berou název z karty hodinek), digitální pasy, archiv prodaných, SEO a metadata,
+  příspěvky na sociální sítě.
+- Vystavené faktury, objednávky a jiné historické doklady se zpětně nemění. Adresy stránek (slug) zůstávají.
+- Přestavby (`kind = prestavba`) mají v popisu vždy upozornění: „Jde o nezávislou přestavbu ateliéru Dante Time
+  s využitím originálních historických komponentů, nikoli o oficiální nový model původního výrobce.“
+- Ceny, fotografie, technické parametry ani evidenční čísla se touto změnou nemění.
+**Důsledky:** `src/shop/naming.mjs` (`dtName` – jediné místo s pravidlem), automaticky v administraci (uložení hodinek),
+katalogu (`scripts/catalog.mjs`), generátoru popisů a pasech; migrace 0032 převedla existující záznamy; `REBUILD_NOTE`
+v `src/shop/format.mjs`; pravidlo v `AGENTS.md` (sekce 6a) a `katalog/README.md`.
+**Upozornění předáno majiteli:** značky OMEGA, ROLEX a PRIM jsou ochranné známky jiných výrobců; zdůraznění značky
+v názvu zvyšuje riziko sporu, upozornění u přestaveb ho snižuje, ale nevylučuje (na vlastní odpovědnost, jako u R22).

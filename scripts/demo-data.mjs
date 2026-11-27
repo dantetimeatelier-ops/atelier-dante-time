@@ -1,6 +1,7 @@
 // Ukázková data pro ZKUŠEBNÍ verzi a místní vývoj. Nikdy pro ostrý web.
 // Ceny i údaje jsou smyšlené a hodinky jsou označeny jako ukázka.
 import { describe } from '../src/shop/describe.mjs';
+import { dtName } from '../src/shop/naming.mjs';
 
 const W = [
   { id: 'demo1', slug: 'ukazka-omega-seamaster-1962', status: 'available', kind: 'original', brand: 'Omega', model: 'Seamaster', year: '1962', movement: 'Omega cal. 552', movement_type: 'automatic', case_metal: 'ocel', case_diameter_mm: 34, lug_width_mm: 18, dial: 'v barvě stříbra, s patinou', crystal: 'akrylátové', strap: 'kožený, hnědý', condition: 'velmi dobrý, drobné stopy používání', service_done: 'kompletní servis, čištění, mazání, regulace chodu', original_parts: 'strojek, ciferník, ručky, korunka, pouzdro', authenticity_parts: 'strojek,cifernik,rucicky', replaced_parts: 'sklíčko, řemínek', price_czk: 42000, featured: 1 },
@@ -17,7 +18,7 @@ export function demoSql({ reset = false } = {}) {
   if (reset) sql += "DELETE FROM withdrawals; DELETE FROM invoices; DELETE FROM product_images; DELETE FROM order_items; DELETE FROM orders; DELETE FROM products WHERE id LIKE 'demo%'; DELETE FROM settings WHERE key = 'demo_seeded';\n";
   for (const w of W) {
     const d = describe(w);
-    const p = { ...w, title: `${w.brand} ${w.model} – ukázka`, condition: `${w.condition} (ukázkový kus)`, ...d };
+    const p = { ...w, title: dtName({ brand: w.brand, title: `${w.model} – ukázka` }), condition: `${w.condition} (ukázkový kus)`, ...d };
     p.description_cs = `UKÁZKA – smyšlený kus pro zkušební verzi. ${d.description_cs}`;
     const keys = Object.keys(p);
     sql += `INSERT INTO products (${keys.join(', ')}, published_at) SELECT ${keys.map((k) => q(p[k])).join(', ')}, strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE NOT EXISTS (SELECT 1 FROM settings WHERE key = 'demo_seeded');\n`;
