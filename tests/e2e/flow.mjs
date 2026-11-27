@@ -426,7 +426,9 @@ try {
   assert.deepEqual([det.state, det.paid, det.remaining, det.payments.length], ['castecne', 5000, 8000, 2]);
   assert.ok(det.history.some((h) => h.action === 'platba_zrusena'));
   const dupList = (await api('GET', 'invoices?q=Duplicitn')).j;
-  assert.equal(dupList.unpaid, 8000, 'pohledávka jen ze zbývající částky nestornované faktury');
+  // (souhrn pohledávek počítá jen ostré doklady – v testovacím režimu kontrolujeme jednotlivé doklady)
+  assert.equal(dupList.invoices.find((x) => x.id === dup1.j.id).remaining, 8000, 'zbývá jen rozdíl po částečné platbě');
+  assert.ok(dupList.invoices.find((x) => x.id === dup3.j.id).cancelled_at, 'duplicita stornována');
   await page.goto(`${BASE}/admin/#/faktury/${dup1.j.id}`);
   await page.getByText('ČÁSTEČNĚ UHRAZENO').waitFor();
   await page.getByRole('button', { name: 'Zapsat platbu' }).click(); // předvyplněný doplatek 8 000
