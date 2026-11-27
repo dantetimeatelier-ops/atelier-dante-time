@@ -178,14 +178,16 @@ export async function commissionEconomics(env, commissionId) {
   const partsCost = parts.reduce((a, x) => a + (x.unit_cost_czk || 0) * (x.qty || 1), 0);
   paid += partsCost;
   const { results: invoices } = await env.DB.prepare(`SELECT id, number, public_token, kind, total, advance_deducted, related_invoice_id, issued_at, due_date, paid_at, sent_at, cancelled_at, buyer_email, mode,
+      (SELECT COALESCE(SUM(p.amount_czk),0) FROM invoice_payments p WHERE p.invoice_id = invoices.id AND p.cancelled_at IS NULL) AS paid_sum,
       (SELECT 1 FROM approvals a WHERE a.kind = 'faktura_odeslani' AND a.payload = invoices.id AND a.status = 'ceka') AS awaiting_send
     FROM invoices WHERE commission_id = ?${invMode(env)} ORDER BY issued_at`).bind(commissionId).all();
   const live = invoices.filter((i) => !i.cancelled_at);
   const finals = live.filter((i) => i.kind !== 'zalohova');
   const advances = live.filter((i) => i.kind === 'zalohova');
   const invoiced = finals.reduce((a, i) => a + i.total, 0);
-  const advancesPaid = advances.filter((i) => i.paid_at).reduce((a, i) => a + i.total, 0);
-  const paidInvoices = finals.filter((i) => i.paid_at).reduce((a, i) => a + i.total - (i.advance_deducted || 0), 0);
+  // Přijato = skutečné platby (i částečné); zálohová faktura se počítá jen do výše uhrazené částky
+  const advancesPaid = advances.reduce((a, i) => a + (i.paid_sum || 0), 0);
+  const paidInvoices = finals.reduce((a, i) => a + (i.paid_sum || 0), 0);
   const depositCash = Number(k.deposit_czk) || 0; // záloha přijatá bez zálohové faktury (např. hotově)
   // Část hotovostní zálohy už odečtená ve fakturách (odečet nad rámec uhrazené zálohové faktury)
   const advTotal = Object.fromEntries(advances.map((a) => [a.id, a.total]));
@@ -200,7 +202,7 @@ export async function commissionEconomics(env, commissionId) {
     commission: { id: k.id, number: k.number, status: k.status },
     costs, byCat, parts, partsCost, paid, ownWork: own, estimate: est, rate,
     price, priceSource, invoiced, invoices, hasFinal,
-    advancesPaid, advancesOpen: advances.filter((i) => !i.paid_at).reduce((a, i) => a + i.total, 0),
+    advancesPaid, advancesOpen: advances.filter((i) => !i.paid_at).reduce((a, i) => a + Math.max(0, i.total - (i.paid_sum || 0)), 0),
     depositCash, depositCashLeft: Math.max(0, depositCash - cashUsed), paidInvoices, received,
     remaining: price != null ? price - received : null,
     overdue: live.filter((i) => !i.paid_at && i.kind !== 'dobropis' && i.due_date && i.due_date < today).length,
@@ -231,8 +233,9 @@ export async function overview(env, year) {
   const { results: sl } = await env.DB.prepare("SELECT issued_on, total_czk FROM sales WHERE status = 'potvrzeno' AND substr(issued_on,1,4) = ? AND (number IS NULL OR number NOT IN (SELECT number FROM invoices WHERE mode = 'live'))").bind(y).all();
   for (const r of sl) { months[idx(r.issued_on)].revenue += r.total_czk; months[idx(r.issued_on)].received += r.total_czk; }
   // Přijaté platby (podle data úhrady)
-  const { results: pay } = await env.DB.prepare("SELECT paid_at, kind, total, advance_deducted FROM invoices WHERE cancelled_at IS NULL AND mode = 'live' AND paid_at IS NOT NULL AND substr(paid_at,1,4) = ?").bind(y).all();
-  for (const r of pay) months[idx(r.paid_at)].received += r.kind === 'faktura' ? r.total - (r.advance_deducted || 0) : r.total;
+  // Přijaté platby podle data úhrady (evidence plateb: i částečné platby, doplatky a vrácení)
+  const { results: pay } = await env.DB.prepare("SELECT p.paid_on, p.amount_czk FROM invoice_payments p JOIN invoices i ON i.id = p.invoice_id WHERE p.cancelled_at IS NULL AND i.cancelled_at IS NULL AND i.mode = 'live' AND substr(p.paid_on,1,4) = ?").bind(y).all();
+  for (const r of pay) months[idx(r.paid_on)].received += r.amount_czk;
   const { results: dep } = await env.DB.prepare("SELECT deposit_czk, COALESCE(deposit_received_on, received_at, substr(created_at,1,10)) AS d FROM commissions WHERE deposit_czk > 0 AND status <> 'zruseno'").all();
   for (const r of dep) if (String(r.d).slice(0, 4) === y) months[idx(r.d)].received += r.deposit_czk;
   const { results: cs } = await env.DB.prepare("SELECT cost_date, category, amount_czk, hours, product_id, commission_id, estimate, own_work FROM costs WHERE status = 'potvrzeno' AND substr(cost_date,1,4) = ?").bind(y).all();
@@ -271,7 +274,7 @@ export async function overview(env, year) {
   jobs.sort((a, b) => (b.margin ?? -1e12) - (a.margin ?? -1e12));
   // Pohledávky: neuhrazené doklady (ostré), z toho po splatnosti
   const nowIso = new Date().toISOString();
-  const open = (await env.DB.prepare("SELECT COALESCE(SUM(total - advance_deducted),0) AS s, COALESCE(SUM(CASE WHEN due_date IS NOT NULL AND due_date < ? THEN total - advance_deducted ELSE 0 END),0) AS o, COALESCE(SUM(CASE WHEN due_date IS NOT NULL AND due_date < ? THEN 1 ELSE 0 END),0) AS n FROM invoices WHERE cancelled_at IS NULL AND mode = 'live' AND paid_at IS NULL AND kind <> 'dobropis'").bind(nowIso, nowIso).first());
+  const open = (await env.DB.prepare("SELECT COALESCE(SUM(total - advance_deducted - (SELECT COALESCE(SUM(p.amount_czk),0) FROM invoice_payments p WHERE p.invoice_id = invoices.id AND p.cancelled_at IS NULL)),0) AS s, COALESCE(SUM(CASE WHEN due_date IS NOT NULL AND due_date < ? THEN total - advance_deducted - (SELECT COALESCE(SUM(p.amount_czk),0) FROM invoice_payments p WHERE p.invoice_id = invoices.id AND p.cancelled_at IS NULL) ELSE 0 END),0) AS o, COALESCE(SUM(CASE WHEN due_date IS NOT NULL AND due_date < ? THEN 1 ELSE 0 END),0) AS n FROM invoices WHERE cancelled_at IS NULL AND mode = 'live' AND paid_at IS NULL AND kind <> 'dobropis'").bind(nowIso, nowIso).first());
   const revenue = sum('revenue');
   const costs = sum('costs');
   const ownWork = sum('ownWork');

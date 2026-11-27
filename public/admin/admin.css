@@ -95,3 +95,5 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 4px;b
 .lightbox .seg{margin:0}
 .mtab th{width:auto;white-space:nowrap}.mtab td{white-space:nowrap}
 input[type=radio],input[type=checkbox]{accent-color:var(--gold)}
+
+.ok{color:var(--ok)}

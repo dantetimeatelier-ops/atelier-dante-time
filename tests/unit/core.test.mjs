@@ -476,3 +476,53 @@ test('admin API: všechny cesty jsou registrované na nejvyšší úrovni (ne uv
   }
   assert.equal(depth, 0);
 });
+
+test('Fakturace: částečné platby, přeplatek, oprava platby, storno s důvodem, duplicita, pohledávky', async () => {
+  const INV = await import('../../server/invoicing.js');
+  const PAY = await import('../../server/invoice-payments.js');
+  const FIN = await import('../../server/finance.js');
+  const db = new DatabaseSync(':memory:');
+  for (const f of readdirSync(new URL('../../migrations/', import.meta.url)).sort()) { try { db.exec(readFileSync(new URL(`../../migrations/${f}`, import.meta.url), 'utf8')); } catch { /* část schématu mimo SQLite */ } }
+  const stmt = (sql) => { let a = []; const o = { bind: (...b) => { a = b; return o; }, run: async () => db.prepare(sql).run(...a), first: async () => db.prepare(sql).get(...a) ?? null, all: async () => ({ results: db.prepare(sql).all(...a) }) }; return o; };
+  const env = { DB: { prepare: stmt, batch: async (l) => { for (const s of l) await s.run(); } }, SHOP_MODE: 'live' };
+  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE name='invoice_payments'").get(), 'migrace 0025 proběhla');
+  const base = { kind: 'faktura', channel: 'osobne', buyer_name: 'Pavel Buben', items: [{ text: 'Zakázková sestava', qty: 1, price: 13000 }], payment_method: 'bank_transfer', send_mode: 'ulozit' };
+  const a = await INV.issueManual(env, base, 'test@dt');
+  // Duplicita: stejný odběratel a částka → odmítnuto, s potvrzením povoleno
+  await assert.rejects(() => INV.issueManual(env, { ...base, buyer_name: ' pavel buben ' }, 'test@dt'), (e) => e.status === 409 && e.extra.code === 'duplicate' && /DT-\d{4}-0001/.test(e.message));
+  const b = await INV.issueManual(env, { ...base, allow_duplicate: true }, 'test@dt');
+  let list = await INV.listInvoices(env, {});
+  assert.equal(list.unpaid, 26000);
+  // Storno duplicity s důvodem → pohledávka zpět na 13 000, historie zachována
+  await assert.rejects(() => INV.cancelInvoice(env, b.id, 'test@dt', ''), /důvod storna/);
+  await INV.cancelInvoice(env, b.id, 'test@dt', 'vystaveno omylem dvakrát');
+  list = await INV.listInvoices(env, {});
+  assert.equal(list.unpaid, 13000); assert.equal(list.revenue, 13000);
+  const cancelled = list.invoices.find((x) => x.id === b.id);
+  assert.ok(cancelled.cancelled_at); assert.equal(cancelled.cancel_reason, 'vystaveno omylem dvakrát');
+  // Částečná platba (záloha 5 000), chybná platba, oprava, doplatek, přeplatek, vrácení
+  await PAY.addPayment(env, a.id, { amount: 5000, paid_on: '2026-11-20', method: 'cash', note: 'záloha' }, 'test@dt');
+  let d = await INV.invoiceDetail(env, a.id);
+  assert.equal(d.state, 'castecne'); assert.equal(d.remaining, 8000); assert.equal(d.invoice.paid_at, null);
+  const wrong = await PAY.addPayment(env, a.id, { amount: 80000, paid_on: '2026-11-21' }, 'test@dt');
+  d = await INV.invoiceDetail(env, a.id); assert.equal(d.state, 'preplaceno'); assert.equal(d.overpaid, 72000);
+  await PAY.cancelPayment(env, wrong.id, 'překlep v částce', 'test@dt');
+  d = await INV.invoiceDetail(env, a.id); assert.equal(d.state, 'castecne'); assert.equal(d.payments.length, 2); // zrušená zůstává v historii
+  assert.ok(d.history.some((h) => h.action === 'platba_zrusena'));
+  await assert.rejects(() => INV.cancelInvoice(env, a.id, 'test@dt', 'omyl'), /zaznamenané platby/); // s platbami jen dobropis
+  await PAY.addPayment(env, a.id, { amount: 8500, paid_on: '2026-11-25' }, 'test@dt');
+  d = await INV.invoiceDetail(env, a.id); assert.equal(d.state, 'preplaceno'); assert.equal(d.overpaid, 500); assert.equal(d.invoice.paid_at.slice(0, 10), '2026-11-25');
+  await PAY.addPayment(env, a.id, { amount: -500, paid_on: '2026-11-26', note: 'vrácení přeplatku' }, 'test@dt');
+  d = await INV.invoiceDetail(env, a.id); assert.equal(d.state, 'uhrazeno'); assert.equal(d.paid, 13000);
+  list = await INV.listInvoices(env, {}); assert.equal(list.unpaid, 0); assert.equal(list.overpaid, 0);
+  // Přijato po měsících = skutečné platby (5 000 + 8 500 − 500), ne fakturováno
+  const ov = await FIN.overview(env, 2026);
+  assert.equal(ov.months[10].received, 13000); assert.equal(ov.unpaid, 0); assert.equal(ov.revenue, 13000);
+  // Kopie jako koncept
+  const c = await INV.copyToDraft(env, a.id, 'test@dt');
+  const draft = db.prepare('SELECT data FROM invoice_drafts WHERE id = ?').get(c.draft_id);
+  assert.equal(JSON.parse(draft.data).items[0].price, 13000);
+  // Vystavení s „Již uhrazeno“ zapíše platbu automaticky
+  const p = await INV.issueManual(env, { ...base, buyer_name: 'Jiný', paid: true }, 'test@dt');
+  assert.equal(await PAY.paidSum(env, p.id), 13000);
+});

@@ -18,6 +18,7 @@ import * as DOC from '../../../server/documents.js';
 import * as INV from '../../../server/invoicing.js';
 import { INVOICE_KINDS, SALE_CHANNELS, INVOICE_PAY } from '../../../src/shop/invoice.mjs';
 import * as INB from '../../../server/inbox.js';
+import * as PAY from '../../../server/invoice-payments.js';
 import * as CPH from '../../../server/commission-photos.js';
 import { draftReply } from '../../../server/sales.js';
 import { refreshOrder, createPacket, labelPdf } from '../../../server/packeta.js';
@@ -570,12 +571,18 @@ route('POST', 'invoices', async ({ env, body, user, request }) => {
   if (body.draft_id) await env.DB.prepare('DELETE FROM invoice_drafts WHERE id = ?').bind(String(body.draft_id)).run(); // koncept je vystaven
   return json({ id: inv.id, number: inv.number, token: inv.public_token, done: inv.done, sendMode: inv.sendMode }, 201);
 });
-route('POST', 'invoices/:id/paid', async ({ env, params, user }) => {
-  await env.DB.prepare('UPDATE invoices SET paid_at = ? WHERE id = ? AND paid_at IS NULL').bind(now(), params.id).run();
-  await audit(env, user.email, 'faktura_uhrazena', 'invoice', params.id);
-  return json({ ok: true });
+// „Uhrazeno“ jedním klepnutím = platba zbývající částky dnešním datem
+route('POST', 'invoices/:id/paid', async ({ env, params, body, user }) => {
+  const d = await INV.invoiceDetail(env, params.id);
+  if (d.invoice.cancelled_at) throw new HttpError('Doklad je stornovaný');
+  if (d.remaining === 0) return json({ ok: true, already: true });
+  return json(await PAY.addPayment(env, params.id, { amount: d.remaining, paid_on: body.paid_on, method: body.method, note: 'Doplatek' }, user.email));
 });
-route('POST', 'invoices/:id/cancel', async ({ env, params, user }) => { await INV.cancelInvoice(env, params.id, user.email); return json({ ok: true }); });
+route('GET', 'invoices/:id', async ({ env, params }) => json(await INV.invoiceDetail(env, params.id)));
+route('POST', 'invoices/:id/payments', async ({ env, params, body, user }) => json(await PAY.addPayment(env, params.id, body, user.email), 201));
+route('POST', 'invoice-payments/:id/cancel', async ({ env, params, body, user }) => { await PAY.cancelPayment(env, params.id, body.reason, user.email); return json({ ok: true }); });
+route('POST', 'invoices/:id/copy', async ({ env, params, user }) => json(await INV.copyToDraft(env, params.id, user.email), 201));
+route('POST', 'invoices/:id/cancel', async ({ env, params, body, user }) => { await INV.cancelInvoice(env, params.id, user.email, body.reason); return json({ ok: true }); });
 route('POST', 'invoices/:id/credit', async ({ env, params, body, user }) => { const inv = await INV.creditNote(env, params.id, body, user.email); return json({ id: inv.id, number: inv.number, token: inv.public_token }, 201); });
 route('POST', 'invoices/:id/send', async ({ env, params, user, request }) => { await INV.sendInvoice(env, params.id, user.email, new URL(request.url).origin); return json({ ok: true }); });
 

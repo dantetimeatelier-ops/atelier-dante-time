@@ -43,7 +43,7 @@
     // Načítání pro obrazovku, ze které uživatel mezitím odešel → nevykreslovat přes novou obrazovku
     if (method === 'GET' && seq !== navSeq) { const e = new Error('stale'); e.stale = true; throw e; }
     if (res.status === 401 && !path.startsWith('login') && !path.startsWith('setup')) { showLogin(); throw new Error('Přihlaste se prosím'); }
-    if (!res.ok) { const e = new Error(out.error || `Chyba ${res.status}`); e.status = res.status; e.busy = !out.error && res.status >= 500; throw e; }
+    if (!res.ok) { const e = new Error(out.error || `Chyba ${res.status}`); e.status = res.status; e.data = out; e.busy = !out.error && res.status >= 500; throw e; }
     return out;
   }
   // Přetížený server (503 bez vysvětlení) → chvíli počkat a zkusit znovu (nahrání je bezpečné opakovat – duplicitu server pozná)
@@ -449,7 +449,7 @@
     const econ = async () => {
       const e = await api('GET', `commissions/${id}/economics`);
       const src = { faktura: 'fakturováno', konecna: 'konečná cena', orientacni: 'orientační cena' }[e.priceSource] || 'cena zatím není';
-      const invSt = (v) => (v.cancelled_at ? 'storno' : v.kind === 'dobropis' ? 'dobropis' : v.paid_at ? 'uhrazeno' : v.due_date && v.due_date < new Date().toISOString() ? 'po splatnosti' : 'neuhrazeno');
+      const invSt = (v) => (v.cancelled_at ? 'storno' : v.kind === 'dobropis' ? 'dobropis' : v.paid_at ? (v.paid_sum > v.total - (v.advance_deducted || 0) ? 'přeplaceno' : 'uhrazeno') : v.due_date && v.due_date < new Date().toISOString() ? 'po splatnosti' : v.paid_sum > 0 ? 'částečně uhrazeno' : 'neuhrazeno');
       const KIND = { faktura: 'Faktura', zalohova: 'Zálohová faktura', dobropis: 'Dobropis' };
       ebox.innerHTML = `<h2>Ekonomika zakázky</h2>
         <div class="grid"><div class="stat"><b>${czk(e.price)}</b>cena (${src})</div><div class="stat"><b>${czk(e.paid)}</b>zaplacené náklady</div>
@@ -466,11 +466,11 @@
           <tr><th><b>Přijato celkem</b></th><td><b>${czk(e.received)}</b></td></tr>
           <tr><th><b>${e.remaining < 0 ? 'Přeplatek' : 'Zbývá uhradit'}</b></th><td><b>${czk(e.remaining == null ? null : Math.abs(e.remaining))}</b></td></tr></table>
           ${e.remaining < 0 ? '<p class="small warn" style="padding:8px;border-radius:8px">Přijato je víc než cena – zkontrolujte, zda je záloha odečtena ve faktuře.</p>' : ''}</div>
-        <h2>Faktury</h2><div class="list">${e.invoices.map((v) => `<div class="item"><span class="grow"><span class="t">${esc(v.number)} · ${KIND[v.kind] || 'Faktura'}</span><br>
-          <span class="small muted">${czk(v.total - (v.advance_deducted || 0))} · ${esc(dmy(v.issued_at))} · <b class="${invSt(v) === 'po splatnosti' ? 'warnt' : ''}">${invSt(v)}</b>${v.sent_at ? ' · odesláno' : v.awaiting_send ? ' · <b class="warnt">čeká na schválení odeslání</b>' : ''}</span><br>
+        <h2>Faktury</h2><div class="list">${e.invoices.map((v) => `<div class="item"><span class="grow"><a class="t" href="#/faktury/${esc(v.id)}">${esc(v.number)} · ${KIND[v.kind] || 'Faktura'}</a><br>
+          <span class="small muted">${czk(v.total - (v.advance_deducted || 0))}${v.paid_sum && !v.paid_at && !v.cancelled_at ? ` (uhrazeno ${czk(v.paid_sum)})` : ''} · ${esc(dmy(v.issued_at))} · <b class="${invSt(v) === 'po splatnosti' ? 'warnt' : ''}">${invSt(v)}</b>${v.sent_at ? ' · odesláno' : v.awaiting_send ? ' · <b class="warnt">čeká na schválení odeslání</b>' : ''}</span><br>
           <span class="row" style="gap:4px;margin-top:6px"><a class="btn ghost sm" href="/faktura/${esc(v.public_token)}" target="_blank">Zobrazit</a>
           ${v.awaiting_send && !v.cancelled_at ? `<button class="btn sm" data-isend="${v.id}">Schválit a odeslat</button>` : ''}
-          ${!v.paid_at && !v.cancelled_at && v.kind !== 'dobropis' ? `<button class="btn ghost sm" data-ipaid="${v.id}">Uhrazeno</button>` : ''}</span></span></div>`).join('') || '<p class="small muted">Zatím žádná faktura.</p>'}</div>
+          ${!v.paid_at && !v.cancelled_at && v.kind !== 'dobropis' ? `<button class="btn ghost sm" data-ipaid="${v.id}">Uhrazeno</button>` : ''}<a class="btn ghost sm" href="#/faktury/${esc(v.id)}">Platby, storno…</a></span></span></div>`).join('') || '<p class="small muted">Zatím žádná faktura.</p>'}</div>
         <h2>Náklady</h2><div class="list">${e.costs.map((c) => `<div class="item"><span class="grow"><span class="t">${esc(c.description)}</span><br>
           <span class="small muted">${esc(costLabel(c))} · ${esc(dmy(c.cost_date))}${c.supplier ? ` · ${esc(c.supplier)}` : ''}${docTag(c)}</span>
           ${c.estimate ? ' <span class="chip">odhad</span>' : c.own ? ' <span class="chip">vlastní práce</span>' : ''}</span>
@@ -969,27 +969,27 @@
     const { drafts } = await api('GET', 'invoice-drafts').catch(() => ({ drafts: [] }));
     const opts = (map, v, all) => `<option value="">${all}</option>${Object.entries(map).map(([k, t]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${esc(t)}</option>`).join('')}`;
     const y = new Date().getFullYear();
-    const st = (v) => (v.cancelled_at ? 'storno' : v.kind === 'dobropis' ? 'dobropis' : v.paid_at ? 'uhrazeno' : v.overdue ? 'po splatnosti' : 'neuhrazeno');
+    const st = (v) => (v.cancelled_at ? 'storno' : v.kind === 'dobropis' ? 'dobropis' : v.overdue ? `po splatnosti${v.paid_sum ? ' · částečně' : ''}` : v.state_label || (v.paid_at ? 'uhrazeno' : 'neuhrazeno'));
     app.innerHTML = `<div class="row" style="justify-content:space-between"><h1>Faktury</h1><a class="btn primary" href="#/faktury/nova">+ Nová</a></div>
       ${drafts.length ? `<h2>Koncepty</h2><div class="list" style="margin-bottom:16px">${drafts.map((x) => `<div class="item"><a href="#/faktury/nova?draft=${esc(x.id)}" style="flex:1"><b>${esc(x.buyer_name || 'Bez odběratele')}</b><br><span class="small muted">${x.commission_number ? `zakázka ${esc(x.commission_number)} · ` : ''}${x.total_czk ? `${czk(x.total_czk)} · ` : ''}uloženo ${esc(dmy(x.updated_at))}</span></a><button class="btn ghost" data-ddel="${esc(x.id)}" aria-label="Smazat koncept">🗑</button></div>`).join('')}</div>` : ''}
       <p class="small muted">Faktury z e-shopu se vystavují samy po zaplacení. Zde vystavíte fakturu k prodeji na Vinted, Aukru, Instagramu, osobně nebo k zakázce. Čísla jdou automaticky: DT-${y}-0001, DT-${y}-0002…</p>
       <form id="ff" class="card" style="margin-bottom:12px"><input name="q" placeholder="Hledat: číslo, zákazník, model, výrobní číslo" value="${esc(q.get('q') || '')}">
         <div class="grid" style="margin-top:8px"><select name="year">${opts(Object.fromEntries([y, y - 1].map((x) => [String(x), String(x)])), q.get('year') || '', 'Všechny roky')}</select>
-        <select name="status">${opts({ neuhrazeno: 'Neuhrazené', po_splatnosti: 'Po splatnosti', ke_schvaleni: 'Čeká na schválení odeslání', uhrazeno: 'Uhrazené', storno: 'Stornované' }, q.get('status') || '', 'Všechny stavy')}</select></div>
+        <select name="status">${opts({ neuhrazeno: 'Neuhrazené', castecne: 'Částečně uhrazené', preplaceno: 'Přeplacené', po_splatnosti: 'Po splatnosti', ke_schvaleni: 'Čeká na schválení odeslání', uhrazeno: 'Uhrazené', storno: 'Stornované' }, q.get('status') || '', 'Všechny stavy')}</select></div>
         <div class="grid"><select name="channel">${opts(d.channels, q.get('channel') || '', 'Všechny kanály')}</select><select name="kind">${opts(d.kinds, q.get('kind') || '', 'Všechny doklady')}</select></div>
         <button class="btn block">Filtrovat</button></form>
-      <div class="grid"><div class="stat"><b>${czk(d.revenue)}</b>fakturováno (výběr)</div><div class="stat"><b>${czk(d.unpaid)}</b>neuhrazeno</div></div>
+      <div class="grid"><div class="stat"><b>${czk(d.revenue)}</b>fakturováno (výběr)</div><a class="stat" href="#/faktury?status=neuhrazeno"><b>${czk(d.unpaid)}</b>zbývá uhradit</a></div>
+      ${d.overpaid ? `<a class="card" style="display:block;margin-top:10px" href="#/faktury?status=preplaceno">Přeplatky k vrácení nebo započtení: <b>${czk(d.overpaid)}</b></a>` : ''}
       ${d.overdue ? `<a class="card warn" style="display:block;margin-top:10px" href="#/faktury?status=po_splatnosti">Po splatnosti: <b>${czk(d.overdue)}</b></a>` : ''}
-      <div class="list" style="margin-top:12px">${d.invoices.map((v) => `<div class="item"><span class="grow"><span class="t">${esc(v.number)} · ${esc(v.buyer_company || v.buyer_name)}</span><br>
-        <span class="small muted">${esc(d.kinds[v.kind] || 'Faktura')} · ${esc(d.channels[v.channel] || '')} · ${czk(v.total - (v.advance_deducted || 0))} · ${date(v.issued_at)} · <b class="${v.overdue && !v.cancelled_at ? 'warnt' : ''}">${st(v)}</b>${v.watch_model ? ` · ${esc(v.watch_model)}` : ''}${v.commission_number ? ` · <a href="#/zakazky/${esc(v.commission_id)}">zakázka ${esc(v.commission_number)}</a>` : ''}${v.sent_at ? ' · odesláno' : v.awaiting_send && !v.cancelled_at ? ' · <b class="warnt">čeká na schválení odeslání</b>' : ''}${v.mode === 'test' ? ' · test' : ''}</span><br>
+      <div class="list" style="margin-top:12px">${d.invoices.map((v) => `<div class="item"><span class="grow"><a class="t" href="#/faktury/${esc(v.id)}">${esc(v.number)} · ${esc(v.buyer_company || v.buyer_name)}</a><br>
+        <span class="small muted">${esc(d.kinds[v.kind] || 'Faktura')} · ${esc(d.channels[v.channel] || '')} · ${czk(v.total - (v.advance_deducted || 0))}${v.paid_sum && v.remaining && !v.cancelled_at ? ` (zbývá ${czk(v.remaining)})` : ''}${v.overpaid ? ` (přeplatek ${czk(v.overpaid)})` : ''} · ${date(v.issued_at)} · <b class="${v.overdue && !v.cancelled_at ? 'warnt' : ''}">${st(v)}</b>${v.watch_model ? ` · ${esc(v.watch_model)}` : ''}${v.commission_number ? ` · <a href="#/zakazky/${esc(v.commission_id)}">zakázka ${esc(v.commission_number)}</a>` : ''}${v.sent_at ? ' · odesláno' : v.awaiting_send && !v.cancelled_at ? ' · <b class="warnt">čeká na schválení odeslání</b>' : ''}${v.mode === 'test' ? ' · test' : ''}</span><br>
         <span class="row" style="gap:4px;flex-wrap:wrap;margin-top:6px"><a class="btn ghost" style="min-height:38px;padding:8px 12px" href="/faktura/${esc(v.public_token)}" target="_blank">Zobrazit / PDF</a>
         ${!v.paid_at && !v.cancelled_at && v.kind !== 'dobropis' ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-paid="${v.id}">Uhrazeno</button>` : ''}
-        ${v.buyer_email && !v.cancelled_at ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-send="${v.id}">${v.sent_at ? 'Poslat znovu' : v.awaiting_send ? 'Schválit a odeslat' : 'Poslat e-mailem'}</button>` : ''}
-        ${v.kind === 'faktura' && !v.cancelled_at ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-credit="${v.id}" data-total="${v.total}">Dobropis</button>` : ''}
-        ${!v.cancelled_at && !(v.order_id && v.kind === 'faktura') ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-storno="${v.id}">Storno</button>` : ''}</span></span></div>`).join('') || '<p class="muted">Žádné doklady.</p>'}</div>`;
+        ${v.awaiting_send && !v.cancelled_at && v.buyer_email ? `<button class="btn ghost" style="min-height:38px;padding:8px 12px" data-send="${v.id}">Schválit a odeslat</button>` : ''}
+        <a class="btn ghost" style="min-height:38px;padding:8px 12px" href="#/faktury/${esc(v.id)}">Platby, storno, kopie…</a></span></span></div>`).join('') || '<p class="muted">Žádné doklady.</p>'}</div>`;
     app.querySelector('#ff').addEventListener('submit', (e) => { e.preventDefault(); const p = new URLSearchParams(Object.entries(formData(e.target)).filter(([, v]) => v)); location.hash = `#/faktury?${p}`; });
     app.querySelectorAll('[data-ddel]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Smazat koncept faktury?')) return; await api('DELETE', `invoice-drafts/${b.dataset.ddel}`); views.faktury(_, q); })));
-    app.querySelectorAll('[data-paid]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Označit doklad jako uhrazený?')) return; await api('POST', `invoices/${b.dataset.paid}/paid`, {}); views.faktury(_, q); })));
+    app.querySelectorAll('[data-paid]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Zapsat úhradu zbývající částky s dnešním datem?')) return; await api('POST', `invoices/${b.dataset.paid}/paid`, {}); toast('Úhrada zapsána'); views.faktury(_, q); })));
     app.querySelectorAll('[data-send]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Poslat doklad zákazníkovi e-mailem?')) return; await api('POST', `invoices/${b.dataset.send}/send`, {}); toast('Odesláno'); views.faktury(_, q); })));
     app.querySelectorAll('[data-storno]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Stornovat doklad? Použijte jen u chybně vystaveného dokladu. Hodinky prodané touto fakturou se vrátí na sklad.')) return; await api('POST', `invoices/${b.dataset.storno}/cancel`, {}); views.faktury(_, q); })));
     app.querySelectorAll('[data-credit]').forEach((b) => b.addEventListener('click', () => run(async () => {
@@ -998,6 +998,76 @@
       const restock = !amount || Number(amount) === Number(b.dataset.total) ? confirm('Vracejí se hodinky na sklad?') : false;
       const r = await api('POST', `invoices/${b.dataset.credit}/credit`, { reason, amount: amount || null, restock }); toast(`Dobropis ${r.number} vystaven`); window.open(`/faktura/${r.token}`, '_blank'); views.faktury(_, q);
     })));
+  };
+
+  // Detail dokladu: stav úhrady, platby (částečné, doplatky, přeplatky, vrácení), oprava platby, storno s důvodem, kopie, historie
+  const PAYM = { bank_transfer: 'Převodem', cash: 'Hotově', card: 'Kartou', cod: 'Dobírka', other: 'Jinak' };
+  const ACT = { faktura_vystavena: 'Vystaveno', zaloha_vystavena: 'Záloha vystavena', faktura_odeslana: 'Odesláno zákazníkovi', faktura_stornovana: 'Stornováno', faktura_uhrazena: 'Uhrazeno', platba_zaznamenana: 'Platba zapsána', platba_vracena: 'Vráceno zákazníkovi', platba_zrusena: 'Platba zrušena (oprava)', faktura_zkopirovana: 'Zkopírováno do konceptu', dobropis_vystaven: 'Dobropis vystaven' };
+  views['faktury/:id'] = async ({ id }) => {
+    const d = await api('GET', `invoices/${id}`);
+    const v = d.invoice;
+    const dobropis = v.kind === 'dobropis';
+    const chip = v.cancelled_at ? 'storno' : d.state;
+    const tone = { uhrazeno: 'ok', vraceno: 'ok', preplaceno: 'warnt', castecne: 'warnt', storno: 'muted' }[chip] || '';
+    const hist = (h) => { let x = {}; try { x = JSON.parse(h.details || '{}'); } catch { /* starý záznam */ } return `${esc(ACT[h.action] || h.action)}${x.amount ? ` · ${czk(x.amount)}` : ''}${x.paid_on ? ` · ${esc(dmy(x.paid_on))}` : ''}${x.reason ? ` · ${esc(x.reason)}` : ''}`; };
+    app.innerHTML = `<p><a href="#/faktury">← Faktury</a></p>
+      <h1>${esc(d.kinds[v.kind] || 'Faktura')} ${esc(v.number)}</h1>
+      <p class="small muted">${esc(v.buyer_company || v.buyer_name)} · vystaveno ${esc(date(v.issued_at))}${v.due_date && !v.paid_at ? ` · splatnost ${esc(date(v.due_date))}` : ''}${d.commission ? ` · <a href="#/zakazky/${esc(d.commission.id)}">zakázka ${esc(d.commission.number)}</a>` : ''}${v.mode === 'test' ? ' · TEST' : ''}</p>
+      <div class="card" style="margin-bottom:12px">
+        <p style="margin:0 0 6px"><b class="${tone}">${esc(v.cancelled_at ? 'STORNOVÁNO' : (d.state_label || '').toUpperCase())}</b>${v.cancelled_at && v.cancel_reason ? ` – ${esc(v.cancel_reason)}` : ''}</p>
+        <table class="kv"><tbody>
+          <tr><th>Celkem</th><td>${czk(v.total)}</td></tr>
+          ${v.advance_deducted ? `<tr><th>Odečtená záloha</th><td>−${czk(v.advance_deducted)}</td></tr>` : ''}
+          <tr><th>${dobropis ? 'K vrácení' : 'K úhradě'}</th><td>${czk(Math.abs(d.due))}</td></tr>
+          <tr><th>${dobropis ? 'Vráceno' : 'Uhrazeno'}</th><td>${czk(Math.abs(d.paid))}</td></tr>
+          ${!v.cancelled_at && d.remaining ? `<tr><th>Zbývá</th><td><b>${czk(Math.abs(d.remaining))}</b></td></tr>` : ''}
+          ${d.overpaid ? `<tr><th>Přeplatek</th><td><b class="warnt">${czk(d.overpaid)}</b> – vraťte ho zákazníkovi (záporná platba) nebo započtěte</td></tr>` : ''}
+        </tbody></table>
+      </div>
+      <div class="grid" style="margin-bottom:12px"><a class="btn" href="/faktura/${esc(v.public_token)}" target="_blank">Zobrazit / PDF</a>${v.buyer_email && !v.cancelled_at ? `<button class="btn" id="vsend">${v.sent_at ? 'Poslat znovu' : 'Poslat e-mailem'}</button>` : '<span></span>'}</div>
+
+      <h2>Platby</h2>
+      <div class="list">${d.payments.map((p) => `<div class="item"${p.cancelled_at ? ' style="opacity:.55"' : ''}><span class="grow"><b>${p.amount_czk < 0 ? 'Vráceno ' : ''}${czk(Math.abs(p.amount_czk))}</b> · ${esc(dmy(p.paid_on))} · ${esc(PAYM[p.method] || p.method || '')}${p.note ? `<br><span class="small muted">${esc(p.note)}</span>` : ''}${p.cancelled_at ? `<br><span class="small">Zrušeno: ${esc(p.cancel_reason || '')}</span>` : ''}</span>${p.cancelled_at ? '' : `<button class="btn ghost" data-pcancel="${esc(p.id)}" style="min-height:38px;padding:8px 12px">Opravit</button>`}</div>`).join('') || '<p class="muted small">Zatím žádná platba.</p>'}</div>
+      ${v.cancelled_at ? '' : `<form id="payf" class="card" style="margin-top:10px">
+        <div class="grid"><label>Částka (Kč)<input name="amount" inputmode="decimal" value="${d.remaining ? Math.abs(d.remaining) : d.overpaid ? -d.overpaid : ''}" required></label><label>Datum úhrady<input name="paid_on" type="date" value="${today()}" required></label></div>
+        <div class="grid"><label>Způsob<select name="method">${Object.entries(PAYM).map(([k, t]) => `<option value="${k}" ${v.payment_method === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label><label>Poznámka<input name="note" placeholder="např. záloha, doplatek"></label></div>
+        <p class="small muted">Částečná platba, záloha i doplatek se sčítají. Vrácení peněz zadejte zápornou částkou (např. −500).</p>
+        <button class="btn primary block">${dobropis ? 'Zapsat vrácení' : 'Zapsat platbu'}</button></form>`}
+
+      <h2>Další akce</h2>
+      <div class="grid">
+        ${dobropis ? '' : '<button class="btn" id="vcopy">Kopírovat jako koncept</button>'}
+        ${v.kind === 'faktura' && !v.cancelled_at ? '<button class="btn" id="vcredit">Dobropis (vrácení, sleva)</button>' : ''}
+        ${!v.cancelled_at && !(v.order_id && v.kind === 'faktura') ? '<button class="btn" id="vstorno" style="border-color:#7a3b3b">Stornovat doklad</button>' : ''}
+      </div>
+      <p class="small muted">Vystavený doklad se nemaže ani nepřepisuje (číselná řada musí zůstat úplná). Chybný doklad stornujte s důvodem – zůstane v evidenci jako „Stornováno“ a nepočítá se do tržeb ani pohledávek. Pak ho můžete zkopírovat jako koncept a vystavit správně.</p>
+      ${d.related.length ? `<h2>Související doklady</h2><div class="list">${d.related.map((r) => `<a class="item" href="#/faktury/${esc(r.id)}"><span class="grow">${esc(d.kinds[r.kind] || r.kind)} ${esc(r.number)} · ${czk(r.total)}${r.cancelled_at ? ' · storno' : ''}</span></a>`).join('')}</div>` : ''}
+      <h2>Položky</h2><div class="card"><table class="kv"><tbody>${v.items.map((i) => `<tr><th>${esc(i.text)}${(i.qty || 1) > 1 ? ` × ${i.qty}` : ''}</th><td>${czk((i.qty || 1) * i.price)}</td></tr>`).join('')}</tbody></table></div>
+      <h2>Historie</h2><div class="list">${d.history.map((h) => `<div class="item small"><span class="grow">${hist(h)}<br><span class="muted">${esc(date(h.created_at))} · ${esc(h.actor)}</span></span></div>`).join('') || '<p class="muted small">Bez záznamů.</p>'}</div>`;
+    const reload = () => views['faktury/:id']({ id });
+    app.querySelector('#payf')?.addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
+      const f = formData(e.target); const amount = Math.round(Number(String(f.amount).replace(/\s/g, '').replace(',', '.')));
+      if (!amount) throw new Error('Zadejte částku');
+      if (!dobropis && amount > 0 && d.remaining >= 0 && amount > d.remaining && !confirm(`Platba ${czk(amount)} je vyšší než zbývající částka ${czk(d.remaining)} – vznikne přeplatek ${czk(amount - d.remaining)}. Pokračovat?`)) return;
+      await api('POST', `invoices/${id}/payments`, { ...f, amount });
+      toast(amount < 0 ? 'Vrácení zapsáno' : 'Platba zapsána'); reload();
+    }); });
+    app.querySelectorAll('[data-pcancel]').forEach((b) => b.addEventListener('click', () => run(async () => {
+      const reason = prompt('Proč platbu rušíte? (např. špatná částka, zapsáno dvakrát)\nPlatba zůstane v historii jako zrušená, správnou pak zapište znovu.'); if (!reason) return;
+      await api('POST', `invoice-payments/${b.dataset.pcancel}/cancel`, { reason }); toast('Platba zrušena – stav dokladu přepočítán'); reload();
+    })));
+    app.querySelector('#vsend')?.addEventListener('click', () => run(async () => { if (!confirm(`Poslat doklad na ${v.buyer_email}?`)) return; await api('POST', `invoices/${id}/send`, {}); toast('Odesláno'); reload(); }));
+    app.querySelector('#vcopy')?.addEventListener('click', () => run(async () => { const r = await api('POST', `invoices/${id}/copy`, {}); toast('Koncept vytvořen'); location.hash = `#/faktury/nova?draft=${r.draft_id}`; }));
+    app.querySelector('#vstorno')?.addEventListener('click', () => run(async () => {
+      const reason = prompt(`Stornovat ${v.number}?\nDoklad zůstane v evidenci jako „Stornováno“ a přestane se počítat do tržeb a pohledávek. Hodinky prodané tímto dokladem se vrátí na sklad.\n\nDůvod storna (povinný, např. „vystaveno omylem dvakrát“):`); if (!reason) return;
+      await api('POST', `invoices/${id}/cancel`, { reason }); toast(`${v.number} stornováno`); reload();
+    }));
+    app.querySelector('#vcredit')?.addEventListener('click', () => run(async () => {
+      const reason = prompt('Důvod opravy (např. vrácení hodinek, sleva):'); if (!reason) return;
+      const amount = prompt(`Částka dobropisu v Kč (prázdné = celá faktura ${v.total} Kč):`, '');
+      const restock = !amount || Number(amount) === Number(v.total) ? confirm('Vracejí se hodinky na sklad?') : false;
+      const r = await api('POST', `invoices/${id}/credit`, { reason, amount: amount || null, restock }); toast(`Dobropis ${r.number} vystaven`); location.hash = `#/faktury/${r.id}`;
+    }));
   };
 
   views['faktury/nova'] = async (_, q) => {
@@ -1077,10 +1147,13 @@
       if (draftId) d.draft_id = draftId;
       d.deduct_cash_deposit = !!form.deduct_cash_deposit?.checked && form.kind.value === 'faktura';
       if (form.kind.value !== 'faktura') delete d.advance_id;
-      const r = await api('POST', 'invoices', d);
+      let r;
+      try { r = await api('POST', 'invoices', d); } catch (err) {
+        if (err.data?.code !== 'duplicate' || !confirm(`${err.message}\n\nOK = přesto vystavit, Zrušit = nevystavovat`)) throw err;
+        r = await api('POST', 'invoices', { ...d, allow_duplicate: true });
+      }
       toast(`${form.kind.value === 'zalohova' ? 'Zálohová faktura' : 'Faktura'} ${r.number} vystavena${r.done?.length ? ` – ${r.done.join(', ')}` : ''}`);
-      location.hash = pre.commission_id ? `#/zakazky/${pre.commission_id}` : '#/faktury';
-      if (r.sendMode !== 'odeslat') window.open(`/faktura/${r.token}`, '_blank'); // ke kontrole
+      location.hash = pre.commission_id ? `#/zakazky/${pre.commission_id}` : `#/faktury/${r.id}`; // ze zakázky zpět do zakázky, jinak detail dokladu
     }); });
   };
 
