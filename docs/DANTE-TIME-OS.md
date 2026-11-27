@@ -112,6 +112,23 @@ Administrace zůstane jedna, v současném prémiovém stylu, pro telefon i poč
 
 ---
 
+## Stav agentů k 27. 11. 2026 (porovnání se zadáním majitele)
+
+| Agent | Stav | Co skutečně dělá | Spouštění | Náklady |
+|---|---|---|---|---|
+| **DT Guardian** | ✅ běží | kontrola cen, fotek, faktur, změn cen, e-mailů, zálohy DB; smí pozastavit roli | každou hodinu, záloha denně | 0 Kč |
+| **DT Director** | ✅ běží | týdenní e-mail: tržby, náklady, zisk, cíl 2 mil., co se udělalo, co čeká, upozornění všech rolí | pondělí 7:00 | 0 Kč |
+| **DT Logistics** | ✅ běží | připomínky garančních prohlídek, nevyřízené objednávky, sledování Zásilkovny; expedice (založení zásilky, štítek) na tlačítko | denně 8:00 | 0 Kč |
+| **DT Sales** | ✅ běží | poptávky bez odpovědi 2+ dny, nabídky bez reakce, zakázky po termínu, končící rezervace, neúplné inzeráty; návrh odpovědi (AI) na tlačítko | denně 8:00 | AI jen na pokyn |
+| **DT Finance** | ✅ běží | doklady ke kontrole, hodinky bez nákupní ceny; vytěžení dokladů (AI) na pokyn; přehledy, marže, export pro účetní | denně 8:00 | AI jen na pokyn |
+| **DT Developer** | ✅ (mimo systém) | vývoj přes pull requesty s testy (Claude / ChatGPT podle AGENTS.md) | při úkolu | – |
+| **DT Marketing** | ⏸ čeká | potřebuje přístup k Instagramu/Facebooku a údaje o Metricool (bod 7) | – | – |
+| **DT Scout** | ⏸ čeká | potřebuje tržiště a kritéria nákupu (bod 8); bez souhlasu nikdy nenakupuje | – | – |
+| **DT Innovation** | ⏸ připraveno | týdenní analýza s návrhy – spustit po prvních týdnech provozu, aby měla z čeho vycházet | – | AI v limitu 300 Kč |
+
+Všechny role sdílejí jednu databázi (D1), deník běhů (`agent_runs`), upozornění (`os_findings`), frontu schválení
+(`approvals`) a deník nákladů AI s měsíčním limitem. Zákazníkům nic neposílají bez majitele.
+
 ## 4. Etapy realizace
 
 | Etapa | Obsah | Přínos | Náklady navíc |
