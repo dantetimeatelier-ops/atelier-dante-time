@@ -84,7 +84,7 @@ export async function usePartInCommission(env, commissionId, partId, qty, actor)
   const p = await env.DB.prepare('SELECT * FROM parts WHERE id = ?').bind(partId).first();
   if (!p) throw new HttpError('Díl nenalezen', 404);
   if (p.status !== 'skladem' || p.product_id || p.commission_id) throw new HttpError(`${p.title} není skladem`);
-  const n = int(qty ?? 1, { min: 1, max: 10000, nullable: false, name: 'počet kusů' });
+  const n = int(qty == null || qty === '' ? 1 : qty, { min: 1, max: 10000, nullable: false, name: 'počet kusů' });
   if (n > (p.qty || 0)) throw new HttpError(`Skladem je jen ${p.qty} ks`);
   const t = new Date().toISOString();
   let id = partId;

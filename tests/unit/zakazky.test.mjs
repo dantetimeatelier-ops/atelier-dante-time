@@ -230,7 +230,7 @@ test('díly ze skladu v zakázce: rozdělení zásoby, náklad zakázky, vrácen
   assert.notEqual(used, 's1');
   assert.equal(db.prepare("SELECT qty FROM parts WHERE id = 's1'").get().qty, 3);
   assert.deepEqual({ ...db.prepare('SELECT qty, status, commission_id, unit_cost_czk FROM parts WHERE id = ?').get(used) }, { qty: 2, status: 'pouzito', commission_id: 'k1', unit_cost_czk: 120 });
-  assert.equal(await FIN.usePartInCommission(env, 'k1', 'r1', undefined, 't'), 'r1'); // celý kus → bez rozdělení
+  assert.equal(await FIN.usePartInCommission(env, 'k1', 'r1', '', 't'), 'r1'); // celý kus → bez rozdělení
   await assert.rejects(() => FIN.usePartInCommission(env, 'k1', 's1', 4, 't'), /Skladem je jen 3 ks/);
   await assert.rejects(() => FIN.usePartInCommission(env, 'k1', 'r1', 1, 't'), /není skladem/);
   await assert.rejects(() => FIN.usePartInCommission(env, 'k1', 'h1', 1, 't'), /není skladem/);

@@ -502,7 +502,7 @@
         sb.innerHTML = st.length ? `<p class="small muted">Cena dílu se započítá do nákladů zakázky. Při použití části zásoby zbytek zůstane skladem.</p><div class="list">${st.map((x) => `<div class="item"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${esc(PK[x.kind] || '')}${x.original ? ' · originál' : ''} · skladem ${x.qty} ks · ${czk(x.unit_cost_czk)}/ks</span></span><button class="btn sm" data-use="${x.id}" data-qty="${x.qty}">Použít</button></div>`).join('')}</div>` : '<p class="small muted">Sklad dílů je prázdný. Díly přidáte v <a href="#/dily">Skladu dílů</a>.</p>';
         sb.querySelectorAll('[data-use]').forEach((b) => b.addEventListener('click', () => run(async () => {
           let qty = 1;
-          if (+b.dataset.qty > 1) { const v = prompt(`Kolik kusů použít? (skladem ${b.dataset.qty})`, '1'); if (v == null) return; qty = v; }
+          if (+b.dataset.qty > 1) { const v = prompt(`Kolik kusů použít? (skladem ${b.dataset.qty})`, '1'); if (v == null) return; qty = String(v).trim() || 1; }
           await api('POST', `commissions/${id}/parts`, { part_id: b.dataset.use, qty }); toast('Díl použit v zakázce'); await econ();
         })));
       }); });
