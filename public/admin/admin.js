@@ -1302,7 +1302,8 @@
     if (kc?.buyer && !draft) { // nová faktura k zakázce: odběratel a položka z aktuálně uložené zakázky
       for (const [k, v] of Object.entries(kc.buyer)) if (!pre[k]) pre[k] = v;
       if (!pre.items?.length) {
-        const what = `${L.ctype[kc.type] || 'Zakázka'} – ${kc.watch || 'hodinky'}${kc.caliber ? `, kalibr ${kc.caliber}` : ''} (zakázka ${kc.number})`;
+        // Položka = hodinky ze zakázky (značka, model), případně s kalibrem – bez dlouhého popisu práce
+        const what = `${kc.watch || L.ctype[kc.type] || 'Zakázka'}${kc.caliber ? ` (kalibr ${kc.caliber})` : ''}`;
         pre.items = [pre.kind === 'zalohova' ? { text: `Záloha – ${what}`, price: '' } : { text: what, price: kc.final_price_czk ?? kc.estimate_czk ?? '' }];
       }
     }
@@ -1327,7 +1328,7 @@
       <details open><summary>Platba</summary>
         ${sel('payment_method', 'Způsob úhrady', f.pay, 'bank_transfer')}
         <label class="row"><input type="checkbox" name="paid" style="width:22px;min-height:22px"> Již uhrazeno</label>
-        <div class="grid"><label>Splatnost (dní)<input name="due_days" inputmode="numeric" value="14"></label>${field('taxable_date', 'Datum prodeje (DUZP)', { taxable_date: today() }, 'type="date"')}</div>
+        <div class="grid"><label>Splatnost (dní)<input name="due_days" inputmode="numeric" value="14"></label>${field('taxable_date', 'Datum prodeje (jen pro evidenci, na faktuře se netiskne)', { taxable_date: today() }, 'type="date"')}</div>
         ${f.advances.length ? `<label data-k="faktura">Odečíst uhrazenou zálohovou fakturu<select name="advance_id"><option value="">–</option>${f.advances.map((a) => `<option value="${a.id}" ${myAdv?.id === a.id ? 'selected' : ''}>${esc(a.number)} · ${esc(a.buyer_name)} · ${czk(a.total)}</option>`).join('')}</select></label>` : ''}
         ${kc?.depositCashLeft ? `<label class="row" data-k="faktura"><input type="checkbox" name="deduct_cash_deposit" checked style="width:22px;min-height:22px"> Odečíst zálohu přijatou bez dokladu (${czk(kc.depositCashLeft)})</label>` : ''}
         ${field('note', 'Poznámka na faktuře', pre)}
