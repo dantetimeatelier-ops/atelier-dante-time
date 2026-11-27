@@ -55,7 +55,7 @@ test('doprava: filtr podle země, celkové hodnoty, materiálu pouzdra a stavu d
   let cz = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 9000 });
   assert.deepEqual(cz.shipping.map((s) => s.id), ['zasilkovna', 'balikovna', 'pojistena', 'osobni']); // Balíkovna do 20 000 Kč
   assert.deepEqual(cz.payment.map((p) => p.id), ['bank_transfer', 'cod']); // převod první (výchozí)
-  assert.deepEqual(cz.payment.find((p) => p.id === 'cod').onlyWith, ['zasilkovna']);
+  assert.deepEqual(cz.payment.find((p) => p.id === 'cod').onlyWith, ['zasilkovna', 'balikovna']);
   assert.ok(!('cost' in cz.shipping[0])); // náklad dopravce se zákazníkovi neposílá
   const cheap = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 4000 });
   assert.deepEqual(cheap.shipping.map((s) => s.id), ['zasilkovna', 'balikovna', 'pojistena', 'osobni']);
