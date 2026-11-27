@@ -28,26 +28,16 @@ jsou karetní peněženky) – PayPal, Link ani jiné metody se nezobrazí. Kód
 - **Převod v EUR (SEPA QR):** zůstává; ateliér platí 5 Kč za příchozí SEPA platbu a kurzový rozdíl banky. Cena v EUR
   se zaokrouhluje nahoru na celé euro, což rozdíl obvykle pokryje.
 
-## 2. Doprava a pojištění na plnou hodnotu
+## 2. Doprava a pojištění na plnou hodnotu (zjednodušeno, R25)
 
-**Od R24 se vše nastavuje v administraci → Dopravci** (ceny podle zemí, příplatek podle hodnoty, dobírka, max. krytá
-hodnota, výluky materiálu pouzdra, štítek, sledování, náklad dopravce). Dotazy na dopravce a Dohoda s Balíkovnou: `docs/DOPRAVCI.md`.
-Tabulka níže popisuje výchozí hodnoty.
+Vše se nastavuje v administraci → Dopravci. Bez nových firemních smluv, bez měsíčních poplatků a minimálních odběrů.
+Přehled limitů a co zákazník uvidí: `docs/DOPRAVCI.md`.
 
-Každý způsob dopravy má v Nastavení „do jaké hodnoty dopravce odpovídá“. Dražší kus se zákazníkovi tímto dopravcem
-**vůbec nenabídne**. Když nezbude žádný běžný dopravce, nabídne se pojištěná cenná zásilka (pokud má cenu) a osobní předání.
-
-| Dopravce | Výchozí limit | Zdroj / poznámka |
+| Hodnota hodinek | ČR | Slovensko a EU |
 |---|---|---|
-| Zásilkovna ČR (výdejní místo i adresa) | 20 000 Kč | obchodní podmínky Zásilkovny: max. hodnota zásilky 20 000 Kč / 700 EUR, za vyšší hodnotu odpovídá jen do 20 000 Kč |
-| Packeta do zahraničí | 700 EUR | totéž |
-| Balíkovna | **5 000 Kč** | podmínky 2026: šperky, drahé kovy a „podobné cennosti“ nad 5 000 Kč jen s doplňkovou službou Cenný obsah; hodinky výslovně uvedeny nejsou → do potvrzení České pošty bezpečně 5 000 Kč |
-| Pojištěná přeprava ČR (Cenný balík / Balík Do ruky s Cenným obsahem) | 1 000 000 Kč | udaná cena až 1 000 000 Kč |
-| Pojištěná přeprava do EU | prázdné = nenabízet | vyplní majitel po výběru dopravce (např. Cenný balík do zahraničí – limit podle země) |
-
-**Důsledek pro e-shop:** hodinky nad 5 000 Kč se Balíkovnou nenabídnou a hodinky nad 20 000 Kč jdou jen pojištěnou
-přepravou nebo osobně. Pokud vám Česká pošta potvrdí, že hodinky nejsou „cennost“, nebo budete podávat Balíkovnu plus
-s Cenným obsahem, zvyšte limit v Nastavení → Pojištění na plnou hodnotu.
+| do 5 000 Kč | Zásilkovna, Balíkovna, Cenná zásilka, osobně | Zásilkovna (Packeta) |
+| 5 000–20 000 Kč (běžné PRIM, OMEGA) | Zásilkovna (i dobírka), Cenná zásilka, osobně | Packeta do 700 € (cca 17 000 Kč) |
+| nad 20 000 Kč (Rolex) | Cenná zásilka České pošty (platba předem), osobně | po domluvě (osobně) |
 
 **Odeslání:** vytvoření štítku objednávku neoznačí. Každou hodinu se u Zásilkovny a České pošty ověří, zda dopravce
 zásilku převzal; teprve pak se objednávka označí „odesláno“ a zákazník dostane e-mail se sledovacím číslem.

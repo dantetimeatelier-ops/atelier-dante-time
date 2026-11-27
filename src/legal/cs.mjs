@@ -297,11 +297,11 @@ export const shipping = doc('shipping', '/doprava-a-platba', 'Doprava a platba',
 <tr><td><strong>Zásilkovna</strong> – výdejní místo nebo Z-BOX (výběr na mapě)</td><td>${priceCs(T.defaultPrices.zasilkovna)}</td></tr>
 <tr><td><strong>Balíkovna</strong> – výdejní místo (výběr na mapě České pošty)</td><td>${priceCs(T.defaultPrices.balikovna)}</td></tr>
 <tr><td><strong>Zásilkovna</strong> – doručení na adresu</td><td>cena se zobrazí v košíku před objednáním</td></tr>
-<tr><td><strong>Pojištěná přeprava na plnou hodnotu</strong> – u hodinek vyšší hodnoty (Česká pošta, Balíkovna na adresu s Cenným obsahem nebo PPL), předání proti podpisu</td><td>cena podle hodnoty hodinek se zobrazí v košíku před objednáním</td></tr>
+<tr><td><strong>Česká pošta – Cenná zásilka</strong> – u hodinek vyšší hodnoty, pojištěno na plnou hodnotu, předání jen proti podpisu, platba předem</td><td>cena podle hodnoty hodinek se zobrazí v košíku před objednáním</td></tr>
 <tr><td><strong>Osobní předání</strong> – pouze po předchozí individuální domluvě (nemáme kamennou prodejnu)</td><td>zdarma</td></tr>
 </tbody></table>
 <h2>Doprava do zemí EU</h2>
-<p>Doručujeme do všech 27 členských států EU včetně Slovenska, zejména přes síť Zásilkovny (Packeta) na výdejní místa nebo na adresu; hodinky vyšší hodnoty pojištěnou přepravou PPL. Cena dopravy se řídí cílovou zemí a dostupným dopravcem a <strong>zobrazí se v košíku po výběru země, ještě před odesláním objednávky</strong>. Do země, pro kterou cenu zatím nemáme, vám rádi připravíme nabídku.</p>
+<p>Doručujeme do členských států EU včetně Slovenska přes síť Zásilkovny (Packeta) na výdejní místa nebo na adresu, a to u hodinek do hodnoty 700 EUR, za kterou Zásilkovna odpovídá. Dražší hodinky do zahraničí posíláme po předchozí domluvě. Cena dopravy se řídí cílovou zemí a dostupným dopravcem a <strong>zobrazí se v košíku po výběru země, ještě před odesláním objednávky</strong>. Do země, pro kterou cenu zatím nemáme, vám rádi připravíme nabídku.</p>
 <h2>Odeslání</h2>
 <p>Dostupné hodinky odesíláme do <strong>${T.dispatchWorkingDays} pracovních dnů</strong> od přijetí platby, u dobírky od potvrzení objednávky. Jakmile zásilku převezme dopravce, pošleme vám e-mail s číslem zásilky. <strong>Všechny hodinky posíláme pojištěné na plnou hodnotu.</strong> V košíku proto nabízíme jen ty způsoby dopravy, u kterých dopravce za hodnotu konkrétního kusu odpovídá; u dražších hodinek je to pojištěná cenná zásilka nebo osobní předání po domluvě.</p>
 <h2>Platba</h2>

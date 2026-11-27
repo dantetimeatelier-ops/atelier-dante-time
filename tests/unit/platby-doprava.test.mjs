@@ -38,7 +38,11 @@ test('migrace 0026: dopravci převzali dosavadní nastavení, nové (neověřen�
   assert.equal(rows.balikovna.status, 'aktivni');
   assert.equal(rows.balikovna.max_value_czk, 5000);
   assert.equal(rows.osobni.status, 'aktivni');
-  for (const id of ['balikovna_adresa', 'pojistena', 'ppl_adresa', 'ppl_eu', 'zasilkovna_adresa']) assert.equal(rows[id].status, 'pripraveno', id); // zákazníkům skryto
+  assert.equal(rows.zasilkovna_adresa.status, 'pripraveno'); // zákazníkům skryto
+  // 0028 (R25): zjednodušení – Cenná zásilka zapnutá bez dobírky, PPL a Balíkovna na adresu (Dohoda) se nepoužívají
+  assert.equal(rows.pojistena.status, 'aktivni');
+  assert.equal(rows.pojistena.cod_enabled, 0);
+  for (const id of ['balikovna_adresa', 'ppl_adresa', 'ppl_eu']) assert.equal(rows[id].status, 'vypnuto', id);
   assert.equal(rows.ppl_eu.excluded_metals, 'zlato,stribro,platina');
   const sql = readFileSync(new URL('../../migrations/0026_dopravci.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(sql, /DROP|DELETE|UPDATE /i);
@@ -47,14 +51,19 @@ test('migrace 0026: dopravci převzali dosavadní nastavení, nové (neověřen�
 test('doprava: filtr podle země, celkové hodnoty, materiálu pouzdra a stavu dopravce; cena podle hodnoty', async () => {
   const { shopConfig } = await import('../../server/orders.js');
   const { db, env } = makeEnv();
-  // Jen připravené (neověřené) způsoby zákazník nevidí
+  // Jen připravené (skryté) a vypnuté způsoby zákazník nevidí
   let cz = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 9000 });
-  assert.deepEqual(cz.shipping.map((s) => s.id), ['zasilkovna', 'osobni']); // Balíkovna jen do 5 000 Kč
+  assert.deepEqual(cz.shipping.map((s) => s.id), ['zasilkovna', 'pojistena', 'osobni']); // Balíkovna jen do 5 000 Kč
   assert.deepEqual(cz.payment.map((p) => p.id), ['bank_transfer', 'cod']); // převod první (výchozí)
   assert.deepEqual(cz.payment.find((p) => p.id === 'cod').onlyWith, ['zasilkovna']);
   assert.ok(!('cost' in cz.shipping[0])); // náklad dopravce se zákazníkovi neposílá
   const cheap = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 4000 });
-  assert.deepEqual(cheap.shipping.map((s) => s.id), ['zasilkovna', 'balikovna', 'osobni']);
+  assert.deepEqual(cheap.shipping.map((s) => s.id), ['zasilkovna', 'balikovna', 'pojistena', 'osobni']);
+  // Rolex 60 000 Kč: jen Cenná zásilka (platba předem, bez dobírky) nebo osobní předání
+  const rolex = await shopConfig(env, 'cs', { country: 'CZ', itemsTotal: 60000 });
+  assert.deepEqual(rolex.shipping.map((s) => s.id), ['pojistena', 'osobni']);
+  assert.equal(rolex.shipping[0].price, 190 + 3 * 14);
+  assert.ok(!rolex.payment.some((p) => p.id === 'cod'));
   assert.equal(cheap.insuredOnly, false);
 
   // Majitel zapne Zásilkovnu na adresu, Cennou zásilku a PPL do EU
@@ -106,7 +115,8 @@ test('administrace: úprava dopravce se ověří (země, ceny, výluky, dobírka
   await assert.rejects(() => SHIP.saveMethod(env, 'neni', { status: 'aktivni' }, 'test'), /nenalezen/);
   const pv = await SHIP.preview(env, { country: 'CZ', value: 50000, metals: [] });
   assert.equal(pv.find((x) => x.id === 'zasilkovna').reason, 'hodnota nad 20000 Kč není krytá');
-  assert.match(pv.find((x) => x.id === 'pojistena').reason, /připraveno/);
+  assert.equal(pv.find((x) => x.id === 'pojistena').ok, true); // Cenná zásilka kryje i Rolex
+  assert.match(pv.find((x) => x.id === 'zasilkovna_adresa').reason, /připraveno/);
 });
 
 test('náklad dopravy: odhad u objednávky, při odeslání do nákladů hodinek, oprava podle faktury dopravce; zisk počítá i zaplacenou dopravu', async () => {

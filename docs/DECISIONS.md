@@ -207,3 +207,13 @@ Kompletní správa dopravců v administraci (ceny, příplatky, dobírka, země,
 Neověřené způsoby připravit, ale zákazníkům neaktivovat. Bezplatná Dohoda s Balíkovnou jen bez paušálu, minimálního odběru
 a pravidelných plateb. Bez placených smluv a předplatných bez souhlasu majitele.
 **Důsledky:** migrace 0026 (`shipping_methods`), `server/shipping.js`, administrace → Dopravci, `docs/DOPRAVCI.md`.
+
+## R25 – Zjednodušení dopravy (2026-11-27)
+**Rozhodl:** majitel („Zjednoduš celý systém dopravy. Nepotřebuji oslovovat všechny dopravce ani uzavírat nové firemní smlouvy.“)
+**Rozhodnutí:** Běžné hodinky 9 000–15 000 Kč, Rolex 50 000–70 000 Kč. Primárně Zásilkovna a Balíkovna; u dražších
+hodinek platba předem, osobní předání nebo Cenná zásilka České pošty. PPL zatím ne. Slovensko a EU tam, kde to podmínky
+dopravce umožňují (Packeta do 700 €). Žádné měsíční poplatky, minimální odběry ani předplatné, žádné nové smlouvy
+(Dohoda s Balíkovnou a dotazy dopravcům z R24 se nedělají).
+**Důsledky:** migrace 0028 (Cenná zásilka aktivní bez dobírky, PPL a Balíkovna na adresu vypnuté), administrace →
+Dopravci skrývá nepoužívané, `docs/DOPRAVCI.md` přepsán, text Doprava a platba bez PPL.
+

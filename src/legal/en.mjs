@@ -201,11 +201,11 @@ export const shipping = doc('shipping', '/en/shipping-payment', 'Shipping and Pa
 <tr><td><strong>Packeta (Zásilkovna)</strong> – pickup point or Z-BOX (map selection)</td><td>${priceEn(T.defaultPrices.zasilkovna)}</td></tr>
 <tr><td><strong>Balíkovna</strong> – pickup point (Czech Post map)</td><td>${priceEn(T.defaultPrices.balikovna)}</td></tr>
 <tr><td><strong>Packeta (Zásilkovna)</strong> – home delivery</td><td>shown in the cart before ordering</td></tr>
-<tr><td><strong>Delivery insured for the full value</strong> – for higher-value watches (Czech Post, Balíkovna home delivery with Valuable Contents, or PPL), against signature</td><td>price depending on the watch value, shown in the cart before ordering</td></tr>
+<tr><td><strong>Czech Post – insured valuable parcel</strong> – for higher-value watches, insured for the full value, delivered against signature only, payment in advance</td><td>price depending on the watch value, shown in the cart before ordering</td></tr>
 <tr><td><strong>Personal handover</strong> – only by prior individual arrangement (no retail shop)</td><td>free</td></tr>
 </tbody></table>
 <h2>Shipping to EU countries</h2>
-<p>We deliver to all 27 EU member states including Slovakia, mainly through the Packeta network to pickup points or to your address; higher-value watches by insured PPL delivery. The price depends on the destination country and available carrier and <strong>is shown in the cart after selecting the country, before the order is placed</strong>. For countries without a price yet, we will gladly prepare an offer.</p>
+<p>We deliver to EU member states including Slovakia through the Packeta network to pickup points or to your address, for watches up to EUR 700, the value Packeta is liable for. Higher-value watches are shipped abroad by prior arrangement. The price depends on the destination country and available carrier and <strong>is shown in the cart after selecting the country, before the order is placed</strong>. For countries without a price yet, we will gladly prepare an offer.</p>
 <h2>Dispatch</h2>
 <p>Available watches are dispatched within <strong>${T.dispatchWorkingDays} working days</strong> of receipt of payment, or of order confirmation for cash on delivery. As soon as the carrier takes over the parcel, you receive the tracking number by e-mail. <strong>Every watch is shipped insured for its full value.</strong> The cart therefore offers only carriers that are liable for the value of the particular piece; for higher-value watches this is an insured valuable parcel or personal handover by arrangement.</p>
 <h2>Payment</h2>

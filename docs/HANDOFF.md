@@ -4,6 +4,15 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/platby-doprava-eu (R25 zjednodušení dopravy)
+**Hotovo:** migrace 0028 (Cenná zásilka aktivní 190 Kč + 14 Kč/10 000 Kč nad 30 000, bez dobírky; PPL a Balíkovna
+na adresu vypnuté), administrace → Dopravci skrývá vypnuté pod „Nepoužívané“, text Doprava a platba (CZ/EN) bez PPL,
+`docs/DOPRAVCI.md` přepsán na jednoduchý přehled (žádné e-maily dopravcům ani Dohoda), R25 v DECISIONS.
+**Rozpracováno:** nic.
+**Další krok:** majitel sloučí PR #47, případně upraví cenu Cenné zásilky v administraci.
+**Pozor na:** Balíkovna zůstává do 5 000 Kč (podmínky ČP, cennosti bez Cenného obsahu); dražší hodinky do zahraničí
+nemají dopravce bez smlouvy → jen po domluvě.
+
 ## 2026-11-27 – Claude – claude/platby-doprava-eu (R24 dopravci)
 **Hotovo:** správa dopravců (migrace 0026 `shipping_methods`, `server/shipping.js` quote/offer/preview/saveMethod), administrace
 → Dopravci (seznam, editor, náhled „co uvidí zákazník“), pokladna filtruje podle země, hodnoty košíku a materiálu pouzder

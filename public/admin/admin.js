@@ -1486,18 +1486,20 @@
   const SM_KIND = { vydejni_misto: 'Výdejní místo', adresa: 'Na adresu', osobni: 'Osobní předání' };
   const METAL_CS = { zlato: 'zlato', stribro: 'stříbro', platina: 'platina' };
   const czkOr = (v, dash = '–') => (v == null || v === '' ? dash : czk(Number(v)));
-  views.dopravci = async () => {
-    const { methods } = await api('GET', 'shipping-methods');
-    app.innerHTML = `<p><a href="#/nastaveni">← Nastavení</a></p><h1>Dopravci</h1>
-      <p class="small muted">Zákazník uvidí jen aktivní způsoby, které doručují do zvolené země, pokryjí celou hodnotu objednávky a nevylučují materiál pouzdra. Vše ostatní se řeší automaticky.</p>
-      <div class="list">${methods.map((m) => {
+  const smItem = (m) => {
         const st = { aktivni: ['Aktivní', 'available'], pripraveno: ['Skryto', 'reserved'], vypnuto: ['Vypnuto', ''] }[m.status] || [m.status, ''];
         const countries = Object.keys(m.prices).filter((c) => c !== '*');
         const from = m.prices.CZ ?? m.prices['*'] ?? (countries.length ? Math.min(...countries.map((c) => m.prices[c])) : null);
         const max = m.prices.CZ != null ? m.max_value_czk : (m.max_value_abroad_czk ?? m.max_value_czk);
         return `<a class="item" href="#/dopravci/${esc(m.id)}"><span class="grow" style="min-width:0"><span class="t" style="display:block">${esc(m.name_cs)}</span><span class="small muted">${esc(SM_KIND[m.kind] || m.kind)} · ${m.prices['*'] != null ? 'všechny země' : esc(countries.join(', ') || 'žádná země')} · od ${czkOr(from)} · ${m.kind === 'osobni' ? 'osobně' : max ? `krytí do ${czk(max)}` : 'bez limitu'}${m.cod_enabled ? ' · dobírka' : ''}${m.excluded.length ? ` · ne: ${m.excluded.map((x) => METAL_CS[x]).join(', ')}` : ''}</span></span><span class="chip ${st[1]}" style="flex:none">${esc(st[0])}</span></a>`;
-      }).join('')}</div>
-      <p class="small muted">Aktivní = zákazníci vidí · Skryto = připraveno, čeká na ověření podmínek · Vypnuto.</p>
+      };
+  views.dopravci = async () => {
+    const { methods } = await api('GET', 'shipping-methods');
+    app.innerHTML = `<p><a href="#/nastaveni">← Nastavení</a></p><h1>Dopravci</h1>
+      <p class="small muted">Zákazník uvidí jen aktivní způsoby, které doručují do zvolené země, pokryjí celou hodnotu objednávky a nevylučují materiál pouzdra. Vše ostatní se řeší automaticky.</p>
+      <div class="list">${methods.filter((m) => m.status !== 'vypnuto').map((m) => smItem(m)).join('')}</div>
+      ${methods.some((m) => m.status === 'vypnuto') ? `<details style="margin-top:12px"><summary class="small muted">Nepoužívané (${methods.filter((m) => m.status === 'vypnuto').length})</summary><div class="list" style="margin-top:8px">${methods.filter((m) => m.status === 'vypnuto').map((m) => smItem(m)).join('')}</div></details>` : ''}
+      <p class="small muted">Aktivní = zákazníci vidí · Skryto = připraveno, zákazníci zatím nevidí · Vypnuto = nepoužívá se.</p>
       <a class="btn block" href="#/dopravci/novy" style="margin-top:12px">+ Přidat dopravce</a>
       <div class="card" style="margin-top:18px"><h2 style="margin-top:0">Co uvidí zákazník</h2>
         <div class="grid"><label>Země<select id="pvc">${EU.map(([c, nm]) => `<option value="${c}" ${c === 'CZ' ? 'selected' : ''}>${nm}</option>`).join('')}</select></label><label>Hodnota hodinek (Kč)<input id="pvv" inputmode="numeric" value="25000"></label></div>

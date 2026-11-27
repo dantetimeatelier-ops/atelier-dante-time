@@ -1,118 +1,46 @@
-# Dopravci – dotazy na podmínky a Dohoda s Balíkovnou (27. 11. 2026, R24)
+# Doprava – jednoduché nastavení (R25, 27. 11. 2026)
 
-Stav v e-shopu (administrace → **Dopravci**): Zásilkovna (do 20 000 Kč), Balíkovna na výdejní místo (do 5 000 Kč)
-a osobní předání jsou aktivní. **Cenná zásilka České pošty, Balíkovna na adresu s Cenným obsahem, PPL v ČR a PPL do EU
-jsou připravené, ale zákazníkům skryté**, dokud dopravci písemně nepotvrdí podmínky pro hodinky.
-Po potvrzení stačí u dopravce přepnout Stav na „Aktivní“ a zkontrolovat ceny.
+Cíl: co nejjednodušší a bezpečný provoz **bez nových firemních smluv, měsíčních poplatků, minimálních odběrů
+a předplatného**. Dopravce není potřeba oslovovat.
 
----
+## Co zákazník uvidí
 
-## 1. Postup – bezplatná firemní Dohoda s Balíkovnou
+| Hodnota hodinek | Česko | Slovensko a další země EU |
+|---|---|---|
+| do 5 000 Kč | Zásilkovna, Balíkovna, Cenná zásilka, osobní předání | Zásilkovna / Packeta |
+| 5 000–20 000 Kč (běžně 9 000–15 000 Kč) | Zásilkovna (i na dobírku), Cenná zásilka, osobní předání | Zásilkovna / Packeta do 700 € (cca 17 000 Kč) |
+| nad 20 000 Kč (Rolex 50 000–70 000 Kč) | Cenná zásilka České pošty – jen platba předem, osobní předání | jen po domluvě (osobní předání) |
 
-Cíl: firemní ceník (Balíkovna na adresu 99 Kč + Cenný obsah 50 Kč) **bez měsíčního poplatku, bez minimálního
-odběru a bez jiných pravidelných plateb**.
+Pokladna vybírá automaticky podle země a hodnoty košíku. Zákazník nikdy neuvidí dopravce, který za hodnotu kusu neručí.
 
-1. Na www.balikovna.cz → „Pro firmy“ vyplňte poptávkový formulář (nebo e-mail níže). Uveďte odhad: jednotky až
-   desítky balíků měsíčně, hodnotné zboží (hodinky), potřeba Cenný obsah a doručení na adresu.
-2. Obchodník pošle návrh **Dohody o podmínkách podávání poštovních zásilek**. Před podpisem zkontrolujte
-   (pošlete mi ho a projdu ho s vámi):
-   - že **není** sjednán měsíční paušál, minimální měsíční počet zásilek ani minimální obrat,
-   - že **není** zapnutá placená služba „Trvalá dosílka“ (350 Kč měsíčně) ani skladování vratek,
-   - že platí ceník pro podnikatele (příloha E VPPS) nebo individuální ceny bez závazku,
-   - že je povolen produkt **Balíkovna na adresu** s doplňkovou službou **Cenný obsah**,
-   - výpovědní lhůta a že Dohodu lze bez sankce ukončit,
-   - způsob úhrady (fakturace za skutečně podané zásilky).
-3. Podepisujte jen pokud všechny body sedí. Nic placeného nepodepisujte bez kontroly.
-4. Po podpisu: administrace → Dopravci → **Balíkovna na adresu** → zkontrolovat ceny → Stav „Aktivní“.
+## Ověřené limity (zdroje: podmínky dopravců platné v roce 2026)
 
----
+- **Zásilkovna / Packeta:** maximální hodnota zásilky i dobírky **20 000 Kč / 700 EUR**, připojištění nelze
+  (obchodní podmínky čl. 2.1). Bez měsíčního poplatku.
+- **Balíkovna (výdejní místo):** šperky, drahé kovy a „obdobně cenné věci“ nad **5 000 Kč** smějí jen se službou
+  Cenný obsah, kterou výdejní místo ani Balíkovna na adresu nenabízí (poštovní podmínky Balíkovna 2026, bod 6).
+  Hodinky proto Balíkovnou posíláme jen do 5 000 Kč – jinak by Česká pošta při ztrátě nemusela nic nahradit.
+- **Česká pošta – Cenná zásilka (Cenný balík):** bez smlouvy, podání na kterékoli poště, odpovědnost do výše udané ceny
+  až **1 000 000 Kč**, předání jen proti podpisu. Nad 30 000 Kč udané ceny je nutné zvláštní balení (zalepení
+  a označení podle pokynů pošty). Cena od 1. 4. 2026: S 131 Kč + udaná cena 14 Kč do 30 000 Kč a 14 Kč za každých
+  dalších 10 000 Kč (Rolex za 70 000 Kč ≈ 201 Kč).
+- **Osobní předání:** zdarma, jen po předchozí domluvě.
 
-## 2. E-mail – Česká pošta / Balíkovna
+## Ceny pro zákazníka (lze kdykoli změnit v administraci → Dopravci)
 
-**Komu:** obchodní oddělení Balíkovny / České pošty (kontakt z formuláře „Pro firmy“), kopie info@cpost.cz
-**Předmět:** Dotaz – přeprava mechanických hodinek (Cenná zásilka, Balíkovna, Cenný obsah) a firemní Dohoda
+- Zásilkovna 99 Kč, Balíkovna podle Vašeho nastavení, osobní předání zdarma.
+- **Cenná zásilka 190 Kč** do 30 000 Kč, pak +14 Kč za každých započatých 10 000 Kč (Rolex 60 000 Kč → 232 Kč).
+  Pokrývá cenu pošty včetně udané ceny. ⚖️ Návrh – upravte, pokud chcete jinou cenu.
 
-> Dobrý den,
->
-> provozuji e-shop Atelier Dante Time (Patrik Hužička, IČO 24020885, Buková 1561, 273 51 Unhošť) s mechanickými
-> hodinkami značek PRIM, OMEGA a ROLEX. Hodnota jednoho kusu je obvykle 5 000–300 000 Kč, výjimečně až 1 000 000 Kč.
-> Pouzdra jsou ocelová, pozlacená (obecný kov s pozlacením) a výjimečně ze zlata (s puncem).
->
-> Prosím o písemné potvrzení těchto bodů:
-> 1. Považujete mechanické hodinky (ocelové / pozlacené / zlaté pouzdro) za „obdobně cenné věci“ podle bodu 36
->    Poštovních podmínek Balíkovna, tedy za obsah, který nad 5 000 Kč vyžaduje doplňkovou službu Cenný obsah?
-> 2. Lze hodinky poslat na **výdejní místo Balíkovny** s krytím jejich plné hodnoty? Pokud ano, do jaké výše?
-> 3. **Balíkovna na adresu s Cenným obsahem:** potvrzujete krytí plné hodnoty až do 1 000 000 Kč, podmínky balení
->    (přelepení páskou, podpis/razítko) a doručení jen proti podpisu?
-> 4. **Cenná zásilka (dříve Cenný balík):** potvrzujete přepravu hodinek s udanou cenou až 1 000 000 Kč
->    a odpovědnost do výše udané ceny? Vztahuje se na zlaté pouzdro nějaká výjimka?
-> 5. **Dobírka** u Balíkovny na adresu a u Cenné zásilky: maximální výše a poplatek.
-> 6. **Firemní Dohoda:** rád bych uzavřel Dohodu **bez měsíčního poplatku, bez minimálního počtu zásilek a bez jiných
->    pravidelných plateb** – jen platba za skutečně podané zásilky. Je to možné? Pošlete mi prosím návrh.
-> 7. Zasíláte **Cennou zásilku do zahraničí** (Slovensko a další země EU) pro hodinky? Jaké jsou maximální udané ceny podle zemí?
->
-> Děkuji za odpověď.
-> S pozdravem
-> Patrik Hužička, Atelier Dante Time
-> dante.time.atelier@gmail.com · atelier-dante-time.cz
+## Nepoužívá se
 
----
+PPL, Balíkovna na adresu a Balíkovna plus (vyžadují firemní Dohodu nebo smlouvu) jsou v administraci vypnuté
+a schované v sekci „Nepoužívané“. Kdykoli je lze znovu zapnout.
 
-## 3. E-mail – PPL
+## Jak podat Cennou zásilku
 
-**Komu:** obchodní oddělení PPL CZ (formulář „Chci se stát zákazníkem“ na ppl.cz), kopie zákaznická linka
-**Předmět:** Dotaz – přeprava mechanických hodinek s plným krytím hodnoty (ČR, Slovensko, EU)
-
-> Dobrý den,
->
-> provozuji e-shop Atelier Dante Time (Patrik Hužička, IČO 24020885, Buková 1561, 273 51 Unhošť) s mechanickými
-> hodinkami PRIM, OMEGA a ROLEX v hodnotě obvykle 5 000–300 000 Kč za kus. Pouzdra jsou ocelová, pozlacená
-> (obecný kov) a výjimečně ze zlata.
->
-> Prosím o písemné potvrzení:
-> 1. Přijímáte hodinky k přepravě podle čl. 4.1.9 Všeobecných podmínek (vyloučené „drahé kovy, drahé kameny…“)?
->    Platí to zvlášť pro **ocelová**, **pozlacená** a **zlatá** pouzdra?
-> 2. **PPL Parcel CZ Private:** krytí 50 000 Kč v ceně a zvýšená odpovědnost do 100 000 / 250 000 / 500 000 Kč –
->    potvrzujete, že se vztahuje i na hodinky a že náhrada odpovídá plné prodejní hodnotě (bez amortizace)?
-> 3. **PPL Parcel Connect** na Slovensko a do EU (Německo, Rakousko, Polsko, Maďarsko a další): krytí 100 000 Kč v ceně
->    a zvýšená odpovědnost do 250 000 Kč – platí pro hodinky? Do kterých zemí EU můžete doručit?
-> 4. Je možné posílat **bez rámcové smlouvy**, nebo se smlouvou **bez měsíčního poplatku a bez minimálního odběru**,
->    s platbou jen za skutečně odeslané zásilky?
-> 5. Nabízíte **dobírku** a doručení **jen proti podpisu** adresáta? Za jakou cenu?
-> 6. Je k dispozici **API pro štítky a sledování zásilek** bez pravidelného poplatku?
->
-> Děkuji za odpověď.
-> S pozdravem
-> Patrik Hužička, Atelier Dante Time
-> dante.time.atelier@gmail.com · atelier-dante-time.cz
-
----
-
-## 4. E-mail – Zásilkovna / Packeta
-
-**Komu:** obchod@zasilkovna.cz (kopie podpora z klientské sekce)
-**Předmět:** Dotaz – limity hodnoty a krytí u zásilek s mechanickými hodinkami (ČR, SK, EU)
-
-> Dobrý den,
->
-> jsem registrovaný e-shop Atelier Dante Time (Patrik Hužička, IČO 24020885). Prodávám mechanické hodinky PRIM,
-> OMEGA a ROLEX, pouzdra ocelová, pozlacená (obecný kov) a výjimečně zlatá.
->
-> Prosím o písemné potvrzení:
-> 1. Jaká je dnes **maximální hodnota zásilky** a **krytí škody** pro e-shopy v ČR (výdejní místo, Z-BOX, doručení
->    na adresu)? Platí stále 20 000 Kč a nelze zásilku připojistit?
-> 2. Jaké jsou limity hodnoty pro **Slovensko** a další země EU (výdejní místa Packeta i doručení na adresu)? Platí 700 EUR?
-> 3. Je možné za příplatek sjednat **vyšší krytí** (např. do 100 000 Kč) bez měsíčního poplatku a bez minimálního odběru?
-> 4. Vztahují se na **hodinky** (ocelové, pozlacené, zlaté pouzdro) nějaké výluky z přepravy nebo z náhrady škody?
-> 5. Potvrzujete, že **API** (štítky, sledování zásilek) i výběr výdejních míst (widget) jsou zdarma, bez paušálu?
->
-> Děkuji za odpověď.
-> S pozdravem
-> Patrik Hužička, Atelier Dante Time
-> dante.time.atelier@gmail.com · atelier-dante-time.cz
-
----
-
-## 5. Co udělat po odpovědích
-Pošlete mi odpovědi (stačí přeposlat). Podle nich upravím limity, ceny a výluky u dopravců a připravené způsoby
-zapnu – vždy až s vaším souhlasem.
+1. V administraci otevřete objednávku a vytiskněte si adresu.
+2. Hodinky zabalte do pevné krabičky; nad 30 000 Kč použijte zvláštní balení podle pokynů na poště.
+3. Na poště uveďte **udanou cenu = cena hodinek** (jinak pošta ručí jen do nižší částky).
+4. Číslo zásilky z podacího lístku vložte do objednávky – e-mail se sledováním odejde zákazníkovi sám,
+   jakmile pošta zásilku převezme.
