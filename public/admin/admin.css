@@ -27,7 +27,7 @@ h1{font:400 26px Georgia,serif;margin:6px 0 14px}h2{font:400 20px Georgia,serif;
 .list{display:grid;gap:8px}
 .item{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px;color:var(--text)}
 .item img,.item .ph{width:56px;height:70px;object-fit:cover;border-radius:8px;background:#1a1a1a;flex:0 0 56px}
-.item .grow{flex:1;min-width:0}.item .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .grow{flex:1;min-width:0}.item .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;max-width:100%;vertical-align:bottom}
 .chip{display:inline-block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
 .chip.available,.chip.paid,.chip.vyrizena,.chip.predano{color:var(--ok);border-color:rgba(127,191,138,.5)}
 .chip.reserved,.chip.awaiting_payment,.chip.nova,.chip.v_praci{color:var(--warn);border-color:rgba(224,178,90,.5)}
