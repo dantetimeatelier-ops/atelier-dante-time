@@ -5,7 +5,8 @@
 const has = (v) => v != null && String(v).trim() !== '';
 const join = (parts, sep = ', ') => parts.filter((x) => typeof x === 'string' && x.trim() !== '').join(sep);
 
-import { KIND, METAL, PRECIOUS } from './format.mjs';
+import { KIND, METAL, PRECIOUS, REBUILD_NOTE } from './format.mjs';
+import { dtName } from './naming.mjs';
 
 export const AUTH_PARTS = { strojek: { cs: 'strojek', en: 'movement' }, cifernik: { cs: 'ciferník', en: 'dial' }, rucicky: { cs: 'ručičky', en: 'hands' } };
 export const authenticityParts = (p) => String(p.authenticity_parts || '').split(',').filter((x) => AUTH_PARTS[x]);
@@ -15,9 +16,9 @@ const MOVEMENT = {
   automatic: { cs: 'automatickým nátahem', en: 'automatic winding', csAdj: 'automatický nátah', enAdj: 'automatic' },
 };
 
-// Zobrazovaný název: vlastní název hodinek, jinak značka a model
+// Zobrazovaný název v jednotném tvaru „DT – ZNAČKA model označení“ (src/shop/naming.mjs); bez údajů „Hodinky“
 export function productName(p) {
-  return (p.title && String(p.title).trim()) || join([p.brand, p.model], ' ') || 'Hodinky';
+  return dtName(p) || 'Hodinky';
 }
 
 export function describe(p) {
@@ -31,6 +32,7 @@ export function describe(p) {
   en.push(`${name}${has(p.year) ? ` from ${p.year}` : ''} – a mechanical watch${mv ? ` with ${mv.en}` : ''}${has(p.movement) ? ` (movement ${p.movement})` : ''}.`);
 
   if (KIND[p.kind] && p.kind !== 'original') { cs.push(KIND[p.kind].note.cs); en.push(KIND[p.kind].note.en); }
+  if (p.kind === 'prestavba') { cs.push(REBUILD_NOTE.cs); en.push(REBUILD_NOTE.en); }
   const metal = METAL[p.case_metal];
   if (metal) {
     const extra = PRECIOUS.includes(p.case_metal) && has(p.hallmark) ? `, ${p.hallmark}` : p.case_metal === 'pozlaceno' && has(p.plating) ? `, ${p.plating}` : '';

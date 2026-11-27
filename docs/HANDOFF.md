@@ -4,6 +4,16 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/nazvy-dt
+**Hotovo:** jednotné názvy hodinek „DT – ZNAČKA model označení“ (R26). Pravidlo `src/shop/naming.mjs` (`dtName`,
+idempotentní), použito v `productName` (web, košík, JSON-LD, popisy), při uložení hodinek v administraci, v katalogu
+(`scripts/catalog.mjs` převede title i SEO titulek), v pasech a ukázkových datech. Migrace 0032 převedla názvy, SEO
+titulky, popisky fotek a pasy v databázi (faktury, objednávky a prohlídky beze změny). Přestavby: `REBUILD_NOTE`
+v generátoru popisu, v katalogu, při uložení v administraci i v migraci. Pravidlo zapsáno v AGENTS.md 6a, DECISIONS R26,
+katalog/README.md, DANTE-TIME-OS.md.
+**Další krok:** –
+**Pozor na:** šablony příspěvků na sociální sítě v repozitáři zatím nejsou – pravidlo je v AGENTS.md / DANTE-TIME-OS.md.
+
 ## 2026-11-27 – Claude – claude/nahled-faktury
 **Hotovo:** náhled faktury před vystavením (tlačítko „Náhled“ ve formuláři; `POST invoices/preview` → `issueManual(..., { preview: true })`
 projde stejné výpočty a kontroly, ale nic neuloží ani nepřidělí číslo). Vzhled dokladu přesunut do `server/invoice-page.js`

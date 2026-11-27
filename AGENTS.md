@@ -188,6 +188,19 @@ Agenti spolu nemluví přímo. Komunikují **přes soubory v repozitáři**:
 - **Tón textů:** elegantní a věcný. Sjednocení tykání/vykání čeká na
   rozhodnutí R7 v `docs/ROADMAP.md`.
 
+## 6a. Pojmenování hodinek (rozhodnutí R26, závazné)
+
+- Každé hodinky se jmenují **`DT – ZNAČKA <název modelu a jeho označení>`**, značka VELKÝMI písmeny,
+  např. `DT – PRIM Classic Soleil LTD.01`, `DT – OMEGA Renaissance 0-04`, `DT – ROLEX Cellini 0-05`.
+- Platí pro inzeráty, katalog, administraci, databázi, košík, objednávky, faktury, certifikáty, záruční dokumenty,
+  e-maily, digitální pasy, archiv prodaných, SEO, metadata i příspěvky na sociální sítě.
+- Pravidlo je v kódu na jednom místě: `src/shop/naming.mjs` (`dtName`). Administrace i katalog ho použijí samy,
+  nikdy ho neobcházej a nepiš názvy ručně v jiném tvaru.
+- Jméno modelu a evidenční číslo navrhuje agent podle `katalog/README.md` (R22) a nikdy je nemění bez majitele.
+- Přestavby mají v popisu vždy upozornění, že jde o nezávislou přestavbu ateliéru Dante Time s originálními
+  historickými komponenty, nikoli o oficiální nový model původního výrobce (`REBUILD_NOTE`).
+- Vystavené faktury a historické doklady se zpětně nepřejmenovávají; adresy stránek (slug) se nemění.
+
 ## 7. Technické standardy
 
 - **Mobil na prvním místě:** testuj šířky 375 px, 768 px a 1280 px.

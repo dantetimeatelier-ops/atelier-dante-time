@@ -13,7 +13,8 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { puncCheck } from '../src/shop/punc.mjs';
-import { KIND, METAL } from '../src/shop/format.mjs';
+import { KIND, METAL, REBUILD_NOTE, hasRebuildNote } from '../src/shop/format.mjs';
+import { dtName, DT_PREFIX } from '../src/shop/naming.mjs';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 export const CATALOG_DIR = path.join(ROOT, 'katalog');
@@ -39,6 +40,15 @@ export function loadCatalog(dir = CATALOG_DIR) {
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) err('název složky smí obsahovat jen malá písmena, číslice a pomlčky');
     if (!STATUSES.includes(w.status)) err(`stav musí být jeden z ${STATUSES.join(', ')}`);
     if (!w.title) err('chybí název (title)');
+    // Jednotný název „DT – ZNAČKA model označení“ (R26) – doplní se automaticky, i když ho agent zapomene
+    const oldTitle = String(w.title).trim();
+    w.title = dtName(w);
+    if (w.seo_title && !String(w.seo_title).startsWith(DT_PREFIX)) w.seo_title = String(w.seo_title).startsWith(oldTitle) ? `${w.title}${String(w.seo_title).slice(oldTitle.length)}` : `${w.title} – ${w.seo_title}`;
+    // Přestavba: vždy upozornění, že nejde o oficiální nový model původního výrobce
+    if (w.kind === 'prestavba') {
+      if (w.description_cs && !hasRebuildNote(w.description_cs)) w.description_cs = `${w.description_cs}\n\n${REBUILD_NOTE.cs}`;
+      if (w.description_en && !hasRebuildNote(w.description_en)) w.description_en = `${w.description_en}\n\n${REBUILD_NOTE.en}`;
+    }
     if (w.kind && !KIND[w.kind]) err(`neznámý druh ${w.kind}`);
     if (w.case_metal && !METAL[w.case_metal]) err(`neznámý materiál pouzdra ${w.case_metal}`);
     if (w.status === 'available' && !(Number.isInteger(w.price_czk) && w.price_czk > 0)) err('hodinky „skladem“ musí mít cenu v Kč');

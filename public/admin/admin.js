@@ -174,7 +174,7 @@
         <details open><summary>Základ</summary>
           <div class="grid">${field('brand', 'Značka', p)}${field('model', 'Model', p)}</div>
           <div class="grid">${field('year', 'Rok výroby', p)}${field('price_czk', 'Cena (Kč)', p, 'inputmode="numeric"')}</div>
-          ${field('title', 'Název na webu (vyplní se sám ze značky a modelu)', p)}
+          ${field('title', 'Název na webu (tvar „DT – ZNAČKA model označení“ se doplní sám)', p)}
           <label>Stav v e-shopu<select name="status">${['draft', 'in_progress', 'available', 'sold', 'archived'].map((s) => `<option value="${s}" ${p.status === s ? 'selected' : ''}>${L.product[s]}</option>`).join('')}${p.status === 'reserved' && p.reserved_order_id ? '<option value="reserved" selected>Rezervováno (objednávkou z e-shopu)</option>' : `<option value="reserved" ${p.status === 'reserved' ? 'selected' : ''}>Rezervováno osobně (prodej mimo e-shop)</option>`}</select></label>
           <label>Druh hodinek<select name="kind">${[['original', 'Originální hodinky (po servisu / renovaci)'], ['prestavba', 'Přestavba (upravené, část dílů není původní)'], ['sestava', 'Sestava z ateliéru (z vybraných dílů)']].map(([v, t]) => `<option value="${v}" ${(p.kind || 'original') === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
           <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="featured" ${p.featured ? 'checked' : ''} style="width:22px;min-height:22px"> Zobrazit na hlavní stránce</label>
