@@ -57,22 +57,74 @@ export async function updateCost(env, id, b, actor) {
   const c = await env.DB.prepare('SELECT * FROM costs WHERE id = ?').bind(id).first();
   if (!c) throw new HttpError('Náklad nenalezen', 404);
   const d = {};
+  // Přiřazení: náklad patří vždy nejvýš k jedné věci (hodinky NEBO zakázka) → nikdy se nezapočítá dvakrát.
+  // Pošle-li se jen commission_id (rychlé přiřazení ze zakázky), náklad hodinek se nepřesune bez vědomí.
+  const move = 'product_id' in b && 'commission_id' in b;
+  if ('product_id' in b) {
+    const pid = b.product_id ? str(b.product_id, { max: 40 }) : null;
+    if (pid && !(await env.DB.prepare('SELECT 1 FROM products WHERE id = ?').bind(pid).first())) throw new HttpError('Hodinky nenalezeny', 404);
+    d.product_id = pid;
+  }
   if ('commission_id' in b) {
     const kid = b.commission_id ? str(b.commission_id, { max: 40 }) : null;
     if (kid) {
       if (!(await env.DB.prepare('SELECT 1 FROM commissions WHERE id = ?').bind(kid).first())) throw new HttpError('Zakázka nenalezena', 404);
-      if (c.product_id) throw new HttpError('Náklad už patří k hodinkám – nejdřív ho u hodinek odeberte');
+      if (c.product_id && !move) throw new HttpError('Náklad už patří k hodinkám – nejdřív ho u hodinek odeberte');
       if (c.part_id && !c.amount_czk) throw new HttpError('Tento nákup je naskladněný jako díl – jeho cena se počítá při použití dílu');
     }
     d.commission_id = kid;
   }
+  if (d.product_id && d.commission_id) throw new HttpError('Náklad patří buď k hodinkám, nebo k zakázce');
+  if ('description' in b) d.description = str(b.description, { max: 300, required: true, name: 'popis' });
+  if ('category' in b) d.category = oneOf(b.category, Object.keys(COST_CATS), 'druh nákladu');
+  if ('part_kind' in b) d.part_kind = b.part_kind ? oneOf(b.part_kind, Object.keys(PART_KINDS), 'druh dílu') : null;
+  if ('supplier' in b) d.supplier = str(b.supplier, { max: 200 }) || null;
+  if ('document_ref' in b) d.document_ref = str(b.document_ref, { max: 200 }) || null;
+  if ('note' in b) d.note = str(b.note, { max: 2000 }) || null;
   if ('estimate' in b) d.estimate = flag(b.estimate);
   if ('amount_czk' in b && b.amount_czk !== '' && b.amount_czk != null) d.amount_czk = int(b.amount_czk, { min: 0, max: 50000000, nullable: false, name: 'částka' });
-  if ('cost_date' in b && b.cost_date) d.cost_date = ymd(b.cost_date);
-  const k = Object.keys(d);
-  if (!k.length) return;
-  await env.DB.prepare(`UPDATE costs SET ${k.map((x) => `${x} = ?`).join(', ')} WHERE id = ?`).bind(...k.map((x) => d[x]), id).run();
-  await audit(env, actor, 'naklad_upraven', 'cost', id, d);
+  if ('cost_date' in b && b.cost_date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(b.cost_date))) throw new HttpError('Neplatné datum');
+    d.cost_date = b.cost_date;
+  }
+  // Nákup naskladněný jako díl: cena se počítá u dílu (při nákupu / použití) – částka u nákladu by ji započítala podruhé
+  if (c.part_id && d.amount_czk) throw new HttpError('Tento nákup je naskladněný jako díl – cenu upravte u dílu ve Skladu dílů');
+  const amount = d.amount_czk ?? c.amount_czk;
+  const own = c.own_work; const hours = c.hours;
+  if (!amount && !hours && !own && !c.part_id && ('amount_czk' in b)) throw new HttpError('Vyplňte částku');
+  const k = Object.keys(d).filter((x) => d[x] !== c[x]);
+  if (!k.length) return { changed: [] };
+  await env.DB.prepare(`UPDATE costs SET ${k.map((x) => `${x} = ?`).join(', ')}, updated_at = ? WHERE id = ?`).bind(...k.map((x) => d[x]), new Date().toISOString(), id).run();
+  // Do historie: co se změnilo (z → na)
+  await audit(env, actor, 'naklad_upraven', 'cost', id, Object.fromEntries(k.map((x) => [x, { z: c[x] ?? null, na: d[x] ?? null }])));
+  return { changed: k };
+}
+
+/** Detail výdaje: údaje, přiřazení, všechny přílohy a historie změn. */
+export async function getCost(env, id) {
+  const c = await env.DB.prepare(`SELECT c.*, p.title AS product_title, k.number AS commission_number, COALESCE(cu.name, k.contact_name) AS commission_customer,
+      x.title AS part_title, x.qty AS part_qty, x.unit_cost_czk AS part_unit_cost
+    FROM costs c LEFT JOIN products p ON p.id = c.product_id LEFT JOIN commissions k ON k.id = c.commission_id
+    LEFT JOIN customers cu ON cu.id = k.customer_id LEFT JOIN parts x ON x.id = c.part_id WHERE c.id = ?`).bind(id).first();
+  if (!c) throw new HttpError('Náklad nenalezen', 404);
+  const { results: docs } = await env.DB.prepare('SELECT id, kind, filename, mime, size, note, created_at, created_by FROM documents WHERE cost_id = ? ORDER BY created_at').bind(id).all();
+  const { results: history } = await env.DB.prepare("SELECT at, actor, action, details FROM audit_log WHERE entity = 'cost' AND entity_id = ? ORDER BY id DESC LIMIT 50").bind(id).all().catch(() => ({ results: [] }));
+  return { cost: c, docs, history, categories: COST_CATS, partKinds: PART_KINDS };
+}
+
+/**
+ * Smazání výdaje. Přílohy se buď odpojí (zůstanou mezi doklady bez nákladu), nebo smažou (withDocs).
+ * Nákup naskladněný jako díl: díl zůstává ve skladu (má vlastní cenu).
+ */
+export async function deleteCost(env, id, actor, { withDocs = false, removeDoc } = {}) {
+  const c = await env.DB.prepare('SELECT id, description, amount_czk FROM costs WHERE id = ?').bind(id).first();
+  if (!c) throw new HttpError('Náklad nenalezen', 404);
+  const { results: docs } = await env.DB.prepare('SELECT id FROM documents WHERE cost_id = ?').bind(id).all();
+  await env.DB.prepare('DELETE FROM costs WHERE id = ?').bind(id).run();
+  if (withDocs && removeDoc) for (const x of docs) await removeDoc(env, x.id, actor);
+  else await env.DB.prepare('UPDATE documents SET cost_id = NULL WHERE cost_id = ?').bind(id).run();
+  await audit(env, actor, 'naklad_smazan', 'cost', id, { description: c.description, amount: c.amount_czk, docs: docs.length, docsDeleted: !!withDocs });
+  return { docs: docs.length };
 }
 
 /**

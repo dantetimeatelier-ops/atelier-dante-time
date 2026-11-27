@@ -537,11 +537,22 @@ route('GET', 'passports/:id/certificate', async ({ env, params }) => html(PAS.ce
 
 // --- Poptávky a odstoupení -----------------------------------------------------------
 route('GET', 'inquiries', async ({ env }) => {
-  const { results } = await env.DB.prepare('SELECT i.*, p.title AS product_title, p.slug AS product_slug, (SELECT group_concat(f.id) FROM commission_photos f WHERE f.inquiry_id = i.id) AS photo_ids FROM inquiries i LEFT JOIN products p ON p.id = i.product_id ORDER BY CASE i.status WHEN \'nova\' THEN 0 ELSE 1 END, i.created_at DESC LIMIT 300').all();
+  const { results } = await env.DB.prepare('SELECT i.*, p.title AS product_title, p.slug AS product_slug, (SELECT group_concat(f.id) FROM commission_photos f WHERE f.inquiry_id = i.id) AS photo_ids, (SELECT number FROM commissions k WHERE k.inquiry_id = i.id) AS commission_number FROM inquiries i LEFT JOIN products p ON p.id = i.product_id ORDER BY CASE i.status WHEN \'nova\' THEN 0 ELSE 1 END, i.created_at DESC LIMIT 300').all();
   return json({ inquiries: results });
 });
 route('PUT', 'inquiries/:id', async ({ env, params, body }) => {
   await env.DB.prepare('UPDATE inquiries SET status = ? WHERE id = ?').bind(oneOf(body.status, ['nova', 'vyrizuje_se', 'vyrizena', 'spam'], 'stav'), params.id).run();
+  return json({ ok: true });
+});
+// Smazání poptávky (např. spam nebo na žádost zákazníka – GDPR). Poptávku, ze které vznikla zakázka, smazat nelze.
+route('DELETE', 'inquiries/:id', async ({ env, params, user }) => {
+  const i = await env.DB.prepare('SELECT id, status FROM inquiries WHERE id = ?').bind(params.id).first();
+  if (!i) throw new HttpError('Poptávka nenalezena', 404);
+  const k = await env.DB.prepare('SELECT number FROM commissions WHERE inquiry_id = ?').bind(params.id).first();
+  if (k) throw new HttpError(`Z poptávky vznikla zakázka ${k.number} – smazat ji nelze`, 409);
+  const photos = await CPH.removeForInquiry(env, params.id);
+  await env.DB.prepare('DELETE FROM inquiries WHERE id = ?').bind(params.id).run();
+  await audit(env, user.email, 'poptavka_smazana', 'inquiry', params.id, { status: i.status, photos });
   return json({ ok: true });
 });
 // DT Sales: návrh odpovědi (odesílá majitel sám ze svého e-mailu)
@@ -677,22 +688,41 @@ route('GET', 'finance/products/:id', async ({ env, params }) => json(await FIN.p
 route('GET', 'costs', async ({ env, request }) => {
   const u = new URL(request.url).searchParams;
   // volne = nepřiřazené skutečně zaplacené výdaje (lze je přiřadit k zakázce, bez nového zadání)
-  const where = u.get('volne') ? "c.product_id IS NULL AND c.commission_id IS NULL AND c.estimate = 0 AND c.status = 'potvrzeno' AND c.amount_czk > 0" : u.get('overhead') ? 'c.product_id IS NULL AND c.commission_id IS NULL' : '1=1';
-  const { results } = await env.DB.prepare(`SELECT c.*, p.title AS product_title, (SELECT number FROM commissions k WHERE k.id = c.commission_id) AS commission_number, (SELECT COUNT(*) FROM documents d WHERE d.cost_id = c.id) AS docs FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE ${where} ORDER BY c.cost_date DESC, c.created_at DESC LIMIT 300`).all();
+  const where = [u.get('volne') ? "c.product_id IS NULL AND c.commission_id IS NULL AND c.estimate = 0 AND c.status = 'potvrzeno' AND c.amount_czk > 0" : u.get('overhead') ? 'c.product_id IS NULL AND c.commission_id IS NULL' : '1=1'];
+  const binds = [];
+  // Hledání a filtry (jako v účetních programech): text, druh, rok/měsíc, přiřazení, bez dokladu
+  const q = (u.get('q') || '').trim().slice(0, 100);
+  if (q) { where.push("(c.description LIKE ? OR COALESCE(c.supplier,'') LIKE ? OR COALESCE(c.document_ref,'') LIKE ? OR COALESCE(c.note,'') LIKE ? OR COALESCE(c.order_ref,'') LIKE ?)"); binds.push(...Array(5).fill(`%${q}%`)); }
+  if (u.get('category') && FIN.COST_CATS[u.get('category')]) { where.push('c.category = ?'); binds.push(u.get('category')); }
+  if (/^\d{4}(-\d{2})?$/.test(u.get('obdobi') || '')) { where.push('substr(c.cost_date, 1, ?) = ?'); binds.push(u.get('obdobi').length, u.get('obdobi')); }
+  const pr = u.get('prirazeni');
+  if (pr === 'provoz') where.push('c.product_id IS NULL AND c.commission_id IS NULL');
+  if (pr === 'hodinky') where.push('c.product_id IS NOT NULL');
+  if (pr === 'zakazka') where.push('c.commission_id IS NOT NULL');
+  if (u.get('bez_dokladu')) where.push('NOT EXISTS (SELECT 1 FROM documents d WHERE d.cost_id = c.id)');
+  const { results } = await env.DB.prepare(`SELECT c.*, p.title AS product_title, (SELECT number FROM commissions k WHERE k.id = c.commission_id) AS commission_number, (SELECT COUNT(*) FROM documents d WHERE d.cost_id = c.id) AS docs FROM costs c LEFT JOIN products p ON p.id = c.product_id WHERE ${where.join(' AND ')} ORDER BY c.cost_date DESC, c.created_at DESC LIMIT 500`).bind(...binds).all();
   return json({ costs: results, categories: FIN.COST_CATS });
 });
 route('POST', 'costs', async ({ env, body, user }) => json({ id: await FIN.addCost(env, body, user.email) }, 201));
-route('PUT', 'costs/:id', async ({ env, params, body, user }) => { await FIN.updateCost(env, params.id, body, user.email); return json({ ok: true }); });
-route('DELETE', 'costs/:id', async ({ env, params, user }) => {
-  await env.DB.prepare('DELETE FROM costs WHERE id = ?').bind(params.id).run();
-  await env.DB.prepare('UPDATE documents SET cost_id = NULL WHERE cost_id = ?').bind(params.id).run(); // doklad se nemaže, jen se odpojí
-  await audit(env, user.email, 'naklad_smazan', 'cost', params.id); return json({ ok: true });
+route('GET', 'costs/:id', async ({ env, params }) => json(await FIN.getCost(env, params.id)));
+route('PUT', 'costs/:id', async ({ env, params, body, user }) => json({ ok: true, ...(await FIN.updateCost(env, params.id, body, user.email)) }));
+route('DELETE', 'costs/:id', async ({ env, params, user, request }) => {
+  // Výchozí: přílohy se nemažou, jen odpojí (zůstanou mezi doklady bez nákladu). ?doklady=1 smaže i přílohy.
+  const withDocs = new URL(request.url).searchParams.get('doklady') === '1';
+  return json({ ok: true, ...(await FIN.deleteCost(env, params.id, user.email, { withDocs, removeDoc: DOC.remove })) });
 });
 // --- Doklady k nákladům (E3b, bez AI) ---------------------------------------------------
 route('GET', 'documents', async ({ env, request }) => json({ documents: await DOC.list(env, { unassigned: !!new URL(request.url).searchParams.get('volne') }), kinds: DOC.DOC_KINDS }));
 route('POST', 'documents', async ({ env, request, user }) => json({ id: await DOC.upload(env, await request.formData(), user.email) }, 201));
-route('PUT', 'documents/:id', async ({ env, params, body, user }) => { await DOC.assign(env, params.id, body.cost_id ? str(body.cost_id, { max: 40 }) : null, user.email); return json({ ok: true }); });
-route('GET', 'documents/:id/file', async ({ env, params, user }) => DOC.file(env, params.id, user.email));
+route('PUT', 'documents/:id', async ({ env, params, body, user }) => {
+  if ('cost_id' in body) await DOC.assign(env, params.id, body.cost_id ? str(body.cost_id, { max: 40 }) : null, user.email);
+  if ('kind' in body || 'note' in body) await DOC.update(env, params.id, body, user.email);
+  return json({ ok: true });
+});
+route('GET', 'documents/:id/file', async ({ env, params, user, request }) => {
+  const u = new URL(request.url).searchParams;
+  return DOC.file(env, params.id, user.email, { download: u.get('download') === '1', preview: u.get('preview') === '1' });
+});
 route('DELETE', 'documents/:id', async ({ env, params, user }) => { await DOC.remove(env, params.id, user.email); return json({ ok: true }); });
 // --- Nákupy a prodeje (E3b v2): nahrání, AI vytěžení, kontrola, ruční zadání ------------------
 route('GET', 'inbox', async ({ env }) => json(await INB.overview(env)));
@@ -705,6 +735,13 @@ route('POST', 'inbox/cleanup', async ({ env, user }) => json({ removed: await IN
 route('POST', 'inbox/:id/extract', async ({ env, params, user }) => json(await INB.extract(env, params.id, user.email)));
 route('POST', 'purchases', async ({ env, body, user }) => json({ id: await INB.savePurchase(env, null, body, user.email) }, 201));
 route('PUT', 'purchases/:id', async ({ env, params, body, user }) => json({ id: await INB.savePurchase(env, params.id, body, user.email, { confirm: body.confirm !== false }) }));
+route('GET', 'sales/:id', async ({ env, params }) => {
+  const sale = await env.DB.prepare('SELECT s.*, p.title AS product_title FROM sales s LEFT JOIN products p ON p.id = s.product_id WHERE s.id = ?').bind(params.id).first();
+  if (!sale) throw new HttpError('Prodej nenalezen', 404);
+  const { results: docs } = await env.DB.prepare('SELECT id, kind, filename, mime, size, created_at FROM documents WHERE sale_id = ? ORDER BY created_at').bind(params.id).all();
+  const { results: history } = await env.DB.prepare("SELECT at, actor, action, details FROM audit_log WHERE entity = 'sale' AND entity_id = ? ORDER BY id DESC LIMIT 30").bind(params.id).all();
+  return json({ sale, docs, history, pay: INB.PAY });
+});
 route('POST', 'sales', async ({ env, body, user }) => json({ id: await INB.saveSale(env, null, body, user.email) }, 201));
 route('PUT', 'sales/:id', async ({ env, params, body, user }) => json({ id: await INB.saveSale(env, params.id, body, user.email, { confirm: body.confirm !== false }) }));
 route('DELETE', 'sales/:id', async ({ env, params, user }) => {
