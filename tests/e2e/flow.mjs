@@ -482,6 +482,21 @@ try {
   await page.getByText('skutečně přijato').waitFor();
   step('zakázky: náklady, vlastní práce, odhad, přiřazení výdaje, záloha, schválení odeslání, platby, zisk a marže');
 
+  // Díl ze skladu použitý v zakázce: 1 ze 3 kusů (dotaz na počet se v testu potvrdí výchozí 1) → náklad zakázky, zbytek skladem, vrácení na sklad
+  const sp = await api('POST', 'parts', { kind: 'sklo', title: 'Sklo safírové 30 mm test', qty: 3, unit_cost_czk: 250, status: 'skladem' });
+  assert.equal(sp.s, 201, JSON.stringify(sp.j));
+  await page.goto(`${BASE}/admin/#/zakazky/${kid}`);
+  await page.locator('#usep summary').click();
+  await page.locator('#stock .item', { hasText: 'Sklo safírové 30 mm test' }).getByRole('button', { name: 'Použít' }).click();
+  await page.getByRole('heading', { name: 'Díly ze skladu' }).waitFor();
+  ke = (await api('GET', `commissions/${kid}/economics`)).j;
+  assert.deepEqual([ke.partsCost, ke.paid, ke.profit], [250, 2250, 10750]);
+  assert.equal((await api('GET', 'parts')).j.parts.find((x) => x.id === sp.j.id).qty, 2);
+  await page.getByRole('button', { name: 'Vrátit na sklad' }).click();
+  await page.getByRole('heading', { name: 'Díly ze skladu' }).waitFor({ state: 'detached' });
+  assert.equal((await api('GET', `commissions/${kid}/economics`)).j.partsCost, 0);
+  step('díly ze skladu: použití části zásoby v zakázce, náklad a zisk, vrácení na sklad');
+
   // Fotky zakázky: fáze, hlavní fotka, celá obrazovka, smazání s potvrzením, miniatura v přehledu
   const ph = await page.evaluate(async (id) => {
     const c = document.createElement('canvas'); c.width = 40; c.height = 50; const x = c.getContext('2d'); x.fillStyle = '#c8a24a'; x.fillRect(0, 0, 40, 50);
@@ -493,6 +508,7 @@ try {
     return out;
   }, kid);
   assert.equal((await api('GET', 'commissions')).j.commissions.find((x) => x.id === kid).cover_photo_id, ph[1], 'bez volby je hlavní fotka „po“');
+  await page.goto(`${BASE}/admin/#/zakazky`); // jiná adresa → detail zakázky se znovu načte i s novými fotkami
   await page.goto(`${BASE}/admin/#/zakazky/${kid}`);
   await page.locator('#kphotos .photo').nth(1).waitFor();
   await page.locator('#kphotos .photo .tag', { hasText: 'Před' }).waitFor();

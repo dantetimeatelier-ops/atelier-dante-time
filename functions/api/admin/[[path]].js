@@ -443,6 +443,8 @@ route('PUT', 'commissions/:id/main-photo', async ({ env, params, body, user }) =
   await audit(env, user.email, 'zakazka_hlavni_foto', 'commission', params.id, { photo: body.photo_id || null });
   return json({ ok: true });
 });
+route('POST', 'commissions/:id/parts', async ({ env, params, body, user }) => json({ id: await FIN.usePartInCommission(env, params.id, str(body.part_id, { max: 40, required: true, name: 'díl' }), body.qty, user.email) }, 201));
+route('DELETE', 'commissions/:id/parts/:pid', async ({ env, params, user }) => { await FIN.returnPartFromCommission(env, params.id, params.pid, user.email); return json({ ok: true }); });
 route('GET', 'commissions/:id/economics', async ({ env, params }) => json(await FIN.commissionEconomics(env, params.id)));
 route('GET', 'commission-photos/:id/:size', async ({ env, params }) => CPH.file(env, params.id, params.size));
 route('DELETE', 'commission-photos/:id', async ({ env, params, user }) => {
@@ -650,7 +652,7 @@ route('GET', 'finance/export', async ({ env, request, user }) => {
   return new Response(csv, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="dante-time-${kind}-${u.get('from')}-${u.get('to')}.csv"`, 'Cache-Control': 'no-store' } });
 });
 route('GET', 'parts', async ({ env }) => {
-  const { results } = await env.DB.prepare("SELECT x.*, p.title AS product_title FROM parts x LEFT JOIN products p ON p.id = x.product_id ORDER BY CASE x.status WHEN 'skladem' THEN 0 ELSE 1 END, x.kind, x.title LIMIT 500").all();
+  const { results } = await env.DB.prepare("SELECT x.*, p.title AS product_title, k.number AS commission_number FROM parts x LEFT JOIN products p ON p.id = x.product_id LEFT JOIN commissions k ON k.id = x.commission_id ORDER BY CASE x.status WHEN 'skladem' THEN 0 ELSE 1 END, x.kind, x.title LIMIT 500").all();
   return json({ parts: results, kinds: FIN.PART_KINDS });
 });
 route('POST', 'parts', async ({ env, body, user }) => {
@@ -659,7 +661,10 @@ route('POST', 'parts', async ({ env, body, user }) => {
   await audit(env, user.email, 'dil_pridan', 'part', id, { title: d.title }); return json({ id }, 201);
 });
 route('PUT', 'parts/:id', async ({ env, params, body, user }) => {
-  const d = FIN.partInput(body); const k = Object.keys(d);
+  const d = FIN.partInput(body);
+  // Díl patří k hodinkám, nebo k zakázce; vrácený na sklad nepatří nikam
+  if (d.product_id || d.status === 'skladem') d.commission_id = null;
+  const k = Object.keys(d);
   await env.DB.prepare(`UPDATE parts SET ${k.map((x) => `${x} = ?`).join(', ')}, updated_at = ? WHERE id = ?`).bind(...k.map((x) => d[x]), now(), params.id).run();
   await audit(env, user.email, 'dil_upraven', 'part', params.id, { status: d.status, product: d.product_id }); return json({ ok: true });
 });

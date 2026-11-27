@@ -219,3 +219,30 @@ test('administrace: nové cesty jsou zaregistrované a datum zakázek je ve form
   assert.equal(dmy(null), '');
   assert.match(ui, /watchph/); assert.match(ui, /Opravdu smazat tuto fotografii/);
 });
+
+test('díly ze skladu v zakázce: rozdělení zásoby, náklad zakázky, vrácení na sklad, bez dvojího započtení', async () => {
+  const FIN = await import('../../server/finance.js');
+  const { db, env } = makeEnv();
+  db.exec("INSERT INTO commissions (id, number, type, status, final_price_czk) VALUES ('k1', 'Z-1', 'renovace', 'v_praci', 5000)");
+  db.exec(`INSERT INTO parts (id, kind, title, qty, unit_cost_czk, purchase_date, status) VALUES ('s1', 'sklo', 'Sklo 30 mm', 5, 120, '${Y}-02-01', 'skladem'), ('r1', 'remen', 'Řemínek hnědý', 1, 400, '${Y}-02-01', 'skladem'), ('h1', 'strojek', 'Strojek v hodinkách', 1, 900, '${Y}-02-01', 'pouzito')`);
+  const before = (await FIN.overview(env, Y)).months[1].costs;
+  const used = await FIN.usePartInCommission(env, 'k1', 's1', 2, 't');
+  assert.notEqual(used, 's1');
+  assert.equal(db.prepare("SELECT qty FROM parts WHERE id = 's1'").get().qty, 3);
+  assert.deepEqual({ ...db.prepare('SELECT qty, status, commission_id, unit_cost_czk FROM parts WHERE id = ?').get(used) }, { qty: 2, status: 'pouzito', commission_id: 'k1', unit_cost_czk: 120 });
+  assert.equal(await FIN.usePartInCommission(env, 'k1', 'r1', '', 't'), 'r1'); // celý kus → bez rozdělení
+  await assert.rejects(() => FIN.usePartInCommission(env, 'k1', 's1', 4, 't'), /Skladem je jen 3 ks/);
+  await assert.rejects(() => FIN.usePartInCommission(env, 'k1', 'r1', 1, 't'), /není skladem/);
+  await assert.rejects(() => FIN.usePartInCommission(env, 'k1', 'h1', 1, 't'), /není skladem/);
+  await assert.rejects(() => FIN.usePartInCommission(env, 'neni', 's1', 1, 't'), /Zakázka nenalezena/);
+  let e = await FIN.commissionEconomics(env, 'k1');
+  assert.equal(e.partsCost, 240 + 400); assert.equal(e.paid, 640); assert.equal(e.profit, 5000 - 640); assert.equal(e.parts.length, 2);
+  // Měsíční náklady (nákup dílů) se použitím nezmění – díl se nepočítá dvakrát
+  assert.equal((await FIN.overview(env, Y)).months[1].costs, before);
+  assert.equal(before, 5 * 120 + 400 + 900);
+  await FIN.returnPartFromCommission(env, 'k1', 'r1', 't');
+  assert.deepEqual({ ...db.prepare("SELECT status, commission_id FROM parts WHERE id = 'r1'").get() }, { status: 'skladem', commission_id: null });
+  await assert.rejects(() => FIN.returnPartFromCommission(env, 'k1', 'r1', 't'), /není/);
+  e = await FIN.commissionEconomics(env, 'k1');
+  assert.equal(e.paid, 240);
+});
