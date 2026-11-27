@@ -63,7 +63,7 @@ async function upsertCustomer(env, inv) {
 const ymd = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : null);
 
 /** Ruční faktura / zálohová faktura z administrace, volitelně s hodinkami ze skladu. */
-export async function issueManual(env, b, actor, origin = SITE.origin) {
+export async function issueManual(env, b, actor, origin = SITE.origin, { preview = false } = {}) {
   const kind = oneOf(b.kind || 'faktura', ['faktura', 'zalohova'], 'druh dokladu');
   const channel = oneOf(b.channel || 'osobne', Object.keys(SALE_CHANNELS), 'zdroj prodeje');
   const lines = (Array.isArray(b.items) ? b.items : []).slice(0, 30).map((i) => ({
@@ -105,6 +105,29 @@ export async function issueManual(env, b, actor, origin = SITE.origin) {
     if (!cashDeposit) throw new HttpError('Zakázka nemá žádnou neodečtenou zálohu bez dokladu');
   }
   if ((advance ? advance.total : 0) + cashDeposit > invoiceTotals(lines).total) throw new HttpError('Záloha je vyšší než faktura');
+  const paid = Boolean(b.paid);
+  const dueDays = int(b.due_days, { max: 90 }) ?? 14;
+  const taxable = ymd(b.taxable_date);
+  const buyerEmail = b.buyer_email ? vEmail(b.buyer_email) : null;
+  const fields = {
+    kind, channel, source: b.commission_id ? 'commission' : 'manual', commission_id: b.commission_id || null,
+    buyer_name: str(b.buyer_name, { max: 200, required: true, name: 'odběratele' }), buyer_company: str(b.buyer_company, { max: 200 }),
+    buyer_ico: str(b.buyer_ico, { max: 20 }), buyer_dic: str(b.buyer_dic, { max: 20 }), buyer_street: str(b.buyer_street, { max: 200 }),
+    buyer_city: str(b.buyer_city, { max: 120 }), buyer_zip: str(b.buyer_zip, { max: 12 }), buyer_email: buyerEmail,
+    items: lines, payment_method: oneOf(b.payment_method || 'bank_transfer', Object.keys(INVOICE_PAY), 'způsob úhrady'),
+    taxable_date: taxable ? `${taxable}T12:00:00.000Z` : now(), paid_at: paid ? now() : null,
+    due_date: paid ? null : new Date(Date.now() + dueDays * 86400000).toISOString(), note: str(b.note, { max: 500 }),
+    advance_deducted: (advance ? advance.total : 0) + cashDeposit, related_invoice_id: advance?.id || null,
+    product_id: product?.id || null, watch_model: str(b.watch_model, { max: 200 }) || product?.title || null,
+    serial_ref: str(b.serial_ref, { max: 120 }) || product?.serial_ref || null, actor,
+  };
+  // Náhled: stejné výpočty a kontroly jako při vystavení, ale nic se neuloží (bez čísla, bez zabrání hodinek)
+  if (preview) {
+    const { items, total } = invoiceTotals(lines);
+    if (!items.length) throw new HttpError('Faktura musí mít alespoň jednu položku');
+    if (total <= 0) throw new HttpError('Celková částka musí být kladná');
+    return { inv: { ...fields, items: JSON.stringify(items), total, number: '(přidělí se při vystavení)', issued_at: now(), variable_symbol: '', pay_currency: 'CZK', ...bankDetails() }, related: advance ? { number: advance.number } : null };
+  }
   // Ochrana proti omylem vystavené duplicitě (stejný odběratel a částka do 30 dnů, nebo druhá faktura k téže zakázce)
   if (!(b.allow_duplicate === true || b.allow_duplicate === 'true')) {
     const total = invoiceTotals(lines).total;
@@ -124,25 +147,10 @@ export async function issueManual(env, b, actor, origin = SITE.origin) {
     if (!r?.meta?.changes) throw new HttpError(`${product.title} mezitím rezervovala objednávka z e-shopu nebo už jsou prodané`, 409);
     claimed = prev;
   }
-  const paid = Boolean(b.paid);
-  const dueDays = int(b.due_days, { max: 90 }) ?? 14;
-  const taxable = ymd(b.taxable_date);
-  const buyerEmail = b.buyer_email ? vEmail(b.buyer_email) : null;
   const release = async () => { if (product && claimed) await env.DB.prepare('UPDATE products SET status = ?, sold_at = NULL, updated_at = ? WHERE id = ?').bind(claimed, now(), product.id).run(); };
   let inv;
   try {
-  inv = await createInvoice(env, {
-    kind, channel, source: b.commission_id ? 'commission' : 'manual', commission_id: b.commission_id || null,
-    buyer_name: str(b.buyer_name, { max: 200, required: true, name: 'odběratele' }), buyer_company: str(b.buyer_company, { max: 200 }),
-    buyer_ico: str(b.buyer_ico, { max: 20 }), buyer_dic: str(b.buyer_dic, { max: 20 }), buyer_street: str(b.buyer_street, { max: 200 }),
-    buyer_city: str(b.buyer_city, { max: 120 }), buyer_zip: str(b.buyer_zip, { max: 12 }), buyer_email: buyerEmail,
-    items: lines, payment_method: oneOf(b.payment_method || 'bank_transfer', Object.keys(INVOICE_PAY), 'způsob úhrady'),
-    taxable_date: taxable ? `${taxable}T12:00:00.000Z` : now(), paid_at: paid ? now() : null,
-    due_date: paid ? null : new Date(Date.now() + dueDays * 86400000).toISOString(), note: str(b.note, { max: 500 }),
-    advance_deducted: (advance ? advance.total : 0) + cashDeposit, related_invoice_id: advance?.id || null,
-    product_id: product?.id || null, watch_model: str(b.watch_model, { max: 200 }) || product?.title || null,
-    serial_ref: str(b.serial_ref, { max: 120 }) || product?.serial_ref || null, actor,
-  });
+  inv = await createInvoice(env, fields);
   } catch (e) { await release(); throw e; }
   if (inv.total - inv.advance_deducted < 0) throw new HttpError('Záloha je vyšší než faktura');
   await upsertCustomer(env, inv);

@@ -27,6 +27,7 @@ import { gateway as payGateway, isLive as payLive } from '../../../server/paymen
 import * as SHIP from '../../../server/shipping.js';
 import { setShippingCost } from '../../../server/orders.js';
 import { html } from '../../../server/http.js';
+import { renderInvoicePage } from '../../../server/invoice-page.js';
 
 const STATUSES = ['draft', 'available', 'reserved', 'sold', 'in_progress', 'archived'];
 const PRODUCT_TEXT = { title: 200, brand: 80, model: 120, reference: 80, year: 20, movement: 120, case_material: 120, crystal: 80, water_resistance: 80, dial: 200, strap: 200, condition: 1000, service_done: 1000, original_parts: 1000, replaced_parts: 1000, accessories: 500, manufacturer_info: 500, safety_info: 500, hallmark: 200, plating: 200, authenticity_note: 1000, serial_ref: 120, description_cs: 5000, description_en: 5000, seo_title: 80, seo_description: 200 };
@@ -627,6 +628,13 @@ route('POST', 'invoice-drafts', async ({ env, body, user }) => {
 route('DELETE', 'invoice-drafts/:id', async ({ env, params }) => {
   await env.DB.prepare('DELETE FROM invoice_drafts WHERE id = ?').bind(params.id).run();
   return json({ ok: true });
+});
+// Náhled dokladu z rozpracovaného formuláře – nic se neuloží, číslo se nepřidělí
+route('POST', 'invoices/preview', async ({ env, body, user }) => {
+  let commission = null;
+  if (body.commission_id) commission = await env.DB.prepare('SELECT number FROM commissions WHERE id = ?').bind(body.commission_id).first();
+  const { inv, related } = await INV.issueManual(env, { ...body, channel: body.channel || (commission ? 'zakazka' : 'osobne'), note: body.note || (commission ? `Zakázka ${commission.number}` : null) }, user.email, undefined, { preview: true });
+  return json({ html: renderInvoicePage(inv, { related, preview: true }) });
 });
 route('POST', 'invoices', async ({ env, body, user, request }) => {
   let commission = null;
