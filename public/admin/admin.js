@@ -455,6 +455,7 @@
         <div class="grid"><div class="stat"><b>${czk(e.price)}</b>cena (${src})</div><div class="stat"><b>${czk(e.paid)}</b>zaplacené náklady</div>
           <div class="stat"><b class="${e.profit < 0 ? 'neg' : ''}">${czk(e.profit)}</b>zisk před zdaněním</div><div class="stat"><b class="${e.marginPct < 0 ? 'neg' : ''}">${e.marginPct != null ? `${String(e.marginPct).replace('.', ',')} %` : '–'}</b>marže</div></div>
         <div class="card" style="margin-top:10px"><table>
+          ${e.partsCost ? `<tr><th>Z toho díly ze skladu</th><td>${czk(e.partsCost)}</td></tr>` : ''}
           <tr><th>Vlastní práce${e.rate ? ` (${czk(e.rate)}/h)` : ''}</th><td>${czk(e.ownWork)} <span class="small muted">– není výdaj</span></td></tr>
           <tr><th>Zisk po ocenění vlastní práce</th><td>${czk(e.profitAfterWork)}</td></tr>
           ${e.estimate ? `<tr><th>Odhad dalších nákladů</th><td>${czk(e.estimate)}</td></tr><tr><th>Očekávaný zisk po odhadech</th><td>${czk(e.expectedProfit)}</td></tr>` : ''}
@@ -476,6 +477,8 @@
           ${c.estimate ? ' <span class="chip">odhad</span>' : c.own ? ' <span class="chip">vlastní práce</span>' : ''}</span>
           <b>${costAmount(c)}</b><button class="btn ghost sm" data-cmenu="${c.id}" aria-label="Možnosti nákladu">⋯</button></div>
           <div class="row cmenu" data-for="${c.id}" hidden>${c.estimate ? `<button class="btn sm" data-real="${c.id}" data-amt="${c.amount_czk}">Změnit na skutečný</button>` : ''}<button class="btn ghost sm" data-unassign="${c.id}">Odebrat ze zakázky</button><button class="btn danger sm" data-cdel="${c.id}">Smazat</button></div>`).join('') || '<p class="small muted">Zatím žádné náklady.</p>'}</div>
+        ${e.parts.length ? `<h2 style="font-size:17px;margin-top:16px">Díly ze skladu</h2><div class="list">${e.parts.map((x) => `<div class="item"><span class="grow"><span class="t" style="display:block">${esc(x.title)}</span>
+          <span class="small muted">${esc(PK[x.kind] || '')}${x.original ? ' · originál' : ''} · ${x.qty} ks × ${czk(x.unit_cost_czk)}</span></span><b>${czk((x.unit_cost_czk || 0) * (x.qty || 1))}</b><button class="btn ghost sm" data-pret="${x.id}" aria-label="Vrátit na sklad">↩ Sklad</button></div>`).join('')}</div>` : ''}
         <details style="margin-top:12px" id="addc"><summary>+ Přidat náklad</summary>
           <div class="filters" id="cq">${JOB_COSTS.map(([key, t]) => `<button type="button" data-q="${key}" aria-pressed="false">${t}</button>`).join('')}</div>
           <form id="jcf">
@@ -489,7 +492,20 @@
             <p class="small muted" data-x="own">Vlastní práci zadejte v hodinách (ocení se sazbou z Ekonomiky) nebo přímo v Kč. Nezapočítává se do zaplacených výdajů.</p>
             <p class="small muted" data-x="est">Odhad se nepočítá do skutečných nákladů ani zisku. Až výdaj nastane, změňte ho na skutečný (⋯).</p>
             <button class="btn primary block">Přidat náklad</button></form></details>
-        <details id="assign"><summary>Přiřadit už zapsaný výdaj</summary><div id="free"><p class="small muted">Načítám…</p></div></details>`;
+        <details id="assign"><summary>Přiřadit už zapsaný výdaj</summary><div id="free"><p class="small muted">Načítám…</p></div></details>
+        <details id="usep"><summary>Použít díl ze skladu</summary><div id="stock"><p class="small muted">Načítám…</p></div></details>`;
+      ebox.querySelectorAll('[data-pret]').forEach((b) => b.addEventListener('click', () => run(async () => { if (!confirm('Vrátit díl zpět na sklad?')) return; await api('DELETE', `commissions/${id}/parts/${b.dataset.pret}`); toast('Díl vrácen na sklad'); await econ(); })));
+      ebox.querySelector('#usep').addEventListener('toggle', (ev) => { if (!ev.target.open) return; run(async () => {
+        const { parts } = await api('GET', 'parts');
+        const st = parts.filter((x) => x.status === 'skladem' && x.qty > 0);
+        const sb = ebox.querySelector('#stock');
+        sb.innerHTML = st.length ? `<p class="small muted">Cena dílu se započítá do nákladů zakázky. Při použití části zásoby zbytek zůstane skladem.</p><div class="list">${st.map((x) => `<div class="item"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${esc(PK[x.kind] || '')}${x.original ? ' · originál' : ''} · skladem ${x.qty} ks · ${czk(x.unit_cost_czk)}/ks</span></span><button class="btn sm" data-use="${x.id}" data-qty="${x.qty}">Použít</button></div>`).join('')}</div>` : '<p class="small muted">Sklad dílů je prázdný. Díly přidáte v <a href="#/dily">Skladu dílů</a>.</p>';
+        sb.querySelectorAll('[data-use]').forEach((b) => b.addEventListener('click', () => run(async () => {
+          let qty = 1;
+          if (+b.dataset.qty > 1) { const v = prompt(`Kolik kusů použít? (skladem ${b.dataset.qty})`, '1'); if (v == null) return; qty = v; }
+          await api('POST', `commissions/${id}/parts`, { part_id: b.dataset.use, qty }); toast('Díl použit v zakázce'); await econ();
+        })));
+      }); });
       // typ nákladu
       const jf = ebox.querySelector('#jcf');
       let type = 'paid';
@@ -739,7 +755,7 @@
     const value = stock.reduce((a, x) => a + (x.unit_cost_czk || 0) * (x.qty || 0), 0);
     app.innerHTML = `<h1>Sklad dílů</h1><p class="small muted">Skladem ${stock.length} položek v hodnotě ${czk(value)}.</p>
       <details ${edit ? 'open' : ''}><summary>${edit ? `Upravit: ${esc(edit.title)}` : 'Přidat díl'}</summary>${partForm(edit, products)}</details>
-      <div class="list" style="margin-top:12px">${parts.map((x) => `<a class="item" href="#/dily?e=${x.id}"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${esc(PK[x.kind])}${x.original ? ' · originál' : ''} · ${x.qty} ks · ${czk(x.unit_cost_czk)}/ks · ${esc({ skladem: 'skladem', pouzito: 'použito', prodano: 'prodáno', vyrazeno: 'vyřazeno' }[x.status])}${x.product_title ? ` · ${esc(x.product_title)}` : ''}</span></span></a>`).join('') || '<p class="muted">Zatím žádné díly.</p>'}</div>`;
+      <div class="list" style="margin-top:12px">${parts.map((x) => `<a class="item" href="#/dily?e=${x.id}"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${esc(PK[x.kind])}${x.original ? ' · originál' : ''} · ${x.qty} ks · ${czk(x.unit_cost_czk)}/ks · ${esc({ skladem: 'skladem', pouzito: 'použito', prodano: 'prodáno', vyrazeno: 'vyřazeno' }[x.status])}${x.product_title ? ` · ${esc(x.product_title)}` : ''}${x.commission_number ? ` · zakázka ${esc(x.commission_number)}` : ''}</span></span></a>`).join('') || '<p class="muted">Zatím žádné díly.</p>'}</div>`;
     app.querySelector('#pf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => {
       const d = formData(ev.target); d.original = ev.target.original.checked;
       if (edit) await api('PUT', `parts/${edit.id}`, d); else await api('POST', 'parts', d);

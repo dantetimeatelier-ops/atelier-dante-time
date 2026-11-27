@@ -75,6 +75,38 @@ export async function updateCost(env, id, b, actor) {
   await audit(env, actor, 'naklad_upraven', 'cost', id, d);
 }
 
+/**
+ * Použití dílu ze skladu v zakázce. Při použití části zásoby se položka rozdělí (zbytek zůstane skladem),
+ * takže celková hodnota nákupu se nemění a nic se nezapočítá dvakrát.
+ */
+export async function usePartInCommission(env, commissionId, partId, qty, actor) {
+  if (!(await env.DB.prepare('SELECT 1 FROM commissions WHERE id = ?').bind(commissionId).first())) throw new HttpError('Zakázka nenalezena', 404);
+  const p = await env.DB.prepare('SELECT * FROM parts WHERE id = ?').bind(partId).first();
+  if (!p) throw new HttpError('Díl nenalezen', 404);
+  if (p.status !== 'skladem' || p.product_id || p.commission_id) throw new HttpError(`${p.title} není skladem`);
+  const n = int(qty ?? 1, { min: 1, max: 10000, nullable: false, name: 'počet kusů' });
+  if (n > (p.qty || 0)) throw new HttpError(`Skladem je jen ${p.qty} ks`);
+  const t = new Date().toISOString();
+  let id = partId;
+  if (n === p.qty) {
+    await env.DB.prepare("UPDATE parts SET status = 'pouzito', commission_id = ?, updated_at = ? WHERE id = ? AND status = 'skladem'").bind(commissionId, t, partId).run();
+  } else {
+    id = randomId();
+    await env.DB.prepare('UPDATE parts SET qty = qty - ?, updated_at = ? WHERE id = ?').bind(n, t, partId).run();
+    await env.DB.prepare(`INSERT INTO parts (id, kind, title, brand, caliber, original, condition, qty, unit_cost_czk, purchase_date, supplier, status, commission_id, note)
+      SELECT ?, kind, title, brand, caliber, original, condition, ?, unit_cost_czk, purchase_date, supplier, 'pouzito', ?, note FROM parts WHERE id = ?`).bind(id, n, commissionId, partId).run();
+  }
+  await audit(env, actor, 'dil_pouzit_v_zakazce', 'part', id, { commission: commissionId, qty: n, from: partId });
+  return id;
+}
+
+/** Vrácení dílu ze zakázky zpět na sklad. */
+export async function returnPartFromCommission(env, commissionId, partId, actor) {
+  const r = await env.DB.prepare("UPDATE parts SET status = 'skladem', commission_id = NULL, updated_at = ? WHERE id = ? AND commission_id = ?").bind(new Date().toISOString(), partId, commissionId).run();
+  if (r?.meta && !r.meta.changes) throw new HttpError('Díl u této zakázky není', 404);
+  await audit(env, actor, 'dil_vracen_na_sklad', 'part', partId, { commission: commissionId });
+}
+
 /** Prodej hodinek ruční fakturou: tržba = položka hodinek (bez dopravy), snížená o dobropisy. */
 async function invoiceSale(env, productId) {
   const inv = await env.DB.prepare("SELECT id, number, items, issued_at FROM invoices WHERE product_id = ? AND kind = 'faktura' AND cancelled_at IS NULL AND order_id IS NULL ORDER BY issued_at DESC LIMIT 1").bind(productId).first();
@@ -141,6 +173,10 @@ export async function commissionEconomics(env, commissionId) {
     paid += v.paid; own += v.own; est += v.est;
     if (v.paid) byCat[c.category] = (byCat[c.category] || 0) + v.paid;
   }
+  // Díly ze skladu použité v zakázce (cena se počítá při použití, nákup na sklad je v měsíčních nákladech)
+  const { results: parts } = await env.DB.prepare("SELECT * FROM parts WHERE commission_id = ? AND status IN ('pouzito','prodano') ORDER BY updated_at").bind(commissionId).all();
+  const partsCost = parts.reduce((a, x) => a + (x.unit_cost_czk || 0) * (x.qty || 1), 0);
+  paid += partsCost;
   const { results: invoices } = await env.DB.prepare(`SELECT id, number, public_token, kind, total, advance_deducted, related_invoice_id, issued_at, due_date, paid_at, sent_at, cancelled_at, buyer_email, mode,
       (SELECT 1 FROM approvals a WHERE a.kind = 'faktura_odeslani' AND a.payload = invoices.id AND a.status = 'ceka') AS awaiting_send
     FROM invoices WHERE commission_id = ?${invMode(env)} ORDER BY issued_at`).bind(commissionId).all();
@@ -162,7 +198,7 @@ export async function commissionEconomics(env, commissionId) {
   const today = new Date().toISOString();
   return {
     commission: { id: k.id, number: k.number, status: k.status },
-    costs, byCat, paid, ownWork: own, estimate: est, rate,
+    costs, byCat, parts, partsCost, paid, ownWork: own, estimate: est, rate,
     price, priceSource, invoiced, invoices, hasFinal,
     advancesPaid, advancesOpen: advances.filter((i) => !i.paid_at).reduce((a, i) => a + i.total, 0),
     depositCash, depositCashLeft: Math.max(0, depositCash - cashUsed), paidInvoices, received,

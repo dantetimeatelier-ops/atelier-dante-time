@@ -4,6 +4,16 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/dily-ze-skladu-v-zakazce
+**Hotovo:** díly ze skladu lze použít v zakázce. Migrace 0023: `parts.commission_id`. `FIN.usePartInCommission`
+(při použití části zásoby se položka rozdělí, zbytek zůstane skladem), `returnPartFromCommission`; cena použitých dílů
+je součástí zaplacených nákladů zakázky (`partsCost`). Měsíční náklady dál počítají nákup dílu k datu nákupu → bez
+dvojího započtení. Díl patří k hodinkám NEBO k zakázce (PUT parts/:id při `product_id` nebo stavu skladem zakázku smaže).
+**Další krok:** –
+**Pozor na:** –
+
+---
+
 ## 2026-11-27 – Claude – claude/zakazky-ekonomika-faktury-fotky
 **Hotovo:** zakázky propojené s ekonomikou a fakturací (zadání majitele 27. 11.). Migrace 0022 (jen přidává sloupce):
 `costs.estimate` (odhad – nepočítá se), `costs.own_work` (vlastní práce – není výdaj), `costs.part_kind`,
