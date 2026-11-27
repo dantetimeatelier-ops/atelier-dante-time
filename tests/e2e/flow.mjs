@@ -122,7 +122,7 @@ try {
   await shop.locator('[data-cart-items] .cart-item').waitFor();
   // Omega za 38 900 Kč: Zásilkovna ani Balíkovna ji na plnou hodnotu nepojistí → nabídne se jen pojištěná přeprava a osobní předání
   assert.equal(await shop.getByLabel(/Zásilkovna – výdejní místo/).count(), 0);
-  await shop.getByLabel(/Pojištěná přeprava na plnou hodnotu/).check();
+  await shop.getByLabel(/Cenná zásilka, pojištěno na plnou hodnotu/).check();
   await shop.getByLabel('Jméno a příjmení').fill('Jana Testovací');
   await shop.getByLabel('E-mail').fill('jana@example.com');
   await shop.getByLabel(/Telefon/).fill('+420 600 000 000');
