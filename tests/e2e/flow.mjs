@@ -508,6 +508,7 @@ try {
     return out;
   }, kid);
   assert.equal((await api('GET', 'commissions')).j.commissions.find((x) => x.id === kid).cover_photo_id, ph[1], 'bez volby je hlavní fotka „po“');
+  await page.goto(`${BASE}/admin/#/zakazky`); // jiná adresa → detail zakázky se znovu načte i s novými fotkami
   await page.goto(`${BASE}/admin/#/zakazky/${kid}`);
   await page.locator('#kphotos .photo').nth(1).waitFor();
   await page.locator('#kphotos .photo .tag', { hasText: 'Před' }).waitFor();
