@@ -251,7 +251,7 @@ try {
   await shop.getByRole('button', { name: 'Vybrat Balíkovnu na mapě' }).click();
   await shop.getByText('Balíkovna Praha 7, Dukelských hrdinů 1, 17000 Praha').waitFor();
   await shop.getByLabel(/Dobírka/).check();
-  await shop.getByText('13 029 Kč').waitFor(); // 12 900 + 89 + 40
+  await shop.locator('[data-summary]').getByText('13 029 Kč').waitFor(); // 12 900 + 89 + 40
   for (const [l, v] of [['Jméno a příjmení', 'Karel Dobírka'], ['E-mail', 'karel@example.com'], [/Telefon/, '+420 600 000 002'], ['Ulice a číslo', 'Testovací 9'], ['Město', 'Praha'], ['PSČ', '17000']]) await shop.getByLabel(l).fill(v);
   await shop.locator('input[name=terms]').check();
   await shop.getByRole('button', { name: 'Objednávka zavazující k platbě' }).click();
