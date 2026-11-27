@@ -1,6 +1,7 @@
 // DT Logistics: stav zásilek Zásilkovny přes jejich REST/XML API (metoda packetStatus).
 // Potřebuje tajný klíč PACKETA_API_PASSWORD (API heslo z klientské sekce) – nikdy nejde do prohlížeče.
 import { HttpError } from './http.js';
+import { cpostStatus } from './cpost.js';
 
 const API = 'https://www.zasilkovna.cz/api/rest';
 
@@ -90,7 +91,8 @@ export async function packetStatus(env, tracking, { fetcher = fetch } = {}) {
 
 // Zjistí stav jedné objednávky a uloží ho
 export async function refreshOrder(env, order, deps) {
-  const s = await packetStatus(env, order.tracking_number, deps);
+  if (!order.shipping_method) order = { ...order, ...(await env.DB.prepare('SELECT shipping_method FROM orders WHERE id = ?').bind(order.id).first()) };
+  const s = order.shipping_method === 'balikovna' ? await cpostStatus(order.tracking_number, deps) : await packetStatus(env, order.tracking_number, deps);
   await env.DB.prepare('UPDATE orders SET tracking_code = ?, tracking_status = ?, tracking_at = ?, tracking_checked_at = ? WHERE id = ?')
     .bind(s.code, s.text, s.at, new Date().toISOString(), order.id).run();
   return s;
@@ -98,8 +100,9 @@ export async function refreshOrder(env, order, deps) {
 
 // Denní běh DT Logistics: odeslané zásilky Zásilkovny, které ještě nejsou doručené ani vrácené
 export async function refreshAll(env, deps) {
-  if (!env.PACKETA_API_PASSWORD) return null;
-  const { results } = await env.DB.prepare("SELECT id, number, tracking_number, tracking_code FROM orders WHERE status = 'shipped' AND shipping_method = 'zasilkovna' AND tracking_number IS NOT NULL AND tracking_number != '' AND (tracking_code IS NULL OR tracking_code NOT IN (7, 10, 11, 12)) ORDER BY shipped_at LIMIT 40").all();
+  // Zásilkovna jen s API heslem, Balíkovna (Česká pošta) vždy – její sledování je veřejné
+  const methods = env.PACKETA_API_PASSWORD ? "('zasilkovna','balikovna')" : "('balikovna')";
+  const { results } = await env.DB.prepare(`SELECT id, number, shipping_method, tracking_number, tracking_code FROM orders WHERE status = 'shipped' AND shipping_method IN ${methods} AND tracking_number IS NOT NULL AND tracking_number != '' AND (tracking_code IS NULL OR tracking_code NOT IN (7, 10, 11, 12)) ORDER BY shipped_at LIMIT 40`).all();
   const out = { checked: 0, delivered: [], problems: [], errors: 0 };
   for (const o of results) {
     try {

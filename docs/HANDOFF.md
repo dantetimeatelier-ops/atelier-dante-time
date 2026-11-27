@@ -4,6 +4,13 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/sledovani-balikovna
+**Hotovo:** sledování zásilek Balíkovny přes veřejné rozhraní České pošty (`server/cpost.js`, bez klíče). Stav z textu poslední
+události převeden na stejné kódy jako Zásilkovna; denní běh DT Logistics i tlačítko „Zjistit stav“ fungují pro obě dopravy.
+**Pozor na:** rozhraní České pošty není oficiálně dokumentované – při změně formátu se jen zobrazí chyba, nic jiného se nerozbije.
+
+---
+
 ## 2026-11-27 – Claude – claude/os-sales-finance-director
 **Hotovo:** podle zadání Dante Time OS oživeny role **DT Sales** a **DT Finance** (migrace 0020, `salesCheck`, `financeCheck`
 v `server/os.js`, denně 8:00, bez AI). Sales: poptávky bez odpovědi 2+ dny (bez jmen), nabídky bez reakce 7+ dní, zakázky
