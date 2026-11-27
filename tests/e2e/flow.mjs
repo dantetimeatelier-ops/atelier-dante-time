@@ -304,12 +304,17 @@ try {
   // Doklad u nákladu: uložen, jde otevřít jen po přihlášení
   await page.goto(`${BASE}/admin/#/doklady`);
   await page.getByRole('heading', { name: 'Nákupy a prodeje' }).waitFor();
-  const docLink = page.locator('.item', { hasText: 'Nákup hodinek – test' }).getByRole('link', { name: 'doklad' });
-  const docHref = await docLink.getAttribute('href');
+  // Řádek nákupu otevře detail výdaje s přílohami
+  await page.locator('a.item', { hasText: 'Nákup hodinek – test' }).first().click();
+  await page.getByRole('heading', { name: 'Nákup hodinek – test' }).waitFor();
+  await page.locator('#docs .item').first().waitFor();
+  const docHref = `/api/admin/documents/${await page.locator('#docs [data-view]').first().getAttribute('data-view')}/file`;
   const docRes = await page.evaluate(async (u) => { const r = await fetch(u); return { s: r.status, t: r.headers.get('content-type'), n: (await r.arrayBuffer()).byteLength }; }, `${BASE}${docHref}`);
   assert.equal(docRes.s, 200); assert.match(docRes.t, /^image\//); assert.ok(docRes.n > 1000);
   assert.equal((await fetch(`${BASE}${docHref}`)).status, 401, 'doklad nesmí být dostupný bez přihlášení');
   step('doklad: nahrán s nákladem, chráněn přihlášením');
+  await page.goto(`${BASE}/admin/#/doklady`);
+  await page.getByRole('heading', { name: 'Nákupy a prodeje' }).waitFor();
 
   // Nákup ze screenshotu (bez AI): nahrát → ke kontrole → doplnit EUR s kurzem → naskladnit jako díl
   await page.locator('#up-nakup').setInputFiles(path.join(ROOT, 'assets/originals/service-watch-box-2.jpg'));
@@ -551,6 +556,53 @@ try {
   await page.getByRole('heading', { name: 'Díly ze skladu' }).waitFor({ state: 'detached' });
   assert.equal((await api('GET', `commissions/${kid}/economics`)).j.partsCost, 0);
   step('díly ze skladu: použití části zásoby v zakázce, náklad a zisk, vrácení na sklad');
+
+  // Jednotná správa výdajů: detail, úprava s přepočtem, více dokladů, nahrazení, stažení, přiřazení, hledání, smazání
+  const vy = await api('POST', 'costs', { commission_id: kid, category: 'dil', part_kind: 'sklo', description: 'Sklo safírové e2e', amount_czk: 800 });
+  assert.equal(vy.s, 201, JSON.stringify(vy.j));
+  const vid = vy.j.id;
+  const paid0 = (await api('GET', `commissions/${kid}/economics`)).j.paid;
+  await page.goto(`${BASE}/admin/#/zakazky`);
+  await page.goto(`${BASE}/admin/#/zakazky/${kid}`);
+  await page.locator('#kecon a', { hasText: 'Sklo safírové e2e' }).click();
+  await page.getByRole('heading', { name: 'Sklo safírové e2e' }).waitFor();
+  const pdfFile = (t) => ({ name: `${t}.pdf`, mimeType: 'application/pdf', buffer: Buffer.from(`%PDF-1.4\n% ${t} ${Date.now()}\n`) });
+  await page.setInputFiles('#dadd', [pdfFile('faktura-skla'), pdfFile('uctenka-skla')]);
+  await page.locator('#docs .item', { hasText: 'uctenka-skla.pdf' }).waitFor();
+  let vd = (await api('GET', `costs/${vid}`)).j;
+  assert.deepEqual(vd.docs.map((x) => x.filename).sort(), ['faktura-skla.pdf', 'uctenka-skla.pdf']);
+  const firstDoc = vd.docs.find((x) => x.filename === 'faktura-skla.pdf').id;
+  const disp = await page.evaluate(async (d) => (await fetch(`/api/admin/documents/${d}/file?download=1`)).headers.get('content-disposition'), firstDoc);
+  assert.match(disp, /^attachment; filename="faktura-skla\.pdf"/);
+  await page.locator('#cedit [name=amount_czk]').fill('950');
+  await page.locator('#cedit [name=note]').fill('dodáno s těsněním');
+  await page.getByRole('button', { name: 'Uložit změny' }).click();
+  await page.locator('.stat b', { hasText: /950\s*Kč/ }).waitFor();
+  vd = (await api('GET', `costs/${vid}`)).j;
+  assert.deepEqual([vd.cost.amount_czk, vd.cost.note], [950, 'dodáno s těsněním']);
+  assert.ok(vd.history.some((h) => h.action === 'naklad_upraven' && /"z":800,"na":950/.test(h.details)));
+  assert.equal((await api('GET', `commissions/${kid}/economics`)).j.paid, paid0 + 150, 'zisk a náklady zakázky přepočítané');
+  await page.setInputFiles(`[data-repl="${firstDoc}"]`, pdfFile('faktura-skla-oprava'));
+  await page.locator('#docs .item', { hasText: 'faktura-skla-oprava.pdf' }).waitFor();
+  vd = (await api('GET', `costs/${vid}`)).j;
+  assert.deepEqual(vd.docs.map((x) => x.filename).sort(), ['faktura-skla-oprava.pdf', 'uctenka-skla.pdf'], 'nahrazený doklad je pryč');
+  await page.locator('#docs .item', { hasText: 'uctenka-skla.pdf' }).locator('[data-dremove]').click();
+  await page.locator('#docs .item', { hasText: 'uctenka-skla.pdf' }).waitFor({ state: 'detached' });
+  await page.locator('#cassign [data-tg=provoz]').click();
+  await page.getByRole('button', { name: 'Uložit přiřazení' }).click();
+  await page.locator('.stat', { hasText: 'společný náklad' }).waitFor();
+  assert.equal((await api('GET', `costs/${vid}`)).j.cost.commission_id, null);
+  assert.equal((await api('GET', `commissions/${kid}/economics`)).j.paid, paid0 - 800, 'odebráno ze zakázky, výdaj zůstal v evidenci');
+  await page.goto(`${BASE}/admin/#/naklady?q=${encodeURIComponent('Sklo safírové e2e')}`);
+  await page.locator('a.item', { hasText: 'Sklo safírové e2e' }).click();
+  await page.getByRole('heading', { name: 'Sklo safírové e2e' }).waitFor();
+  await page.getByRole('button', { name: 'Trvale smazat výdaj' }).click(); // obě potvrzení odsouhlasena → i doklady
+  await page.getByRole('heading', { name: 'Výdaje' }).waitFor();
+  assert.equal((await api('GET', `costs/${vid}`)).s, 404);
+  assert.ok(!(await api('GET', 'documents')).j.documents.some((x) => /skla/.test(x.filename || '')), 'doklady smazané spolu s výdajem');
+  const ms = (await api('GET', 'inbox')).j.sales.find((x) => x.kind === 'import');
+  if (ms) { await page.goto(`${BASE}/admin/#/prodeje/${ms.id}`); await page.getByRole('heading', { name: /^Prodej/ }).waitFor(); await page.locator('form.sform').waitFor(); }
+  step('výdaje: detail, úprava s přepočtem, více dokladů, nahrazení, stažení, přiřazení, hledání, smazání; detail prodeje');
 
   // Fotky zakázky: fáze, hlavní fotka, celá obrazovka, smazání s potvrzením, miniatura v přehledu
   const ph = await page.evaluate(async (id) => {

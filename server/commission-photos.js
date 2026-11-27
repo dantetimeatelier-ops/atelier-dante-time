@@ -92,6 +92,13 @@ export async function remove(env, id) {
   return p;
 }
 
+/** Fotky poptávky, ze které nevznikla zakázka (při smazání poptávky). Fotky zakázek zůstávají. */
+export async function removeForInquiry(env, inquiryId) {
+  const { results } = await env.DB.prepare('SELECT id, key_large, key_small FROM commission_photos WHERE inquiry_id = ? AND commission_id IS NULL').bind(inquiryId).all();
+  await removeRows(env, results);
+  return results.length;
+}
+
 // Doba uložení: fotky poptávek, ze kterých nevznikla zakázka, mizí spolu s poptávkou (po roce)
 export async function purgeOrphans(env, olderThan) {
   const { results } = await env.DB.prepare('SELECT id, key_large, key_small FROM commission_photos WHERE commission_id IS NULL AND created_at < ? AND (inquiry_id IS NULL OR inquiry_id NOT IN (SELECT id FROM inquiries)) LIMIT 50')

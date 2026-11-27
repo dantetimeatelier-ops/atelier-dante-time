@@ -33,31 +33,55 @@ export async function upload(env, form, actor) {
     .bind(id, costId, oneOf(form.get('kind') || 'uctenka', Object.keys(DOC_KINDS), 'druh dokladu'), str(f.name, { max: 200 }), mime, buf.length, hash, store.data, store.enc, str(form.get('note'), { max: 500 }), actor).run();
   for (const st of store.stmts) await st.run();
   await audit(env, actor, 'doklad_nahran', 'document', id, { cost: costId, size: buf.length });
+  if (costId) await audit(env, actor, 'priloha_pridana', 'cost', costId, { soubor: f.name || null, document: id });
   return id;
 }
 
 export async function list(env, { unassigned = false } = {}) {
+  // Bez nákladu = doklad nákupu, který zatím nepatří k žádnému výdaji ani prodeji
   const { results } = await env.DB.prepare(`SELECT d.id, d.cost_id, d.kind, d.filename, d.mime, d.size, d.note, d.created_at, c.description AS cost_description, c.amount_czk, c.cost_date
-    FROM documents d LEFT JOIN costs c ON c.id = d.cost_id ${unassigned ? 'WHERE d.cost_id IS NULL' : ''} ORDER BY d.created_at DESC LIMIT 300`).all();
+    FROM documents d LEFT JOIN costs c ON c.id = d.cost_id ${unassigned ? "WHERE d.cost_id IS NULL AND d.sale_id IS NULL AND COALESCE(d.purpose, 'nakup') = 'nakup'" : ''} ORDER BY d.created_at DESC LIMIT 300`).all();
   return results;
 }
 
 export async function assign(env, id, costId, actor) {
+  const d = await env.DB.prepare('SELECT id, cost_id, filename FROM documents WHERE id = ?').bind(id).first();
+  if (!d) throw new HttpError('Doklad nenalezen', 404);
   if (costId && !(await env.DB.prepare('SELECT id FROM costs WHERE id = ?').bind(costId).first())) throw new HttpError('Náklad nenalezen', 404);
   await env.DB.prepare('UPDATE documents SET cost_id = ? WHERE id = ?').bind(costId || null, id).run();
   await audit(env, actor, 'doklad_prirazen', 'document', id, { cost: costId });
+  if (d.cost_id && d.cost_id !== costId) await audit(env, actor, 'priloha_odebrana', 'cost', d.cost_id, { soubor: d.filename, document: id });
+  if (costId && d.cost_id !== costId) await audit(env, actor, 'priloha_pridana', 'cost', costId, { soubor: d.filename, document: id });
 }
 
-export async function file(env, id, actor) {
+/** Úprava popisu přílohy (druh dokladu, poznámka). */
+export async function update(env, id, b, actor) {
+  const d = {};
+  if ('kind' in b) d.kind = oneOf(b.kind, Object.keys(DOC_KINDS), 'druh dokladu');
+  if ('note' in b) d.note = str(b.note, { max: 500 }) || null;
+  const k = Object.keys(d);
+  if (!k.length) return;
+  const r = await env.DB.prepare(`UPDATE documents SET ${k.map((x) => `${x} = ?`).join(', ')} WHERE id = ?`).bind(...k.map((x) => d[x]), id).run();
+  if (r?.meta && !r.meta.changes) throw new HttpError('Doklad nenalezen', 404);
+  await audit(env, actor, 'doklad_upraven', 'document', id, d);
+}
+
+/** Soubor dokladu: inline (zobrazit) nebo jako stažení původního souboru. Náhled (miniatura) se do historie nezapisuje. */
+export async function file(env, id, actor, { download = false, preview = false } = {}) {
   const d = await env.DB.prepare('SELECT id, mime, filename, enc FROM documents WHERE id = ?').bind(id).first();
   if (!d) throw new HttpError('Doklad nenalezen', 404);
-  await audit(env, actor, 'doklad_zobrazen', 'document', id);
-  const name = (d.filename || `doklad-${id}`).replace(/[^\w.-]+/g, '_');
-  return new Response(await docBytes(env, d), { headers: { ...SECURITY_HEADERS, 'Content-Type': d.mime, 'Content-Disposition': `inline; filename="${name}"`, 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' } });
+  if (!preview) await audit(env, actor, download ? 'doklad_stazen' : 'doklad_zobrazen', 'document', id);
+  const ext = { 'application/pdf': '.pdf', 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' }[d.mime] || '';
+  let name = (d.filename || `doklad-${id}`).replace(/[^\w.-]+/g, '_');
+  if (ext && !name.toLowerCase().endsWith(ext) && !(ext === '.jpg' && /\.jpe?g$/i.test(name))) name += ext;
+  return new Response(await docBytes(env, d), { headers: { ...SECURITY_HEADERS, 'Content-Type': d.mime, 'Content-Disposition': `${download ? 'attachment' : 'inline'}; filename="${name}"`, 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' } });
 }
 
 export async function remove(env, id, actor) {
+  const d = await env.DB.prepare('SELECT cost_id, filename FROM documents WHERE id = ?').bind(id).first();
+  if (!d) throw new HttpError('Doklad nenalezen', 404);
   await env.DB.prepare('DELETE FROM documents WHERE id = ?').bind(id).run();
   await removeChunks(env, id);
   await audit(env, actor, 'doklad_smazan', 'document', id);
+  if (d.cost_id) await audit(env, actor, 'priloha_smazana', 'cost', d.cost_id, { soubor: d.filename, document: id });
 }
