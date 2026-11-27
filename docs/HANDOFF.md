@@ -4,6 +4,10 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/hero-tablet
+**Hotovo:** úvodní fotka na tabletech. 881–1280 px (iPad na šířku, menší notebooky): fotka jen v pravých 64 % s maskou do tmy,
+text vlevo ji nepřekrývá, nižší výška. 600–880 px (iPad na výšku, rozdělená obrazovka): široká fotka 16:9 s celou scénou
+místo úzkého mobilního výřezu. Mobil a velké obrazovky beze změny. Ověřeno snímky 390–1440 px.
 ## 2026-11-27 – Claude – claude/sledovani-balikovna
 **Hotovo:** sledování zásilek Balíkovny přes veřejné rozhraní České pošty (`server/cpost.js`, bez klíče). Stav z textu poslední
 události převeden na stejné kódy jako Zásilkovna; denní běh DT Logistics i tlačítko „Zjistit stav“ fungují pro obě dopravy.
