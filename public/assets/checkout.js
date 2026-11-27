@@ -46,7 +46,10 @@
   const submitBtn = form.querySelector('button[type=submit]');
   manual.insertAdjacentHTML('beforebegin', `<div data-zas-map hidden><a class="btn ghost" href="https://www.zasilkovna.cz/pobocky" target="_blank" rel="noopener noreferrer">${L('Vybrat Zásilkovnu na mapě', 'Choose Packeta point on the map')}</a><p class="doc-meta" style="margin-top:8px">${L('Mapa se otevře v novém okně. Název a adresu vybraného místa vložte do pole níže.', 'The map opens in a new window. Enter the chosen point name and address below.')}</p></div>`);
 
-  const radio = (name, opts, selected) => opts.map((o, n) => `<label class="choice"><input type="radio" name="${name}" value="${esc(o.id)}" ${(selected ? o.id === selected : n === 0) ? 'checked' : ''} required><span><span class="t">${esc(o.label)}</span>${o.price != null ? `<br><span class="doc-meta">${o.price === 0 ? L('zdarma', 'free') : fmt(o.price)}</span>` : ''}${o.note ? `<br><span class="doc-meta">${esc(o.note)}</span>` : ''}</span></label>`).join('');
+  // Decentní textová označení platebních metod (jen u skutečně dostupných možností)
+  const BADGE = { visa: 'Visa', mastercard: 'Mastercard', applepay: 'Apple Pay', googlepay: 'Google Pay', qr: L('QR platba', 'QR payment'), cod: L('Při převzetí', 'On delivery') };
+  const badges = (o) => (o.badges?.length ? `<span class="pay-badges">${o.badges.map((b) => `<span class="pay-badge pay-${esc(b)}">${esc(BADGE[b] || b)}</span>`).join('')}</span>` : '');
+  const radio = (name, opts, selected) => opts.map((o, n) => `<label class="choice"><input type="radio" name="${name}" value="${esc(o.id)}" ${(selected ? o.id === selected : n === 0) ? 'checked' : ''} required><span class="choice-body"><span class="choice-head"><span class="t">${esc(o.label)}</span>${o.price != null ? `<span class="choice-price">${o.price === 0 ? L('zdarma', 'free') : fmt(o.price)}</span>` : ''}</span>${badges(o)}${o.note ? `<span class="doc-meta">${esc(o.note)}</span>` : ''}</span></label>`).join('');
 
   const shippingSel = () => (config.shipping || []).find((s) => s.id === form.shipping?.value);
   const paymentSel = () => (config.payment || []).find((p) => p.id === form.payment?.value);
@@ -65,7 +68,7 @@
   function renderPayments(prevPay) {
     const ship = shippingSel();
     const eur = form.currency.value === 'EUR';
-    const opts = (config.payment || []).filter((p) => (!p.onlyWith || p.onlyWith.includes(ship?.id)) && (!eur || p.id === 'bank_transfer'));
+    const opts = (config.payment || []).filter((p) => (!p.onlyWith || p.onlyWith.includes(ship?.id)) && (p.currencies || ['CZK']).includes(eur ? 'EUR' : 'CZK'));
     $('[data-payment]').innerHTML = radio('payment', opts, opts.some((p) => p.id === (prevPay || form.payment?.value)) ? (prevPay || form.payment?.value) : null);
     update();
   }
@@ -81,6 +84,8 @@
     manual.hidden = !manualNeeded;
     manual.querySelector('input').required = Boolean(manualNeeded) && !form.pickupPointId.value;
     $('[data-zas-map]').hidden = !(s?.id === 'zasilkovna' && !config.packetaKey);
+    // Doručení na adresu: adresní pole slouží jako doručovací adresa
+    $('[data-address-legend]').textContent = s?.address ? L('Kontaktní údaje a doručovací adresa', 'Contact details and delivery address') : L('Kontaktní a fakturační údaje', 'Contact & billing details');
     const ship = s?.price ?? 0;
     const p = paymentSel();
     const cod = p?.id === 'cod' ? (p.price || 0) : 0;
@@ -88,6 +93,8 @@
     const eur = form.currency.value === 'EUR' && config.eurRate;
     $('[data-summary]').innerHTML = `<div><span>${L('Hodinky', 'Watches')}</span><span>${fmt(itemsTotal)}</span></div><div><span>${L('Doprava', 'Shipping')}</span><span>${s ? (ship === 0 ? L('zdarma', 'free') : fmt(ship)) : '–'}</span></div>${p?.id === 'cod' ? `<div><span>${L('Dobírka', 'Cash on delivery')}</span><span>${cod === 0 ? L('zdarma', 'free') : fmt(cod)}</span></div>` : ''}<div class="total"><span>${L('Celkem', 'Total')}</span><strong>${fmt(total)}</strong></div>${eur ? `<div><span>${L('K úhradě v eurech', 'To pay in euros')}</span><strong>${fmtEur(Math.ceil(total / config.eurRate) * 100)}</strong></div><p class="doc-meta">${L('Kurz', 'Rate')} ${config.eurRate} Kč/€</p>` : ''}`;
     submitBtn.disabled = !s || !p;
+    const bar = $('[data-mobile-total]');
+    if (bar) bar.textContent = eur ? `${fmtEur(Math.ceil(total / config.eurRate) * 100)}` : fmt(total);
   }
 
   form.addEventListener('change', async (e) => {
@@ -102,6 +109,7 @@
   });
   config = await getConfig(form.country.value, itemsTotal);
   renderOptions();
+  root.querySelector('[data-mobile-go]')?.addEventListener('click', () => root.querySelector('.buybox')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
 
   // Výběr výdejního místa: oficiální mapa dopravce v okně přes celou obrazovku (iframe), výsledek přijde zprávou postMessage.
   // Balíkovna = Česká pošta (b2c.cpost.cz), Zásilkovna = widget.packeta.com (vlastní okno místo jejich knihovny –
@@ -143,7 +151,9 @@
       const p = data.packetaPoint;
       if (!p) { closePicker(); return; } // zákazník mapu zavřel bez výběru
       const label = p.formatedValue || [p.name, p.street, [p.zip, p.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
-      if (p.id != null && label) choose(p.id, label);
+      // Výdejní místo partnerského dopravce v zahraničí: ID dopravce + ID jeho místa
+      const id = p.carrierId && p.carrierPickupPointId ? `c${p.carrierId}:${p.carrierPickupPointId}` : p.id;
+      if (id != null && label) choose(id, label);
     }
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePicker(); });
@@ -155,7 +165,7 @@
       return;
     }
     if (!config.packetaKey) return;
-    const q = new URLSearchParams({ apiKey: config.packetaKey, language: cs ? 'cs' : 'en', country: 'cz', appIdentity: 'atelier-dante-time' });
+    const q = new URLSearchParams({ apiKey: config.packetaKey, language: cs ? 'cs' : 'en', country: String(form.country.value || 'CZ').toLowerCase(), appIdentity: 'atelier-dante-time' });
     openPicker('zasilkovna', `${PACKETA_ORIGIN}/v6/#/?${q.toString()}`, L('Mapa výdejních míst Zásilkovny', 'Packeta pickup point map'),
       L('Vyberte výdejní místo Zásilkovny a potvrďte ho tlačítkem Vybrat', 'Choose a Packeta pickup point and confirm it with the select button'));
   });

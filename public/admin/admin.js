@@ -26,7 +26,7 @@
     inq: { nova: 'Nová', vyrizuje_se: 'Vyřizuje se', vyrizena: 'Vyřízená', spam: 'Spam' },
     wphase: { pripomenout: 'Poslat připomínku', v_okne: 'V termínu prohlídky', planovana: 'Naplánováno', zmeskana: 'Termín propásnut', hotova: 'Hotovo', zrusena: 'Zrušeno' },
     itype: { servis: 'Servis', renovace: 'Renovace', zakazkova_vyroba: 'Zakázková sestava', prestavba: 'Přestavba', jine: 'Jiný dotaz', product: 'Zájem o hodinky', general: 'Dotaz' },
-    ship: { zasilkovna: 'Zásilkovna', balikovna: 'Balíkovna', osobni: 'Osobně' },
+    ship: { zasilkovna: 'Zásilkovna', zasilkovna_adresa: 'Zásilkovna na adresu', balikovna: 'Balíkovna', osobni: 'Osobně', eu: 'Zahraničí na adresu', pojistena: 'Pojištěná přeprava' },
     pay: { bank_transfer: 'Převod', card: 'Karta', cod: 'Dobírka', cash: 'Hotově' },
   };
   const EU = [['AT', 'Rakousko'], ['BE', 'Belgie'], ['BG', 'Bulharsko'], ['HR', 'Chorvatsko'], ['CY', 'Kypr'], ['CZ', 'Česko'], ['DK', 'Dánsko'], ['EE', 'Estonsko'], ['FI', 'Finsko'], ['FR', 'Francie'], ['DE', 'Německo'], ['GR', 'Řecko'], ['HU', 'Maďarsko'], ['IE', 'Irsko'], ['IT', 'Itálie'], ['LV', 'Lotyšsko'], ['LT', 'Litva'], ['LU', 'Lucembursko'], ['MT', 'Malta'], ['NL', 'Nizozemsko'], ['PL', 'Polsko'], ['PT', 'Portugalsko'], ['RO', 'Rumunsko'], ['SK', 'Slovensko'], ['SI', 'Slovinsko'], ['ES', 'Španělsko'], ['SE', 'Švédsko']];
@@ -267,16 +267,18 @@
         <tr><th>Zákazník</th><td>${esc(o.name)}${o.company ? `<br>${esc(o.company)} (IČO ${esc(o.company_ico || '')})` : ''}</td></tr>
         <tr><th>Kontakt</th><td><a href="mailto:${esc(o.email)}">${esc(o.email)}</a><br><a href="tel:${esc(o.phone)}">${esc(o.phone)}</a></td></tr>
         <tr><th>Adresa</th><td>${esc(o.billing_street)}, ${esc(o.billing_zip)} ${esc(o.billing_city)}</td></tr>
-        ${o.tracking_number ? `<tr><th>Zásilka</th><td>${esc(o.tracking_number)}${['zasilkovna', 'balikovna'].includes(o.shipping_method) ? `<br><span id="trk">${o.tracking_status ? `${esc(o.tracking_status)}${o.tracking_at ? ` · ${date(o.tracking_at)}` : ''}` : '<span class="muted">stav zatím neověřen</span>'}</span> <button class="btn" type="button" data-trk style="min-height:36px;padding:4px 12px">Zjistit stav</button>` : ''}</td></tr>` : ''}
+        ${o.tracking_number ? `<tr><th>Zásilka</th><td>${esc(o.tracking_number)}${['zasilkovna', 'zasilkovna_adresa', 'balikovna'].includes(o.shipping_method) ? `<br><span id="trk">${o.tracking_status ? `${esc(o.tracking_status)}${o.tracking_at ? ` · ${date(o.tracking_at)}` : ''}` : '<span class="muted">stav zatím neověřen</span>'}</span> <button class="btn" type="button" data-trk style="min-height:36px;padding:4px 12px">Zjistit stav</button>` : ''}</td></tr>` : ''}
         <tr><th>Výdejní místo</th><td>${esc(o.pickup_point_name || '–')}${o.pickup_point_id ? ` (ID ${esc(o.pickup_point_id)})` : ''}</td></tr>
         ${o.customer_note ? `<tr><th>Poznámka</th><td>${esc(o.customer_note)}</td></tr>` : ''}
         <tr><th>Podmínky</th><td class="small">verze ${esc(o.terms_version)}, ${date(o.terms_accepted_at)}</td></tr>
       </table></div>
       <div class="list" id="actions">
         ${(o.status === 'awaiting_payment' && o.payment_method !== 'cod') || o.status === 'expired' ? '<button class="btn primary block" data-a="paid">✓ Platba přijata</button>' : ''}
-        ${(o.status === 'paid' || (o.status === 'awaiting_payment' && o.payment_method === 'cod')) && o.shipping_method === 'zasilkovna' && !o.tracking_number ? `<div class="card"><b>Zásilkovna</b><p class="small muted">Založí zásilku na výdejní místo zákazníka${o.payment_method === 'cod' ? ' s dobírkou' : ''}, hodnota ${czk(o.total)}. Číslo zásilky se doplní samo.</p>
-          <label>Hmotnost balíku (kg)<input id="pweight" inputmode="decimal" value="0.5"></label><button class="btn block" data-pk>Založit zásilku v Zásilkovně</button></div>` : ''}
-        ${o.tracking_number && o.shipping_method === 'zasilkovna' ? `<a class="btn block" href="/api/admin/orders/${esc(o.id)}/packeta-label" target="_blank">Štítek k tisku (PDF)</a>` : ''}
+        ${(o.status === 'paid' || (o.status === 'awaiting_payment' && o.payment_method === 'cod')) && ['zasilkovna', 'zasilkovna_adresa'].includes(o.shipping_method) && !o.tracking_number ? `<div class="card"><b>Zásilkovna</b><p class="small muted">Založí zásilku ${o.shipping_method === 'zasilkovna_adresa' ? 'na adresu zákazníka' : 'na výdejní místo zákazníka'}${o.payment_method === 'cod' ? ' s dobírkou' : ''}, hodnota ${czk(o.total)}. Číslo zásilky se doplní samo.</p>
+          <label>Hmotnost balíku (kg)<input id="pweight" inputmode="decimal" value="0.5"></label>
+          <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="pnotify" checked style="width:22px;min-height:22px"> Rovnou označit „odesláno“ a poslat zákazníkovi číslo zásilky s odkazem pro sledování</label>
+          <button class="btn block" data-pk>Založit zásilku v Zásilkovně</button></div>` : ''}
+        ${o.tracking_number && ['zasilkovna', 'zasilkovna_adresa'].includes(o.shipping_method) ? `<a class="btn block" href="/api/admin/orders/${esc(o.id)}/packeta-label" target="_blank">Štítek k tisku (PDF)</a>` : ''}
         ${o.status === 'paid' || (o.status === 'awaiting_payment' && o.payment_method === 'cod') ? `<label>Číslo zásilky (nepovinné)<input id="tracking" value="${esc(o.tracking_number || '')}"></label><button class="btn primary block" data-a="shipped">Odesláno${o.payment_method === 'cod' ? ' na dobírku' : ''} – informovat zákazníka</button>` : ''}
         ${o.status === 'shipped' && o.payment_method === 'cod' ? '<button class="btn primary block" data-a="paid">✓ Dobírka zaplacena – vystavit fakturu</button>' : ''}
         ${o.status === 'shipped' && o.payment_method !== 'cod' ? `<label>Datum převzetí zákazníkem${o.tracking_code === 7 ? `<p class="small">Zásilkovna hlásí doručení${o.tracking_at ? ` ${date(o.tracking_at)}` : ''} – potvrďte převzetí.</p>` : ''}<input id="delivered" type="date" value="${(o.tracking_code === 7 && o.tracking_at ? new Date(o.tracking_at) : new Date()).toISOString().slice(0, 10)}" max="${new Date().toISOString().slice(0, 10)}"></label><button class="btn block" data-a="delivered">Převzato zákazníkem – dokončit</button>` : ''}
@@ -287,7 +289,7 @@
       <h2>Interní poznámka</h2><form id="nf"><textarea name="note">${esc(o.internal_note)}</textarea><button class="btn block">Uložit poznámku</button></form>`;
     app.querySelector('[data-pk]')?.addEventListener('click', (e) => run(async () => {
       const b = e.currentTarget; if (!confirm('Založit zásilku v Zásilkovně?')) return; b.disabled = true;
-      try { const r = await api('POST', `orders/${id}/packeta`, { weight: app.querySelector('#pweight').value }); toast(`Zásilka ${r.tracking} založena`); await views['objednavky/:id']({ id }); } finally { b.disabled = false; }
+      try { const r = await api('POST', `orders/${id}/packeta`, { weight: app.querySelector('#pweight').value, notify: app.querySelector('#pnotify').checked }); toast(`Zásilka ${r.tracking} založena${r.shipped ? ' – zákazník dostal číslo zásilky' : ''}`); await views['objednavky/:id']({ id }); } finally { b.disabled = false; }
     }));
     app.querySelector('[data-trk]')?.addEventListener('click', (e) => run(async () => {
       const b = e.currentTarget; b.disabled = true;
@@ -1075,6 +1077,8 @@
     const { settings: s, integrations: i } = await api('GET', 'settings');
     let eu = {}; try { eu = JSON.parse(s.shipping_eu_json || '{}'); } catch { eu = {}; }
     let euIns = {}; try { euIns = JSON.parse(s.shipping_eu_insured_json || '{}'); } catch { euIns = {}; }
+    const pj = (k) => { try { return JSON.parse(s[k] || '{}'); } catch { return {}; } };
+    const pp = pj('shipping_packeta_pickup_json'); const ph = pj('shipping_packeta_home_json'); const pc = pj('packeta_home_carriers_json');
     const yes = (v) => (v ? '<span class="chip available">aktivní</span>' : '<span class="chip">neaktivní</span>');
     app.innerHTML = `<h1>Nastavení</h1>
       <form id="setf" class="card"><h2 style="margin-top:0">Doprava</h2>
@@ -1089,7 +1093,12 @@
         <div class="grid"><label>Cena pojištěné přepravy v ČR (Kč)<input name="insured_price_czk" inputmode="numeric" value="${esc(s.insured_price_czk)}"></label><label>Cena pojištěné přepravy do EU (Kč)<input name="insured_eu_price_czk" inputmode="numeric" value="${esc(s.insured_eu_price_czk)}"></label></div>
         <h2>Platby v eurech</h2>
         <label>Kurz CZK za 1 EUR (prázdné = platba v EUR se nenabízí)<input name="eur_rate" inputmode="decimal" value="${esc(s.eur_rate)}"></label>
-        <details><summary>Doprava do zemí EU – cena v Kč (prázdné = do země běžně nedoručujeme)</summary>
+        <details open><summary>Zásilkovna / Packeta po EU – cena v Kč (prázdné = nenabízet)</summary>
+          <p class="small muted">Výdejní místo v zahraničí se zákazníkům ukáže jen s mapou Zásilkovny (API klíč). Doručení na adresu i v ČR. Dopravce pro adresu se vybere sám podle seznamu Zásilkovny; vlastní ID dopravce vyplňte jen výjimečně.</p>
+          <table class="small" style="margin-top:6px"><tr><th>Země</th><th>Výdejní místo</th><th>Na adresu</th><th>ID dopravce</th></tr>${EU.map(([c, n]) => `<tr><td>${n}</td><td>${c === 'CZ' ? '<span class="muted">viz výše</span>' : `<input aria-label="${n} – výdejní místo" data-pp="${c}" inputmode="numeric" value="${esc(pp[c] ?? '')}">`}</td><td><input aria-label="${n} – na adresu" data-ph="${c}" inputmode="numeric" value="${esc(ph[c] ?? '')}"></td><td><input aria-label="${n} – ID dopravce" data-pc="${c}" inputmode="numeric" value="${esc(pc[c] ?? '')}" placeholder="auto"></td></tr>`).join('')}</table>
+        </details>
+        <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="ship_autonotify" ${s.ship_autonotify === '1' ? 'checked' : ''} style="width:22px;min-height:22px"> Po založení zásilky rovnou poslat zákazníkovi číslo zásilky</label>
+        <details><summary>Jiný dopravce do zemí EU – cena v Kč (použije se, jen když pro zemi není Packeta na adresu)</summary>
           <p class="small muted">Běžná = doprava na adresu. Pojištěná = pro hodinky nad hranicí výše; prázdné = použije se společná cena pojištěné přepravy do EU.</p>
           <table class="small" style="margin-top:6px"><tr><th>Země</th><th>Běžná</th><th>Pojištěná</th></tr>${EU.filter((c) => c[0] !== 'CZ').map(([c, n]) => `<tr><td>${n}</td><td><input aria-label="${n} – běžná doprava" data-eu="${c}" inputmode="numeric" value="${esc(eu[c] ?? '')}"></td><td><input aria-label="${n} – pojištěná přeprava" data-eu-ins="${c}" inputmode="numeric" value="${esc(euIns[c] ?? '')}"></td></tr>`).join('')}</table>
         </details>
@@ -1105,12 +1114,14 @@
       <div class="card"><h2 style="margin-top:0">Stav integrací</h2><table>
         <tr><th>Režim e-shopu</th><td>${esc({ preview: 'náhled', test: 'testovací', live: 'ostrý' }[i.mode])}</td></tr>
         <tr><th>Platba převodem (QR)</th><td>${yes(i.iban)}</td></tr>
-        <tr><th>Platba kartou</th><td>${yes(i.card)} ${i.card && !i.cardLive ? '<span class="small muted">(testovací)</span>' : ''}</td></tr>
+        <tr><th>Platba kartou, Apple Pay, Google Pay</th><td>${yes(i.card)} ${i.cardGateway ? `<span class="small muted">${esc(i.cardGateway === 'stripe' ? 'Stripe' : 'Comgate')}${i.cardLive ? '' : ' (testovací)'}</span>` : '<span class="small muted">čeká na schválení brány</span>'}</td></tr>
         <tr><th>Výběr místa Zásilkovny</th><td>${yes(i.packeta)}</td></tr>
         <tr><th>Odesílání e-mailů</th><td>${yes(i.email)}</td></tr>
       </table><p class="small muted">Integrace se zapínají v Cloudflare podle návodu docs/INTEGRATIONS.md. Ostrý režim a ostré platby jen po vašem rozhodnutí.</p></div>`;
     app.querySelector('#setf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
-      const d = formData(e.target); d.shipping_osobni_enabled = e.target.shipping_osobni_enabled.checked; d.cod_enabled = e.target.cod_enabled.checked; d.punc_notified = e.target.punc_notified.checked; d.invoice_autosend = e.target.invoice_autosend.checked;
+      const d = formData(e.target); d.shipping_osobni_enabled = e.target.shipping_osobni_enabled.checked; d.cod_enabled = e.target.cod_enabled.checked; d.punc_notified = e.target.punc_notified.checked; d.invoice_autosend = e.target.invoice_autosend.checked; d.ship_autonotify = e.target.ship_autonotify.checked;
+      const grab = (attr) => Object.fromEntries([...e.target.querySelectorAll(`[data-${attr}]`)].map((x) => [x.dataset[attr], x.value.trim()]));
+      d.shipping_packeta_pickup_json = grab('pp'); d.shipping_packeta_home_json = grab('ph'); d.packeta_home_carriers_json = grab('pc');
       d.shipping_eu_insured_json = Object.fromEntries([...e.target.querySelectorAll('[data-eu-ins]')].map((x) => [x.dataset.euIns, x.value.trim()]));
       d.shipping_eu_json = Object.fromEntries([...e.target.querySelectorAll('[data-eu]')].map((x) => [x.dataset.eu, x.value.trim()]));
       await api('PUT', 'settings', d); toast('Uloženo');

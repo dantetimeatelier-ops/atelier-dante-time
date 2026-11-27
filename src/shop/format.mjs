@@ -32,6 +32,7 @@ export const COMMISSION_STATUS = {
 
 export const SHIPPING = {
   zasilkovna: { cs: 'Zásilkovna – výdejní místo', en: 'Packeta – pickup point' },
+  zasilkovna_adresa: { cs: 'Zásilkovna – doručení na adresu', en: 'Packeta – home delivery' },
   balikovna: { cs: 'Balíkovna – výdejní místo', en: 'Balíkovna – pickup point' },
   osobni: { cs: 'Osobní předání po předchozí domluvě', en: 'Personal handover by prior arrangement' },
   eu: { cs: 'Doprava do zahraničí na adresu', en: 'International delivery to address' },

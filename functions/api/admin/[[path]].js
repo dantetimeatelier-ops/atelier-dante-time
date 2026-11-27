@@ -22,6 +22,7 @@ import * as CPH from '../../../server/commission-photos.js';
 import { draftReply } from '../../../server/sales.js';
 import { refreshOrder, createPacket, labelPdf } from '../../../server/packeta.js';
 import { aiStatus } from '../../../server/ai.js';
+import { gateway as payGateway, isLive as payLive } from '../../../server/payments.js';
 import { html } from '../../../server/http.js';
 
 const STATUSES = ['draft', 'available', 'reserved', 'sold', 'in_progress', 'archived'];
@@ -315,8 +316,12 @@ route('POST', 'orders/:id/packeta', async ({ env, params, body, user }) => {
   const o = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(params.id).first();
   if (!o) throw new HttpError('Objednávka nenalezena', 404);
   if (!['paid', 'awaiting_payment', 'shipped'].includes(o.status) || (o.status === 'awaiting_payment' && o.payment_method !== 'cod')) throw new HttpError('Zásilku lze založit jen u zaplacené objednávky nebo dobírky');
-  const r = await createPacket(env, o, { weightKg: body.weight });
+  const settings = await getSettings(env);
+  const r = await createPacket(env, o, { weightKg: body.weight, settings });
   await audit(env, user.email, 'zasilka_zalozena', 'order', o.id, { tracking: r.tracking });
+  // Automaticky: objednávka „odesláno“ a zákazníkovi e-mail s číslem a odkazem pro sledování
+  const notify = body.notify ?? settings.ship_autonotify === '1';
+  if (notify && o.status !== 'shipped') { await markShipped(env, o.id, r.tracking, user.email); r.shipped = true; }
   return json(r, 201);
 });
 route('GET', 'orders/:id/packeta-label', async ({ env, params }) => {
@@ -549,14 +554,17 @@ route('POST', 'invoices/:id/send', async ({ env, params, user, request }) => { a
 
 // --- Nastavení, e-maily, historie ------------------------------------------------------
 const SETTINGS = { shipping_zasilkovna_czk: 'int', shipping_balikovna_czk: 'int', shipping_osobni_enabled: 'bool', reservation_hours_bank: 'int', reservation_minutes_card: 'int', cod_enabled: 'bool', cod_fee_czk: 'int',
-  eur_rate: 'num', punc_notified: 'bool', shipping_eu_insured_json: 'json', insured_threshold_czk: 'int', insured_price_czk: 'int', insured_eu_price_czk: 'int', shipping_eu_json: 'json', invoice_autosend: 'bool' };
+  eur_rate: 'num', punc_notified: 'bool', shipping_eu_insured_json: 'json', insured_threshold_czk: 'int', insured_price_czk: 'int', insured_eu_price_czk: 'int', shipping_eu_json: 'json', invoice_autosend: 'bool',
+  shipping_packeta_pickup_json: 'json', shipping_packeta_home_json: 'json', packeta_home_carriers_json: 'json', ship_autonotify: 'bool' };
+// U těchto nastavení smí být i ČR (doručení na adresu v ČR)
+const JSON_WITH_CZ = new Set(['shipping_packeta_home_json', 'packeta_home_carriers_json']);
 route('GET', 'settings', async ({ env }) => {
   const s = await getSettings(env);
   return json({
     settings: s,
     integrations: {
-      mode: mode(env), email: env.EMAIL_PROVIDER === 'resend' && Boolean(env.RESEND_API_KEY), card: Boolean(env.COMGATE_MERCHANT && env.COMGATE_SECRET),
-      cardLive: env.PAYMENTS_LIVE === 'true', packeta: Boolean(env.PACKETA_API_KEY), packetaTracking: Boolean(env.PACKETA_API_PASSWORD), iban: Boolean(OPERATOR.iban),
+      mode: mode(env), email: env.EMAIL_PROVIDER === 'resend' && Boolean(env.RESEND_API_KEY), card: Boolean(payGateway(env)), cardGateway: payGateway(env),
+      cardLive: payLive(env), packeta: Boolean(env.PACKETA_API_KEY), packetaTracking: Boolean(env.PACKETA_API_PASSWORD), iban: Boolean(OPERATOR.iban),
     },
   });
 });
@@ -570,9 +578,9 @@ route('PUT', 'settings', async ({ env, body, user }) => {
       const obj = typeof body[k] === 'object' && body[k] ? body[k] : {};
       const clean = {};
       for (const [cc, price] of Object.entries(obj)) {
-        if (!/^[A-Z]{2}$/.test(cc) || cc === 'CZ') continue;
+        if (!/^[A-Z]{2}$/.test(cc) || (cc === 'CZ' && !JSON_WITH_CZ.has(k))) continue;
         if (price === '' || price == null) continue;
-        clean[cc] = int(price, { max: 100000, nullable: false, name: `cena dopravy ${cc}` });
+        clean[cc] = int(price, { max: 100000, nullable: false, name: k === 'packeta_home_carriers_json' ? `dopravce ${cc}` : `cena dopravy ${cc}` });
       }
       v = JSON.stringify(clean);
     } else if (body[k] === '' || body[k] == null) v = null;

@@ -14,12 +14,13 @@ import { TERMS } from '../src/terms.mjs';
 import { createForOrder } from './warranty.js';
 import { onDelivered } from './passport.js';
 import { createInvoice } from './invoicing.js';
+import { trackingUrl } from './packeta.js';
 
 // Texty e-mailů v jazyce objednávky (zákazníci z EU objednávají i anglicky)
 const tr = (o, cs, en) => (o?.lang === 'en' ? en : cs);
 const dt = (o, iso) => new Date(iso).toLocaleString(o?.lang === 'en' ? 'en-GB' : 'cs-CZ', { timeZone: 'Europe/Prague', day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 import { productName } from '../src/shop/describe.mjs';
-import { createCardPayment, cardPaymentsAvailable } from './payments.js';
+import { createCardPayment, cardPaymentsAvailable, cardCurrencies } from './payments.js';
 
 const num = (v) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null);
 
@@ -39,19 +40,35 @@ export async function shopConfig(env, lang = 'cs', { country = 'CZ', itemsTotal 
   let euInsured = {};
   try { euInsured = JSON.parse(s.shipping_eu_insured_json || '{}'); } catch { euInsured = {}; }
 
+  let packetaPickup = {}; try { packetaPickup = JSON.parse(s.shipping_packeta_pickup_json || '{}'); } catch { packetaPickup = {}; }
+  let packetaHome = {}; try { packetaHome = JSON.parse(s.shipping_packeta_home_json || '{}'); } catch { packetaHome = {}; }
+  const hasPacketaKey = Boolean(env.PACKETA_API_KEY);
+  const packetaName = cc === 'CZ' ? L('Zásilkovna', 'Packeta') : 'Packeta';
+
+  // Zobrazujeme jen skutečně funkční možnosti: každá musí mít nastavenou cenu
+  // a výběr výdejního místa v zahraničí funguje jen s mapou Zásilkovny (API klíč).
   const shipping = [];
-  if (cc === 'CZ' && !insuredOnly) {
-    for (const id of ['zasilkovna', 'balikovna']) {
-      const price = num(s[`shipping_${id}_czk`]);
-      if (price != null) shipping.push({ id, label: SHIPPING[id][lang], price, pickup: true });
+  if (!insuredOnly) {
+    const pickupPrice = num(cc === 'CZ' ? s.shipping_zasilkovna_czk : packetaPickup[cc]);
+    if (pickupPrice != null && (cc === 'CZ' || hasPacketaKey)) {
+      shipping.push({ id: 'zasilkovna', label: L(`${packetaName} – výdejní místo nebo Z-BOX`, 'Packeta – pickup point or Z-BOX'), price: pickupPrice, pickup: true, carrier: 'packeta' });
     }
-  }
-  if (cc !== 'CZ' && !insuredOnly && num(euPrices[cc]) != null) {
-    shipping.push({ id: 'eu', label: L(`Doprava do země ${countryName(cc, 'cs')} – doručení na adresu`, `Delivery to ${countryName(cc, 'en')} – to your address`), price: num(euPrices[cc]), note: L('Dopravce podle cílové země (např. Zásilkovna a její partneři).', 'Carrier depends on the destination country (e.g. Packeta and its partners).') });
+    if (cc === 'CZ') {
+      const price = num(s.shipping_balikovna_czk);
+      if (price != null) shipping.push({ id: 'balikovna', label: SHIPPING.balikovna[lang], price, pickup: true, carrier: 'balikovna' });
+    }
+    const homePrice = num(packetaHome[cc]);
+    if (homePrice != null) {
+      shipping.push({ id: 'zasilkovna_adresa', label: L(`${packetaName} – doručení na adresu`, 'Packeta – home delivery'), price: homePrice, address: true, carrier: 'packeta', note: L('Doručí kurýr na adresu uvedenou níže.', 'Delivered by courier to the address below.') });
+    }
+    // Původní obecná doprava do zahraničí (jen pokud pro zemi není nastavena Packeta na adresu)
+    if (cc !== 'CZ' && homePrice == null && num(euPrices[cc]) != null) {
+      shipping.push({ id: 'eu', label: L(`Doprava do země ${countryName(cc, 'cs')} – doručení na adresu`, `Delivery to ${countryName(cc, 'en')} – to your address`), price: num(euPrices[cc]), address: true, note: L('Dopravce podle cílové země (např. Zásilkovna a její partneři).', 'Carrier depends on the destination country (e.g. Packeta and its partners).') });
+    }
   }
   if (insuredOnly) {
     const price = num(cc === 'CZ' ? s.insured_price_czk : (euInsured[cc] ?? s.insured_eu_price_czk));
-    if (price != null) shipping.push({ id: 'pojistena', label: L('Pojištěná přeprava kurýrem na plnou hodnotu', 'Courier delivery insured for the full value'), price, note: L('U hodinek vyšší hodnoty posíláme jen pojištěnou zásilkou.', 'Higher-value watches are sent only by insured shipment.') });
+    if (price != null) shipping.push({ id: 'pojistena', label: L('Pojištěná přeprava na plnou hodnotu', 'Delivery insured for the full value'), price, address: true, note: L('Hodinky vyšší hodnoty posíláme jen jako cennou zásilku pojištěnou na plnou hodnotu, předání proti podpisu.', 'Higher-value watches are sent only as a valuable parcel insured for the full value, delivered against signature.') });
   }
   if (s.shipping_osobni_enabled === '1') {
     shipping.push({ id: 'osobni', label: SHIPPING.osobni[lang], price: 0, note: L('Pouze po předchozí individuální domluvě. Nemáme kamennou prodejnu.', 'Only by prior individual arrangement. We have no retail shop.') });
@@ -59,11 +76,11 @@ export async function shopConfig(env, lang = 'cs', { country = 'CZ', itemsTotal 
 
   const payment = [];
   const iban = OPERATOR.iban;
-  if (iban && isValidIban(iban)) payment.push({ id: 'bank_transfer', label: PAYMENT.bank_transfer[lang], note: L('Platební údaje a QR kód obdržíte hned po objednávce. Splatnost 3 dny.', 'Payment details and a QR code are shown right after ordering. Due within 3 days.') });
-  if (cardPaymentsAvailable(env)) payment.push({ id: 'card', label: PAYMENT.card[lang] });
+  if (iban && isValidIban(iban)) payment.push({ id: 'bank_transfer', label: PAYMENT.bank_transfer[lang], currencies: ['CZK', 'EUR'], note: L('Platební údaje a QR kód obdržíte hned po objednávce. Splatnost 3 dny. Bez poplatků.', 'Payment details and a QR code are shown right after ordering. Due within 3 days. No fees.') });
+  if (cardPaymentsAvailable(env)) payment.push({ id: 'card', label: PAYMENT.card[lang], badges: ['visa', 'mastercard', 'applepay', 'googlepay'], currencies: cardCurrencies(env), note: L('Zabezpečená platba přes platební bránu. Apple Pay a Google Pay se nabídnou na podporovaných zařízeních.', 'Secure payment via the payment gateway. Apple Pay and Google Pay are offered on supported devices.') });
   // Dobírka jen v ČR a jen s výdejním místem; zahraniční objednávky pouze s platbou předem
   if (s.cod_enabled === '1' && cc === 'CZ' && !insuredOnly) {
-    payment.push({ id: 'cod', label: PAYMENT.cod[lang], price: num(s.cod_fee_czk) || 0, onlyWith: ['zasilkovna', 'balikovna'], note: L('Platíte při převzetí zásilky (jen Zásilkovna a Balíkovna v ČR).', 'Pay on collection (Czech pickup points only).') });
+    payment.push({ id: 'cod', label: PAYMENT.cod[lang], currencies: ['CZK'], price: num(s.cod_fee_czk) || 0, onlyWith: ['zasilkovna', 'balikovna'], note: L('Platíte při převzetí na výdejním místě (jen v ČR).', 'Pay on collection at a pickup point (Czech Republic only).') });
   }
 
   const eurRate = num(s.eur_rate);
@@ -104,9 +121,10 @@ export async function createOrder(env, body, origin) {
   const pickupName = str(body.pickupPointName, { max: 200 });
   if (['zasilkovna', 'balikovna'].includes(ship.id) && !pickupName) throw new HttpError('Vyberte prosím výdejní místo');
   if (ship.id === 'balikovna' && pickupId && !/^[BP]\d{5}$/.test(pickupId)) throw new HttpError('Neplatné výdejní místo Balíkovny');
-  if (pay.onlyWith && !pay.onlyWith.includes(ship.id)) throw new HttpError('Dobírku lze zvolit jen s výdejním místem v ČR');
+  if (ship.id === 'zasilkovna' && country !== 'CZ' && !/^(\d{1,10}|c\d{1,8}:[A-Za-z0-9._-]{1,30})$/.test(pickupId || '')) throw new HttpError('Vyberte prosím výdejní místo na mapě');
+  if (pay.onlyWith && !pay.onlyWith.includes(ship.id)) throw new HttpError('Dobírku lze zvolit jen s výdejním místem Zásilkovny nebo Balíkovny v ČR');
   const currency = body.currency === 'EUR' && cfg.currencies.includes('EUR') ? 'EUR' : 'CZK';
-  if (currency === 'EUR' && pay.id !== 'bank_transfer') throw new HttpError('V eurech lze zatím platit jen převodem');
+  if (!(pay.currencies || ['CZK']).includes(currency)) throw new HttpError(currency === 'EUR' ? 'Zvolenou platbu nelze provést v eurech' : 'Zvolenou platbu nelze provést v korunách');
 
   const ph = ids.map(() => '?').join(',');
   const { results: products } = await env.DB.prepare(`SELECT id, title, brand, model, price_czk, status, serial_ref FROM products WHERE id IN (${ph})`).bind(...ids).all();
@@ -125,7 +143,8 @@ export async function createOrder(env, body, origin) {
   const token = randomToken(24);
   const s = cfg.settings;
   // Dobírka: kus zůstává rezervovaný až do odeslání (bez lhůty), ostatní podle splatnosti
-  const reservedUntil = pay.id === 'cod' ? null : pay.id === 'card' ? addMinutes(Number(s.reservation_minutes_card || 30)) : addMinutes(Number(s.reservation_hours_bank || 72) * 60);
+  // Karta: rezervace nejméně 35 minut (brána Stripe přijímá platbu nejméně 30 minut) – platba po vypršení už nejde zaplatit
+  const reservedUntil = pay.id === 'cod' ? null : pay.id === 'card' ? addMinutes(Math.max(35, Number(s.reservation_minutes_card || 35))) : addMinutes(Number(s.reservation_hours_bank || 72) * 60);
   const t = now();
 
   // Vše v jedné dávce = jedné transakci. Pokud se některý kus nepodaří
@@ -165,11 +184,24 @@ export async function createOrder(env, body, origin) {
 
   let redirect = `/objednavka/${token}`;
   if (pay.id === 'card') {
-    const payment = await createCardPayment(env, order, origin);
-    await env.DB.prepare('UPDATE orders SET payment_ref=? WHERE id=?').bind(payment.transId, orderId).run();
-    redirect = payment.redirect;
+    try {
+      redirect = await startCardPayment(env, order, origin);
+    } catch (e) {
+      // Objednávka i rezervace zůstávají; zákazník může platbu zopakovat na stránce objednávky
+      await audit(env, 'system', 'platba_nezalozena', 'order', orderId, { error: String(e?.message || e).slice(0, 200) });
+      redirect = `/objednavka/${token}?platba=chyba`;
+    }
   }
   return { number, token, redirect };
+}
+
+/** Založí (nebo znovu založí) platbu kartou k objednávce čekající na platbu a vrátí adresu brány. */
+export async function startCardPayment(env, order, origin) {
+  if (order.payment_method !== 'card' || order.status !== 'awaiting_payment') throw new HttpError('Objednávku nelze zaplatit kartou');
+  if (order.reserved_until && order.reserved_until < now()) throw new HttpError('Rezervace hodinek už vypršela', 409);
+  const payment = await createCardPayment(env, order, origin);
+  await env.DB.prepare('UPDATE orders SET payment_ref=? WHERE id=?').bind(payment.transId, order.id).run();
+  return payment.redirect;
 }
 
 // Obchodní podmínky a poučení o odstoupení v jazyce, ve kterém zákazník objednal (smlouvu lze uzavřít česky i anglicky)
@@ -369,10 +401,13 @@ export async function markShipped(env, orderId, tracking, actor) {
   if (cod) stmts.push(env.DB.prepare("UPDATE products SET status='sold', sold_at=?, reserved_until=NULL, updated_at=? WHERE id IN (SELECT product_id FROM order_items WHERE order_id=?)").bind(t, t, orderId));
   await env.DB.batch(stmts);
   await audit(env, actor, 'objednavka_odeslana', 'order', orderId, { tracking });
+  const turl = trackingUrl(order.shipping_method, tracking, order.lang);
+  const trackCs = tracking ? ` Číslo zásilky: <strong>${tracking}</strong>.${turl ? ` <a href="${turl}">Sledovat zásilku</a>` : ''}` : '';
+  const trackEn = tracking ? ` Tracking number: <strong>${tracking}</strong>.${turl ? ` <a href="${turl}">Track your parcel</a>` : ''}` : '';
   await sendEmail(env, {
     to: order.email, subject: tr(order, `Objednávka ${order.number} je na cestě`, `Order ${order.number} is on its way`), related: `order:${orderId}`,
-    body: tr(order, `<p>Dobrý den, ${order.name},</p>${cod ? `<p>Při převzetí zaplatíte <strong>${formatCzk(order.total)}</strong>.</p>` : ''}<p>vaše hodinky jsou na cestě${order.pickup_point_name ? ` na výdejní místo ${order.pickup_point_name}` : ''}.${tracking ? ` Číslo zásilky: <strong>${tracking}</strong>.` : ''}</p><p>Po převzetí doporučujeme nechat hodinky několik hodin v klidu při pokojové teplotě. Rady k péči: <a href="${SITE.origin}/care">Péče o hodinky</a>.</p>${TERMS.inspection.enabled ? `<p style="font-size:13px;color:#555">Záruka za jakost: ${TERMS.warrantyMonths} měsíců, ve druhém roce po garanční prohlídce ${TERMS.inspection.afterMonths} měsíců od převzetí. Podrobnosti: <a href="${SITE.origin}/warranty">Záruka a garance pravosti</a>.</p>` : ''}`,
-      `<p>Dear ${order.name},</p>${cod ? `<p>You pay <strong>${formatCzk(order.total)}</strong> on delivery.</p>` : ''}<p>your watch is on its way${order.pickup_point_name ? ` to the pickup point ${order.pickup_point_name}` : ''}.${tracking ? ` Tracking number: <strong>${tracking}</strong>.` : ''}</p><p>After receipt we recommend letting the watch rest for a few hours at room temperature. Care tips: <a href="${SITE.origin}/en/care">Watch care</a>.</p>${TERMS.inspection.enabled ? `<p style="font-size:13px;color:#555">Quality warranty: ${TERMS.warrantyMonths} months, in the second year after a warranty inspection ${TERMS.inspection.afterMonths} months after receipt. Details: <a href="${SITE.origin}/en/warranty">Warranty and authenticity guarantee</a>.</p>` : ''}`),
+    body: tr(order, `<p>Dobrý den, ${order.name},</p>${cod ? `<p>Při převzetí zaplatíte <strong>${formatCzk(order.total)}</strong>.</p>` : ''}<p>vaše hodinky jsou na cestě${order.pickup_point_name ? ` na výdejní místo ${order.pickup_point_name}` : ''}.${trackCs}</p><p>Po převzetí doporučujeme nechat hodinky několik hodin v klidu při pokojové teplotě. Rady k péči: <a href="${SITE.origin}/care">Péče o hodinky</a>.</p>${TERMS.inspection.enabled ? `<p style="font-size:13px;color:#555">Záruka za jakost: ${TERMS.warrantyMonths} měsíců, ve druhém roce po garanční prohlídce ${TERMS.inspection.afterMonths} měsíců od převzetí. Podrobnosti: <a href="${SITE.origin}/warranty">Záruka a garance pravosti</a>.</p>` : ''}`,
+      `<p>Dear ${order.name},</p>${cod ? `<p>You pay <strong>${formatCzk(order.total)}</strong> on delivery.</p>` : ''}<p>your watch is on its way${order.pickup_point_name ? ` to the pickup point ${order.pickup_point_name}` : ''}.${trackEn}</p><p>After receipt we recommend letting the watch rest for a few hours at room temperature. Care tips: <a href="${SITE.origin}/en/care">Watch care</a>.</p>${TERMS.inspection.enabled ? `<p style="font-size:13px;color:#555">Quality warranty: ${TERMS.warrantyMonths} months, in the second year after a warranty inspection ${TERMS.inspection.afterMonths} months after receipt. Details: <a href="${SITE.origin}/en/warranty">Warranty and authenticity guarantee</a>.</p>` : ''}`),
   });
 }
 

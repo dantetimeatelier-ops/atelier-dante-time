@@ -4,6 +4,23 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/platby-doprava-eu
+**Hotovo:** rozšíření objednávek podle zadání majitele (podklady a ceny: `docs/PLATBY-A-DOPRAVA.md`).
+- Platby: `server/payments.js` = jedno rozhraní pro **Stripe** (Checkout přes REST, bez knihovny) i Comgate; karta v CZK i EUR;
+  Apple Pay / Google Pay řídí nastavení brány. Pojistka: ostrý klíč bez `PAYMENTS_LIVE` se nezobrazí. Oznámení
+  `functions/api/payments/stripe.js` (ověření podpisu HMAC) a `comgate.js` → `server/payment-events.js` (ověření částky a měny
+  u brány, konflikt s prodaným kusem → e-mail majiteli „Vrátit platbu“). Opakování platby `functions/api/pay.js` + `public/assets/order.js`.
+- Doprava: `zasilkovna` i mimo ČR (mapa podle země, partnerská místa `c<carrier>:<id>`), nová `zasilkovna_adresa` (ČR, SR, EU;
+  dopravce z feedu Packeta, nastavení nebo výchozí CZ 106 / SK 131). Migrace 0024 (jen nová nastavení). Dobírka dál jen s výdejním
+  místem (podle obchodních podmínek).
+- Automatizace: po založení zásilky se objednávka označí odesláno a zákazník dostane číslo s odkazem (`trackingUrl`), nastavení `ship_autonotify`.
+- Pokladna: textová označení Visa / Mastercard / Apple Pay / Google Pay, mobilní lišta s celkovou cenou, doručovací adresa.
+- Testy `tests/unit/platby-doprava.test.mjs` (celý nákup kartou v EUR, dvojí prodej, nabídka podle země, štítky).
+**Další krok:** po schválení majitele: účet Stripe (nejdřív test), doplnění Zásad ochrany osobních údajů o platební bránu, tabulka „Doprava a platba“.
+**Pozor na:** úroveň 3 (platby) – PR slučuje jen majitel. Limit hodnoty zásilky Zásilkovny ověřit v klientské sekci.
+
+---
+
 ## 2026-11-27 – Claude – claude/dily-ze-skladu-v-zakazce
 **Hotovo:** díly ze skladu lze použít v zakázce. Migrace 0023: `parts.commission_id`. `FIN.usePartInCommission`
 (při použití části zásoby se položka rozdělí, zbytek zůstane skladem), `returnPartFromCommission`; cena použitých dílů

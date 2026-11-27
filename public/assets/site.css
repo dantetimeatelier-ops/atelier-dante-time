@@ -251,6 +251,24 @@ legend{padding:0 6px;color:var(--text);font-family:var(--serif);font-size:19px}
 .choice:has(input:checked){border-color:var(--gold);background:rgba(200,162,74,.06)}
 .choice input{width:20px;min-height:20px;height:20px;accent-color:var(--gold);margin-top:3px}
 .choice .t{color:var(--text)}
+.choice-body{display:grid;gap:6px;flex:1;min-width:0}
+.choice-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.choice-price{color:var(--gold-2,var(--gold));white-space:nowrap;font-size:15px}
+.choice{min-height:56px;-webkit-tap-highlight-color:transparent}
+/* Decentní označení platebních metod: tlumené, bez barevných log */
+.pay-badges{display:flex;flex-wrap:wrap;gap:6px}
+.pay-badge{display:inline-flex;align-items:center;height:24px;padding:0 9px;border:1px solid rgba(200,162,74,.35);border-radius:6px;font-size:11px;letter-spacing:.06em;color:var(--muted);background:rgba(255,255,255,.02);white-space:nowrap}
+.pay-visa{font-style:italic;font-weight:700;letter-spacing:.08em}
+.secure-note{margin-top:12px;font-size:12px;color:var(--muted);line-height:1.5}
+.mobile-total{display:none}
+@media (max-width:900px){
+  .mobile-total{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(7,7,7,.94);border-top:1px solid rgba(200,162,74,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .mobile-total > span{display:grid;line-height:1.2}
+  .mobile-total strong{font-family:var(--serif);font-size:20px;color:var(--gold-2,var(--gold));font-weight:normal}
+  .mobile-total .btn{min-height:44px;padding:10px 18px}
+  [data-cart-form]:not([hidden]){padding-bottom:84px}
+  .buybox{position:static}
+}
 .hp{position:absolute!important;left:-10000px!important}
 
 /* Platba převodem */
