@@ -430,11 +430,11 @@ try {
   assert.equal(dupList.invoices.find((x) => x.id === dup1.j.id).remaining, 8000, 'zbývá jen rozdíl po částečné platbě');
   assert.ok(dupList.invoices.find((x) => x.id === dup3.j.id).cancelled_at, 'duplicita stornována');
   await page.goto(`${BASE}/admin/#/faktury/${dup1.j.id}`);
-  await page.getByText('ČÁSTEČNĚ UHRAZENO').waitFor();
+  await page.getByText('ČÁSTEČNĚ UHRAZENO', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Zapsat platbu' }).click(); // předvyplněný doplatek 8 000
-  await page.getByText(/^UHRAZENO$/).waitFor();
+  await page.getByText('UHRAZENO', { exact: true }).waitFor();
   await page.goto(`${BASE}/admin/#/faktury/${dup3.j.id}`);
-  await page.getByText('STORNOVÁNO').waitFor(); await page.getByText('vystaveno omylem dvakrát').first().waitFor();
+  await page.getByText('STORNOVÁNO', { exact: true }).waitFor(); await page.getByText('vystaveno omylem dvakrát').first().waitFor();
   step('duplicita zachycena, částečná platba, oprava platby, doplatek, storno s důvodem');
   // Bezpečné mazání: zakázka s fakturou ne (archiv), prázdná ano; historie změn
   assert.equal((await api('DELETE', `commissions/${kz.j.id}`)).s, 409, 'zakázku s fakturou smazat nejde');
@@ -460,7 +460,7 @@ try {
   await page.locator('input[name=paid]').check();
   await page.getByRole('button', { name: 'Vystavit fakturu' }).click();
   await page.getByRole('heading', { name: /^Faktura DT-\d{4}-\d{4}$/ }).waitFor(); // po vystavení detail dokladu
-  await page.getByText('UHRAZENO').waitFor();
+  await page.getByText('UHRAZENO', { exact: true }).waitFor();
   const list = (await api('GET', 'invoices?channel=vinted')).j.invoices;
   assert.equal(list.length, 1); assert.match(list[0].number, /^DT-\d{4}-\d{4}$/); assert.equal(list[0].total, 5150);
   assert.equal((await api('GET', `products/${stockId}`)).j.product.status, 'sold', 'hodinky musí být prodané');
