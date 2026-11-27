@@ -348,7 +348,7 @@ test('DT Logistics: stav zásilky Zásilkovny – číslo, XML odpověď, chyby,
   assert.equal(db.prepare("SELECT tracking_code FROM orders WHERE id='o1'").get().tracking_code, 7);
   const again = await P.refreshAll(env, { fetcher: async () => { throw new Error('nemá se volat'); } });
   assert.equal(again.checked, 0); // doručené a vrácené se už neověřují
-  assert.equal(await P.refreshAll({ DB: env.DB }), null); // bez hesla nic
+  assert.equal((await P.refreshAll({ DB: env.DB }, { fetcher: async () => { throw new Error('Zásilkovna se bez hesla nevolá'); } })).checked, 0); // bez hesla jen Balíkovna
 });
 
 test('Potvrzení objednávky: krátký e-mail, fotka, PDF přílohy v platné verzi, záloha s plným zněním', async () => {
@@ -447,4 +447,19 @@ test('Dante Time OS: DT Sales a DT Finance denně připomínají, DT Director po
   const d = await OS.directorSummary(env2);
   assert.equal(d.status, 'ok');
   for (const t of ['Stav firmy', 'zisk', 'Co se tento týden udělalo', 'Co čeká na vás', 'Obchod (DT Sales)', 'Ekonomika (DT Finance)', 'DT Finance – denní kontrola', 'Hodinky bez nákupní ceny: PRIM A']) assert.ok(mails[0].includes(t), `v přehledu chybí: ${t}`);
+});
+
+test('DT Logistics: sledování Balíkovny (Česká pošta) – číslo, poslední stav, převod na kódy', async () => {
+  const C = await import('../../server/cpost.js');
+  assert.equal(C.parcelId('DR 1234 5678 9E'), 'DR123456789E');
+  assert.equal(C.parcelId('Z1234567890'), null);
+  assert.equal(C.classify('Zásilka tohoto podacího čísla není v evidenci.', '-3'), 1);
+  assert.equal(C.classify('Dodání zásilky.'), 7);
+  assert.equal(C.classify('Zásilka je připravena k vyzvednutí.'), 5);
+  assert.equal(C.classify('Vrácení zásilky odesílateli.'), 9);
+  let url;
+  const json = [{ id: 'DR123456789E', states: { state: [{ id: '21', date: '2026-11-25', text: 'Podání zásilky.' }, { id: '91', date: '2026-11-27', text: 'Dodání zásilky.' }] } }];
+  const s = await C.cpostStatus('DR 1234 5678 9E', { fetcher: async (u) => { url = u; return new Response(JSON.stringify(json)); } });
+  assert.match(url, /idParcel=DR123456789E/); assert.equal(s.code, 7); assert.equal(s.text, 'Dodání zásilky.'); assert.equal(s.at, '2026-11-27T12:00:00');
+  await assert.rejects(() => C.cpostStatus('ABC'), /tvaru České pošty/);
 });
