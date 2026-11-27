@@ -9,8 +9,10 @@ import { OPERATOR, SITE, missing, docBank } from '../../src/site.mjs';
 import { formatCzk, ORDER_STATUS, SHIPPING, PAYMENT } from '../../src/shop/format.mjs';
 import { hero, esc } from '../../src/layout.mjs';
 import { TERMS } from '../../src/terms.mjs';
+import { trackingUrl } from '../../server/packeta.js';
+import { formatEur as fEur } from '../../src/shop/eu.mjs';
 
-export const onRequestGet = handle(async ({ env, params }) => {
+export const onRequestGet = handle(async ({ env, params, request }) => {
   await releaseExpired(env);
   const token = String(params.token || '');
   const o = /^[A-Za-z0-9_-]{20,64}$/.test(token) ? await env.DB.prepare('SELECT * FROM orders WHERE public_token = ?').bind(token).first() : null;
@@ -41,6 +43,19 @@ ${eur ? `<tr><th>IBAN</th><td>${esc(bank.ibanPretty)}</td></tr><tr><th>BIC / SWI
 </tbody></table><div>${qr}<p class="doc-meta" style="text-align:center">${eur ? 'SEPA QR – naskenujte v bankovní aplikaci' : 'Naskenujte v bankovní aplikaci'}</p></div></div>
 <p class="doc-meta">Hodinky jsou pro vás rezervovány do data splatnosti. Pokud platba nedorazí, rezervace se zruší. Případné poplatky banky plátce hradí plátce.</p></div>`;
   }
+  // Platba kartou: zákazník se vrátil z brány nebo ji zavřel – nabídneme zaplacení znovu (jen během rezervace)
+  const flag = new URL(request.url).searchParams.get('platba');
+  if (o.status === 'awaiting_payment' && o.payment_method === 'card') {
+    const amount = o.pay_currency === 'EUR' ? fEur(o.pay_amount_cents) : formatCzk(o.total);
+    const due = o.reserved_until ? new Date(o.reserved_until).toLocaleString('cs-CZ', { timeZone: 'Europe/Prague', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    payment = flag === 'ok'
+      ? `<div class="card" data-pay-wait><h2>Ověřujeme platbu / Verifying payment</h2><p>Děkujeme, platební brána nám platbu právě potvrzuje. Stránka se za chvíli obnoví a e-mailem pošleme potvrzení.</p><p class="doc-meta">Thank you – the payment is being confirmed. This page will refresh shortly.</p></div>`
+      : `<div class="card"><h2>Platba kartou / Card payment</h2>
+<p>${flag === 'zrusena' ? 'Platba nebyla dokončena. ' : flag === 'chyba' ? 'Platební bránu se nepodařilo otevřít. ' : ''}K úhradě <strong>${amount}</strong>${due ? `, hodinky jsou rezervovány do ${due}` : ''}.</p>
+<div class="pay-badges" aria-label="Visa, Mastercard, Apple Pay, Google Pay"><span class="pay-badge">Visa</span><span class="pay-badge">Mastercard</span><span class="pay-badge">Apple Pay</span><span class="pay-badge">Google Pay</span></div>
+<button class="btn solid" type="button" data-pay-again="${esc(token)}" style="margin-top:12px">Zaplatit / Pay now</button><p class="notice" data-pay-status hidden role="alert" style="margin-top:10px"></p></div>`;
+  }
+  const turl = trackingUrl(o.shipping_method, o.tracking_number, 'cs');
   const rows = items.map((i) => `<tr><th>${esc(i.title)}</th><td>${formatCzk(i.price_czk)}</td></tr>`).join('');
   const body = `${hero({ eyebrow: `Objednávka ${esc(o.number)}`, title: ORDER_STATUS[o.status] || o.status, small: true })}
 <section class="section" style="padding-top:8px"><div class="wrap split">
@@ -51,7 +66,7 @@ ${eur ? `<tr><th>IBAN</th><td>${esc(bank.ibanPretty)}</td></tr><tr><th>BIC / SWI
       <tr><th>Platba</th><td>${esc(PAYMENT[o.payment_method]?.cs || o.payment_method)}</td></tr>
       <tr><th><strong>Celkem</strong></th><td><strong>${formatCzk(o.total)}</strong></td></tr>
     </tbody></table>
-    ${o.tracking_number ? `<p style="margin-top:14px">Číslo zásilky: <strong>${esc(o.tracking_number)}</strong></p>` : ''}
+    ${o.tracking_number ? `<p style="margin-top:14px">Číslo zásilky: <strong>${esc(o.tracking_number)}</strong>${turl ? ` · <a href="${esc(turl)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold-2)">Sledovat zásilku</a>` : ''}</p>` : ''}
     ${invoice ? `<p style="margin-top:14px"><a class="btn ghost" href="/faktura/${esc(invoice.public_token)}">Faktura ${esc(invoice.number)}</a></p>` : ''}
     ${o.payment_method === 'cod' && o.status === 'awaiting_payment' ? '<p class="notice" style="margin-top:14px">Platíte dobírkou při převzetí. Hodinky jsou pro vás rezervovány, o odeslání vás budeme informovat.</p>' : ''}</div>
   </div>
@@ -59,5 +74,5 @@ ${eur ? `<tr><th>IBAN</th><td>${esc(bank.ibanPretty)}</td></tr><tr><th>BIC / SWI
     <p class="doc-meta">Hotové hodinky můžete jako spotřebitel vrátit do ${TERMS.withdrawalDays} dnů od převzetí.</p>
     <a class="btn ghost block" href="/odstoupeni">Odstoupit od smlouvy</a></aside>
 </div></section>`;
-  return page(env, { lang: 'cs', title: `Objednávka ${o.number}`, description: 'Stav objednávky', path: `/objednavka/${token}`, noindex: true, body }, 200, 'no-store');
+  return page(env, { lang: 'cs', title: `Objednávka ${o.number}`, description: 'Stav objednávky', path: `/objednavka/${token}`, noindex: true, body, scripts: o.payment_method === 'card' && o.status === 'awaiting_payment' ? ['/assets/order.js'] : [] }, 200, 'no-store');
 });

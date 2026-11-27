@@ -23,6 +23,9 @@ import * as CPH from '../../../server/commission-photos.js';
 import { draftReply } from '../../../server/sales.js';
 import { refreshOrder, createPacket, labelPdf } from '../../../server/packeta.js';
 import { aiStatus } from '../../../server/ai.js';
+import { gateway as payGateway, isLive as payLive } from '../../../server/payments.js';
+import * as SHIP from '../../../server/shipping.js';
+import { setShippingCost } from '../../../server/orders.js';
 import { html } from '../../../server/http.js';
 
 const STATUSES = ['draft', 'available', 'reserved', 'sold', 'in_progress', 'archived'];
@@ -225,15 +228,19 @@ route('PUT', 'products/:id', async ({ env, params, body, user }) => {
       const o = await env.DB.prepare("SELECT number FROM orders WHERE id=? AND status='awaiting_payment'").bind(old.reserved_order_id).first();
       if (o) throw new HttpError(`Hodinky jsou rezervované objednávkou ${o.number}. Nejdřív ji vyřiďte nebo zrušte.`, 409);
     }
-    if (d.status === 'reserved') throw new HttpError('Rezervaci vytváří jen objednávka', 400);
+    // Osobní rezervace (prodej mimo e-shop se domlouvá): kus zmizí z nabídky, e-shop ho nepředá jinému zákazníkovi
+    if (d.status === 'reserved') { d.reserved_order_id = null; d.reserved_until = null; }
     if (old.status === 'draft' && !old.published_at) d.published_at = now();
     if (d.status === 'sold') d.sold_at = now();
     if (d.status !== 'reserved') { d.reserved_order_id = null; d.reserved_until = null; }
   }
+  // Změna stavu jen pokud se stav mezitím nezměnil (např. objednávka z e-shopu ve stejnou chvíli) – ochrana proti dvojímu prodeji
+  const guard = d.status && d.status !== old.status;
   if (old.status === 'draft' && (body.brand || body.model || body.year) && !old.published_at) d.slug = await uniqueSlug(env, [d.brand ?? old.brand, d.model ?? old.model, d.year ?? old.year].filter(Boolean).join(' ') || d.title, params.id);
   d.updated_at = now();
   const keys = Object.keys(d);
-  await env.DB.prepare(`UPDATE products SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`).bind(...keys.map((k) => d[k]), params.id).run();
+  const upd = await env.DB.prepare(`UPDATE products SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?${guard ? ' AND status = ?' : ''}`).bind(...keys.map((k) => d[k]), params.id, ...(guard ? [old.status] : [])).run();
+  if (guard && !upd?.meta?.changes) throw new HttpError('Stav hodinek se mezitím změnil (např. objednávka z e-shopu). Obnovte stránku.', 409);
   const changed = keys.filter((k) => k !== 'updated_at' && String(old[k] ?? '') !== String(d[k] ?? ''));
   await audit(env, user.email, 'hodinky_upraveny', 'product', params.id, { changed, ...(changed.includes('price_czk') ? { price: [old.price_czk, d.price_czk] } : {}) });
   return json({ ok: true });
@@ -316,8 +323,11 @@ route('POST', 'orders/:id/packeta', async ({ env, params, body, user }) => {
   const o = await env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(params.id).first();
   if (!o) throw new HttpError('Objednávka nenalezena', 404);
   if (!['paid', 'awaiting_payment', 'shipped'].includes(o.status) || (o.status === 'awaiting_payment' && o.payment_method !== 'cod')) throw new HttpError('Zásilku lze založit jen u zaplacené objednávky nebo dobírky');
-  const r = await createPacket(env, o, { weightKg: body.weight });
+  const settings = await getSettings(env);
+  const r = await createPacket(env, o, { weightKg: body.weight, settings });
   await audit(env, user.email, 'zasilka_zalozena', 'order', o.id, { tracking: r.tracking });
+  // Štítek ≠ odeslání: objednávka se označí „odesláno“ (a zákazník dostane e-mail) až když dopravce zásilku převezme
+  // (hodinová kontrola DT Logistics) nebo když majitel klepne na „Předáno dopravci“.
   return json(r, 201);
 });
 route('GET', 'orders/:id/packeta-label', async ({ env, params }) => {
@@ -633,16 +643,39 @@ route('POST', 'invoices/:id/cancel', async ({ env, params, body, user }) => { aw
 route('POST', 'invoices/:id/credit', async ({ env, params, body, user }) => { const inv = await INV.creditNote(env, params.id, body, user.email); return json({ id: inv.id, number: inv.number, token: inv.public_token }, 201); });
 route('POST', 'invoices/:id/send', async ({ env, params, user, request }) => { await INV.sendInvoice(env, params.id, user.email, new URL(request.url).origin); return json({ ok: true }); });
 
+// --- Dopravci (ceny, příplatky, dobírka, země, limity, výluky, automatizace) -----------------
+route('GET', 'shipping-methods', async ({ env }) => json({ methods: await SHIP.loadMethods(env), providers: SHIP.PROVIDERS, metals: SHIP.METALS_EXCLUDABLE, packetaKey: Boolean(env.PACKETA_API_KEY), packetaApi: Boolean(env.PACKETA_API_PASSWORD) }));
+route('POST', 'shipping-methods', async ({ env, body, user }) => json({ method: await SHIP.saveMethod(env, str(body.id, { max: 32, required: true, name: 'kód' }), body, user.email, { create: true }) }, 201));
+route('PUT', 'shipping-methods/:id', async ({ env, params, body, user }) => {
+  if (body.status === 'aktivni') {
+    const cur = await SHIP.methodById(env, params.id);
+    const prices = body.prices ?? cur?.prices ?? {};
+    if (!Object.values(typeof prices === 'string' ? JSON.parse(prices || '{}') : prices).some((v) => v !== '' && v != null)) throw new HttpError('Před zapnutím vyplňte cenu alespoň pro jednu zemi');
+  }
+  return json({ method: await SHIP.saveMethod(env, params.id, body, user.email) });
+});
+// Náhled pokladny: co uvidí zákazník pro zemi, hodnotu a materiál pouzdra
+route('GET', 'shipping-preview', async ({ env, request }) => {
+  const u = new URL(request.url);
+  const metal = u.searchParams.get('metal');
+  return json({ rows: await SHIP.preview(env, { country: (u.searchParams.get('country') || 'CZ').toUpperCase(), value: Number(u.searchParams.get('value')) || 0, metals: metal ? [metal] : [] }) });
+});
+route('PUT', 'orders/:id/shipping-cost', async ({ env, params, body, user }) => json({ cost: await setShippingCost(env, params.id, body.amount, user.email) }));
+
 // --- Nastavení, e-maily, historie ------------------------------------------------------
 const SETTINGS = { shipping_zasilkovna_czk: 'int', shipping_balikovna_czk: 'int', shipping_osobni_enabled: 'bool', reservation_hours_bank: 'int', reservation_minutes_card: 'int', cod_enabled: 'bool', cod_fee_czk: 'int',
-  eur_rate: 'num', punc_notified: 'bool', shipping_eu_insured_json: 'json', insured_threshold_czk: 'int', insured_price_czk: 'int', insured_eu_price_czk: 'int', shipping_eu_json: 'json', invoice_autosend: 'bool' };
+  eur_rate: 'num', punc_notified: 'bool', shipping_eu_insured_json: 'json', insured_threshold_czk: 'int', insured_price_czk: 'int', insured_eu_price_czk: 'int', shipping_eu_json: 'json', invoice_autosend: 'bool',
+  shipping_packeta_pickup_json: 'json', shipping_packeta_home_json: 'json', packeta_home_carriers_json: 'json', ship_autonotify: 'bool',
+  auto_label: 'bool', label_weight_kg: 'num', cover_packeta_czk: 'int', cover_packeta_eu_eur: 'int', cover_balikovna_czk: 'int', cover_insured_czk: 'int', cover_insured_eu_czk: 'int' };
+// U těchto nastavení smí být i ČR (doručení na adresu v ČR)
+const JSON_WITH_CZ = new Set(['shipping_packeta_home_json', 'packeta_home_carriers_json']);
 route('GET', 'settings', async ({ env }) => {
   const s = await getSettings(env);
   return json({
     settings: s,
     integrations: {
-      mode: mode(env), email: env.EMAIL_PROVIDER === 'resend' && Boolean(env.RESEND_API_KEY), card: Boolean(env.COMGATE_MERCHANT && env.COMGATE_SECRET),
-      cardLive: env.PAYMENTS_LIVE === 'true', packeta: Boolean(env.PACKETA_API_KEY), packetaTracking: Boolean(env.PACKETA_API_PASSWORD), iban: Boolean(OPERATOR.iban),
+      mode: mode(env), email: env.EMAIL_PROVIDER === 'resend' && Boolean(env.RESEND_API_KEY), card: Boolean(payGateway(env)), cardGateway: payGateway(env),
+      cardLive: payLive(env), packeta: Boolean(env.PACKETA_API_KEY), packetaTracking: Boolean(env.PACKETA_API_PASSWORD), iban: Boolean(OPERATOR.iban),
     },
   });
 });
@@ -656,13 +689,13 @@ route('PUT', 'settings', async ({ env, body, user }) => {
       const obj = typeof body[k] === 'object' && body[k] ? body[k] : {};
       const clean = {};
       for (const [cc, price] of Object.entries(obj)) {
-        if (!/^[A-Z]{2}$/.test(cc) || cc === 'CZ') continue;
+        if (!/^[A-Z]{2}$/.test(cc) || (cc === 'CZ' && !JSON_WITH_CZ.has(k))) continue;
         if (price === '' || price == null) continue;
-        clean[cc] = int(price, { max: 100000, nullable: false, name: `cena dopravy ${cc}` });
+        clean[cc] = int(price, { max: 100000, nullable: false, name: k === 'packeta_home_carriers_json' ? `dopravce ${cc}` : `cena dopravy ${cc}` });
       }
       v = JSON.stringify(clean);
     } else if (body[k] === '' || body[k] == null) v = null;
-    else v = String(type === 'num' ? num(body[k], { min: 1, max: 1000, name: 'kurz EUR' }) : int(body[k], { max: 10000000, name: k }));
+    else v = String(type === 'num' ? (k === 'label_weight_kg' ? num(body[k], { min: 0.05, max: 30, name: 'hmotnost' }) : num(body[k], { min: 1, max: 1000, name: 'kurz EUR' })) : int(body[k], { max: 10000000, name: k }));
     stmts.push(env.DB.prepare('UPDATE settings SET value = ?, updated_at = ? WHERE key = ?').bind(v, now(), k));
   }
   if (stmts.length) await env.DB.batch(stmts);

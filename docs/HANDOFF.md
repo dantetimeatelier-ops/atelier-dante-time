@@ -4,6 +4,54 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/platby-doprava-eu (R25 zjednodušení dopravy)
+**Hotovo:** migrace 0028 (Cenná zásilka aktivní 190 Kč + 14 Kč/10 000 Kč nad 30 000, bez dobírky; PPL a Balíkovna
+na adresu vypnuté), administrace → Dopravci skrývá vypnuté pod „Nepoužívané“, text Doprava a platba (CZ/EN) bez PPL,
+`docs/DOPRAVCI.md` přepsán na jednoduchý přehled (žádné e-maily dopravcům ani Dohoda), R25 v DECISIONS.
+**Rozpracováno:** nic.
+**Další krok:** majitel sloučí PR #47, případně upraví cenu Cenné zásilky v administraci.
+**Pozor na:** Balíkovna zůstává do 5 000 Kč (podmínky ČP, cennosti bez Cenného obsahu); dražší hodinky do zahraničí
+nemají dopravce bez smlouvy → jen po domluvě.
+
+## 2026-11-27 – Claude – claude/platby-doprava-eu (R24 dopravci)
+**Hotovo:** správa dopravců (migrace 0026 `shipping_methods`, `server/shipping.js` quote/offer/preview/saveMethod), administrace
+→ Dopravci (seznam, editor, náhled „co uvidí zákazník“), pokladna filtruje podle země, hodnoty košíku a materiálu pouzder
+(`cartFacts`, `/api/config?items=`), dobírka podle dopravce (`fees`, `cod_max`), náklad dopravy `orders.shipping_cost_czk` →
+náklad „doprava“ u hodinek při odeslání (`recordShippingCost`, oprava `PUT orders/:id/shipping-cost`), tržba hodinek
+včetně zaplacené dopravy (`productEconomics`), automatický štítek Zásilkovny po zaplacení (`autoLabel`, nastavení `auto_label`,
+výchozí vypnuto), sledování podle dopravce (`PACKETA_/CPOST_/PPL_METHODS`). E-maily dopravcům a postup Dohody: `docs/DOPRAVCI.md`.
+**Další krok:** odpovědi dopravců → úprava limitů/výluk → zapnutí připravených způsobů (jen se souhlasem majitele).
+**Pozor na:** staré klíče nastavení dopravy (shipping_*_czk, cover_*, packeta json) se už nepoužívají – převzala je migrace 0026.
+
+---
+
+## 2026-11-27 – Claude – claude/platby-doprava-eu (R23)
+**Hotovo:** schválené úpravy majitele (R23, `docs/PLATBY-A-DOPRAVA.md`):
+- Stripe jen `payment_method_types=card`, vždy v Kč (`chargeCurrency`), bez placených doplňků; poplatek z balance transaction
+  → náklad „poplatky“ u hodinek (`server/payment-events.js` `recordCardFee`, hodinově `recordMissingCardFees`), `orders.card_fee_czk`.
+- Pojištění na plnou hodnotu: `cover_*` nastavení (migrace 0025), `shopConfig` nenabídne dopravce, který hodnotu nekryje.
+- Odesláno až při předání dopravci: `handoverCheck` v `server/os.js` (každou hodinu), štítek už neodesílá e-mail.
+- Dobírka i na `zasilkovna_adresa`; právní dokumenty 1.2 (CZ+EN): dobírka, Stripe v zásadách, pojištění, tabulka Doprava a platba.
+- Dvojí prodej mimo e-shop: `issueManual` zabírá kus atomicky, záloha = osobní rezervace, `inbox` sale confirm a PUT hodinek s podmínkou stavu.
+**Další krok:** majitel založí Stripe a vloží klíče; po testu ostrý provoz. Limit Balíkovny ověřit u České pošty.
+**Pozor na:** úroveň 3 – PR slučuje jen majitel. Datum účinnosti podmínek 1.2 = 27. 11. 2026 (upravit, pokud se PR sloučí později).
+
+---
+
+## 2026-11-27 – Claude – claude/platby-doprava-eu
+**Hotovo:** rozšíření objednávek podle zadání majitele (podklady a ceny: `docs/PLATBY-A-DOPRAVA.md`).
+- Platby: `server/payments.js` = jedno rozhraní pro **Stripe** (Checkout přes REST, bez knihovny) i Comgate; karta v CZK i EUR;
+  Apple Pay / Google Pay řídí nastavení brány. Pojistka: ostrý klíč bez `PAYMENTS_LIVE` se nezobrazí. Oznámení
+  `functions/api/payments/stripe.js` (ověření podpisu HMAC) a `comgate.js` → `server/payment-events.js` (ověření částky a měny
+  u brány, konflikt s prodaným kusem → e-mail majiteli „Vrátit platbu“). Opakování platby `functions/api/pay.js` + `public/assets/order.js`.
+- Doprava: `zasilkovna` i mimo ČR (mapa podle země, partnerská místa `c<carrier>:<id>`), nová `zasilkovna_adresa` (ČR, SR, EU;
+  dopravce z feedu Packeta, nastavení nebo výchozí CZ 106 / SK 131). Migrace 0024 (jen nová nastavení). Dobírka dál jen s výdejním
+  místem (podle obchodních podmínek).
+- Automatizace: po založení zásilky se objednávka označí odesláno a zákazník dostane číslo s odkazem (`trackingUrl`), nastavení `ship_autonotify`.
+- Pokladna: textová označení Visa / Mastercard / Apple Pay / Google Pay, mobilní lišta s celkovou cenou, doručovací adresa.
+- Testy `tests/unit/platby-doprava.test.mjs` (celý nákup kartou v EUR, dvojí prodej, nabídka podle země, štítky).
+**Další krok:** po schválení majitele: účet Stripe (nejdřív test), doplnění Zásad ochrany osobních údajů o platební bránu, tabulka „Doprava a platba“.
+**Pozor na:** úroveň 3 (platby) – PR slučuje jen majitel. Limit hodnoty zásilky Zásilkovny ověřit v klientské sekci.
 ## 2026-11-27 – Claude – claude/storno-oprava-odberatele
 **Hotovo:** tlačítko Storno v seznamu faktur posílalo storno bez důvodu (chyba „Vyplňte prosím důvod storna“) → dotaz na
 důvod (předvyplněno „Vystaveno omylem dvakrát“). Storno dokladu s aktivním dobropisem je blokované (nejdřív storno

@@ -30,7 +30,7 @@ export function cart(lang) {
       </fieldset>
       <fieldset><legend>${L('Doprava', 'Shipping')}</legend><div data-shipping></div>
         <p class="notice" data-insured-note hidden style="margin-top:10px">${L('Hodinky vyšší hodnoty posíláme pouze pojištěnou přepravou na plnou hodnotu, případně je předáme osobně po domluvě.', 'Higher-value watches are sent only by fully insured shipment, or handed over personally by arrangement.')}</p>
-        <p class="notice" data-no-shipping hidden style="margin-top:10px">${L('Do zvolené země zatím nemáme stanovenou cenu dopravy. Napište nám a připravíme vám nabídku.', 'We have no shipping price for this country yet. Contact us and we will prepare an offer.')} <a href="${'/kontakt'}">${L('Kontakt', 'Contact')}</a></p>
+        <p class="notice" data-no-shipping hidden style="margin-top:10px">${L('Pro tuto zemi nebo hodnotu hodinek vám zásilku připravíme individuálně – napište nám, nebo zvolte osobní předání.', 'For this country or watch value we arrange shipping individually – contact us, or choose personal handover.')} <a href="${'/kontakt'}">${L('Kontakt', 'Contact')}</a></p>
         <div data-pickup hidden style="margin-top:12px">
           <button class="btn ghost" type="button" data-pick-point>${L('Vybrat výdejní místo', 'Choose pickup point')}</button>
           <p class="doc-meta" data-pickup-label style="margin-top:8px"></p>
@@ -39,14 +39,14 @@ export function cart(lang) {
         </div>
       </fieldset>
       <fieldset><legend>${L('Platba', 'Payment')}</legend><div data-payment></div></fieldset>
-      <fieldset><legend>${L('Kontaktní a fakturační údaje', 'Contact &amp; billing details')}</legend>
+      <fieldset><legend data-address-legend>${L('Kontaktní a fakturační údaje', 'Contact &amp; billing details')}</legend>
         <div class="form">
           <div class="row"><label>${L('Jméno a příjmení', 'Full name')}<input type="text" name="name" autocomplete="name" required maxlength="120"></label>
-          <label>E-mail<input name="email" type="email" autocomplete="email" required maxlength="200"></label></div>
+          <label>E-mail<input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" required maxlength="200"></label></div>
           <label>${L('Telefon (pro dopravce)', 'Phone (for the carrier)')}<input name="phone" type="tel" autocomplete="tel" required maxlength="40"></label>
           <label>${L('Ulice a číslo', 'Street')}<input type="text" name="street" autocomplete="address-line1" required maxlength="200"></label>
           <div class="row"><label>${L('Město', 'City')}<input type="text" name="city" autocomplete="address-level2" required maxlength="120"></label>
-          <label>PSČ<input type="text" name="zip" autocomplete="postal-code" required maxlength="12"></label></div>
+          <label>${L('PSČ', 'Postcode')}<input type="text" name="zip" autocomplete="postal-code" autocapitalize="characters" required maxlength="12"></label></div>
           <details><summary class="doc-meta">${L('Nakupuji na firmu', 'Buying as a company')}</summary>
             <div class="row" style="margin-top:10px"><label>${L('Firma', 'Company')}<input type="text" name="company" maxlength="200"></label><label>IČO<input type="text" name="ico" maxlength="20"></label></div>
             <label>DIČ<input type="text" name="dic" maxlength="20"></label>
@@ -63,7 +63,9 @@ export function cart(lang) {
       <p class="doc-meta" style="margin-top:10px">${L(`Hotové hodinky můžete jako spotřebitel vrátit do ${TERMS.withdrawalDays} dnů od převzetí. <a href="/returns" style="color:var(--gold-2)">Podmínky</a>`, `As a consumer you can return finished watches within ${TERMS.withdrawalDays} days of receipt. <a href="/en/withdrawal" style="color:var(--gold-2)">Details</a>`)}</p>
       <button class="btn solid block" type="submit" style="margin-top:12px">${L('Objednávka zavazující k platbě', 'Order with obligation to pay')}</button>
       <div class="notice" data-status hidden role="alert" style="margin-top:12px"></div>
+      <p class="secure-note">${L('Zabezpečené spojení · Platební údaje karty zadáváte jen u platební brány, k nám se nedostanou.', 'Secure connection · Card details are entered only at the payment gateway and never reach us.')}</p>
     </aside>
+    <div class="mobile-total" aria-hidden="true"><span><span class="doc-meta">${L('Celkem', 'Total')}</span><strong data-mobile-total>–</strong></span><button class="btn solid" type="button" data-mobile-go tabindex="-1">${L('K dokončení', 'Checkout')}</button></div>
   </form>
 </div></section>`,
   };
@@ -80,7 +82,7 @@ export function withdrawalForm() {
   <form class="form" data-withdrawal-form novalidate>
     <div data-step="1">
       <div class="row"><label>Jméno a příjmení<input type="text" name="name" autocomplete="name" required maxlength="120"></label>
-      <label>E-mail použitý při objednávce<input name="email" type="email" autocomplete="email" required maxlength="200"></label></div>
+      <label>E-mail použitý při objednávce<input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" required maxlength="200"></label></div>
       <label style="margin-top:14px">Číslo objednávky<input type="text" name="orderNumber" required maxlength="20" placeholder="např. 2026-0001"></label>
       <label style="margin-top:14px">Zboží, kterého se odstoupení týká (nepovinné, jinak celá objednávka)<input type="text" name="items" maxlength="500"></label>
       <label style="margin-top:14px">Číslo účtu pro vrácení peněz (nepovinné)<input type="text" name="account" maxlength="50"></label>

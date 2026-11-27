@@ -181,3 +181,39 @@ Upřesnění majitele:
 - U každého nového inzerátu z fotografií navrhne agent jméno modelu automaticky (postup v `katalog/README.md`).
 - Upozornění předáno majiteli: „Prim“ je ochranná známka jiného výrobce; majitel zvolil variantu A (na vlastní odpovědnost).
 
+
+## R23 – Platby kartou přes Stripe, doprava po EU, pojištění na plnou hodnotu (2026-11-27)
+**Rozhodl:** majitel („Schvaluji Stripe Standard a navržené rozšíření plateb a dopravy.“)
+**Rozhodnutí:**
+- Platební brána **Stripe Standard**: nulový měsíční paušál, nulový aktivační poplatek, žádná placená předplatná ani placené
+  doplňky Stripe (fakturace je vlastní). Akceptovány jen transakční poplatky za uskutečněné platby.
+- Aktivovat Visa, Mastercard, Apple Pay a Google Pay **po dokončení registrace a testování**. PayPal vypnutý.
+- Bankovní převod s QR kódem zůstává výchozí možností.
+- Poplatky brány se automaticky evidují v nákladech konkrétních prodaných hodinek.
+- Dobírka rozšířena na doručení Zásilkovnou na adresu v ČR; schválena aktualizace právních podmínek (verze 1.2):
+  dobírka, platba kartou přes Stripe (včetně Zásad ochrany osobních údajů), pojištění na plnou hodnotu.
+- Doprava po celé EU podle skutečných možností dopravců. **Všechny hodinky kryté na plnou hodnotu**, nejen kusy nad 20 000 Kč.
+- Objednávka se označí jako odeslaná až při skutečném předání dopravci, ne při vytvoření štítku.
+- Ochrana proti dvojímu prodeji i při ručním prodeji mimo e-shop.
+- Bez výslovného souhlasu majitele se neaktivuje žádná služba s pravidelnými poplatky.
+**Důsledky:** `docs/PLATBY-A-DOPRAVA.md`, PR „platby-doprava-eu“. Tajné klíče Stripe zadává majitel přímo v Cloudflare.
+
+## R24 – Správa dopravců a rozdělení dopravy podle hodnoty (2026-11-27)
+**Rozhodl:** majitel („Souhlasím s navrhovaným rozdělením dopravy. Pokračuj v implementaci.“)
+**Rozhodnutí:** Do 20 000 Kč Zásilkovna (výdejní místo, Z-BOX, adresa, dobírka), Balíkovna na výdejní místo jen do 5 000 Kč;
+nad 20 000 Kč v ČR pojištěná přeprava (Česká pošta – Cenná zásilka, Balíkovna na adresu s Cenným obsahem) s cenou podle hodnoty;
+Slovensko a EU Packeta do 700 €, nad to PPL Parcel Connect do 250 000 Kč; osobní předání zdarma po domluvě.
+Kompletní správa dopravců v administraci (ceny, příplatky, dobírka, země, max. hodnota, výluky, automatizace).
+Neověřené způsoby připravit, ale zákazníkům neaktivovat. Bezplatná Dohoda s Balíkovnou jen bez paušálu, minimálního odběru
+a pravidelných plateb. Bez placených smluv a předplatných bez souhlasu majitele.
+**Důsledky:** migrace 0026 (`shipping_methods`), `server/shipping.js`, administrace → Dopravci, `docs/DOPRAVCI.md`.
+
+## R25 – Zjednodušení dopravy (2026-11-27)
+**Rozhodl:** majitel („Zjednoduš celý systém dopravy. Nepotřebuji oslovovat všechny dopravce ani uzavírat nové firemní smlouvy.“)
+**Rozhodnutí:** Běžné hodinky 9 000–15 000 Kč, Rolex 50 000–70 000 Kč. Primárně Zásilkovna a Balíkovna; u dražších
+hodinek platba předem, osobní předání nebo Cenná zásilka České pošty. PPL zatím ne. Slovensko a EU tam, kde to podmínky
+dopravce umožňují (Packeta do 700 €). Žádné měsíční poplatky, minimální odběry ani předplatné, žádné nové smlouvy
+(Dohoda s Balíkovnou a dotazy dopravcům z R24 se nedělají).
+**Důsledky:** migrace 0028 (Cenná zásilka aktivní bez dobírky, PPL a Balíkovna na adresu vypnuté), administrace →
+Dopravci skrývá nepoužívané, `docs/DOPRAVCI.md` přepsán, text Doprava a platba bez PPL.
+

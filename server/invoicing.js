@@ -113,11 +113,25 @@ export async function issueManual(env, b, actor, origin = SITE.origin) {
       .bind(kind, String(b.buyer_name || '').trim(), total, since, b.commission_id || null, b.commission_id || null).first();
     if (dup) throw new HttpError(`Podobný doklad už existuje: ${dup.number} ze dne ${new Date(dup.issued_at).toLocaleDateString('cs-CZ', { timeZone: 'Europe/Prague' })} na ${formatCzk(dup.total)}. Opravdu vystavit další?`, 409, { code: 'duplicate', number: dup.number });
   }
+  // Ochrana unikátního kusu: hodinky se zaberou v jednom kroku DŘÍV, než vznikne doklad. Pokud je mezitím
+  // rezervovala objednávka z e-shopu nebo je někdo prodal, prodej se nepovolí (nikdy dvojí prodej).
+  let claimed = null;
+  if (product) {
+    const prev = product.status;
+    const r = kind === 'faktura'
+      ? await env.DB.prepare("UPDATE products SET status = 'sold', sold_at = COALESCE(sold_at, ?), reserved_until = NULL, reserved_order_id = NULL, updated_at = ? WHERE id = ? AND (status IN ('available','in_progress','draft') OR (status = 'reserved' AND reserved_order_id IS NULL))").bind(now(), now(), product.id).run()
+      : await env.DB.prepare("UPDATE products SET status = 'reserved', reserved_order_id = NULL, reserved_until = NULL, updated_at = ? WHERE id = ? AND (status IN ('available','in_progress','draft') OR (status = 'reserved' AND reserved_order_id IS NULL))").bind(now(), product.id).run();
+    if (!r?.meta?.changes) throw new HttpError(`${product.title} mezitím rezervovala objednávka z e-shopu nebo už jsou prodané`, 409);
+    claimed = prev;
+  }
   const paid = Boolean(b.paid);
   const dueDays = int(b.due_days, { max: 90 }) ?? 14;
   const taxable = ymd(b.taxable_date);
   const buyerEmail = b.buyer_email ? vEmail(b.buyer_email) : null;
-  const inv = await createInvoice(env, {
+  const release = async () => { if (product && claimed) await env.DB.prepare('UPDATE products SET status = ?, sold_at = NULL, updated_at = ? WHERE id = ?').bind(claimed, now(), product.id).run(); };
+  let inv;
+  try {
+  inv = await createInvoice(env, {
     kind, channel, source: b.commission_id ? 'commission' : 'manual', commission_id: b.commission_id || null,
     buyer_name: str(b.buyer_name, { max: 200, required: true, name: 'odběratele' }), buyer_company: str(b.buyer_company, { max: 200 }),
     buyer_ico: str(b.buyer_ico, { max: 20 }), buyer_dic: str(b.buyer_dic, { max: 20 }), buyer_street: str(b.buyer_street, { max: 200 }),
@@ -129,6 +143,7 @@ export async function issueManual(env, b, actor, origin = SITE.origin) {
     product_id: product?.id || null, watch_model: str(b.watch_model, { max: 200 }) || product?.title || null,
     serial_ref: str(b.serial_ref, { max: 120 }) || product?.serial_ref || null, actor,
   });
+  } catch (e) { await release(); throw e; }
   if (inv.total - inv.advance_deducted < 0) throw new HttpError('Záloha je vyšší než faktura');
   await upsertCustomer(env, inv);
   const done = [];
@@ -212,6 +227,10 @@ export async function cancelInvoice(env, id, actor, reason) {
   await env.DB.prepare("UPDATE approvals SET status = 'zamitnuto', decided_at = ?, decided_by = ? WHERE kind = 'faktura_odeslani' AND payload = ? AND status = 'ceka'").bind(now(), actor, id).run();
   if (inv.kind === 'faktura' && inv.product_id) {
     await env.DB.prepare("UPDATE products SET status = 'available', sold_at = NULL, updated_at = ? WHERE id = ? AND status = 'sold'").bind(now(), inv.product_id).run();
+  }
+  // Storno zálohy na hodinky: uvolní osobní rezervaci (ne rezervaci objednávky z e-shopu)
+  if (inv.kind === 'zalohova' && inv.product_id) {
+    await env.DB.prepare("UPDATE products SET status = 'available', updated_at = ? WHERE id = ? AND status = 'reserved' AND reserved_order_id IS NULL").bind(now(), inv.product_id).run();
   }
   await audit(env, actor, 'faktura_stornovana', 'invoice', id, { number: inv.number, reason: why });
 }

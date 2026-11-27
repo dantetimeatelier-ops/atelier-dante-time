@@ -118,8 +118,8 @@ Cíl: majitel sám přidává hodinky, fotky, ceny a dostupnost.
 Každá služba vyžaduje smlouvu nebo registraci majitele. Agent připraví
 integraci v testovacím režimu a ostrý provoz zapne až po souhlasu.
 
-- [ ] Platební brána (rozhodnutí R3): Comgate / GoPay / Stripe
-- [ ] Zásilkovna: výběrové okno výdejních míst (widget) a API pro zásilky
+- [ ] Platební brána (rozhodnutí R3): Stripe i Comgate naprogramovány a otestovány, **čeká na schválení majitele** (doporučen Stripe – bez měsíčních poplatků, `docs/PLATBY-A-DOPRAVA.md`)
+- [x] Zásilkovna: výběrové okno výdejních míst (widget) a API pro zásilky, doručení na adresu, Packeta pro SR a EU
 - [x] Balíkovna (Česká pošta): výběr pobočky (podání zatím ručně)
 - [ ] Automatická fakturace (rozhodnutí R4): Fakturoid / iDoklad
 - [x] Testy celé cesty objednávky v testovacím (sandbox) režimu
@@ -157,7 +157,7 @@ nebo schválení majitele se nejprve konzultují.
 |---|---|---|---|
 | **R1** | Na čem e-shop postavit? | **A)** vlastní řešení (Astro + serverové funkce + databáze)<br>**B)** hotová česká platforma (Shoptet, Upgates) 💰<br>**C)** Shopify 💰 | **A**, protože dává plnou kontrolu nad luxusním vzhledem, nízké měsíční náklady a hodí se k malému počtu unikátních kusů. **B** je rychlejší start, ale s omezeným vzhledem a měsíčním poplatkem. |
 | **R2** | Administrace | **A)** Git CMS (Decap/Sveltia, přihlášení přes GitHub s 2FA, zdarma)<br>**B)** databáze + vlastní admin (Supabase apod.) | Katalog nejdřív přes **A**, objednávky přes **B**, až to bude potřeba. |
-| **R3** | Platební brána | Comgate, GoPay, Stripe | Comgate nebo GoPay (české banky, Apple/Google Pay, nízké poplatky v ČR). |
+| **R3** | Platební brána | Comgate, GoPay, Stripe | Stripe (0 Kč měsíčně, platí se jen z prodeje); při obratu kartou nad ~100 000 Kč/měs. Comgate. Podklady `docs/PLATBY-A-DOPRAVA.md`. |
 | **R4** | Fakturace | Fakturoid, iDoklad | Fakturoid (jednoduché API, oblíbený u živnostníků). |
 | **R5** | Jazyky a měny | CZ+EN, později DE; Kč / EUR | Začít CZ+EN v Kč. |
 | **R6** | Hosting pro fázi 5+ | Cloudflare Pages, Netlify, Vercel | Cloudflare Pages (štědrý bezplatný tarif, bezpečnostní hlavičky, serverové funkce). |

@@ -49,7 +49,7 @@ ${toc(L, [['t1', 'Introduction'], ['t2', 'Watches, components and materials'], [
 </ol>
 <h2 id="t5">5. Payment</h2>
 <ol>
-<li>Payment methods: <strong>bank transfer in advance</strong> (CZK with Czech QR payment, EUR with SEPA QR code), <strong>cash on delivery</strong> (Czech pickup points only) and, once the payment gateway is activated, <strong>card payment</strong>. International orders are paid in advance.</li>
+<li>Payment methods: <strong>bank transfer in advance</strong> (CZK with Czech QR payment, EUR with SEPA QR code), <strong>cash on delivery</strong> (Czechia only, for the delivery methods where the cart offers it) and <strong>card payment</strong> (Visa, Mastercard, Apple Pay, Google Pay) via the Stripe payment gateway, where offered in the cart. Card payments are charged in CZK. International orders are paid in advance.</li>
 <li>Bank transfers are due within <strong>${T.paymentDueDays} days</strong> of the conclusion of the contract to the account ${OPERATOR.bankAccount} (IBAN ${OPERATOR.ibanPretty}, BIC ${OPERATOR.bic}, account holder ${OPERATOR.accountHolder}) with the reference given in the order confirmation.</li>
 <li>If the price is not paid by the due date, the reservation ends and the Seller may withdraw from the contract; the Buyer is informed by e-mail.</li>
 <li>For cash on delivery the price is payable on collection of the parcel.</li>
@@ -194,25 +194,26 @@ export const custom = doc('custom', '/en/custom-work', 'Custom Work, Service and
 <p>The Atelier is liable for the work done and new components for ${T.liabilityMonths} months from handover (see <a href="/en/complaints">Complaints Procedure</a>), and for watches received from customers while in its care under the Civil Code.</p>`);
 
 export const shipping = doc('shipping', '/en/shipping-payment', 'Shipping and Payment',
-  'Shipping in the Czech Republic and across the EU, payment by bank transfer (CZK, EUR) or cash on delivery in Czechia.',
+  'Shipping in the Czech Republic and across the EU, insured for the full value; payment by bank transfer (CZK, EUR), card or cash on delivery in Czechia.',
   () => `${head(L)}
 <h2>Shipping in the Czech Republic</h2>
 <table><thead><tr><th>Method</th><th>Price</th></tr></thead><tbody>
 <tr><td><strong>Packeta (Zásilkovna)</strong> – pickup point or Z-BOX (map selection)</td><td>${priceEn(T.defaultPrices.zasilkovna)}</td></tr>
 <tr><td><strong>Balíkovna</strong> – pickup point (Czech Post map)</td><td>${priceEn(T.defaultPrices.balikovna)}</td></tr>
-<tr><td><strong>Insured shipment</strong> – for higher-value watches</td><td>shown in the cart before ordering</td></tr>
+<tr><td><strong>Packeta (Zásilkovna)</strong> – home delivery</td><td>shown in the cart before ordering</td></tr>
+<tr><td><strong>Czech Post – insured valuable parcel</strong> – for higher-value watches, insured for the full value, delivered against signature only, payment in advance</td><td>price depending on the watch value, shown in the cart before ordering</td></tr>
 <tr><td><strong>Personal handover</strong> – only by prior individual arrangement (no retail shop)</td><td>free</td></tr>
 </tbody></table>
 <h2>Shipping to EU countries</h2>
-<p>We deliver to all 27 EU member states including Slovakia. The price depends on the destination country and available carrier and <strong>is shown in the cart after selecting the country, before the order is placed</strong>. For countries without a price yet, we will gladly prepare an offer.</p>
+<p>We deliver to EU member states including Slovakia through the Packeta network to pickup points or to your address, for watches up to EUR 700, the value Packeta is liable for. Higher-value watches are shipped abroad by prior arrangement. The price depends on the destination country and available carrier and <strong>is shown in the cart after selecting the country, before the order is placed</strong>. For countries without a price yet, we will gladly prepare an offer.</p>
 <h2>Dispatch</h2>
-<p>Available watches are dispatched within <strong>${T.dispatchWorkingDays} working days</strong> of receipt of payment, or of order confirmation for cash on delivery. You receive the tracking number by e-mail. Higher-value watches are sent only by insured shipment corresponding to their value or handed over personally by arrangement.</p>
+<p>Available watches are dispatched within <strong>${T.dispatchWorkingDays} working days</strong> of receipt of payment, or of order confirmation for cash on delivery. As soon as the carrier takes over the parcel, you receive the tracking number by e-mail. <strong>Every watch is shipped insured for its full value.</strong> The cart therefore offers only carriers that are liable for the value of the particular piece; for higher-value watches this is an insured valuable parcel or personal handover by arrangement.</p>
 <h2>Payment</h2>
 <table><thead><tr><th>Method</th><th>Fee</th><th>Note</th></tr></thead><tbody>
 <tr><td><strong>Bank transfer in CZK</strong> with QR payment</td><td>free</td><td>due within ${T.paymentDueDays} days; details and QR code right after ordering</td></tr>
 <tr><td><strong>Bank transfer in EUR</strong> with SEPA QR code</td><td>no fee from the Atelier</td><td>IBAN ${OPERATOR.ibanPretty}, BIC ${OPERATOR.bic}. EUR amount at the Atelier’s rate, rounded up to a whole euro</td></tr>
-<tr><td><strong>Cash on delivery</strong> (Czechia only, Packeta and Balíkovna)</td><td>${priceEn(T.defaultPrices.cod)}</td><td>the watch is reserved until dispatch</td></tr>
-<tr><td><strong>Card payment</strong></td><td>–</td><td>available once the payment gateway is activated</td></tr>
+<tr><td><strong>Cash on delivery</strong> (Czechia only, for carriers where the cart offers it)</td><td>${priceEn(T.defaultPrices.cod)}</td><td>the watch is reserved until dispatch</td></tr>
+<tr><td><strong>Card payment</strong> – Visa, Mastercard, Apple Pay, Google Pay</td><td>free</td><td>securely via the Stripe payment gateway, where offered in the cart. Charged in CZK; for cards in another currency your bank converts the amount. Card details are entered only at Stripe.</td></tr>
 </tbody></table>
 <p>International orders are paid in advance. ${vatText(L)} The invoice is sent by e-mail after payment.</p>
 <p>Account holder: ${OPERATOR.accountHolder}, ${OPERATOR.bankName}, account number ${OPERATOR.bankAccount}.</p>`);
@@ -234,7 +235,7 @@ export const privacy = doc('privacy', '/en/privacy', 'Privacy Policy',
 </tbody></table>
 <p>No profiling, automated decision-making or marketing messages.</p>
 <h2>3. Recipients and processors</h2>
-<ul><li><strong>Cloudflare, Inc.</strong> – hosting, database (stored in the EU) and photos,</li><li><strong>Google</strong> – Gmail mailbox,</li><li><strong>Resend</strong> – sending e-mails from the website (order confirmations, invoices, replies to enquiries),</li><li><strong>Anthropic PBC</strong> (USA) – processing of documents using artificial intelligence for records of sales and purchases and drafting replies to enquiries (the enquiry text without contact details; the reply is always reviewed and sent by the operator),</li><li><strong>Packeta (Zásilkovna s.r.o.)</strong>, <strong>Czech Post (Česká pošta, s.p.)</strong> and other carriers depending on the destination – delivery,</li><li><strong>Česká spořitelna, a.s.</strong> – receipt of payments (as an independent controller),</li><li>the payment gateway provider – only once activated (its name will be added here),</li><li>public authorities where required by law.</li></ul>
+<ul><li><strong>Cloudflare, Inc.</strong> – hosting, database (stored in the EU) and photos,</li><li><strong>Google</strong> – Gmail mailbox,</li><li><strong>Resend</strong> – sending e-mails from the website (order confirmations, invoices, replies to enquiries),</li><li><strong>Anthropic PBC</strong> (USA) – processing of documents using artificial intelligence for records of sales and purchases and drafting replies to enquiries (the enquiry text without contact details; the reply is always reviewed and sent by the operator),</li><li><strong>Packeta (Zásilkovna s.r.o.)</strong>, <strong>Czech Post (Česká pošta, s.p.)</strong> and other carriers depending on the destination – delivery,</li><li><strong>Česká spořitelna, a.s.</strong> – receipt of payments (as an independent controller),</li><li><strong>Stripe Payments Europe, Limited</strong> (Ireland) – processing of card payments (Visa, Mastercard, Apple Pay, Google Pay). You enter card details directly at Stripe; we never see or store them. Stripe receives the order number, amount and e-mail from us. Stripe processes data partly as an independent controller (fraud prevention, payment services regulation) and may transfer it to the USA under the EU–US Data Privacy Framework or standard contractual clauses,</li><li>public authorities where required by law.</li></ul>
 <h2>4. Transfers outside the EU</h2>
 <p>Cloudflare, Google and Resend may process data in the USA based on the Commission’s adequacy decision (EU–US Data Privacy Framework) or standard contractual clauses.</p>
 <p>Anthropic PBC processes documents and enquiry texts in the USA based on standard contractual clauses. The data is not used to train models.</p>
@@ -254,7 +255,7 @@ export const cookies = doc('cookies', '/en/cookies', 'Cookie Policy',
 <tr><td><code>__Host-dt_admin</code></td><td>necessary</td><td>admin login (operator only)</td><td>30 days</td></tr>
 </tbody></table>
 <h2>Third-party services</h2>
-<ul><li>The <strong>pickup point map</strong> of Packeta or Balíkovna loads only after you click it in the cart; the carrier may use its own technical storage. The map uses your location only with your browser consent.</li><li><strong>Card payment</strong> (once activated) takes place on the payment gateway page with its necessary cookies.</li><li>Instagram, TikTok and Facebook are plain links and do not load on our website.</li></ul>
+<ul><li>The <strong>pickup point map</strong> of Packeta or Balíkovna loads only after you click it in the cart; the carrier may use its own technical storage. The map uses your location only with your browser consent.</li><li><strong>Card payment</strong> takes place on the secure Stripe payment page with its necessary cookies.</li><li>Instagram, TikTok and Facebook are plain links and do not load on our website.</li></ul>
 <h2>Consent management</h2>
 <p>In <strong>Cookie settings</strong> (link in the footer of every page) you can grant or withdraw consent for optional categories (analytics, marketing) at any time. As long as we do not use them, they remain off; if introduced in future, they will not run without your consent.</p>`);
 
@@ -275,7 +276,7 @@ export const eu = doc('eu', '/en/eu-sales', 'Sales to EU Countries',
 <ol>
 <li><strong>Where we deliver:</strong> all 27 member states of the European Union. The shipping price is shown for your country before the order is placed.</li>
 <li><strong>Same conditions across the EU:</strong> in line with Regulation (EU) 2018/302 (geo-blocking) we offer the same prices and terms to customers from all EU states regardless of nationality or residence.</li>
-<li><strong>Payment:</strong> international orders are paid in advance by bank transfer in EUR (SEPA QR code) or CZK, and by card once activated. Cash on delivery is not available abroad.</li>
+<li><strong>Payment:</strong> international orders are paid in advance by bank transfer in EUR (SEPA QR code) or CZK, or by card (charged in CZK). Cash on delivery is not available abroad.</li>
 <li><strong>Taxes and customs:</strong> ${vatText(L)} No customs duties apply within the EU.</li>
 <li><strong>Your rights:</strong> the ${warrantyShortEn()}, statutory rights for defects (${T.liabilityMonths} months), the ${T.withdrawalDays}-day withdrawal right for finished watches and the lifetime authenticity guarantee apply equally across the EU. The contract is governed by Czech law, but consumers keep the protection of the mandatory rules of their country of residence (Article 6 Rome I).</li>
 <li><strong>Returns from abroad:</strong> the consumer bears the cost of returning the watch, which may be higher than within Czechia. We recommend an insured parcel.</li>

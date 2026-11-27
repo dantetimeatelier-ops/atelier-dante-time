@@ -177,7 +177,8 @@ export async function productEconomics(env, productId) {
   const rate = Number(s.labor_rate_czk) || 0;
   const { results: costs } = await env.DB.prepare("SELECT c.*, (SELECT COUNT(*) FROM documents d WHERE d.cost_id = c.id) AS docs FROM costs c WHERE c.product_id = ? AND c.status = 'potvrzeno' ORDER BY c.cost_date, c.created_at").bind(productId).all();
   const { results: parts } = await env.DB.prepare("SELECT * FROM parts WHERE product_id = ? AND status IN ('pouzito','prodano')").bind(productId).all();
-  const sale = (await env.DB.prepare(`SELECT i.price_czk, o.number, o.created_at FROM order_items i JOIN orders o ON o.id = i.order_id WHERE i.product_id = ? AND o.status IN ${SOLD} ORDER BY o.created_at DESC LIMIT 1`).bind(productId).first())
+  // Tržba z e-shopu = cena hodinek + podíl dopravy a dobírky, které zaplatil zákazník (náklad dopravce je v nákladech „Doprava“)
+  const sale = (await env.DB.prepare(`SELECT i.price_czk + CASE WHEN o.items_total > 0 THEN CAST(ROUND((COALESCE(o.shipping_price, 0) + COALESCE(o.cod_fee, 0)) * i.price_czk * 1.0 / o.items_total) AS INTEGER) ELSE 0 END AS price_czk, o.number, o.created_at FROM order_items i JOIN orders o ON o.id = i.order_id WHERE i.product_id = ? AND o.status IN ${SOLD} ORDER BY o.created_at DESC LIMIT 1`).bind(productId).first())
     || (await invoiceSale(env, productId))
     || (await env.DB.prepare("SELECT total_czk AS price_czk, COALESCE(number, 'prodej mimo e-shop') AS number, issued_on AS created_at FROM sales WHERE product_id = ? AND status = 'potvrzeno' ORDER BY issued_on DESC LIMIT 1").bind(productId).first());
   const p = await env.DB.prepare('SELECT price_czk, status FROM products WHERE id = ?').bind(productId).first();

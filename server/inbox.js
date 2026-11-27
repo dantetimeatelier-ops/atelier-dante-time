@@ -344,7 +344,14 @@ export async function saveSale(env, id, b, actor, { confirm = true } = {}) {
   const k = Object.keys(d);
   await env.DB.prepare(`UPDATE sales SET ${k.map((x) => `${x} = ?`).join(', ')} WHERE id = ?`).bind(...k.map((x) => d[x]), id).run();
   if (confirm) await upsertCustomer(env, d);
-  if (confirm && d.product_id) await env.DB.prepare("UPDATE products SET status = 'sold', sold_at = COALESCE(sold_at, ?) WHERE id = ? AND status IN ('available','reserved','in_progress','draft')").bind(now(), d.product_id).run();
+  if (confirm && d.product_id) {
+    // Ochrana unikátního kusu: kus rezervovaný objednávkou z e-shopu se ručně prodat nedá
+    const r = await env.DB.prepare("UPDATE products SET status = 'sold', sold_at = COALESCE(sold_at, ?), reserved_until = NULL, updated_at = ? WHERE id = ? AND (status IN ('available','in_progress','draft') OR (status = 'reserved' AND reserved_order_id IS NULL))").bind(now(), now(), d.product_id).run();
+    if (!r?.meta?.changes) {
+      const p = await env.DB.prepare('SELECT title, status, reserved_order_id FROM products WHERE id = ?').bind(d.product_id).first();
+      if (p && p.status === 'reserved' && p.reserved_order_id) throw new HttpError(`${p.title} jsou rezervované objednávkou z e-shopu – prodej nejde potvrdit`, 409);
+    }
+  }
   await audit(env, actor, confirm ? 'prodej_potvrzen' : 'prodej_ulozen', 'sale', id, { total: d.total_czk, number });
   return id;
 }
