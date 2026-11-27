@@ -4,6 +4,14 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/zasilkovna-expedice
+**Hotovo:** DT Logistics – expedice. V detailu zaplacené objednávky (nebo dobírky) se Zásilkovnou: hmotnost + „Založit zásilku
+v Zásilkovně“ (`createPacket`: výdejní místo z objednávky, hodnota = cena, dobírka u COD, volitelně `PACKETA_SENDER`).
+Číslo zásilky se uloží samo, pak „Štítek k tisku (PDF)“ (`packetLabelPdf`, A6 na A4). Ochrana proti dvojímu založení.
+**Pozor na:** založení je jen ručně tlačítkem; pokud Zásilkovna vyžaduje označení odesílatele, nastavit `PACKETA_SENDER`.
+
+---
+
 ## 2026-11-27 – Claude – claude/elegantni-potvrzeni
 **Hotovo:** krátké černozlaté potvrzení objednávky (poděkování, číslo, fotka a název hodinek, doprava, platba, celkem,
 „Co bude dál“ podle platby/dopravy, tlačítko Zobrazit objednávku, kontakt, jedna věta o uzavření smlouvy a lhůtě 14 dnů).

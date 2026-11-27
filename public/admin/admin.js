@@ -261,7 +261,10 @@
       </table></div>
       <div class="list" id="actions">
         ${(o.status === 'awaiting_payment' && o.payment_method !== 'cod') || o.status === 'expired' ? '<button class="btn primary block" data-a="paid">✓ Platba přijata</button>' : ''}
-        ${o.status === 'paid' || (o.status === 'awaiting_payment' && o.payment_method === 'cod') ? `<label>Číslo zásilky (nepovinné)<input id="tracking"></label><button class="btn primary block" data-a="shipped">Odesláno${o.payment_method === 'cod' ? ' na dobírku' : ''} – informovat zákazníka</button>` : ''}
+        ${(o.status === 'paid' || (o.status === 'awaiting_payment' && o.payment_method === 'cod')) && o.shipping_method === 'zasilkovna' && !o.tracking_number ? `<div class="card"><b>Zásilkovna</b><p class="small muted">Založí zásilku na výdejní místo zákazníka${o.payment_method === 'cod' ? ' s dobírkou' : ''}, hodnota ${czk(o.total)}. Číslo zásilky se doplní samo.</p>
+          <label>Hmotnost balíku (kg)<input id="pweight" inputmode="decimal" value="0.5"></label><button class="btn block" data-pk>Založit zásilku v Zásilkovně</button></div>` : ''}
+        ${o.tracking_number && o.shipping_method === 'zasilkovna' ? `<a class="btn block" href="/api/admin/orders/${esc(o.id)}/packeta-label" target="_blank">Štítek k tisku (PDF)</a>` : ''}
+        ${o.status === 'paid' || (o.status === 'awaiting_payment' && o.payment_method === 'cod') ? `<label>Číslo zásilky (nepovinné)<input id="tracking" value="${esc(o.tracking_number || '')}"></label><button class="btn primary block" data-a="shipped">Odesláno${o.payment_method === 'cod' ? ' na dobírku' : ''} – informovat zákazníka</button>` : ''}
         ${o.status === 'shipped' && o.payment_method === 'cod' ? '<button class="btn primary block" data-a="paid">✓ Dobírka zaplacena – vystavit fakturu</button>' : ''}
         ${o.status === 'shipped' && o.payment_method !== 'cod' ? `<label>Datum převzetí zákazníkem${o.tracking_code === 7 ? `<p class="small">Zásilkovna hlásí doručení${o.tracking_at ? ` ${date(o.tracking_at)}` : ''} – potvrďte převzetí.</p>` : ''}<input id="delivered" type="date" value="${(o.tracking_code === 7 && o.tracking_at ? new Date(o.tracking_at) : new Date()).toISOString().slice(0, 10)}" max="${new Date().toISOString().slice(0, 10)}"></label><button class="btn block" data-a="delivered">Převzato zákazníkem – dokončit</button>` : ''}
         ${o.status === 'completed' ? `<p class="small muted">Převzato: ${o.delivered_on ? new Date(o.delivered_on + 'T12:00:00Z').toLocaleDateString('cs-CZ') : '–'} (od tohoto dne běží záruka a zákonná práva)</p>` : ''}
@@ -269,6 +272,10 @@
         ${o.status === 'awaiting_payment' ? '<button class="btn danger block" data-a="cancel">Zrušit objednávku a uvolnit hodinky</button>' : ''}
       </div>
       <h2>Interní poznámka</h2><form id="nf"><textarea name="note">${esc(o.internal_note)}</textarea><button class="btn block">Uložit poznámku</button></form>`;
+    app.querySelector('[data-pk]')?.addEventListener('click', (e) => run(async () => {
+      const b = e.currentTarget; if (!confirm('Založit zásilku v Zásilkovně?')) return; b.disabled = true;
+      try { const r = await api('POST', `orders/${id}/packeta`, { weight: app.querySelector('#pweight').value }); toast(`Zásilka ${r.tracking} založena`); await views['objednavky/:id']({ id }); } finally { b.disabled = false; }
+    }));
     app.querySelector('[data-trk]')?.addEventListener('click', (e) => run(async () => {
       const b = e.currentTarget; b.disabled = true;
       try { const r = await api('POST', `orders/${id}/tracking`); app.querySelector('#trk').textContent = `${r.text}${r.at ? ` · ${date(r.at)}` : ''}`; if (r.code === 7 && o.status === 'shipped') await views['objednavky/:id']({ id }); } finally { b.disabled = false; }
