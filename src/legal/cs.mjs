@@ -335,7 +335,7 @@ export const privacy = doc('privacy', '/privacy', 'Zásady ochrany osobních úd
 <li><strong>Cloudflare, Inc.</strong> – hosting, databáze (uložená v EU) a fotografie,</li>
 <li><strong>Google</strong> – e-mailová schránka Gmail,</li>
 <li><strong>Resend</strong> – odesílání e-mailů z webu (potvrzení objednávek, faktury, odpovědi na poptávky),</li>
-<li><strong>Anthropic PBC</strong> (USA) – zpracování dokladů pomocí umělé inteligence při vedení evidence prodejů a nákupů,</li>
+<li><strong>Anthropic PBC</strong> (USA) – zpracování dokladů pomocí umělé inteligence při vedení evidence prodejů a nákupů a příprava návrhů odpovědí na poptávky (text poptávky bez kontaktních údajů; odpověď vždy kontroluje a odesílá provozovatel),</li>
 <li><strong>Zásilkovna s.r.o.</strong>, <strong>Česká pošta, s.p.</strong> a další dopravci podle cílové země – doručení zásilky,</li>
 <li><strong>Česká spořitelna, a.s.</strong> – příjem plateb (jako samostatný správce),</li>
 <li>poskytovatel platební brány – až po její aktivaci (doplníme sem jeho název),</li>
@@ -343,7 +343,7 @@ export const privacy = doc('privacy', '/privacy', 'Zásady ochrany osobních úd
 </ul>
 <h2>4. Předání mimo EU</h2>
 <p>Cloudflare, Google a Resend mohou údaje zpracovávat v USA na základě rozhodnutí Komise o odpovídající ochraně (EU–US Data Privacy Framework) nebo standardních smluvních doložek.</p>
-<p>Anthropic PBC zpracovává doklady v USA na základě standardních smluvních doložek. Údaje nejsou využívány k trénování modelů.</p>
+<p>Anthropic PBC zpracovává doklady a text poptávek v USA na základě standardních smluvních doložek. Údaje nejsou využívány k trénování modelů.</p>
 <h2>5. Vaše práva</h2>
 <p>Máte právo na přístup, opravu, výmaz, omezení zpracování, přenositelnost a námitku proti zpracování na základě oprávněného zájmu. Uplatněte je na ${email}, odpovíme do měsíce. Stížnost můžete podat u Úřadu pro ochranu osobních údajů (Pplk. Sochora 27, 170 00 Praha 7, <a href="https://uoou.gov.cz" rel="noopener noreferrer">uoou.gov.cz</a>) nebo u dozorového úřadu ve státě vašeho bydliště.</p>
 <h2>6. Zabezpečení</h2>
