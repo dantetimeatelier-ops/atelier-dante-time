@@ -181,7 +181,7 @@ try {
   await page.getByRole('button', { name: /Převzato zákazníkem/ }).click();
   await page.locator('.chip.completed').waitFor();
   await page.goto(`${BASE}/admin/#/prohlidky`);
-  await page.locator('.list a.item').first().click();
+  await page.locator('.list a.item[href^="#/prohlidky/"]:not([href$="/nova"])').first().click();
   await page.getByText('Termín prohlídky').waitFor();
   await page.getByLabel(/Odchylka chodu/).fill('+4');
   await page.getByLabel(/Amplituda/).fill('285');
@@ -191,7 +191,7 @@ try {
   step('převzetí zapsáno, garanční prohlídka založena a zapsán protokol');
   // 5c) Digitální pas: vznikl sám při převzetí, má záznam o předání a prohlídce, veřejná stránka bez zákazníka
   await page.goto(`${BASE}/admin/#/pasy`);
-  await page.locator('.list a.item').first().click();
+  await page.locator('.list a.item[href^="#/pasy/"]').first().click();
   await page.getByText('Předání majiteli', { exact: false }).first().waitFor();
   await page.getByText('Garanční prohlídka', { exact: false }).first().waitFor();
   const pasUrl = await page.getByRole('link', { name: 'Otevřít pas ↗' }).getAttribute('href');
@@ -313,7 +313,8 @@ try {
 
   // Ekonomika (E2): nákupní cena u hodinek, marže, přehled a export pro účetní
   await page.goto(`${BASE}/admin/#/hodinky`);
-  await page.locator('.list a.item').first().click();
+  // Po výměně klíče se ukáže „Více“ (také seznam .item) – kliknout až na položku seznamu hodinek
+  await page.locator('.list a.item[href^="#/hodinky/"]').first().click();
   await page.getByRole('link', { name: 'Náklady a marže' }).click();
   await page.getByText('Interní údaje').waitFor();
   await page.getByLabel('Popis').fill('Nákup hodinek – test');

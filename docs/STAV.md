@@ -51,7 +51,7 @@ Související: plán `ROADMAP.md`, rozhodnutí `DECISIONS.md`, agenti `DANTE-TIM
 | 27. 11. | Výběr místa v mapě Zásilkovny se nevrátil do košíku | parametry okna jako oficiální knihovna (`referrer` …), PR #55 – čeká na ověření na iPhonu |
 | 27. 11. | Balíkovna zmizela u hodinek nad 5 000 Kč | limit podle pokynu majitele 50 000 Kč (migrace 0029, 0030) |
 | 27. 11. | Limit DPH ukazoval jen faktury z aplikace | `FIN.vatTurnover` = faktury + nahrané prodeje (PR #57) |
-| 27. 11. | Občasné selhání e2e kroku „Náklady a marže“ (timeout) | po opakování prošlo – sledovat, při opakování opravit čekání v testu |
+| 27. 11. | Občasné selhání e2e kroku „Náklady a marže“ (timeout) | příčina: po výměně klíče 2FA se ukáže „Více“ a test klikl na jeho první položku dřív, než se načetly hodinky; test teď kliká jen na položky správného seznamu (i u prohlídek a pasů) |
 
 ## Návrhy inovací (k posouzení)
 
