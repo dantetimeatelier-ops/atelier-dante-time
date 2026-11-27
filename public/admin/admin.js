@@ -307,12 +307,19 @@
     app.querySelector('#nf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `orders/${id}/note`, formData(e.target)); toast('Uloženo'); }); });
   };
 
-  views.zakazky = async () => {
-    const { commissions } = await api('GET', 'commissions');
+  views.zakazky = async (_, q = new URLSearchParams()) => {
+    const all = (await api('GET', 'commissions')).commissions;
     const short = (k) => { const t = k.watch || k.description || ''; return t.length > 90 ? `${t.slice(0, 88)}…` : t; };
+    const F = { aktivni: ['Rozpracované', (k) => !['hotovo', 'predano', 'zruseno'].includes(k.status)], hotove: ['Hotové a předané', (k) => ['hotovo', 'predano'].includes(k.status)], archiv: ['Zrušené (archiv)', (k) => k.status === 'zruseno'], vse: ['Vše', () => true] };
+    const f = F[q.get('f')] ? q.get('f') : 'aktivni';
+    const term = (q.get('q') || '').toLowerCase();
+    const commissions = all.filter(F[f][1]).filter((k) => !term || [k.number, k.customer_name, k.watch, k.description, k.contact_info].some((x) => String(x || '').toLowerCase().includes(term)));
     app.innerHTML = `<div class="row" style="justify-content:space-between"><h1>Zakázky</h1><a class="btn primary" href="#/zakazky/nova">+ Nová</a></div>
+      <form id="kq" style="margin-bottom:8px"><input name="q" type="search" placeholder="Hledat: číslo, zákazník, hodinky" value="${esc(q.get('q') || '')}"></form>
+      <div class="seg" role="group" aria-label="Filtr zakázek" style="margin-bottom:12px">${Object.entries(F).map(([k, [t, fn]]) => `<a href="#/zakazky?f=${k}${term ? `&q=${encodeURIComponent(term)}` : ''}" role="button" aria-pressed="${k === f}">${t} (${all.filter(fn).length})</a>`).join('')}</div>
       <div class="list">${commissions.map((k) => `<a class="item" href="#/zakazky/${k.id}">${k.cover_photo_id ? `<img src="/api/admin/commission-photos/${esc(k.cover_photo_id)}/s" alt="" loading="lazy" width="56" height="70">` : `<span class="ph watchph">${WATCH_ICON}</span>`}<span class="grow"><span class="t">${esc(k.number)} · ${esc(k.customer_name || '')}</span><br>
-        ${chip('cstatus', k.status)} <span class="small muted">${esc(L.ctype[k.type] || '')}${k.due_date ? ` · termín ${esc(dmy(k.due_date))}` : ''}</span><br><span class="small muted clamp">${esc(short(k))}</span></span></a>`).join('') || '<p class="muted">Zatím žádné zakázky.</p>'}</div>`;
+        ${chip('cstatus', k.status)} <span class="small muted">${esc(L.ctype[k.type] || '')}${k.due_date ? ` · termín ${esc(dmy(k.due_date))}` : ''}</span><br><span class="small muted clamp">${esc(short(k))}</span></span></a>`).join('') || `<p class="muted">${all.length ? 'Nic neodpovídá filtru.' : 'Zatím žádné zakázky.'}</p>`}</div>`;
+    app.querySelector('#kq').addEventListener('submit', (e) => { e.preventDefault(); const t = e.target.q.value.trim(); location.hash = `#/zakazky?f=${t ? 'vse' : f}${t ? `&q=${encodeURIComponent(t)}` : ''}`; });
   };
 
   const commissionForm = (k = {}) => `<form id="kf">
@@ -400,6 +407,7 @@
   const costLabel = (c) => `${c.own_work || (c.hours && !c.amount_czk && !c.estimate) ? 'Vlastní práce' : (c.part_kind && PK[c.part_kind] && c.part_kind !== 'jine' ? PK[c.part_kind] : CC[c.category])}`;
   const costAmount = (c) => (c.estimate ? czk(c.est) : c.paid ? czk(c.paid) : c.own ? czk(c.own) : `${c.hours || 0} h`);
 
+  const HACT = { zakazka_vytvorena: 'Zakázka založena', zakazka_upravena: 'Zakázka upravena', zakazka_foto: 'Přidána fotografie', zakazka_foto_smazano: 'Smazána fotografie', zakazka_smazana: 'Zakázka smazána' };
   views['zakazky/:id'] = async ({ id }) => {
     const { commissions } = await api('GET', 'commissions');
     const k = commissions.find((x) => x.id === id);
@@ -417,6 +425,14 @@
       ${commissionForm(k)}`;
     let phase = phaseFor(k.status);
     app.querySelectorAll('#kphase button').forEach((b) => b.addEventListener('click', () => { phase = b.dataset.v; app.querySelectorAll('#kphase button').forEach((x) => x.setAttribute('aria-pressed', x === b)); }));
+    app.insertAdjacentHTML('beforeend', `<h2>Historie změn</h2><div class="list" id="khist"><p class="small muted">Načítám…</p></div>
+      <p style="margin-top:20px"><button class="btn danger block" id="kdel">Smazat zakázku</button></p>
+      <p class="small muted">Smazat jde jen zakázka bez faktur a nákladů (např. omylem založená). Jinak nastavte stav „Zrušeno“ – zakázka se přesune do archivu a zůstane dohledatelná.</p>`);
+    api('GET', `history/commission/${id}`).then(({ history }) => { const el = app.querySelector('#khist'); if (el) el.innerHTML = history.map((h) => `<div class="item small"><span class="grow">${esc(HACT[h.action] || h.action)}<br><span class="muted">${esc(date(h.at))} · ${esc(h.actor)}</span></span></div>`).join('') || '<p class="small muted">Bez záznamů.</p>'; }).catch(() => {});
+    app.querySelector('#kdel').addEventListener('click', () => run(async () => {
+      if (!confirm(`Opravdu smazat zakázku ${k.number}? Smažou se i její fotky. Tento krok nejde vrátit.`)) return;
+      await api('DELETE', `commissions/${id}`); toast('Zakázka smazána'); location.hash = '#/zakazky';
+    }));
     app.querySelector('#kf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `commissions/${id}`, formData(e.target)); toast('Uloženo'); await econ(); }); });
 
     // --- Fotografie ---
@@ -749,6 +765,10 @@
     app.innerHTML = `<h1>Sklad dílů</h1><p class="small muted">Skladem ${stock.length} položek v hodnotě ${czk(value)}.</p>
       <details ${edit ? 'open' : ''}><summary>${edit ? `Upravit: ${esc(edit.title)}` : 'Přidat díl'}</summary>${partForm(edit, products)}</details>
       <div class="list" style="margin-top:12px">${parts.map((x) => `<a class="item" href="#/dily?e=${x.id}"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${esc(PK[x.kind])}${x.original ? ' · originál' : ''} · ${x.qty} ks · ${czk(x.unit_cost_czk)}/ks · ${esc({ skladem: 'skladem', pouzito: 'použito', prodano: 'prodáno', vyrazeno: 'vyřazeno' }[x.status])}${x.product_title ? ` · ${esc(x.product_title)}` : ''}${x.commission_number ? ` · zakázka ${esc(x.commission_number)}` : ''}</span></span></a>`).join('') || '<p class="muted">Zatím žádné díly.</p>'}</div>`;
+    if (edit) {
+      app.querySelector('#pf').insertAdjacentHTML('beforeend', '<button class="btn danger block" type="button" id="pdel" style="margin-top:8px">Smazat díl</button>');
+      app.querySelector('#pdel').addEventListener('click', () => run(async () => { if (!confirm(`Smazat díl „${edit.title}“? Použijte jen u omylem zapsané položky.`)) return; await api('DELETE', `parts/${edit.id}`); toast('Díl smazán'); location.hash = '#/dily'; }));
+    }
     app.querySelector('#pf').addEventListener('submit', (ev) => { ev.preventDefault(); run(async () => {
       const d = formData(ev.target); d.original = ev.target.original.checked;
       if (edit) await api('PUT', `parts/${edit.id}`, d); else await api('POST', 'parts', d);
@@ -953,13 +973,16 @@
   };
 
   views['zakaznici/:id'] = async ({ id }) => {
-    const { customer: c, orders, commissions, inquiries } = await api('GET', `customers/${id}`);
+    const { customer: c, orders, commissions, inquiries, invoices } = await api('GET', `customers/${id}`);
     app.innerHTML = `<p><a href="#/zakaznici">← Zákazníci</a></p><h1>${esc(c.name || c.email)}</h1>
       <form id="cf" class="card">${field('name', 'Jméno', c)}${field('phone', 'Telefon', c)}<p class="small"><a href="mailto:${esc(c.email)}">${esc(c.email)}</a></p>${area('note', 'Poznámka', c)}<button class="btn block">Uložit</button></form>
       <h2>Objednávky</h2><div class="list">${orders.map((o) => `<a class="item" href="#/objednavky/${o.id}"><span class="grow">${esc(o.number)} ${chip('order', o.status)} ${czk(o.total)}</span></a>`).join('') || '<p class="muted small">Žádné</p>'}</div>
       <h2>Zakázky</h2><div class="list">${commissions.map((k) => `<a class="item" href="#/zakazky/${k.id}"><span class="grow">${esc(k.number)} ${chip('cstatus', k.status)} ${esc(L.ctype[k.type])}</span></a>`).join('') || '<p class="muted small">Žádné</p>'}</div>
-      <h2>Poptávky</h2>${inquiries.map((i) => `<div class="card small">${date(i.created_at)} – ${esc(i.message).slice(0, 200)}</div>`).join('') || '<p class="muted small">Žádné</p>'}`;
+      <h2>Faktury</h2><div class="list">${(invoices || []).map((v) => `<a class="item" href="#/faktury/${v.id}"><span class="grow">${esc(v.number)} · ${czk(v.total)} · ${v.cancelled_at ? 'storno' : v.paid_at ? 'uhrazeno' : 'neuhrazeno'}</span></a>`).join('') || '<p class="muted small">Žádné</p>'}</div>
+      <h2>Poptávky</h2>${inquiries.map((i) => `<div class="card small">${date(i.created_at)} – ${esc(i.message).slice(0, 200)}</div>`).join('') || '<p class="muted small">Žádné</p>'}
+      <p style="margin-top:20px"><button class="btn danger block" id="cdel">Smazat zákazníka</button></p><p class="small muted">Jen pro zákazníka bez objednávek, zakázek a dokladů (např. žádost o výmaz údajů). Doklady se ze zákona uchovávají.</p>`;
     app.querySelector('#cf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `customers/${id}`, formData(e.target)); toast('Uloženo'); }); });
+    app.querySelector('#cdel').addEventListener('click', () => run(async () => { if (!confirm(`Smazat zákazníka ${c.name || c.email}? Tento krok nejde vrátit.`)) return; await api('DELETE', `customers/${id}`); toast('Zákazník smazán'); location.hash = '#/zakaznici'; }));
   };
 
   views.faktury = async (_, q) => {

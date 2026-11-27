@@ -434,6 +434,16 @@ try {
   await page.goto(`${BASE}/admin/#/faktury/${dup3.j.id}`);
   await page.getByText('STORNOVÁNO').waitFor(); await page.getByText('vystaveno omylem dvakrát').first().waitFor();
   step('duplicita zachycena, částečná platba, oprava platby, doplatek, storno s důvodem');
+  // Bezpečné mazání: zakázka s fakturou ne (archiv), prázdná ano; historie změn
+  assert.equal((await api('DELETE', `commissions/${kz.j.id}`)).s, 409, 'zakázku s fakturou smazat nejde');
+  const empty = await api('POST', 'commissions', { type: 'servis', name: 'Omylem Založená' });
+  assert.equal((await api('DELETE', `commissions/${empty.j.id}`)).s, 200);
+  assert.ok(!(await api('GET', 'commissions')).j.commissions.some((x) => x.id === empty.j.id));
+  const hist = (await api('GET', `history/commission/${kz.j.id}`)).j.history;
+  assert.ok(hist.some((h) => h.action === 'zakazka_vytvorena'));
+  await page.goto(`${BASE}/admin/#/zakazky?f=vse&q=Instagram`);
+  await page.locator('.item', { hasText: 'Instagram Zákazník' }).first().waitFor();
+  step('mazání jen bez dokladů, filtr a hledání zakázek, historie');
   const np = await api('POST', 'products', { title: 'Prim Classic Test LTD.01', brand: 'PRIM', serial_ref: '26-9.9', price_czk: 5000 });
   assert.equal(np.s, 201, JSON.stringify(np.j));
   const stockId = np.j.id;
