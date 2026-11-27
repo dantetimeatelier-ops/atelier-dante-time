@@ -4,6 +4,15 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/bez-vlastni-prace
+**Hotovo:** majitel nepoužívá hodinovou sazbu → z administrace odstraněno zadávání vlastní práce (typ nákladu, hodiny,
+nastavení sazby, řádky „zisk po ocenění práce“). Backend (`own_work`, `hours`, `labor_rate_czk`) zůstává kvůli starším
+záznamům; ty se zobrazí jen tam, kde existují, a do zaplacených nákladů se nepočítají.
+**Další krok:** –
+**Pozor na:** –
+
+---
+
 ## 2026-11-27 – Claude – claude/dily-ze-skladu-v-zakazce
 **Hotovo:** díly ze skladu lze použít v zakázce. Migrace 0023: `parts.commission_id`. `FIN.usePartInCommission`
 (při použití části zásoby se položka rozdělí, zbytek zůstane skladem), `returnPartFromCommission`; cena použitých dílů
