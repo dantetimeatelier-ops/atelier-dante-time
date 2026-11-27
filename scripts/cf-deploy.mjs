@@ -109,6 +109,12 @@ writeFileSync(path.join(ROOT, 'wrangler.toml'), toml);
 
 // 5) Struktura databáze
 step('Struktura databáze (migrace)');
+// Bod obnovy před migracemi: D1 Time Travel umí databázi vrátit k tomuto okamžiku (obnova: wrangler d1 time-travel restore).
+try {
+  const tt = run(['d1', 'time-travel', 'info', names.d1, '--json', ...(env ? ['--env', env] : [])], { capture: true });
+  const bookmark = (tt.match(/"bookmark"\s*:\s*"([^"]+)"/) || [])[1];
+  console.log(bookmark ? `Bod obnovy databáze před migracemi: ${bookmark} (${new Date().toISOString()})` : 'Bod obnovy: Time Travel nevrátil záložku (obnova jde i podle času).');
+} catch (e) { console.log(`Bod obnovy se nepodařilo zjistit (${String(e.message).slice(0, 120)}) – obnova podle času přes Time Travel funguje i tak.`); }
 run(['d1', 'migrations', 'apply', names.d1, '--remote', ...(env ? ['--env', env] : [])]);
 
 // 6) Instalační kód administrace – do databáze jde jen jeho otisk, a jen dokud není účet vytvořen

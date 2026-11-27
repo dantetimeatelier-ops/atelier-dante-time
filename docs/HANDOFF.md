@@ -4,6 +4,30 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/fakturace-platby-audit
+**Hotovo:** audit administrace (zadání majitele 27. 11.).
+- **Evidence plateb** (migrace 0025, `server/invoice-payments.js`): tabulka `invoice_payments` = zdroj pravdy pro „přijato“
+  a pohledávky. Záloha, částečná platba, doplatek, přeplatek, vrácení (záporná částka). Oprava platby = zrušení s důvodem
+  (zůstává v historii). `invoices.paid_at` je odvozené (`syncPaid`). Migrace převedla dosavadní úhrady na platby v plné výši.
+  Pozor: `server/payments.js` jsou platby KARTOU v e-shopu – jiný modul.
+- **Storno** jen s důvodem (`cancel_reason`, `cancelled_by`), ne při zaznamenaných platbách (pak dobropis / oprava platby),
+  ne u vyúčtované zálohy. Vystavené doklady se nemažou (číselná řada).
+- **Ochrana proti duplicitě** (409 `code: duplicate`): stejný odběratel + částka do 30 dnů, nebo druhá faktura k zakázce;
+  administrace se zeptá a pošle `allow_duplicate`.
+- **Detail dokladu** `#/faktury/:id`: stav (neuhrazeno/částečně/uhrazeno/přeplaceno), platby, „Zapsat platbu“, „Opravit“,
+  odeslání, kopie do konceptu, dobropis, storno, související doklady, položky, historie. API: GET invoices/:id,
+  POST invoices/:id/payments, POST invoice-payments/:id/cancel, POST invoices/:id/copy.
+- `finance.js`: přijato po měsících z plateb (paid_on), pohledávky = zbývající částky, ekonomika zakázky z plateb.
+- Veřejná faktura: částečně uhrazeno / zbývá, QR na zbývající částku, důvod storna.
+- Zakázky: vyhledávání a filtry (rozpracované / hotové / archiv / vše), smazání jen bez dokladů a nákladů, historie změn.
+  Díl: smazání jen nepoužitého. Zákazník: faktury v detailu, smazání jen bez objednávek, zakázek a dokladů.
+- Nasazení: před migracemi se do logu zapíše bod obnovy D1 Time Travel.
+- Upravené testy druhého agenta (`zakazky.test.mjs`): úhrady přes evidenci plateb, záměrné duplicity s `allow_duplicate`.
+**Další krok:** upomínky zákazníkům (jen se souhlasem majitele), párování plateb z banky (vyžaduje napojení banky – 💰?).
+**Pozor na:** „přijato“ a pohledávky počítej vždy z `invoice_payments`, ne z `paid_at`.
+
+---
+
 ## 2026-11-27 – Claude – claude/koncepty-faktur
 **Hotovo:** koncepty faktur a adresa u zakázky (přání majitele). Migrace 0024: tabulka `invoice_drafts` (bez čísla –
 číslo se přidělí až při vystavení), `commissions.contact_street/city/zip`. API `invoice-drafts` (GET seznam, GET/:id,
