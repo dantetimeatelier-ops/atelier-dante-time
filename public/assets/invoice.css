@@ -29,3 +29,4 @@ mark.todo{background:#ffe3dd;border:1px dashed #d55;padding:0 4px}
 .void::before{content:"STORNO";position:absolute;top:40%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);font:700 110px/1 Arial,sans-serif;color:rgba(200,40,40,.12);pointer-events:none}
 @media print{body{background:#fff}.inv{margin:0;padding:0;box-shadow:none;max-width:none}.print{display:none}}
 @media (max-width:640px){.inv{padding:24px 18px;margin:0}.top{flex-direction:column;gap:18px}.doc{text-align:left}.parties{grid-template-columns:1fr;gap:18px}.sum{width:100%}.logo span{font-size:22px}}
+.preview-note{margin:0 0 24px;padding:10px 14px;border:1px dashed #c8a24a;border-radius:8px;color:#8a6d2a;font-size:13px;text-align:center}

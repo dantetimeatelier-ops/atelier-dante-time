@@ -484,6 +484,14 @@ try {
   await page.locator('input[name=buyer_name]').fill('Vinted Kupující');
   await page.locator('input[name=buyer_email]').fill('vinted@example.com');
   await page.locator('input[name=paid]').check();
+  // Náhled faktury: zobrazí doklad bez uložení a bez čísla
+  await page.getByRole('button', { name: 'Náhled', exact: true }).click();
+  const nf = page.frameLocator('iframe[title="Náhled faktury"]');
+  await nf.getByText(/NÁHLED – doklad ještě není vystavený/).waitFor();
+  await nf.getByText(/Prim Classic Test LTD\.01/).first().waitFor();
+  assert.equal((await api('GET', 'invoices?channel=vinted')).j.invoices.length, 0, 'náhled nesmí vystavit doklad');
+  await page.getByRole('button', { name: 'Zavřít náhled' }).click();
+  step('náhled faktury bez vystavení');
   await page.getByRole('button', { name: 'Vystavit fakturu' }).click();
   await page.getByRole('heading', { name: /^Faktura DT-\d{4}-\d{4}$/ }).waitFor(); // po vystavení detail dokladu
   await page.getByText('UHRAZENO', { exact: true }).waitFor();
@@ -495,7 +503,7 @@ try {
   assert.equal(econ.sold, true); assert.equal(econ.revenue, 5000, 'tržba hodinek bez dopravy');
   const vp = await ctx.newPage(); await vp.goto(`${BASE}/faktura/${list[0].public_token}`);
   const vh = await vp.content(); await vp.close();
-  assert.match(vh, /Neplátce DPH/); assert.match(vh, /Model: Prim Classic Test LTD.01/); assert.match(vh, /Serial no: 26-9.9/); assert.match(vh, /Děkujeme za nákup/); assert.match(vh, /útulku pro zvířata/);
+  assert.match(vh, /Neplátce DPH/); assert.match(vh, /<!--email_off-->/); assert.doesNotMatch(vh, /uskutečnění plnění/); assert.match(vh, /Model: Prim Classic Test LTD.01/); assert.match(vh, /Serial no: 26-9.9/); assert.match(vh, /Děkujeme za nákup/); assert.match(vh, /útulku pro zvířata/);
   // Záloha 2 000 Kč → vyúčtování 9 000 Kč (zbývá 7 000), záloha se nezapočítá do tržeb dvakrát
   const adv = await api('POST', 'invoices', { kind: 'zalohova', channel: 'zakazka', buyer_name: 'Zálohový Zákazník', items: [{ text: 'Záloha na zakázkovou sestavu', qty: 1, price: 2000 }], paid: true, payment_method: 'bank_transfer' });
   assert.equal(adv.s, 201);

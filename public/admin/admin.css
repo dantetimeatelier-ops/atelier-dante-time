@@ -92,6 +92,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 4px;b
 .lightbox .lb-prev,.lightbox .lb-next{position:absolute;top:45%;width:44px;height:64px;border:0;background:rgba(17,17,17,.6);color:var(--gold);font-size:34px;line-height:1}
 .lightbox .lb-prev{left:0;border-radius:0 10px 10px 0}.lightbox .lb-next{right:0;border-radius:10px 0 0 10px}
 .lightbox .lb-bar{padding:10px 14px 14px;display:grid;gap:8px;text-align:center;border-top:1px solid var(--line);background:#0b0b0b}
+.lightbox .lb-frame{flex:1;min-height:0;width:100%;border:0;margin-top:calc(60px + env(safe-area-inset-top));background:#f2f0ec}
 .lightbox .seg{margin:0}
 .mtab th{width:auto;white-space:nowrap}.mtab td{white-space:nowrap}
 input[type=radio],input[type=checkbox]{accent-color:var(--gold)}

@@ -1340,7 +1340,7 @@
         <p class="small muted">${f.autosend ? 'Automatické odesílání je zapnuté – odešle se jen při platném e-mailu zákazníka.' : 'Okamžité odeslání je vypnuté. Zapnete ho v <a href="#/nastaveni">Nastavení → Faktury</a>.'}</p></details>
       <p class="small" id="sum"></p>
       <p class="small muted">Koncept se uloží bez čísla – číslo faktury se přidělí až při vystavení.</p>
-      <div class="sticky-save"><div class="grid"><button class="btn" type="button" id="draft">Uložit koncept</button><button class="btn primary">Vystavit fakturu</button></div></div></form>`;
+      <div class="sticky-save"><div class="grid" style="grid-template-columns:1fr .8fr 1.2fr"><button class="btn" type="button" id="draft">Uložit koncept</button><button class="btn" type="button" id="ipreview">Náhled</button><button class="btn primary">Vystavit fakturu</button></div></div></form>`;
     const form = app.querySelector('#if');
     const recalc = () => {
       const items = [...form.querySelectorAll('.line')].map((l) => (Number(l.querySelector('[name=qty]').value) || 1) * (Number(l.querySelector('[name=price]').value) || 0));
@@ -1370,6 +1370,28 @@
       const total = (Number(form.product_price.value) || 0) + (Number(form.shipping_czk.value) || 0) + data.items.reduce((a, i) => a + (Number(i.qty) || 1) * (Number(i.price) || 0), 0);
       const r = await api('POST', 'invoice-drafts', { id: draftId, commission_id: pre.commission_id || null, total_czk: total || null, data });
       draftId = r.id; toast('Koncept uložen – najdete ho ve Fakturách');
+    }));
+    // Náhled: stejná data jako při vystavení, doklad se ale neuloží a nedostane číslo
+    const payload = () => {
+      const d = formData(form);
+      d.items = [...form.querySelectorAll('.line')].map((l) => ({ text: l.querySelector('[name=text]').value, qty: l.querySelector('[name=qty]').value || 1, price: l.querySelector('[name=price]').value })).filter((i) => i.text.trim());
+      delete d.text; delete d.qty; delete d.price;
+      d.paid = form.paid.checked; d.inspection = form.inspection.checked; d.commission_id = pre.commission_id;
+      d.deduct_cash_deposit = !!form.deduct_cash_deposit?.checked && form.kind.value === 'faktura';
+      if (form.kind.value !== 'faktura') delete d.advance_id;
+      return d;
+    };
+    app.querySelector('#ipreview').addEventListener('click', () => run(async () => {
+      const { html } = await api('POST', 'invoices/preview', payload());
+      const el = document.createElement('div');
+      el.className = 'lightbox'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Náhled faktury');
+      el.innerHTML = '<button class="lb-x" aria-label="Zavřít náhled">✕</button><iframe class="lb-frame" title="Náhled faktury" sandbox="allow-same-origin"></iframe>';
+      el.querySelector('iframe').srcdoc = html;
+      const close = () => { el.remove(); document.removeEventListener('keydown', key); window.removeEventListener('hashchange', close); };
+      const key = (e) => { if (e.key === 'Escape') close(); };
+      el.querySelector('.lb-x').onclick = close;
+      document.addEventListener('keydown', key); window.addEventListener('hashchange', close);
+      document.body.appendChild(el); el.querySelector('.lb-x').focus();
     }));
     form.addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
       const d = formData(form);

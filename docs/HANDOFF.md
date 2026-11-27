@@ -4,6 +4,14 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-27 – Claude – claude/nahled-faktury
+**Hotovo:** náhled faktury před vystavením (tlačítko „Náhled“ ve formuláři; `POST invoices/preview` → `issueManual(..., { preview: true })`
+projde stejné výpočty a kontroly, ale nic neuloží ani nepřidělí číslo). Vzhled dokladu přesunut do `server/invoice-page.js`
+(`renderInvoicePage`), používá ho veřejná stránka faktury i náhled. E-mail dodavatele zabalen do `<!--email_off-->`,
+protože Cloudflare Email Obfuscation ho nahrazoval textem „[email protected]“ (dekódovací skript je na faktuře zakázaný CSP).
+**Další krok:** –
+**Pozor na:** náhled se zobrazuje v `iframe srcdoc` (sandbox bez skriptů), QR platba v náhledu není (VS ještě neexistuje).
+
 ## 2026-11-27 – Claude – claude/faktura-bez-duzp
 **Hotovo:** na faktuře se u neplátce DPH (`OPERATOR.vatPayer = false`) netiskne „Datum uskutečnění plnění“ (pokyn majitele;
 `taxable_date` se dál ukládá pro evidenci). Položka faktury ze zakázky = pole „Hodinky“ (+ kalibr), bez druhu zakázky a čísla.
