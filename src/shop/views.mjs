@@ -22,7 +22,7 @@ export function productCard(p, lang) {
   <div class="meta">
     <span class="status ${p.status}">${esc(st)}</span>
     <h3 style="margin-top:10px">${esc(productName(p))}</h3>
-    <div class="sub">${esc([p.kind && p.kind !== 'original' ? KIND[p.kind]?.[lang] : null, p.year, p.movement, p.case_diameter_mm && `${p.case_diameter_mm} mm`].filter(Boolean).join(' · '))}</div>
+    <div class="sub">${esc([p.kind && p.kind !== 'original' ? KIND[p.kind]?.[lang] : null, p.year, p.movement, p.case_diameter_mm && `${lang === 'cs' ? String(p.case_diameter_mm).replace('.', ',') : p.case_diameter_mm} mm`].filter(Boolean).join(' · '))}</div>
     ${p.case_metal === 'pozlaceno' || PRECIOUS.includes(p.case_metal) ? `<div class="sub metal">${esc(METAL[p.case_metal][lang])}</div>` : ''}
     <div style="margin-top:10px">${price}</div>
   </div>
@@ -113,7 +113,7 @@ export function productPage({ p, images, lang, mode, origin }) {
       <table class="specs"><tbody>
         ${row(L('Značka', 'Brand'), p.brand)}${row('Model', p.model)}${row(L('Reference', 'Reference'), p.reference)}${row(L('Rok výroby', 'Year'), p.year)}
         ${row(L('Strojek', 'Movement'), p.movement)}${row(L('Nátah', 'Winding'), p.movement_type === 'manual' ? L('ruční', 'manual') : p.movement_type === 'automatic' ? L('automatický', 'automatic') : '')}
-        ${row(L('Druh', 'Type'), KIND[p.kind || 'original']?.[lang])}${row(L('Pouzdro', 'Case'), METAL[p.case_metal]?.[lang])}${row(L('Ryzost a punc', 'Fineness & hallmark'), p.hallmark)}${row(L('Pozlacení', 'Plating'), p.plating)}${row(L('Materiál pouzdra – detail', 'Case material – detail'), p.case_material)}${row(L('Průměr pouzdra', 'Case diameter'), p.case_diameter_mm && `${p.case_diameter_mm} mm`)}${row(L('Šířka uchycení', 'Lug width'), p.lug_width_mm && `${p.lug_width_mm} mm`)}
+        ${row(L('Druh', 'Type'), KIND[p.kind || 'original']?.[lang])}${row(L('Pouzdro', 'Case'), METAL[p.case_metal]?.[lang])}${row(L('Ryzost a punc', 'Fineness & hallmark'), p.hallmark)}${row(L('Pozlacení', 'Plating'), p.plating)}${row(L('Materiál pouzdra – detail', 'Case material – detail'), p.case_material)}${row(L('Průměr pouzdra', 'Case diameter'), p.case_diameter_mm && `${lang === 'cs' ? String(p.case_diameter_mm).replace('.', ',') : p.case_diameter_mm} mm`)}${row(L('Šířka uchycení', 'Lug width'), p.lug_width_mm && `${lang === 'cs' ? String(p.lug_width_mm).replace('.', ',') : p.lug_width_mm} mm`)}
         ${row(L('Ciferník', 'Dial'), p.dial)}${row(L('Sklíčko', 'Crystal'), p.crystal)}${row(L('Řemínek', 'Strap'), p.strap)}${row(L('Vodotěsnost', 'Water resistance'), p.water_resistance || L('není určeno do vody', 'not intended for water'))}
         ${row(L('Stav', 'Condition'), p.condition)}${row(L('Provedené práce', 'Work carried out'), p.service_done)}
         ${row(L('Původní originální součásti', 'Original components'), p.original_parts)}${row(L('Doživotní garance pravosti', 'Lifetime authenticity guarantee'), authenticityParts(p).map((x) => AUTH_PARTS[x][lang]).join(', '))}${row(L('Ověření originality', 'Authenticity check'), p.authenticity_note)}${row(L('Nové součásti z přestavby Dante Time / vyměněné díly', 'New components from the Dante Time rebuild / replaced parts'), p.replaced_parts)}${row(L('Hmotnost drahého kovu', 'Precious metal weight'), p.precious_weight_g && `${p.precious_weight_g} g`)}${row(L('Příslušenství', 'Accessories'), p.accessories)}
