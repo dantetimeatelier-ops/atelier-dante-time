@@ -141,7 +141,8 @@ route('GET', 'dashboard', async ({ env }) => {
   // Hlídání limitů DPH u neplátce: obrat za kalendářní rok (vystavené faktury) a prodej spotřebitelům do jiných zemí EU
   const yearStart = `${new Date().getUTCFullYear()}-01-01`;
   const live = mode(env) === 'live' ? "mode = 'live'" : '1=1';
-  const turnover = (await q(`SELECT COALESCE(SUM(total),0) AS s FROM invoices WHERE cancelled_at IS NULL AND kind <> 'zalohova' AND issued_at >= ? AND ${live}`, yearStart)).s;
+  const vt = await FIN.vatTurnover(env, yearStart.slice(0, 4), { liveOnly: mode(env) === 'live' });
+  const turnover = vt.total;
   const euSales = (await q(`SELECT COALESCE(SUM(i.total),0) AS s FROM invoices i JOIN orders o ON o.id = i.order_id WHERE i.cancelled_at IS NULL AND i.kind <> 'zalohova' AND i.issued_at >= ? AND o.billing_country <> 'CZ' AND (o.company_ico IS NULL OR o.company_ico = '') AND ${live.replace('mode', 'i.mode')}`, yearStart)).s;
   const eurRate = Number(cfg.eurRate) || 25;
   const vatLimit = 2000000;
@@ -149,7 +150,7 @@ route('GET', 'dashboard', async ({ env }) => {
   if (!OPERATOR.vatPayer && turnover >= vatLimit * 0.8) warnings.push(`Obrat letos ${turnover.toLocaleString('cs-CZ')} Kč se blíží limitu pro registraci k DPH (2 000 000 Kč). Poraďte se s účetní.`);
   if (euSales >= euLimitCzk * 0.8) warnings.push(`Prodej spotřebitelům do jiných zemí EU letos ${euSales.toLocaleString('cs-CZ')} Kč se blíží limitu 10 000 € (DPH v zemi zákazníka / OSS). Poraďte se s účetní.`);
   return json({
-    turnover, euSales, vatLimit, euLimitCzk,
+    turnover, turnoverInvoices: vt.invoices, turnoverImported: vt.imported, euSales, vatLimit, euLimitCzk,
     mode: mode(env), products: counts, warnings,
     inquiriesNew: (await q("SELECT COUNT(*) AS n FROM inquiries WHERE status='nova'")).n,
     ordersAwaiting: (await q("SELECT COUNT(*) AS n FROM orders WHERE status='awaiting_payment'")).n,
