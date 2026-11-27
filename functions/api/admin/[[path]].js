@@ -638,6 +638,7 @@ route('GET', 'invoices/:id', async ({ env, params }) => json(await INV.invoiceDe
 route('POST', 'invoices/:id/payments', async ({ env, params, body, user }) => json(await PAY.addPayment(env, params.id, body, user.email), 201));
 route('POST', 'invoice-payments/:id/cancel', async ({ env, params, body, user }) => { await PAY.cancelPayment(env, params.id, body.reason, user.email); return json({ ok: true }); });
 route('POST', 'invoices/:id/copy', async ({ env, params, user }) => json(await INV.copyToDraft(env, params.id, user.email), 201));
+route('PUT', 'invoices/:id/buyer', async ({ env, params, body, user }) => json({ ok: true, ...(await INV.updateBuyer(env, params.id, body, user.email)) }));
 route('POST', 'invoices/:id/cancel', async ({ env, params, body, user }) => { await INV.cancelInvoice(env, params.id, user.email, body.reason); return json({ ok: true }); });
 route('POST', 'invoices/:id/credit', async ({ env, params, body, user }) => { const inv = await INV.creditNote(env, params.id, body, user.email); return json({ id: inv.id, number: inv.number, token: inv.public_token }, 201); });
 route('POST', 'invoices/:id/send', async ({ env, params, user, request }) => { await INV.sendInvoice(env, params.id, user.email, new URL(request.url).origin); return json({ ok: true }); });
