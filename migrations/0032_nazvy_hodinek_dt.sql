@@ -12,7 +12,7 @@ UPDATE product_images SET alt = (SELECT CASE
       THEN 'DT – ' || upper(trim(p.brand)) || substr(trim(p.title), length(trim(p.brand)) + 1)
     WHEN trim(COALESCE(p.brand, '')) <> '' THEN 'DT – ' || upper(trim(p.brand)) || ' ' || trim(p.title)
     ELSE 'DT – ' || trim(p.title) END FROM products p WHERE p.id = product_images.product_id)
-WHERE alt IS NOT NULL AND alt = (SELECT p.title FROM products p WHERE p.id = product_images.product_id AND p.title NOT LIKE 'DT – %');
+WHERE alt IS NOT NULL AND alt = (SELECT p.title FROM products p WHERE p.id = product_images.product_id AND p.title NOT LIKE 'DT – %' AND NOT (p.title = 'Hodinky' AND trim(COALESCE(p.brand, '')) = ''));
 
 -- Název a SEO titulek (SQLite počítá všechny výrazy ze starých hodnot)
 UPDATE products SET
@@ -31,7 +31,7 @@ UPDATE products SET
       THEN 'DT – ' || upper(trim(brand)) || substr(trim(title), length(trim(brand)) + 1)
     WHEN trim(COALESCE(brand, '')) <> '' THEN 'DT – ' || upper(trim(brand)) || ' ' || trim(title)
     ELSE 'DT – ' || trim(title) END
-WHERE title NOT LIKE 'DT – %';
+WHERE title NOT LIKE 'DT – %' AND NOT (title = 'Hodinky' AND trim(COALESCE(brand, '')) = '');
 
 -- Přestavby: upozornění, že nejde o oficiální nový model původního výrobce
 UPDATE products SET description_cs = description_cs || char(10) || char(10) || 'Jde o nezávislou přestavbu ateliéru Dante Time s využitím originálních historických komponentů, nikoli o oficiální nový model původního výrobce.'

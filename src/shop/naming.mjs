@@ -21,7 +21,7 @@ export function dtName({ brand, title, model } = {}) {
     rest = rest.replace(new RegExp(`^${escRe(b)}(?![\\p{L}\\p{N}])\\s*[–—-]?\\s*`, 'iu'), ''); // značka na začátku názvu se nepíše dvakrát
     return `${DT_PREFIX}${b.toLocaleUpperCase('cs')}${rest ? ` ${rest}` : ''}`;
   }
-  return rest ? `${DT_PREFIX}${rest}` : '';
+  return rest && rest.toLowerCase() !== 'hodinky' ? `${DT_PREFIX}${rest}` : ''; // „Hodinky“ = zástupný název rozpracované karty
 }
 
 /** Má název už jednotný tvar? (kontrola katalogu a systémová kontrola) */

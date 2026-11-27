@@ -547,3 +547,10 @@ test('jednotné názvy hodinek „DT – ZNAČKA model označení“ (R26)', asy
   assert.match(d.description_cs, /^DT – PRIM Classic 0-02/); assert.match(d.description_cs, /nikoli o oficiální nový model původního výrobce/);
   assert.match(d.seo_title, /^DT – PRIM Classic 0-02/);
 });
+
+test('zástupný název „Hodinky“ se po doplnění značky nahradí jménem modelu', async () => {
+  const { dtName } = await import('../../src/shop/naming.mjs');
+  assert.equal(dtName({ title: 'Hodinky' }), '');
+  assert.equal(productName({ title: 'Hodinky' }), 'Hodinky');
+  assert.equal(productName({ brand: 'Omega', model: 'Genève', title: null }), 'DT – OMEGA Genève');
+});

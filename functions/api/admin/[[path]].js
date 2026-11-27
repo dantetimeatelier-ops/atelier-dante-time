@@ -186,7 +186,7 @@ function productInput(body, existing = {}, settings = {}) {
   const merged = { ...existing, ...d };
   // Název se skládá automaticky ze značky a modelu, pokud majitel nezadal vlastní
   const autoOld = productName({ ...existing, title: null });
-  if (!merged.title || merged.title === 'Hodinky' || merged.title === autoOld) merged.title = productName({ ...merged, title: null });
+  if (!merged.title || ['Hodinky', 'DT – Hodinky', autoOld].includes(merged.title)) merged.title = productName({ ...merged, title: null });
   // Jednotný název „DT – ZNAČKA model označení“ (R26) – doplní se vždy automaticky, i když majitel napíše jen „Prim Classic …“
   merged.title = productName(merged);
   d.title = merged.title;
