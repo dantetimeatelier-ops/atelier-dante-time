@@ -25,6 +25,7 @@ rozhodnutí v [`DECISIONS.md`](DECISIONS.md), historie v [`CHANGELOG.md`](CHANGE
 | Administrace `/admin` (iPhone) | ✅ | heslo + 2FA, hodinky, objednávky, zakázky, sklad, náklady, dopravci, faktury |
 | Ekonomika | ✅ | náklady s doklady, marže po hodinkách vč. dopravy a poplatků brány, limit DPH, export pro účetní |
 | Digitální pas hodinek + certifikát | ✅ | QR, bez AI |
+| Karta pasu k gravírování | ✅ | 85,6 × 54 mm z existujícího pasu: SVG (texty v křivkách), PNG 600 DPI, PDF, inverze, hromadný ZIP, kontrola QR; `server/passport-card.js` |
 | Garanční prohlídky | ✅ | připomínky (DT Logistics) |
 | Google Nákupy feed | ✅ `/feed/google.xml` | účet Merchant Center zakládá majitel (TASKS) |
 | E-maily | ✅ Resend | odesílatel objednavky@atelier-dante-time.cz |

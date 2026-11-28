@@ -207,7 +207,21 @@ try {
   await pas.close();
   const cert = await page.evaluate(async (u) => (await fetch(u)).text(), `${BASE}/api/admin/passports/${page.url().split('/').pop()}/certificate`);
   assert.match(cert, /Certifikát pravosti/);
-  step('digitální pas: založen při převzetí, historie, veřejné ověření bez osobních údajů, certifikát');
+  // Karta k gravírování: náhled, kontrola QR, SVG (texty v křivkách) a PDF ve skutečné velikosti
+  const pasId = page.url().split('/').pop();
+  await page.getByRole('link', { name: 'Karta k gravírování' }).click();
+  await page.getByRole('heading', { name: 'Karta k gravírování' }).waitFor();
+  await page.getByText('QR odkazuje na veřejný digitální pas').waitFor();
+  assert.ok(await page.locator('#cardimg').evaluate((i) => i.complete && i.naturalWidth > 0), 'náhled karty se musí vykreslit');
+  const card = await page.evaluate(async (u) => { const r = await fetch(u); return { type: r.headers.get('content-type'), text: await r.text() }; }, `${BASE}/api/admin/passports/${pasId}/card/svg?invert=1`);
+  assert.match(card.type, /image\/svg\+xml/);
+  assert.match(card.text, /width="85.6mm" height="54mm"/);
+  assert.ok(!/<text|font-family/.test(card.text), 'SVG nesmí obsahovat texty ani písma');
+  const pdfHead = await page.evaluate(async (u) => { const b = new Uint8Array(await (await fetch(u)).arrayBuffer()); return new TextDecoder().decode(b.slice(0, 8)); }, `${BASE}/api/admin/passports/${pasId}/card/pdf`);
+  assert.match(pdfHead, /^%PDF-1\.4/);
+  const zipSig = await page.evaluate(async (u) => { const r = await fetch(u); const b = new Uint8Array(await r.arrayBuffer()); return [r.status, b[0], b[1]]; }, `${BASE}/api/admin/passport-cards?ids=${pasId}`);
+  assert.deepEqual(zipSig, [200, 0x50, 0x4b]);
+  step('digitální pas: založen při převzetí, historie, veřejné ověření bez osobních údajů, certifikát, karta k gravírování');
   await page.goto(orderUrl);
 
   // 6) Online odstoupení od smlouvy (dva kroky)

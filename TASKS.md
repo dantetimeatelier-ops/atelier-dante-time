@@ -20,6 +20,7 @@ Značky: 🔴 platby/bezpečnost · ⚖️ právní texty, ceny · 💰 může s
 | 11 | Kritéria nákupu pro DT Scout (značky, ceny, stav, tržiště) | zadání | – |
 | 12 | 💰 Párování plateb z banky | přístup k účtu, může stát peníze | – |
 | 13 | Fotka strojku Heritage Date do galerie? | souhlas s použitím | 27. 11. |
+| 14 | Zkušební vypálení karty pasu v xTool a načtení QR telefonem (normální i inverze podle materiálu) | fyzický test | 28. 11. |
 
 ## 🔧 Rozpracováno
 
@@ -39,6 +40,7 @@ Značky: 🔴 platby/bezpečnost · ⚖️ právní texty, ceny · 💰 může s
 
 ## ✅ Dokončeno (výběr, podrobně v CHANGELOG.md)
 
+- 28. 11. Karta digitálního pasu k gravírování (SVG v křivkách, PNG 600 DPI, PDF, inverze, hromadný ZIP, kontrola QR).
 - 28. 11. Platba kartou, Apple Pay a Google Pay v ostrém provozu (Integrace: klíč ostrý, webhook ok, zákazníci vidí: ano) – PR #71 + klíče majitele.
 - 28. 11. Centrální dokumentace R28 – PR #70.
 - 28. 11. Ostrý Stripe: ověření účtu, ostrý webhook, metody Cards/Apple Pay/Google Pay, klíče v Cloudflare, nasazení.

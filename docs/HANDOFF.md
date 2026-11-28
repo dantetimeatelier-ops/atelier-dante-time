@@ -4,6 +4,16 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-28 – Claude – claude/karta-pasu
+**Hotovo:** karta digitálního pasu k laserovému gravírování. Admin: Pasy → detail → „Karta k gravírování“ (i z detailu
+hodinek), náhled, inverze, SVG / PNG 600 DPI (pHYs) / PDF ve skutečné velikosti, kontrola QR (obsah = adresa pasu,
+modul 0,59 mm, klidová zóna 4 moduly, BarcodeDetector v prohlížeči), hromadný ZIP v seznamu pasů.
+Statická grafika (logo vektorizované z `logo-faktura.webp`, texty Crimson Text + Inter převedené na křivky, ozubená kola)
+je vygenerovaná `scripts/card-art.py` → `server/passport-card-art.js` (needitovat ručně). Kód pasu z glyfů, QR obrysem modulů
+(úroveň Q). Tvary se nepřekrývají → inverze = evenodd negativ. Žádná nová data ani identifikátory, žádné knihovny.
+**Pozor na:** při změně designu spusť `python3 scripts/card-art.py` (potřebuje fontTools, cv2, rsvg-convert). Test čtení QR
+v `tests/unit/karta-pasu.test.mjs` se bez OpenCV přeskočí.
+
 ## 2026-11-28 13:30 – Claude – Stripe naostro
 **Hotovo:** příčina skryté platby kartou: v `STRIPE_SECRET_KEY` byl publishable key. Majitel vytvořil omezený klíč
 „Full access – except sensitive operations“ (`rk_live_`, 136 oprávnění) a vložil ho; nasazení (napotřetí – Cloudflare API

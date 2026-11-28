@@ -163,7 +163,7 @@
     const pub = `/hodinky/${p.slug}`;
     app.innerHTML = `<p><a href="#/hodinky">← Hodinky</a></p>
       <h1>${esc(p.title)}</h1>
-      <div class="row" style="margin-bottom:12px">${chip('product', p.status)} ${p.status !== 'draft' ? `<a class="small" href="${pub}" target="_blank">Zobrazit na webu ↗</a>` : '<span class="small muted">Koncept – na webu není vidět</span>'} <a class="btn" href="#/marze/${p.id}">Náklady a marže</a> <button class="btn" type="button" id="mkpas">Pas hodinek</button></div>
+      <div class="row" style="margin-bottom:12px">${chip('product', p.status)} ${p.status !== 'draft' ? `<a class="small" href="${pub}" target="_blank">Zobrazit na webu ↗</a>` : '<span class="small muted">Koncept – na webu není vidět</span>'} <a class="btn" href="#/marze/${p.id}">Náklady a marže</a> <button class="btn" type="button" id="mkpas">Pas hodinek</button> <button class="btn" type="button" id="mkcard">Karta k gravírování</button></div>
       ${q.get('nove') ? '<div class="card warn small">Začněte fotografiemi, pak vyplňte základní údaje a cenu. Popis a SEO vygenerujete tlačítkem.</div>' : ''}
       <h2>Fotografie</h2>
       <div class="photos" id="photos">${p.images.map((i, n) => `<div class="photo">${n === 0 ? '<span class="first">Hlavní</span>' : ''}<img src="/media/${esc(i.key_small)}" alt="">
@@ -217,6 +217,7 @@
     };
     form.addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await save(); views['hodinky/:id']({ id }, new URLSearchParams()); }); });
     app.querySelector('#mkpas')?.addEventListener('click', () => run(async () => { const r = await api('POST', 'passports', { product_id: id }); location.hash = `#/pasy/${r.id}`; }));
+    app.querySelector('#mkcard')?.addEventListener('click', () => run(async () => { const r = await api('POST', 'passports', { product_id: id }); location.hash = `#/karta-pasu/${r.id}`; }));
     app.querySelector('#gen').addEventListener('click', () => run(async () => {
       await save();
       const g = await api('POST', `products/${id}/describe`);
@@ -964,6 +965,12 @@
     const { passports } = await api('GET', 'passports');
     app.innerHTML = `<h1>Pasy hodinek</h1><p class="small muted">Každé hodinky dostanou digitální pas s QR kódem: zákazník i každý další majitel si ověří pravost a historii. Pas neobsahuje jméno ani cenu. Pas se založí sám při zápisu převzetí, nebo tlačítkem „Pas hodinek“ u hodinek.</p>
       <div class="list" style="margin-top:12px">${passports.map((x) => `<a class="item" href="#/pasy/${x.id}"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${esc(x.code)} · vystaven ${esc(x.issued_on)} · záznamů ${x.events}${x.status === 'zruseny' ? ' · ZRUŠEN' : ''}</span></span></a>`).join('') || '<p class="muted">Zatím žádné pasy.</p>'}</div>
+      ${passports.length ? `<details style="margin-top:16px"><summary>Karty k gravírování – hromadný export</summary><form class="card" id="bulkcards">
+        <p class="small muted">Stáhne ZIP: SVG (texty v křivkách, pro xTool) a PDF každé karty + jedno PDF se všemi kartami. Každá karta má QR a kód svého pasu.</p>
+        <label class="check"><input type="checkbox" id="bcall" checked> <b>Vybrat vše</b></label>
+        ${passports.map((x) => `<label class="check"><input type="checkbox" name="bc" value="${esc(x.id)}"${x.status === 'zruseny' ? '' : ' checked'}> ${esc(x.title)} <span class="small muted">${esc(x.code)}${x.status === 'zruseny' ? ' · ZRUŠEN' : ''}</span></label>`).join('')}
+        <label class="check" style="margin-top:8px"><input type="checkbox" name="invert"> Invertovat (tmavé kartičky)</label>
+        <button class="btn primary block">Stáhnout karty (ZIP)</button></form></details>` : ''}
       <details style="margin-top:16px"><summary>Založit pas ručně (hodinky mimo katalog)</summary><form class="card" id="nf">
         <label>Název hodinek<input name="title" required maxlength="200"></label>
         <div class="grid"><label>Značka<input name="brand" maxlength="80"></label><label>Model<input name="model" maxlength="120"></label></div>
@@ -973,6 +980,99 @@
         <label>Datum vystavení<input name="issued_on" type="date"></label>
         <button class="btn primary block">Založit pas</button></form></details>`;
     app.querySelector('#nf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { const r = await api('POST', 'passports', formData(e.target)); location.hash = `#/pasy/${r.id}`; }); });
+    const bf = app.querySelector('#bulkcards');
+    if (bf) {
+      bf.querySelector('#bcall').addEventListener('change', (e) => bf.querySelectorAll('[name=bc]').forEach((c) => { c.checked = e.target.checked; }));
+      bf.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const ids = [...bf.querySelectorAll('[name=bc]:checked')].map((c) => c.value);
+        if (!ids.length) return toast('Vyberte alespoň jeden pas');
+        location.href = `/api/admin/passport-cards?ids=${encodeURIComponent(ids.join(','))}${bf.invert.checked ? '&invert=1' : ''}`;
+      });
+    }
+  };
+  // --- Karta digitálního pasu k gravírování (85,6 × 54 mm) ---
+  const CARD_PX = { w: Math.round(85.6 / 25.4 * 600), h: Math.round(54 / 25.4 * 600) }; // 600 DPI
+  const crcTable = (() => { const t = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = (b) => { let c = 0xffffffff; for (const x of b) c = crcTable[(c ^ x) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  /** Doplní do PNG údaj o rozlišení (pHYs), aby se karta otevřela v přesné velikosti. */
+  function pngWithDpi(buf, dpi) {
+    const src = new Uint8Array(buf); const ppm = Math.round(dpi / 0.0254);
+    const head = new TextDecoder('latin1').decode(src.slice(0, Math.min(src.length, 4096))); if (head.includes('pHYs')) return src;
+    const data = [112, 72, 89, 115, ppm >>> 24, (ppm >>> 16) & 255, (ppm >>> 8) & 255, ppm & 255, ppm >>> 24, (ppm >>> 16) & 255, (ppm >>> 8) & 255, ppm & 255, 1];
+    const crc = crc32(data);
+    const chunk = new Uint8Array([0, 0, 0, 9, ...data, crc >>> 24, (crc >>> 16) & 255, (crc >>> 8) & 255, crc & 255]);
+    const out = new Uint8Array(src.length + chunk.length); out.set(src.slice(0, 33)); out.set(chunk, 33); out.set(src.slice(33), 33 + chunk.length);
+    return out;
+  }
+  async function renderCard(id, invert) {
+    const svg = await (await fetch(`/api/admin/passports/${encodeURIComponent(id)}/card/svg?invert=${invert ? 1 : 0}`, { credentials: 'same-origin' })).text();
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    try {
+      const img = new Image(); img.decoding = 'async';
+      await new Promise((ok, err) => { img.onload = ok; img.onerror = () => err(new Error('Kartu se nepodařilo vykreslit')); img.src = url; });
+      const c = document.createElement('canvas'); c.width = CARD_PX.w; c.height = CARD_PX.h;
+      const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+      return c;
+    } finally { URL.revokeObjectURL(url); }
+  }
+  const saveBlob = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); };
+  /** Přečte QR z vykreslené karty (kamera telefonu se chová podobně). U inverze čte negativ = výsledek po vypálení. */
+  async function readQr(canvas, invert) {
+    if (!('BarcodeDetector' in window)) return null;
+    try {
+      let src = canvas;
+      if (invert) { src = document.createElement('canvas'); src.width = canvas.width; src.height = canvas.height; const x = src.getContext('2d'); x.filter = 'invert(1)'; x.drawImage(canvas, 0, 0); }
+      const det = new window.BarcodeDetector({ formats: ['qr_code'] });
+      const r = await det.detect(src);
+      return r[0]?.rawValue || '';
+    } catch { return null; }
+  }
+  views['karta-pasu/:id'] = async ({ id }) => {
+    const [{ passport: p, url }, chk] = await Promise.all([api('GET', `passports/${id}`), api('GET', `passports/${id}/card/check`)]);
+    const base = `/api/admin/passports/${encodeURIComponent(id)}/card`;
+    const file = `karta-pasu-${String(p.code).replace(/[^A-Z0-9]/gi, '')}`;
+    app.innerHTML = `<p><a href="#/pasy/${esc(id)}">← ${esc(p.title)}</a></p><h1 style="font-size:22px">Karta k gravírování</h1>
+      <p class="small muted">85,6 × 54 mm (velikost platební karty), černobílá. QR a kód <b>${esc(p.code)}</b> se berou z pasu těchto hodinek – nic se nepřepisuje.</p>
+      <div class="card center"><img id="cardimg" alt="Náhled karty ${esc(p.code)}" style="width:100%;max-width:560px;height:auto;border-radius:12px;background:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.12)" src="${base}/svg?preview=1">
+        <label class="check" style="justify-content:center;margin-top:12px"><input type="checkbox" id="inv"> Invertovat černou a bílou (tmavé kartičky)</label>
+        <p class="small muted" id="invhint">Černá = gravírovat. Pro světlé kartičky (např. bílý kov, dřevo) nechte normálně.</p>
+        <div class="row" style="justify-content:center;flex-wrap:wrap;gap:8px;margin-top:6px">
+          <a class="btn primary" id="dsvg" href="${base}/svg?download=1">SVG pro xTool</a>
+          <a class="btn primary" href="#" role="button" id="dpng">PNG 600 DPI</a>
+          <a class="btn primary" id="dpdf" href="${base}/pdf?download=1">PDF (skutečná velikost)</a>
+        </div></div>
+      <div class="card"><h2 style="font-size:17px">Kontrola QR kódu</h2>
+        <ul class="small" style="padding-left:18px;margin:6px 0">${chk.checks.map((c) => `<li>${c.ok ? '✓' : '⚠️'} ${esc(c.text)}${c.detail ? ` <span class="muted">${esc(c.detail)}</span>` : ''}</li>`).join('')}<li id="qrread" class="muted">Čtení QR z vykreslené karty…</li></ul>
+        <p class="small muted">Po vygravírování kód ještě zkuste načíst fotoaparátem telefonu – musí otevřít <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a>.</p></div>
+      <details class="card"><summary>Jak kartu vygravírovat v xTool</summary><ol class="small" style="padding-left:18px">
+        <li>Stáhněte <b>SVG</b> a otevřete ho v xTool Creative Space (Import).</li>
+        <li>Zkontrolujte velikost <b>85,6 × 54 mm</b> (zámek poměru stran, měřítko 100 %). Texty jsou už křivky, písma nejsou potřeba.</li>
+        <li>Celou kresbu nastavte na <b>Gravírování (Engrave / Fill)</b>, ne řezání.</li>
+        <li>Na tmavé kartičky (černý elox, tmavá ocel) použijte <b>inverzi</b> – QR pak zůstane čitelný.</li>
+        <li>Nejdřív zkušební vypálení na odřezek stejného materiálu a kontrola QR telefonem.</li></ol></details>`;
+    const inv = app.querySelector('#inv'); const img = app.querySelector('#cardimg');
+    const refresh = async () => {
+      const i = inv.checked ? 1 : 0;
+      img.src = `${base}/svg?preview=1&invert=${i}`;
+      app.querySelector('#dsvg').href = `${base}/svg?download=1&invert=${i}`;
+      app.querySelector('#dpdf').href = `${base}/pdf?download=1&invert=${i}`;
+      app.querySelector('#invhint').textContent = i ? 'Inverze: gravíruje se podklad karty, logo, texty a moduly QR zůstanou (pro tmavé kartičky).' : 'Černá = gravírovat. Pro světlé kartičky (např. bílý kov, dřevo) nechte normálně.';
+      const li = app.querySelector('#qrread');
+      try {
+        const v = await readQr(await renderCard(id, i), i);
+        if (v === null) { li.textContent = 'Čtení QR v tomto prohlížeči není k dispozici – obsah QR je ověřený výše.'; li.className = 'muted'; }
+        else if (v === url) { li.textContent = '✓ QR z vykreslené karty se přečetl a vede na správný pas'; li.className = ''; }
+        else { li.textContent = `⚠️ QR z karty se nepřečetl správně (${v || 'nic'})`; li.className = ''; }
+      } catch (e) { li.textContent = `⚠️ ${e.message}`; }
+    };
+    inv.addEventListener('change', refresh);
+    app.querySelector('#dpng').addEventListener('click', (ev) => { ev.preventDefault(); run(async () => {
+      const c = await renderCard(id, inv.checked);
+      const blob = await new Promise((ok) => c.toBlob(ok, 'image/png'));
+      saveBlob(new Blob([pngWithDpi(await blob.arrayBuffer(), 600)], { type: 'image/png' }), `${file}${inv.checked ? '-inverze' : ''}-600dpi.png`);
+    }); });
+    refresh();
   };
   views['pasy/:id'] = async ({ id }) => {
     const { passport: p, events, url, url_en, qr, kinds } = await api('GET', `passports/${id}`);
@@ -981,7 +1081,7 @@
     app.innerHTML = `<p><a href="#/pasy">← Pasy hodinek</a></p><h1 style="font-size:22px">${esc(p.title)}</h1>
       ${p.status === 'zruseny' ? '<div class="card warn small">Pas je zrušený – stránka pasu ukazuje, že neplatí.</div>' : ''}
       <div class="card center"><div class="qr">${qr}</div><p class="code">${esc(p.code)}</p>
-        <p><a class="btn" href="${esc(url)}" target="_blank" rel="noopener">Otevřít pas ↗</a> <a class="btn" href="${esc(url_en)}" target="_blank" rel="noopener">EN ↗</a> <a class="btn primary" href="/api/admin/passports/${esc(id)}/certificate" target="_blank" rel="noopener">Certifikát k tisku</a></p>
+        <p><a class="btn" href="${esc(url)}" target="_blank" rel="noopener">Otevřít pas ↗</a> <a class="btn" href="${esc(url_en)}" target="_blank" rel="noopener">EN ↗</a> <a class="btn primary" href="/api/admin/passports/${esc(id)}/certificate" target="_blank" rel="noopener">Certifikát k tisku</a> <a class="btn primary" href="#/karta-pasu/${esc(id)}">Karta k gravírování</a></p>
         <p class="small muted">QR kód vytiskněte na certifikát nebo kartičku do krabičky. Na stránce pasu je výrobní číslo jen zkráceně.</p></div>
       <h2 style="margin-top:16px">Historie</h2><div class="list">${events.map((e) => `<div class="item"><span class="grow"><span class="t">${esc(kinds[e.kind])} · ${esc(e.event_date)}</span><br><span class="small muted">${esc(e.text_cs)}${e.public ? '' : ' · jen interně'}</span></span><button class="btn" data-del="${e.id}" aria-label="Smazat záznam">✕</button></div>`).join('') || '<p class="muted">Zatím žádné záznamy.</p>'}</div>
       <details style="margin-top:12px"><summary>Přidat záznam do historie</summary><form class="card" id="ef">
