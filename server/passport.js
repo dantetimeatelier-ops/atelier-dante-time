@@ -261,7 +261,7 @@ h1{font-weight:400;letter-spacing:.18em;text-transform:uppercase;font-size:20px;
 .sub{text-align:center;color:#6b5a2a;letter-spacing:.12em;font-size:12px;text-transform:uppercase;margin:0 0 18px}
 table{border-collapse:collapse;width:100%;font-family:-apple-system,system-ui,sans-serif;font-size:13px}th{text-align:left;color:#555;font-weight:400;padding:5px 12px 5px 0;width:38%;vertical-align:top}td{padding:5px 0}
 .row{display:flex;gap:18px;align-items:flex-start;margin-top:16px}.row>div{flex:1}.qr svg{max-width:120px!important}
-p{font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;line-height:1.5}.muted{color:#666}.signimg{display:flex;align-items:flex-end;gap:8px}.signimg img{max-height:90px;max-width:220px;object-fit:contain}.sign{margin-top:28px;display:flex;justify-content:space-between;align-items:flex-end;font-size:12px;font-family:-apple-system,system-ui,sans-serif}
+p{font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;line-height:1.5}.muted{color:#666}.signimg{display:flex;align-items:flex-end;gap:8px}.signimg img{max-height:130px;max-width:240px;object-fit:contain}.sign{margin-top:28px;display:flex;justify-content:space-between;align-items:flex-end;font-size:12px;font-family:-apple-system,system-ui,sans-serif}
 .noprint{text-align:center;margin:12px}@media print{.noprint{display:none}.sheet{border-color:#c8a24a}}
 </style></head><body>
 <div class="noprint"><button type="button" id="print">Vytisknout / uložit jako PDF</button><script src="/admin/print.js"></script></div>
