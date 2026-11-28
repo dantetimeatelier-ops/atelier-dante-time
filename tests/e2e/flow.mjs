@@ -546,6 +546,13 @@ try {
   const kid = k2.j.id;
   await page.goto(`${BASE}/admin/#/zakazky/${kid}`);
   await page.getByRole('heading', { name: 'Ekonomika zakázky' }).waitFor();
+  // Zakázka v práci má digitální pas automaticky (přestavba → název DT – …), bez jména zákazníka
+  await page.locator('#kpas').getByRole('link', { name: 'Karta k gravírování' }).waitFor();
+  const kp = (await api('GET', `commissions/${kid}/passport`)).j.passport;
+  assert.ok(kp?.code, 'zakázka v práci musí mít pas');
+  const kpd = (await api('GET', `passports/${kp.id}`)).j;
+  assert.match(kpd.passport.title, /^DT – /);
+  assert.ok(!/Ekonomika Test|ekonomika@example/.test(JSON.stringify(kpd.passport)), 'pas bez zákazníka');
   await page.locator('#addc summary').click();
   await page.locator('#cq button', { hasText: 'Pouzdro' }).click();
   await page.locator('#jcf [name=amount_czk]').fill('1500');

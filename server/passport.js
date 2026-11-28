@@ -24,7 +24,7 @@ export const passportUrl = (code, lang = 'cs') => `${SITE.origin}${lang === 'en'
 /** Výrobní číslo zkráceně (jen poslední 4 znaky) – stačí k ověření, ale nedá se okopírovat. */
 export const maskSerial = (s) => { const t = String(s || '').replace(/\s+/g, ''); return t ? (t.length <= 4 ? '••••' : `••••${t.slice(-4)}`) : ''; };
 
-function input(b) {
+function input(b, { customerWatch = false } = {}) {
   const d = {};
   for (const [k, max] of Object.entries(FIELDS)) if (k in b) d[k] = str(b[k], { max, required: k === 'title', name: k === 'title' ? 'název hodinek' : k }) || null;
   if ('authenticity_parts' in b) {
@@ -33,7 +33,8 @@ function input(b) {
     d.authenticity_parts = parts.length ? [...new Set(parts)].join(',') : null;
   }
   if ('issued_on' in b) d.issued_on = ymd(b.issued_on);
-  if (d.title) d.title = dtName({ brand: d.brand ?? b.brand, title: d.title }); // jednotný název DT – ZNAČKA … (R26)
+  // jednotný název DT – ZNAČKA … (R26) – jen u hodinek Dante Time; hodinky zákazníka na servisu si nechávají své jméno
+  if (d.title && !customerWatch) d.title = dtName({ brand: d.brand ?? b.brand, title: d.title });
   if ('status' in b) d.status = oneOf(b.status, ['platny', 'zruseny'], 'stav');
   return d;
 }
@@ -56,6 +57,64 @@ export async function createFromProduct(env, productId, actor) {
   return row.id;
 }
 
+// --- Pas pro hodinky ze zakázky -------------------------------------------------------------
+/** Servis a renovace = hodinky zákazníka (vlastní jméno); přestavba a zakázková výroba = hodinky Dante Time (DT – …). */
+const CUSTOMER_TYPES = ['servis', 'renovace'];
+/** Stavy, ve kterých má zakázka mít pas (po přijetí). */
+export const COMMISSION_PASSPORT_STATUSES = ['prijato', 'v_praci', 'ceka_na_dily', 'hotovo', 'predano'];
+const WORK = {
+  servis: ['servis', 'Servis hodinek v ateliéru Dante Time', 'Watch service at Atelier Dante Time'],
+  renovace: ['renovace', 'Renovace hodinek v ateliéru Dante Time', 'Watch restoration at Atelier Dante Time'],
+  prestavba: ['renovace', 'Přestavba hodinek v ateliéru Dante Time z originálních historických komponentů', 'Rebuilt at Atelier Dante Time from original historic components'],
+  zakazkova_vyroba: ['renovace', 'Zakázková sestava hodinek v ateliéru Dante Time', 'Custom-built at Atelier Dante Time'],
+};
+
+/**
+ * Založí (nebo vrátí existující) pas k hodinkám ze zakázky. Převezme jen popis hodinek a kalibr –
+ * nikdy jméno, kontakt ani cenu. Opakované volání nic nezdvojí.
+ */
+export async function createFromCommission(env, commissionId, actor) {
+  const ex = await env.DB.prepare('SELECT id FROM watch_passports WHERE commission_id = ?').bind(commissionId).first();
+  if (ex) return ex.id;
+  const k = await env.DB.prepare('SELECT id, number, type, watch, caliber FROM commissions WHERE id = ?').bind(commissionId).first();
+  if (!k) throw new HttpError('Zakázka nenalezena', 404);
+  const raw = String(k.watch || '').split(/\r?\n/)[0].trim().slice(0, 200) || `Hodinky – zakázka ${k.number}`;
+  const title = CUSTOMER_TYPES.includes(k.type) ? raw : dtName({ title: raw });
+  const id = randomId();
+  await env.DB.prepare('INSERT OR IGNORE INTO watch_passports (id, code, commission_id, title, movement, issued_on) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(id, newCode(), k.id, title, k.caliber ? String(k.caliber).slice(0, 120) : null, now().slice(0, 10)).run();
+  const row = await env.DB.prepare('SELECT id FROM watch_passports WHERE commission_id = ?').bind(commissionId).first();
+  if (row.id === id) await audit(env, actor, 'pas_zalozen', 'passport', id, { commission: k.number });
+  return row.id;
+}
+
+/**
+ * Zakázka změnila stav: po přijetí založí pas, po dokončení zapíše provedenou práci do historie
+ * a po vrácení zákazníkovi záznam o předání. Texty jsou obecné – bez jména, kontaktu a ceny.
+ */
+export async function onCommissionStatus(env, commissionId, actor) {
+  const k = await env.DB.prepare('SELECT id, number, type, status, returned_at FROM commissions WHERE id = ?').bind(commissionId).first();
+  if (!k || !COMMISSION_PASSPORT_STATUSES.includes(k.status)) return null;
+  const pid = await createFromCommission(env, k.id, actor);
+  const today = now().slice(0, 10);
+  if (['hotovo', 'predano'].includes(k.status)) {
+    const [kind, cs, en] = WORK[k.type] || WORK.servis;
+    await addEvent(env, pid, { kind, event_date: today, text_cs: cs, text_en: en, ref: `commission:${k.id}:prace` });
+  }
+  if (k.status === 'predano') {
+    await addEvent(env, pid, { kind: 'predani', event_date: /^\d{4}-\d{2}-\d{2}/.test(k.returned_at || '') ? k.returned_at.slice(0, 10) : today, text_cs: 'Hodinky předány majiteli', text_en: 'Watch handed over to the owner', ref: `commission:${k.id}:predani` });
+  }
+  return pid;
+}
+
+/** Doplní pasy k zakázkám, které je ještě nemají (zakázky přijaté před zavedením nebo mimo administraci). */
+export async function ensureCommissionPassports(env) {
+  const { results } = await env.DB.prepare(`SELECT k.id FROM commissions k WHERE k.status IN (${COMMISSION_PASSPORT_STATUSES.map(() => '?').join(',')})
+    AND NOT EXISTS (SELECT 1 FROM watch_passports w WHERE w.commission_id = k.id) LIMIT 50`).bind(...COMMISSION_PASSPORT_STATUSES).all();
+  for (const r of results) await onCommissionStatus(env, r.id, 'system');
+  return results.length;
+}
+
 /** Ručně založený pas (hodinky mimo katalog, např. zakázka nebo starší prodej). */
 export async function createManual(env, b, actor) {
   const d = input(b);
@@ -68,7 +127,8 @@ export async function createManual(env, b, actor) {
 }
 
 export async function update(env, id, b, actor) {
-  const d = input(b); const k = Object.keys(d);
+  const k0 = await env.DB.prepare('SELECT k.type FROM watch_passports w JOIN commissions k ON k.id = w.commission_id WHERE w.id = ?').bind(id).first();
+  const d = input(b, { customerWatch: CUSTOMER_TYPES.includes(k0?.type) }); const k = Object.keys(d);
   if (!k.length) return;
   await env.DB.prepare(`UPDATE watch_passports SET ${k.map((x) => `${x} = ?`).join(', ')}, updated_at = ? WHERE id = ?`).bind(...k.map((x) => d[x]), now(), id).run();
   await audit(env, actor, d.status === 'zruseny' ? 'pas_zrusen' : 'pas_upraven', 'passport', id, { fields: k });
@@ -91,7 +151,7 @@ export async function get(env, id) {
 }
 
 export async function list(env) {
-  const { results } = await env.DB.prepare('SELECT w.id, w.code, w.title, w.status, w.issued_on, w.product_id, (SELECT COUNT(*) FROM passport_events e WHERE e.passport_id = w.id) AS events FROM watch_passports w ORDER BY w.created_at DESC LIMIT 500').all();
+  const { results } = await env.DB.prepare('SELECT w.id, w.code, w.title, w.status, w.issued_on, w.product_id, w.commission_id, (SELECT number FROM commissions k WHERE k.id = w.commission_id) AS commission_number, (SELECT COUNT(*) FROM passport_events e WHERE e.passport_id = w.id) AS events FROM watch_passports w ORDER BY w.created_at DESC LIMIT 500').all();
   return results;
 }
 

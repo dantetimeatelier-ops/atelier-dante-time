@@ -426,6 +426,7 @@
       <div class="seg" role="group" aria-label="Nové fotky přidat jako" id="kphase">${Object.entries(PHASE).map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="${v === phaseFor(k.status)}">${t}</button>`).join('')}</div>
       <div class="photos" id="kphotos"><p class="small muted">Načítám…</p></div>
       <p class="small muted" id="kupl"></p>
+      <div id="kpas"></div>
       <div id="kecon"><p class="small muted">Načítám ekonomiku…</p></div>
       ${commissionForm(k)}`;
     let phase = phaseFor(k.status);
@@ -464,6 +465,18 @@
       }));
     };
     run(draw);
+
+    // --- Digitální pas hodinek zakázky (zakládá se sám po přijetí zakázky) ---
+    const pbox = app.querySelector('#kpas');
+    const pas = async () => {
+      const { passport: wp } = await api('GET', `commissions/${id}/passport`);
+      pbox.innerHTML = `<div class="card"><h2 style="font-size:17px;margin:0 0 6px">Digitální pas hodinek</h2>${wp
+        ? `<p class="small muted">Kód <b>${esc(wp.code)}</b>${wp.status === 'zruseny' ? ' · ZRUŠEN' : ''}. Provedená práce a předání se do historie zapíšou samy. Jméno zákazníka ani cena v pasu nejsou.</p>
+           <div class="row"><a class="btn" href="#/pasy/${esc(wp.id)}">Otevřít pas</a><a class="btn primary" href="#/karta-pasu/${esc(wp.id)}">Karta k gravírování</a></div>`
+        : `<p class="small muted">Pas se založí sám, jakmile zakázku přijmete (stav Přijato a dál). Můžete ho založit i hned.</p><button class="btn" type="button" id="kmkpas">Založit pas</button>`}</div>`;
+      pbox.querySelector('#kmkpas')?.addEventListener('click', () => run(async () => { await api('POST', `commissions/${id}/passport`); await pas(); }));
+    };
+    run(pas);
 
     // --- Ekonomika, faktury, zálohy, náklady ---
     const ebox = app.querySelector('#kecon');
@@ -963,8 +976,8 @@
   const AP = { strojek: 'strojek', cifernik: 'ciferník', rucicky: 'ručičky' };
   views.pasy = async () => {
     const { passports } = await api('GET', 'passports');
-    app.innerHTML = `<h1>Pasy hodinek</h1><p class="small muted">Každé hodinky dostanou digitální pas s QR kódem: zákazník i každý další majitel si ověří pravost a historii. Pas neobsahuje jméno ani cenu. Pas se založí sám při zápisu převzetí, nebo tlačítkem „Pas hodinek“ u hodinek.</p>
-      <div class="list" style="margin-top:12px">${passports.map((x) => `<a class="item" href="#/pasy/${x.id}"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${esc(x.code)} · vystaven ${esc(x.issued_on)} · záznamů ${x.events}${x.status === 'zruseny' ? ' · ZRUŠEN' : ''}</span></span></a>`).join('') || '<p class="muted">Zatím žádné pasy.</p>'}</div>
+    app.innerHTML = `<h1>Pasy hodinek</h1><p class="small muted">Každé hodinky dostanou digitální pas s QR kódem: zákazník i každý další majitel si ověří pravost a historii. Pas neobsahuje jméno ani cenu. Pas se založí sám při zápisu převzetí a u zakázek po jejich přijetí, nebo tlačítkem „Pas hodinek“ u hodinek.</p>
+      <div class="list" style="margin-top:12px">${passports.map((x) => `<a class="item" href="#/pasy/${x.id}"><span class="grow"><span class="t">${esc(x.title)}</span><br><span class="small muted">${esc(x.code)}${x.commission_number ? ` · zakázka ${esc(x.commission_number)}` : ''} · vystaven ${esc(x.issued_on)} · záznamů ${x.events}${x.status === 'zruseny' ? ' · ZRUŠEN' : ''}</span></span></a>`).join('') || '<p class="muted">Zatím žádné pasy.</p>'}</div>
       ${passports.length ? `<details style="margin-top:16px"><summary>Karty k gravírování – hromadný export</summary><form class="card" id="bulkcards">
         <p class="small muted">Stáhne ZIP: SVG (texty v křivkách, pro xTool) a PDF každé karty + jedno PDF se všemi kartami. Každá karta má QR a kód svého pasu.</p>
         <label class="check"><input type="checkbox" id="bcall" checked> <b>Vybrat vše</b></label>
@@ -1075,11 +1088,12 @@
     refresh();
   };
   views['pasy/:id'] = async ({ id }) => {
-    const { passport: p, events, url, url_en, qr, kinds } = await api('GET', `passports/${id}`);
+    const { passport: p, events, url, url_en, qr, kinds, commission } = await api('GET', `passports/${id}`);
     const ap = String(p.authenticity_parts || '').split(',');
     const f = (n, l, max = 200) => `<label>${l}<input name="${n}" value="${esc(p[n])}" maxlength="${max}"></label>`;
     app.innerHTML = `<p><a href="#/pasy">← Pasy hodinek</a></p><h1 style="font-size:22px">${esc(p.title)}</h1>
       ${p.status === 'zruseny' ? '<div class="card warn small">Pas je zrušený – stránka pasu ukazuje, že neplatí.</div>' : ''}
+      ${commission ? `<p class="small muted">Hodinky ze zakázky <a href="#/zakazky/${esc(commission.id)}">${esc(commission.number)}</a></p>` : ''}
       <div class="card center"><div class="qr">${qr}</div><p class="code">${esc(p.code)}</p>
         <p><a class="btn" href="${esc(url)}" target="_blank" rel="noopener">Otevřít pas ↗</a> <a class="btn" href="${esc(url_en)}" target="_blank" rel="noopener">EN ↗</a> <a class="btn primary" href="/api/admin/passports/${esc(id)}/certificate" target="_blank" rel="noopener">Certifikát k tisku</a> <a class="btn primary" href="#/karta-pasu/${esc(id)}">Karta k gravírování</a></p>
         <p class="small muted">QR kód vytiskněte na certifikát nebo kartičku do krabičky. Na stránce pasu je výrobní číslo jen zkráceně.</p></div>

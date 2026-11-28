@@ -443,6 +443,7 @@ route('POST', 'commissions', async ({ env, body, user }) => {
   await env.DB.prepare(`INSERT INTO commissions (id, ${keys.join(', ')}) VALUES (?, ${keys.map(() => '?').join(', ')})`).bind(id, ...keys.map((k) => d[k])).run();
   await audit(env, user.email, 'zakazka_vytvorena', 'commission', id, { number: d.number });
   await CPH.linkInquiry(env, d.inquiry_id, id);
+  await PAS.onCommissionStatus(env, id, user.email); // digitální pas po přijetí zakázky
   return json({ id, number: d.number }, 201);
 });
 route('PUT', 'commissions/:id', async ({ env, params, body, user }) => {
@@ -454,6 +455,7 @@ route('PUT', 'commissions/:id', async ({ env, params, body, user }) => {
   const keys = Object.keys(d);
   await env.DB.prepare(`UPDATE commissions SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`).bind(...keys.map((k) => d[k]), params.id).run();
   await audit(env, user.email, 'zakazka_upravena', 'commission', params.id, { status: d.status });
+  if ('status' in d) await PAS.onCommissionStatus(env, params.id, user.email); // pas: založení po přijetí, zápis práce a předání
   return json({ ok: true });
 });
 // Fotografie zakázky (z atelieru i od zákazníka) – soukromé, jen po přihlášení
@@ -545,7 +547,7 @@ route('POST', 'passports', async ({ env, body, user }) => {
   const id = body.product_id ? await PAS.createFromProduct(env, str(body.product_id, { max: 40, required: true }), user.email) : await PAS.createManual(env, body, user.email);
   return json({ id });
 });
-route('GET', 'passports/:id', async ({ env, params }) => { const d = await PAS.get(env, params.id); return json({ ...d, kinds: PAS.EVENT_KINDS }); });
+route('GET', 'passports/:id', async ({ env, params }) => { const d = await PAS.get(env, params.id); const commission = d.passport.commission_id ? await env.DB.prepare('SELECT id, number FROM commissions WHERE id = ?').bind(d.passport.commission_id).first() : null; return json({ ...d, commission, kinds: PAS.EVENT_KINDS }); });
 route('PUT', 'passports/:id', async ({ env, params, body, user }) => { await PAS.get(env, params.id); await PAS.update(env, params.id, body, user.email); return json({ ok: true }); });
 route('POST', 'passports/:id/events', async ({ env, params, body, user }) => { await PAS.get(env, params.id); await PAS.addEvent(env, params.id, { ...body, ref: null }, user.email); return json({ ok: true }); });
 route('DELETE', 'passports/:id/events/:eid', async ({ env, params, user }) => {
@@ -582,6 +584,8 @@ route('GET', 'passport-cards', async ({ env, request }) => {
   files.push({ name: 'PRECTI-ME.txt', data: `Karty digitálních pasů Dante Time (${cards.length})\r\n\r\nRozměr 85,6 × 54 mm. SVG: texty převedené na křivky – v xTool importujte a nastavte velikost 85,6 × 54 mm (měřítko 100 %).\r\nČerná = gravírovat. Inverze: pro tmavé kartičky (QR zůstane po vypálení čitelný).\r\n\r\n${cards.map((c) => `${c.code}  ${c.title}  ${c.url}`).join('\r\n')}\r\n` });
   return bin(CARD.zip(files), 'application/zip', `karty-pasu-${cards.length}${suffix}.zip`, true);
 });
+route('GET', 'commissions/:id/passport', async ({ env, params }) => json({ passport: await env.DB.prepare('SELECT id, code, status FROM watch_passports WHERE commission_id = ?').bind(params.id).first() }));
+route('POST', 'commissions/:id/passport', async ({ env, params, user }) => json({ id: await PAS.createFromCommission(env, params.id, user.email) }, 201));
 route('GET', 'passports/:id/certificate', async ({ env, params }) => html(PAS.certificateHtml(await PAS.get(env, params.id)), 200, { 'Cache-Control': 'no-store' }));
 
 // --- Poptávky a odstoupení -----------------------------------------------------------

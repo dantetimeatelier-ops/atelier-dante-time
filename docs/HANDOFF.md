@@ -4,6 +4,13 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-28 – Claude – claude/pas-zakazky
+**Hotovo:** pas i pro hodinky ze zakázek (migrace 0033 `watch_passports.commission_id`). `PAS.onCommissionStatus` se volá při
+založení a změně stavu zakázky: od stavu Přijato pas (jen první řádek „Hodinky“ + kalibr), u Hotovo/Předáno obecný záznam práce
+a předání (ref `commission:<id>:…`, bez zdvojení). Hodinová kontrola OS doplní pasy chybějícím přijatým zakázkám.
+Servis/renovace = hodinky zákazníka → bez „DT –“; přestavba/zakázková výroba → „DT – …“ (R26). Jméno, kontakt, cena ani popis
+zakázky se do pasu nedostanou. Zakázka má blok „Digitální pas hodinek“ (otevřít pas, karta k gravírování).
+
 ## 2026-11-28 – Claude – claude/karta-pasu
 **Hotovo:** karta digitálního pasu k laserovému gravírování. Admin: Pasy → detail → „Karta k gravírování“ (i z detailu
 hodinek), náhled, inverze, SVG / PNG 600 DPI (pHYs) / PDF ve skutečné velikosti, kontrola QR (obsah = adresa pasu,
