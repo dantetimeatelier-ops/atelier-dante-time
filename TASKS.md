@@ -9,7 +9,6 @@ Značky: 🔴 platby/bezpečnost · ⚖️ právní texty, ceny · 💰 může s
 
 | # | Co | Proč čeká | Od |
 |---|---|---|---|
-| 1 | 🔴 Platba kartou se po přepnutí na ostrý provoz zákazníkům nezobrazuje (ověřeno majitelem 28. 11. 12:51). Sloučit PR „Diagnostika platby kartou“, pak Administrace → Nastavení → Integrace ukáže přesný důvod (klíč / webhook / PAYMENTS_LIVE) | oprava klíčů v Cloudflare dělá jen majitel | 28. 11. |
 | 3 | Ověřit na iPhonu výběr Zásilkovny na mapě („Vybráno: …“) | oprava nasazena (PR #55), bez iPhonu nelze otestovat | 27. 11. |
 | 4 | ⚖️ Kontrola právních dokumentů 1.2 a PR #32 (AI u poptávek v GDPR) | právní texty | 26. 11. |
 | 5 | R7 – tykání, nebo vykání (doporučení: vykání) | tón značky | 25. 11. |
@@ -24,7 +23,7 @@ Značky: 🔴 platby/bezpečnost · ⚖️ právní texty, ceny · 💰 může s
 
 ## 🔧 Rozpracováno
 
-- Diagnostika platby kartou – větev `claude/platby-diagnostika`.
+- (nic)
 
 ## 📋 Plánováno (agent může udělat sám)
 
@@ -40,6 +39,7 @@ Značky: 🔴 platby/bezpečnost · ⚖️ právní texty, ceny · 💰 může s
 
 ## ✅ Dokončeno (výběr, podrobně v CHANGELOG.md)
 
+- 28. 11. Platba kartou, Apple Pay a Google Pay v ostrém provozu (Integrace: klíč ostrý, webhook ok, zákazníci vidí: ano) – PR #71 + klíče majitele.
 - 28. 11. Centrální dokumentace R28 – PR #70.
 - 28. 11. Ostrý Stripe: ověření účtu, ostrý webhook, metody Cards/Apple Pay/Google Pay, klíče v Cloudflare, nasazení.
 - 28. 11. Test plateb kartou v sandboxu na ostrém webu (obj. 2026-0004 se sama zrušila, bez faktury) – PR #54.
