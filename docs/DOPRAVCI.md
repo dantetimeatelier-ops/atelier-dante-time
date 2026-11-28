@@ -8,8 +8,8 @@ a předplatného**. Dopravce není potřeba oslovovat.
 | Hodnota hodinek | Česko | Slovensko a další země EU |
 |---|---|---|
 | do 5 000 Kč | Zásilkovna, Balíkovna, Cenná zásilka, osobní předání | Zásilkovna / Packeta |
-| 5 000–20 000 Kč (běžně 9 000–15 000 Kč) | Zásilkovna (i na dobírku), Cenná zásilka, osobní předání | Zásilkovna / Packeta do 700 € (cca 17 000 Kč) |
-| nad 20 000 Kč (Rolex 50 000–70 000 Kč) | Cenná zásilka České pošty – jen platba předem, osobní předání | jen po domluvě (osobní předání) |
+| 5 000–20 000 Kč (běžně 9 000–15 000 Kč) | Zásilkovna (i na dobírku), Balíkovna, Cenná zásilka, osobní předání | Zásilkovna / Packeta do 700 € (cca 17 000 Kč) |
+| nad 20 000 Kč (Rolex 50 000–70 000 Kč) | Balíkovna do 50 000 Kč, Cenná zásilka České pošty – jen platba předem, osobní předání | jen po domluvě (osobní předání) |
 
 Pokladna vybírá automaticky podle země a hodnoty košíku. Zákazník nikdy neuvidí dopravce, který za hodnotu kusu neručí.
 
@@ -19,7 +19,8 @@ Pokladna vybírá automaticky podle země a hodnoty košíku. Zákazník nikdy n
   (obchodní podmínky čl. 2.1). Bez měsíčního poplatku.
 - **Balíkovna (výdejní místo):** šperky, drahé kovy a „obdobně cenné věci“ nad **5 000 Kč** smějí jen se službou
   Cenný obsah, kterou výdejní místo ani Balíkovna na adresu nenabízí (poštovní podmínky Balíkovna 2026, bod 6).
-  Hodinky proto Balíkovnou posíláme jen do 5 000 Kč – jinak by Česká pošta při ztrátě nemusela nic nahradit.
+  **Na výslovný pokyn majitele (27. 11.) je Balíkovna přesto nabízena až do 50 000 Kč** (migrace 0029, 0030);
+  riziko, že pošta při ztrátě nahradí jen do 5 000 Kč, majitel zná. Limit lze změnit v administraci → Dopravci.
 - **Česká pošta – Cenná zásilka (Cenný balík):** bez smlouvy, podání na kterékoli poště, odpovědnost do výše udané ceny
   až **1 000 000 Kč**, předání jen proti podpisu. Nad 30 000 Kč udané ceny je nutné zvláštní balení (zalepení
   a označení podle pokynů pošty). Cena od 1. 4. 2026: S 131 Kč + udaná cena 14 Kč do 30 000 Kč a 14 Kč za každých
