@@ -1440,7 +1440,7 @@
       <div class="card"><h2 style="margin-top:0">Stav integrací</h2><table>
         <tr><th>Režim e-shopu</th><td>${esc({ preview: 'náhled', test: 'testovací', live: 'ostrý' }[i.mode])}</td></tr>
         <tr><th>Platba převodem (QR)</th><td>${yes(i.iban)}</td></tr>
-        <tr><th>Platba kartou, Apple Pay, Google Pay</th><td>${yes(i.card)} ${i.cardGateway ? `<span class="small muted">${esc(i.cardGateway === 'stripe' ? 'Stripe' : 'Comgate')}${i.cardLive ? '' : ' (testovací)'}</span>` : '<span class="small muted">čeká na schválení brány</span>'}</td></tr>
+        <tr><th>Platba kartou, Apple Pay, Google Pay</th><td>${yes(i.card)} ${i.cardGateway ? `<span class="small muted">${esc(i.cardGateway === 'stripe' ? 'Stripe' : 'Comgate')}${i.cardLive ? ' (ostrý provoz)' : ' (testovací)'}</span>` : '<span class="small muted">čeká na schválení brány</span>'}${i.cardDiag ? `<div class="small muted">Klíč: ${esc(i.cardDiag.keyKind)} · webhook: ${esc(i.cardDiag.webhook)} · PAYMENTS_LIVE: ${esc(i.cardDiag.liveFlag)} · zákazníci vidí: ${i.cardDiag.available ? 'ano' : 'ne'}</div>${i.cardDiag.reason ? `<div class="small" style="color:#e0b95b">${esc(i.cardDiag.reason)}</div>` : ''}` : ''}</td></tr>
         <tr><th>Výběr místa Zásilkovny</th><td>${yes(i.packeta)}</td></tr>
         <tr><th>Odesílání e-mailů</th><td>${yes(i.email)}</td></tr>
       </table><p class="small muted">Integrace se zapínají v Cloudflare podle návodu docs/INTEGRATIONS.md. Ostrý režim a ostré platby jen po vašem rozhodnutí.</p></div>`;

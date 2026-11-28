@@ -433,3 +433,21 @@ test('zkouška Stripe na ostrém webu: testovací klíč vidí jen přihlášen�
   assert.equal(db.prepare('SELECT COUNT(*) AS n FROM invoices WHERE order_id = ?').get(o.id).n, 0);
   assert.ok(db.prepare("SELECT 1 FROM emails WHERE subject LIKE 'Test platby kartou proběhl%'").get());
 });
+
+test('diagnostika platby kartou: PAYMENTS_LIVE s mezerou/velkými písmeny funguje, důvody bez hodnot klíčů', async () => {
+  const P = await import('../../server/payments.js');
+  const base = { SHOP_MODE: 'live', STRIPE_SECRET_KEY: 'sk_live_x', STRIPE_WEBHOOK_SECRET: 'whsec_x' };
+  assert.equal(P.cardPaymentsAvailable({ ...base, PAYMENTS_LIVE: 'true\n' }), true);
+  assert.equal(P.cardPaymentsAvailable({ ...base, PAYMENTS_LIVE: ' True ' }), true);
+  let d = P.cardDiagnostics(base);
+  assert.equal(d.available, false); assert.equal(d.liveFlag, 'chybí'); assert.match(d.reason, /chybí PAYMENTS_LIVE/);
+  d = P.cardDiagnostics({ ...base, PAYMENTS_LIVE: 'ano' });
+  assert.match(d.reason, /nemá hodnotu true/);
+  d = P.cardDiagnostics({ ...base, STRIPE_SECRET_KEY: 'sk_test_x', PAYMENTS_LIVE: 'true' });
+  assert.match(d.reason, /klíč je testovací/);
+  d = P.cardDiagnostics({ ...base, PAYMENTS_LIVE: 'true' });
+  assert.deepEqual([d.keyKind, d.webhook, d.liveFlag, d.available, d.reason], ['ostrý', 'ok', 'true', true, '']);
+  assert.ok(!JSON.stringify(d).includes('sk_live_x'));
+  // Na zkušebním webu (SHOP_MODE=test) se ostrý režim nikdy nezapne
+  assert.equal(P.isLive({ SHOP_MODE: 'test', PAYMENTS_LIVE: 'true' }), false);
+});

@@ -14,7 +14,26 @@ import { HttpError } from './http.js';
 const COMGATE_API = 'https://payments.comgate.cz/v1.0';
 const STRIPE_API = 'https://api.stripe.com/v1';
 
-export const isLive = (env) => env.PAYMENTS_LIVE === 'true' && env.SHOP_MODE === 'live';
+export const isLive = (env) => String(env.PAYMENTS_LIVE ?? '').trim().toLowerCase() === 'true' && env.SHOP_MODE === 'live';
+
+/** Bezpečný přehled pro administraci (bez hodnot klíčů): proč je / není platba kartou vidět. */
+export function cardDiagnostics(env) {
+  const key = String(env.STRIPE_SECRET_KEY || '').trim();
+  const keyKind = !key ? 'chybí' : /^(sk|rk)_live_/.test(key) ? 'ostrý' : /^(sk|rk)_test_/.test(key) ? 'testovací' : 'neplatný';
+  const webhook = !String(env.STRIPE_WEBHOOK_SECRET || '').trim() ? 'chybí' : /^whsec_/.test(String(env.STRIPE_WEBHOOK_SECRET).trim()) ? 'ok' : 'neplatný';
+  const liveFlag = env.PAYMENTS_LIVE == null || String(env.PAYMENTS_LIVE).trim() === '' ? 'chybí' : isLive(env) ? 'true' : 'jiná hodnota';
+  const live = isLive(env);
+  const available = cardPaymentsAvailable(env);
+  let reason = '';
+  if (!available) {
+    if (keyKind === 'chybí' || webhook === 'chybí') reason = 'Chybí STRIPE_SECRET_KEY nebo STRIPE_WEBHOOK_SECRET.';
+    else if (keyKind === 'neplatný') reason = 'STRIPE_SECRET_KEY nezačíná sk_live_ ani sk_test_ – vložte znovu Secret key ze Stripe.';
+    else if (live && keyKind !== 'ostrý') reason = 'PAYMENTS_LIVE je zapnuté, ale klíč je testovací – vložte ostrý klíč sk_live_.';
+    else if (!live && keyKind === 'ostrý') reason = liveFlag === 'chybí' ? 'Klíč je ostrý, ale chybí PAYMENTS_LIVE = true.' : 'Klíč je ostrý, ale PAYMENTS_LIVE nemá hodnotu true.';
+    else if (keyKind === 'testovací' && env.SHOP_MODE === 'live') reason = 'Testovací klíč – platbu kartou vidí jen přihlášený majitel.';
+  }
+  return { keyKind, webhook, liveFlag, live, available, reason };
+}
 
 const hasStripe = (env) => Boolean(String(env.STRIPE_SECRET_KEY || '').trim() && String(env.STRIPE_WEBHOOK_SECRET || '').trim());
 const hasComgate = (env) => Boolean(env.COMGATE_MERCHANT && env.COMGATE_SECRET);

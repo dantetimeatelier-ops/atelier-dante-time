@@ -23,7 +23,7 @@ import * as CPH from '../../../server/commission-photos.js';
 import { draftReply } from '../../../server/sales.js';
 import { refreshOrder, createPacket, labelPdf } from '../../../server/packeta.js';
 import { aiStatus } from '../../../server/ai.js';
-import { gateway as payGateway, isLive as payLive } from '../../../server/payments.js';
+import { gateway as payGateway, isLive as payLive, cardDiagnostics } from '../../../server/payments.js';
 import * as SHIP from '../../../server/shipping.js';
 import { setShippingCost } from '../../../server/orders.js';
 import { html } from '../../../server/http.js';
@@ -697,7 +697,7 @@ route('GET', 'settings', async ({ env }) => {
   return json({
     settings: s,
     integrations: {
-      mode: mode(env), email: env.EMAIL_PROVIDER === 'resend' && Boolean(env.RESEND_API_KEY), card: Boolean(payGateway(env)), cardGateway: payGateway(env),
+      mode: mode(env), email: env.EMAIL_PROVIDER === 'resend' && Boolean(env.RESEND_API_KEY), card: Boolean(payGateway(env)), cardGateway: payGateway(env), cardLive: payLive(env), cardDiag: payGateway(env) === 'stripe' ? cardDiagnostics(env) : null,
       cardLive: payLive(env), packeta: Boolean(env.PACKETA_API_KEY), packetaTracking: Boolean(env.PACKETA_API_PASSWORD), iban: Boolean(OPERATOR.iban),
     },
   });
