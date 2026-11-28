@@ -4,6 +4,15 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-28 – Claude – claude/centralni-dokumentace (R28)
+**Hotovo:** centrální dokumentace v kořeni: `CLAUDE.md` (instrukce + postup před/po úkolu), `AGENTS.md` (sekce 5 –
+role a koordinace, odkazy), `PROJECT_STATE.md` (ověřený stav), `TASKS.md` (čeká na majitele, plánováno, hotovo),
+`ROADMAP.md` (etapy A–D), `DECISIONS.md` (přesun z docs/, R28, doplnění Balíkovny), `CHANGELOG.md` (ze všech PR).
+`docs/STAV.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md` jsou odkazy; původní obsah v `docs/*-archiv.md`.
+Ostrý Stripe nasazen (rerun CI na main 28. 11.), čeká na ověření majitelem v anonymním okně.
+**Další krok:** položky TASKS → Plánováno (poplatky Stripe po první platbě, e-mail „(ostrá)“ u testu).
+**Pozor na:** ostatní konverzace projektu agent neviděl – v dokumentaci je jen to, co bylo zapsané v repozitáři.
+
 ## 2026-11-27 – Claude – večerní samostatná práce (R27)
 **Hotovo:** trvalý pokyn R27 + `docs/STAV.md`; feed Google Nákupů `/feed/google.xml` (#67); stabilita e2e (#66); nástroje z Dependabot #4 přes #68 (html-validate zakazuje `autocapitalize` u `type=email`).
 **Další krok:** komplexní kontrola – objednávky, faktury, pasy, mobil; DT Innovation.

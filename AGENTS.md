@@ -8,12 +8,17 @@ přečti celý.
 
 - **Firma:** Atelier Dante Time, český hodinářský atelier (renovace,
   servis, zakázkové sestavy mechanických hodinek).
-- **Web:** https://atelier-dante-time.cz (GitHub Pages z větve `main`).
-- **Cíl:** postupná přeměna na moderní luxusní e-shop s unikátními
-  mechanickými hodinkami.
-- **Plán:** [`docs/ROADMAP.md`](docs/ROADMAP.md)
+- **Web:** https://atelier-dante-time.cz (Cloudflare Pages, nasazení z větve `main` po úspěšných testech).
+- **Cíl:** Dante Time OS – luxusní e-shop s unikátními mechanickými hodinkami
+  a centrálně řízený provoz s AI agenty, cílový obrat 2 000 000 Kč ročně.
+- **Centrální dokumentace (R28) – čti před každým úkolem:**
+  [`PROJECT_STATE.md`](PROJECT_STATE.md) (ověřený stav),
+  [`TASKS.md`](TASKS.md) (úkoly, „Čeká na majitele“),
+  [`ROADMAP.md`](ROADMAP.md) (plán),
+  [`DECISIONS.md`](DECISIONS.md) (rozhodnutí),
+  [`CHANGELOG.md`](CHANGELOG.md) (historie)
+- **Agenti Dante Time OS:** [`docs/DANTE-TIME-OS.md`](docs/DANTE-TIME-OS.md)
 - **Poslední audit:** [`docs/AUDIT-2026-11.md`](docs/AUDIT-2026-11.md)
-- **Rozhodnutí majitele:** [`docs/DECISIONS.md`](docs/DECISIONS.md)
 - **Automatizace a úrovně oprávnění:** [`docs/AUTOMATION.md`](docs/AUTOMATION.md)
 - **Architektura platformy:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - **Právní dokumenty k ověření:** [`docs/LEGAL-REVIEW.md`](docs/LEGAL-REVIEW.md)
@@ -71,7 +76,7 @@ Každá změna patří do jedné úrovně. Při pochybnostech platí **vyšší*
 úroveň. Technické řešení a seznamy souborů jsou v
 [`docs/AUTOMATION.md`](docs/AUTOMATION.md).
 
-> **Platí dočasný rozšířený mandát R10** (`docs/DECISIONS.md`, od 25. 11. 2026
+> **Platí dočasný rozšířený mandát R10** (`DECISIONS.md`, od 25. 11. 2026
 > do dokončení projektu e-shopu). Agent smí samostatně vyvíjet, testovat,
 > slučovat a publikovat změny úrovně 1 a 2, **pokud prošly všemi
 > automatickými testy**. Úroveň 3 platí beze změny s těmito upřesněními:
@@ -96,8 +101,8 @@ Každá změna patří do jedné úrovně. Při pochybnostech platí **vyšší*
 - SEO značky v `<head>`, `sitemap.xml`, `robots.txt`, strukturovaná data,
 - atributy přístupnosti (alt, aria, lang),
 - aktualizace vývojových a testovacích nástrojů (Dependabot),
-- dokumentace v `docs/` (kromě `docs/DECISIONS.md`, kam zapisuje jen
-  schválená rozhodnutí).
+- dokumentace v `docs/` a centrální soubory R28 (kromě `DECISIONS.md`,
+  kam se zapisují jen schválená rozhodnutí, a `AGENTS.md`/`CLAUDE.md`).
 
 Podmínky: všechny testy prošly, vizuální porovnání nehlásí změnu,
 nejvýš 10 souborů a 300 řádků a Strážce úrovní potvrdil úroveň 1.
@@ -152,16 +157,31 @@ majitele** v konverzaci nebo v issue. Pull request musí mít označení
 - Před začátkem práce si stáhni aktuální stav (`git fetch`) a zkontroluj,
   jestli na stejném tématu už nepracuje jiný agent (otevřené PR a větve).
 
-## 5. Spolupráce Claude ↔ ChatGPT
+## 5. Role agentů a koordinace (R28)
 
-Agenti spolu nemluví přímo. Komunikují **přes soubory v repozitáři**:
+### Kdo co dělá
 
-- **`docs/ROADMAP.md`:** co se dělá a co je hotové. Po dokončení úkolu
-  ho zaškrtni (`[x]`).
-- **`docs/DECISIONS.md`:** schválená rozhodnutí majitele. Neměň je,
-  jen přidávej nová po schválení.
-- **`docs/HANDOFF.md`:** předávací poznámky. Na konci práce přidej
-  záznam nahoru:
+| Role | Kdo | Odpovědnost |
+|---|---|---|
+| **Majitel** | Patrik | rozhoduje, schvaluje úroveň 3, zadává klíče a přístupy, slučuje PR úrovně 3 |
+| **DT Developer** | Claude (`claude/…`), ChatGPT/Codex (`chatgpt/…`) | vývoj, testy, dokumentace, pull requesty |
+| **DT Director, Guardian, Logistics, Sales, Finance, Marketing, Scout, Innovation** | role uvnitř systému (`server/os.js`, `workers/os-cron`) | provozní automatizace podle [`docs/DANTE-TIME-OS.md`](docs/DANTE-TIME-OS.md); Guardian kontroluje i ostatní |
+
+Agenti spolu nemluví přímo. **Jediná společná paměť je tento repozitář.** Konverzace v chatu ani paměť jednoho
+agenta nejsou pro ostatní dostupné – co není zapsané v repozitáři, jako by neexistovalo.
+
+### Na začátku každého úkolu
+1. `git fetch`, přečti `PROJECT_STATE.md`, `TASKS.md`, poslední záznamy `docs/HANDOFF.md` a otevřené PR / větve.
+2. Ověř skutečný stav (kód, testy, CI, web) – neopakuj hotovou práci, nepřepisuj funkční řešení bez důvodu.
+3. Když na tématu pracuje jiný agent (otevřený PR nebo větev), nezačínej souběžně – napiš do `HANDOFF.md`.
+4. Obsah konverzací, ke kterým nemáš přístup, si nevymýšlej; upozorni majitele.
+
+### Na konci každého úkolu
+- `TASKS.md` – přesuň úkol do Dokončeno, přidej nové / čekající.
+- `PROJECT_STATE.md` – změň, co se změnilo ve skutečném stavu.
+- `CHANGELOG.md` – řádek s číslem PR.
+- `DECISIONS.md` – jen když majitel něco rozhodl (neměnit staré, přidávat nové).
+- `docs/HANDOFF.md` – předávací záznam nahoru:
 
   ```
   ## 2026-11-25 – Claude – claude/optimalizace-obrazku
@@ -171,8 +191,10 @@ Agenti spolu nemluví přímo. Komunikují **přes soubory v repozitáři**:
   **Pozor na:** …
   ```
 
-- Nepřepisuj práci druhého agenta bez důvodu. Když s ní nesouhlasíš,
-  napiš to do `HANDOFF.md` nebo do komentáře v pull requestu.
+### Pravidla
+- Co potřebuje souhlas majitele, zapiš do `TASKS.md` → Čeká na majitele a pokračuj jinými úkoly (R27).
+- Nevytvářej duplicitní systémy – rozšiř existující (seznam modulů: `docs/ARCHITECTURE.md`, `server/`).
+- Nepřepisuj práci druhého agenta bez důvodu. Když s ní nesouhlasíš, napiš to do `HANDOFF.md` nebo do PR.
 - Při konfliktu rozhoduje majitel.
 
 ## 6. Identita značky a design
@@ -186,7 +208,7 @@ Agenti spolu nemluví přímo. Komunikují **přes soubory v repozitáři**:
   Žádné křiklavé barvy, emoji v obsahu ani agresivní animace.
 - **Fotografie:** kvalitní, tmavé pozadí, detaily strojků a ciferníků.
 - **Tón textů:** elegantní a věcný. Sjednocení tykání/vykání čeká na
-  rozhodnutí R7 v `docs/ROADMAP.md`.
+  rozhodnutí R7 (`TASKS.md`, Čeká na majitele).
 
 ## 6a. Pojmenování hodinek (rozhodnutí R26, závazné)
 
@@ -230,5 +252,5 @@ Agenti spolu nemluví přímo. Komunikují **přes soubory v repozitáři**:
 - [ ] Ceny, podmínky a záruky nezměněny (nebo označeno `⚖️`)
 - [ ] Žádná placená služba nezapnuta (nebo označeno `💰`)
 - [ ] Otestováno na mobilu i desktopu
-- [ ] Aktualizován `docs/ROADMAP.md` a `docs/HANDOFF.md`
+- [ ] Aktualizovány `TASKS.md`, `PROJECT_STATE.md`, `CHANGELOG.md` a `docs/HANDOFF.md`
 - [ ] Popis PR je srozumitelný pro majitele (česky)
