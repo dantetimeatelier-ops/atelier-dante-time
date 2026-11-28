@@ -4,6 +4,7 @@ Nejnovější nahoře. Každá změna jde přes pull request (číslo #). Po ka�
 Podrobnosti k jednotlivým změnám: `docs/HANDOFF.md` a popisy pull requestů na GitHubu.
 
 ## 2026-11-28
+- Digitální pas automaticky i pro hodinky ze zakázek (#74).
 - Karta digitálního pasu k gravírování: SVG v křivkách, PNG 600 DPI, PDF, inverze, hromadný ZIP, kontrola QR (#73).
 - Platba kartou v ostrém provozu: omezený ostrý klíč Stripe (bez výplat a převodů), diagnostika v administraci, tolerantní PAYMENTS_LIVE (#71).
 - Centrální dokumentace: CLAUDE.md, AGENTS.md, PROJECT_STATE.md, TASKS.md, ROADMAP.md, DECISIONS.md (přesun do kořene), CHANGELOG.md (R28).
