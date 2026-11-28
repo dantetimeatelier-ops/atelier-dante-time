@@ -1589,7 +1589,14 @@
         for (let i = 0; i < a.length; i += 4) { const l = (a[i] + a[i + 1] + a[i + 2]) / 3; a[i + 3] = l > 200 ? 0 : l > 150 ? Math.round(255 * (200 - l) / 50) : 255; }
         x.putImageData(d, 0, 0);
       }
-      await api('PUT', 'signature', { image: c.toDataURL('image/png') }); toast('Podpis a razítko uloženo'); e.target.value = ''; await signPrev();
+      // oříznout průhledné okraje, aby razítko na certifikátu nebylo zbytečně malé
+      let out = c;
+      if (app.querySelector('#signwhite').checked) {
+        const a = x.getImageData(0, 0, c.width, c.height).data; let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+        for (let yy = 0; yy < c.height; yy++) for (let xx = 0; xx < c.width; xx++) if (a[(yy * c.width + xx) * 4 + 3] > 8) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
+        if (x1 >= x0) { out = document.createElement('canvas'); out.width = x1 - x0 + 1; out.height = y1 - y0 + 1; out.getContext('2d').drawImage(c, x0, y0, out.width, out.height, 0, 0, out.width, out.height); }
+      }
+      await api('PUT', 'signature', { image: out.toDataURL('image/png') }); toast('Podpis a razítko uloženo'); e.target.value = ''; await signPrev();
     }));
     run(signPrev);
     app.querySelector('#setf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
