@@ -249,7 +249,7 @@ export function publicBody({ p, events }, lang) {
 }
 
 // --- Tisknutelný certifikát pravosti (administrace) ------------------------------------
-export function certificateHtml({ passport: p, events, qr, url }) {
+export function certificateHtml({ passport: p, events, qr, url, sign = null }) {
   const parts = String(p.authenticity_parts || '').split(',').filter((x) => AUTH_PARTS[x]).map((x) => AUTH_PARTS[x].cs);
   const row = (l, v) => (v ? `<tr><th>${esc(l)}</th><td>${esc(v)}</td></tr>` : '');
   return `<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
@@ -261,7 +261,7 @@ h1{font-weight:400;letter-spacing:.18em;text-transform:uppercase;font-size:20px;
 .sub{text-align:center;color:#6b5a2a;letter-spacing:.12em;font-size:12px;text-transform:uppercase;margin:0 0 18px}
 table{border-collapse:collapse;width:100%;font-family:-apple-system,system-ui,sans-serif;font-size:13px}th{text-align:left;color:#555;font-weight:400;padding:5px 12px 5px 0;width:38%;vertical-align:top}td{padding:5px 0}
 .row{display:flex;gap:18px;align-items:flex-start;margin-top:16px}.row>div{flex:1}.qr svg{max-width:120px!important}
-p{font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;line-height:1.5}.muted{color:#666}.sign{margin-top:28px;display:flex;justify-content:space-between;font-size:12px;font-family:-apple-system,system-ui,sans-serif}
+p{font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;line-height:1.5}.muted{color:#666}.signimg{display:flex;align-items:flex-end;gap:8px}.signimg img{max-height:90px;max-width:220px;object-fit:contain}.sign{margin-top:28px;display:flex;justify-content:space-between;align-items:flex-end;font-size:12px;font-family:-apple-system,system-ui,sans-serif}
 .noprint{text-align:center;margin:12px}@media print{.noprint{display:none}.sheet{border-color:#c8a24a}}
 </style></head><body>
 <div class="noprint"><button type="button" id="print">Vytisknout / uložit jako PDF</button><script src="/admin/print.js"></script></div>
@@ -274,6 +274,6 @@ ${p.original_parts ? `<p class="muted">${esc(p.original_parts)}</p>` : ''}${p.re
 ${events.filter((e) => e.public).length ? `<p><strong>Historie:</strong> ${events.filter((e) => e.public).map((e) => `${esc(e.event_date)} ${esc(EVENT_KINDS[e.kind])}`).join(' · ')}</p>` : ''}
 <p class="muted">Garance pravosti platí i pro každého dalšího majitele hodinek za podmínek uvedených na ${esc(SITE.origin.replace('https://', ''))}/warranty. Garance neomezuje zákonná práva kupujícího. Aktuální stav a historii hodinek ověříte naskenováním QR kódu.</p>
 </div><div class="qr" style="flex:0 0 130px;text-align:center">${qr}<p class="muted" style="font-size:10px;word-break:break-all">${esc(url)}</p></div></div>
-<div class="sign"><span>${esc(OPERATOR.tradeName)}</span><span>Podpis a razítko: ____________________</span></div>
+<div class="sign"><span>${esc(OPERATOR.tradeName)}</span>${sign ? `<span class="signimg"><span>Podpis a razítko:</span><img src="${sign}" alt="Podpis a razítko"></span>` : '<span>Podpis a razítko: ____________________</span>'}</div>
 </div></body></html>`;
 }

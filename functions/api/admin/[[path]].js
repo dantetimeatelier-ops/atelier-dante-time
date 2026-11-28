@@ -595,7 +595,26 @@ route('GET', 'passport-cards', async ({ env, request }) => {
 });
 route('GET', 'commissions/:id/passport', async ({ env, params }) => json({ passport: await env.DB.prepare('SELECT id, code, status FROM watch_passports WHERE commission_id = ?').bind(params.id).first() }));
 route('POST', 'commissions/:id/passport', async ({ env, params, user }) => json({ id: await PAS.createFromCommission(env, params.id, user.email) }, 201));
-route('GET', 'passports/:id/certificate', async ({ env, params }) => html(PAS.certificateHtml(await PAS.get(env, params.id)), 200, { 'Cache-Control': 'no-store' }));
+// Podpis a razítko na certifikát: obrázek v MEDIA_KV, vidí ho jen přihlášený správce a vytištěný certifikát
+const SIGN_KEY = 'settings:podpis-razitko';
+async function signDataUrl(env) {
+  const m = await env.MEDIA_KV.getWithMetadata(SIGN_KEY, 'arrayBuffer');
+  if (!m?.value) return null;
+  let bin = ''; const u = new Uint8Array(m.value); for (let i = 0; i < u.length; i += 0x8000) bin += String.fromCharCode(...u.subarray(i, i + 0x8000));
+  return `data:${m.metadata?.type || 'image/png'};base64,${btoa(bin)}`;
+}
+route('GET', 'signature', async ({ env }) => json({ image: await signDataUrl(env) }));
+route('PUT', 'signature', async ({ env, body, user }) => {
+  const mt = /^data:(image\/(?:png|webp|jpeg));base64,([A-Za-z0-9+/=]+)$/.exec(String(body.image || ''));
+  if (!mt) throw new HttpError('Nahrajte obrázek PNG, WebP nebo JPEG');
+  const bytes = Uint8Array.from(atob(mt[2]), (c) => c.charCodeAt(0));
+  if (bytes.length > 400000) throw new HttpError('Obrázek je příliš velký (max. 400 kB)');
+  await env.MEDIA_KV.put(SIGN_KEY, bytes, { metadata: { type: mt[1] } });
+  await audit(env, user.email, 'podpis_nahran', 'settings', 'podpis', { bytes: bytes.length });
+  return json({ ok: true });
+});
+route('DELETE', 'signature', async ({ env, user }) => { await env.MEDIA_KV.delete(SIGN_KEY); await audit(env, user.email, 'podpis_smazan', 'settings', 'podpis', {}); return json({ ok: true }); });
+route('GET', 'passports/:id/certificate', async ({ env, params }) => html(PAS.certificateHtml({ ...(await PAS.get(env, params.id)), sign: await signDataUrl(env) }), 200, { 'Cache-Control': 'no-store' }));
 
 // --- Poptávky a odstoupení -----------------------------------------------------------
 route('GET', 'inquiries', async ({ env }) => {
@@ -938,7 +957,7 @@ export const onRequest = handle(async (ctx) => {
     if (!m) continue;
     const user = r.auth ? await requireAdmin(env, request) : null;
     const isForm = (request.headers.get('Content-Type') || '').includes('multipart/form-data');
-    const body = ['POST', 'PUT'].includes(request.method) && !isForm ? await readJson(request, 200000).catch((e) => { if (e.status === 415 && r.method === 'POST') return {}; throw e; }) : {};
+    const body = ['POST', 'PUT'].includes(request.method) && !isForm ? await readJson(request, path === 'signature' ? 600000 : 200000).catch((e) => { if (e.status === 415 && r.method === 'POST') return {}; throw e; }) : {};
     return r.fn({ env, request, params: m.groups || {}, body, user });
   }
   throw new HttpError('Neznámá operace', 404);

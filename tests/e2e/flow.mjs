@@ -207,6 +207,13 @@ try {
   await pas.close();
   const cert = await page.evaluate(async (u) => (await fetch(u)).text(), `${BASE}/api/admin/passports/${page.url().split('/').pop()}/certificate`);
   assert.match(cert, /Certifikát pravosti/);
+  // Podpis a razítko: nahrát → na certifikátu je obrázek; odstranit → zase čára
+  const png1 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+  const sapi = (method, p, body) => page.evaluate(async ([m, u, b]) => { const r = await fetch(`/api/admin/${u}`, { method: m, headers: { 'Content-Type': 'application/json', 'X-DT-Admin': '1' }, body: b ? JSON.stringify(b) : undefined }); return { s: r.status, j: await r.json().catch(() => ({})) }; }, [method, p, body]);
+  assert.equal((await sapi('PUT', 'signature', { image: png1 })).s, 200);
+  assert.match(await page.evaluate(async (u) => (await fetch(u)).text(), `${BASE}/api/admin/passports/${page.url().split('/').pop()}/certificate`), /alt="Podpis a razítko"/);
+  assert.equal((await sapi('DELETE', 'signature')).s, 200);
+  assert.equal((await sapi('GET', 'signature')).j.image, null);
   // Karta k gravírování: náhled, kontrola QR, SVG (texty v křivkách) a PDF ve skutečné velikosti
   const pasId = page.url().split('/').pop();
   await page.getByRole('link', { name: 'Karta k gravírování' }).click();
