@@ -212,6 +212,7 @@ try {
   await page.getByRole('link', { name: 'Karta k gravírování' }).click();
   await page.getByRole('heading', { name: 'Karta k gravírování' }).waitFor();
   await page.getByText('QR odkazuje na veřejný digitální pas').waitFor();
+  await page.waitForFunction(() => { const i = document.querySelector('#cardimg'); return i && i.complete && i.naturalWidth > 0; }, null, { timeout: 15000 }).catch(() => {});
   assert.ok(await page.locator('#cardimg').evaluate((i) => i.complete && i.naturalWidth > 0), 'náhled karty se musí vykreslit');
   const card = await page.evaluate(async (u) => { const r = await fetch(u); return { type: r.headers.get('content-type'), text: await r.text() }; }, `${BASE}/api/admin/passports/${pasId}/card/svg?invert=1`);
   assert.match(card.type, /image\/svg\+xml/);
@@ -554,9 +555,9 @@ try {
   assert.match(kpd.passport.title, /^DT – /);
   assert.ok(!/Ekonomika Test|ekonomika@example/.test(JSON.stringify(kpd.passport)), 'pas bez zákazníka');
   // údaje hodinek ze zakázky se přepíšou do pasu
-  assert.equal((await api('PUT', `commissions/${kid}`, { caliber: 'PRIM 66', authenticity_parts: ['strojek', 'rucicky'], replaced_parts: 'pouzdro, řemínek' })).s, 200);
+  assert.equal((await api('PUT', `commissions/${kid}`, { caliber: 'PRIM 66', parts_preset: 'vlastni', authenticity_parts: ['strojek', 'rucicky'], replaced_parts: 'pouzdro, řemínek' })).s, 200);
   const kps = (await api('GET', `passports/${kp.id}`)).j.passport;
-  assert.equal(kps.movement, 'PRIM 66'); assert.equal(kps.authenticity_parts, 'strojek,rucicky'); assert.equal(kps.replaced_parts, 'pouzdro, řemínek');
+  assert.equal(kps.movement, 'originální strojek PRIM kalibr 66, ruční nátah, 17 kamenů'); assert.equal(kps.authenticity_parts, 'strojek,rucicky'); assert.equal(kps.replaced_parts, 'pouzdro, řemínek');
   await page.locator('#addc summary').click();
   await page.locator('#cq button', { hasText: 'Pouzdro' }).click();
   await page.locator('#jcf [name=amount_czk]').fill('1500');

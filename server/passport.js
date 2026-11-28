@@ -7,6 +7,7 @@ import { qrSvg } from './qr.js';
 import { SITE, OPERATOR } from '../src/site.mjs';
 import { AUTH_PARTS } from '../src/shop/describe.mjs';
 import { dtName } from '../src/shop/naming.mjs';
+import { caliberInfo, PARTS_PRESETS } from '../src/shop/calibers.mjs';
 import { esc } from '../src/layout.mjs';
 
 export const EVENT_KINDS = { renovace: 'Renovace', servis: 'Servis', prohlidka: 'Garanční prohlídka', predani: 'Předání majiteli', overeni: 'Ověření pravosti', jine: 'Jiné' };
@@ -114,17 +115,29 @@ export async function onCommissionStatus(env, commissionId, actor) {
  * Díly se přepisují jen tehdy, když je zakázka už má vyplněné (NULL = zatím nevyplněno, nechá pas být).
  */
 export async function syncFromCommission(env, commissionId, actor) {
-  const k = await env.DB.prepare('SELECT id, number, type, watch, caliber, authenticity_parts, original_parts, replaced_parts FROM commissions WHERE id = ?').bind(commissionId).first();
+  const k = await env.DB.prepare('SELECT id, number, type, watch, caliber, parts_preset, authenticity_parts, original_parts, replaced_parts FROM commissions WHERE id = ?').bind(commissionId).first();
   const w = k && await env.DB.prepare('SELECT id FROM watch_passports WHERE commission_id = ?').bind(commissionId).first();
   if (!w) return null;
   const raw = String(k.watch || '').split(/\r?\n/)[0].trim().slice(0, 200);
-  const d = { movement: k.caliber ? String(k.caliber).slice(0, 120) : null };
+  const cal = caliberInfo(k.caliber);
+  const d = { movement: cal.movement };
+  if (cal.year) d.year = cal.year;
   if (raw) d.title = CUSTOMER_TYPES.includes(k.type) ? raw : dtName({ title: raw });
-  if (k.authenticity_parts !== null) d.authenticity_parts = String(k.authenticity_parts).split(',').filter((x) => AUTH_PARTS[x]).join(',') || null;
-  if (k.original_parts !== null || k.replaced_parts !== null) { d.original_parts = k.original_parts || null; d.replaced_parts = k.replaced_parts || null; }
+  const preset = PARTS_PRESETS[commissionPreset(k)];
+  if (preset?.auth) Object.assign(d, { authenticity_parts: preset.auth, original_parts: preset.original, replaced_parts: preset.replaced });
+  else {
+    if (k.authenticity_parts !== null) d.authenticity_parts = String(k.authenticity_parts).split(',').filter((x) => AUTH_PARTS[x]).join(',') || null;
+    if (k.original_parts !== null || k.replaced_parts !== null) { d.original_parts = k.original_parts || null; d.replaced_parts = k.replaced_parts || null; }
+  }
   const keys = Object.keys(d);
   await env.DB.prepare(`UPDATE watch_passports SET ${keys.map((x) => `${x} = ?`).join(', ')}, updated_at = ? WHERE id = ?`).bind(...keys.map((x) => d[x]), now(), w.id).run();
   return w.id;
+}
+
+/** Originalita zakázky: zvolená, jinak výchozí podle druhu (přestavba/výroba = nové pouzdro a řemínek, servis/renovace = vše originální). */
+export function commissionPreset(k) {
+  if (PARTS_PRESETS[k?.parts_preset]) return k.parts_preset;
+  return CUSTOMER_TYPES.includes(k?.type) ? 'original' : 'prestavba';
 }
 
 /** Doplní pasy k zakázkám, které je ještě nemají (zakázky přijaté před zavedením nebo mimo administraci). */
@@ -132,6 +145,9 @@ export async function ensureCommissionPassports(env) {
   const { results } = await env.DB.prepare(`SELECT k.id FROM commissions k WHERE k.status IN (${COMMISSION_PASSPORT_STATUSES.map(() => '?').join(',')})
     AND NOT EXISTS (SELECT 1 FROM watch_passports w WHERE w.commission_id = k.id) LIMIT 50`).bind(...COMMISSION_PASSPORT_STATUSES).all();
   for (const r of results) await onCommissionStatus(env, r.id, 'system');
+  // údaje ze zakázek se do pasů přepisují i bez uložení zakázky (např. kalibr doplněný jinde, výchozí originalita)
+  const all = await env.DB.prepare('SELECT commission_id FROM watch_passports WHERE commission_id IS NOT NULL LIMIT 300').all();
+  for (const r of all.results) await syncFromCommission(env, r.commission_id, 'system');
   return results.length;
 }
 

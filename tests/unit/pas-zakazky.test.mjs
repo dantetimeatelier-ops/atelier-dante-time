@@ -64,14 +64,15 @@ test('údaje ze zakázky se přepisují do pasu (kalibr, originální díly, vym
   const { db, env } = makeEnv(); const PAS = await import('../../server/passport.js');
   addK(db, 'k5', 'prestavba', 'v_praci', 'PRIM Royal Green 68');
   const pid = await PAS.onCommissionStatus(env, 'k5', 't');
-  // nevyplněné díly v zakázce (NULL) nechají ruční úpravu pasu být
+  // vlastní nastavení: nevyplněné díly v zakázce (NULL) nechají ruční úpravu pasu být
+  db.prepare("UPDATE commissions SET parts_preset = 'vlastni' WHERE id = 'k5'").run();
   await PAS.update(env, pid, { authenticity_parts: ['strojek'] }, 't');
   await PAS.syncFromCommission(env, 'k5', 't');
   assert.equal(db.prepare('SELECT authenticity_parts a FROM watch_passports WHERE id = ?').get(pid).a, 'strojek');
   db.prepare("UPDATE commissions SET caliber = 'PRIM 66', authenticity_parts = 'strojek,cifernik,rucicky', replaced_parts = 'pouzdro, řemínek', watch = 'PRIM Royal Green 68 – opraveno' WHERE id = 'k5'").run();
   await PAS.syncFromCommission(env, 'k5', 't');
   const p = db.prepare('SELECT * FROM watch_passports WHERE id = ?').get(pid);
-  assert.equal(p.movement, 'PRIM 66'); assert.equal(p.authenticity_parts, 'strojek,cifernik,rucicky'); assert.equal(p.replaced_parts, 'pouzdro, řemínek');
+  assert.equal(p.movement, 'originální strojek PRIM kalibr 66, ruční nátah, 17 kamenů'); assert.equal(p.year, '1965–1993'); assert.equal(p.authenticity_parts, 'strojek,cifernik,rucicky'); assert.equal(p.replaced_parts, 'pouzdro, řemínek');
   assert.match(p.title, /^DT – PRIM Royal Green 68 – opraveno$/);
   const html = PAS.certificateHtml({ ...(await PAS.get(env, pid)), qr: '', url: 'x' });
   assert.match(html, /strojek, ciferník, ručičky/); assert.doesNotMatch(html, /nejsou deklarovány/);
@@ -79,4 +80,22 @@ test('údaje ze zakázky se přepisují do pasu (kalibr, originální díly, vym
   db.prepare("UPDATE commissions SET authenticity_parts = '' WHERE id = 'k5'").run();
   await PAS.syncFromCommission(env, 'k5', 't');
   assert.equal(db.prepare('SELECT authenticity_parts a FROM watch_passports WHERE id = ?').get(pid).a, null);
+});
+
+test('kalibr: z „66 prim“ vznikne popis a roky výroby; neznámý kalibr se nevymýšlí; výchozí originalita', async () => {
+  const { caliberInfo } = await import('../../src/shop/calibers.mjs');
+  assert.deepEqual(caliberInfo('66 prim'), { movement: 'originální strojek PRIM kalibr 66, ruční nátah, 17 kamenů', year: '1965–1993', known: true });
+  assert.equal(caliberInfo('PRIM kalibr 68').movement, 'originální strojek PRIM kalibr 68, ruční nátah, 17 kamenů, datum');
+  assert.equal(caliberInfo('Prim 96').year, '1978–1989');
+  assert.deepEqual(caliberInfo('Omega 552'), { movement: 'Omega 552', year: null, known: false });
+  const { db, env } = makeEnv(); const PAS = await import('../../server/passport.js');
+  addK(db, 'p1', 'prestavba', 'v_praci', 'PRIM Royal Green 68'); db.prepare("UPDATE commissions SET caliber = 'prim 68' WHERE id = 'p1'").run();
+  const a = db.prepare('SELECT * FROM watch_passports WHERE id = ?').get(await PAS.onCommissionStatus(env, 'p1', 't'));
+  assert.equal(a.authenticity_parts, 'strojek,cifernik,rucicky'); assert.equal(a.replaced_parts, 'nové pouzdro Dante Time, řemínek'); assert.equal(a.year, '1969–1993');
+  db.prepare("UPDATE commissions SET parts_preset = 'original' WHERE id = 'p1'").run(); await PAS.syncFromCommission(env, 'p1', 't');
+  const b = db.prepare("SELECT * FROM watch_passports WHERE commission_id = 'p1'").get();
+  assert.equal(b.replaced_parts, null); assert.equal(b.original_parts, 'kompletně originální hodinky');
+  // servis = hodinky zákazníka → výchozí vše originální
+  addK(db, 's1', 'servis', 'prijato'); await PAS.onCommissionStatus(env, 's1', 't');
+  assert.equal(db.prepare("SELECT replaced_parts r FROM watch_passports WHERE commission_id = 's1'").get().r, null);
 });
