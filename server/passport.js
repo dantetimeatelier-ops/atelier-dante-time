@@ -85,6 +85,7 @@ export async function createFromCommission(env, commissionId, actor) {
     .bind(id, newCode(), k.id, title, k.caliber ? String(k.caliber).slice(0, 120) : null, now().slice(0, 10)).run();
   const row = await env.DB.prepare('SELECT id FROM watch_passports WHERE commission_id = ?').bind(commissionId).first();
   if (row.id === id) await audit(env, actor, 'pas_zalozen', 'passport', id, { commission: k.number });
+  await syncFromCommission(env, commissionId, actor);
   return row.id;
 }
 
@@ -105,6 +106,25 @@ export async function onCommissionStatus(env, commissionId, actor) {
     await addEvent(env, pid, { kind: 'predani', event_date: /^\d{4}-\d{2}-\d{2}/.test(k.returned_at || '') ? k.returned_at.slice(0, 10) : today, text_cs: 'Hodinky předány majiteli', text_en: 'Watch handed over to the owner', ref: `commission:${k.id}:predani` });
   }
   return pid;
+}
+
+/**
+ * Přepíše do pasu údaje hodinek ze zakázky (zakázka je zdroj pravdy): název z 1. řádku „Hodinky“, kalibr,
+ * originální díly s garancí, popis originálních a vyměněných dílů. Nic o zákazníkovi ani ceně.
+ * Díly se přepisují jen tehdy, když je zakázka už má vyplněné (NULL = zatím nevyplněno, nechá pas být).
+ */
+export async function syncFromCommission(env, commissionId, actor) {
+  const k = await env.DB.prepare('SELECT id, number, type, watch, caliber, authenticity_parts, original_parts, replaced_parts FROM commissions WHERE id = ?').bind(commissionId).first();
+  const w = k && await env.DB.prepare('SELECT id FROM watch_passports WHERE commission_id = ?').bind(commissionId).first();
+  if (!w) return null;
+  const raw = String(k.watch || '').split(/\r?\n/)[0].trim().slice(0, 200);
+  const d = { movement: k.caliber ? String(k.caliber).slice(0, 120) : null };
+  if (raw) d.title = CUSTOMER_TYPES.includes(k.type) ? raw : dtName({ title: raw });
+  if (k.authenticity_parts !== null) d.authenticity_parts = String(k.authenticity_parts).split(',').filter((x) => AUTH_PARTS[x]).join(',') || null;
+  if (k.original_parts !== null || k.replaced_parts !== null) { d.original_parts = k.original_parts || null; d.replaced_parts = k.replaced_parts || null; }
+  const keys = Object.keys(d);
+  await env.DB.prepare(`UPDATE watch_passports SET ${keys.map((x) => `${x} = ?`).join(', ')}, updated_at = ? WHERE id = ?`).bind(...keys.map((x) => d[x]), now(), w.id).run();
+  return w.id;
 }
 
 /** Doplní pasy k zakázkám, které je ještě nemají (zakázky přijaté před zavedením nebo mimo administraci). */

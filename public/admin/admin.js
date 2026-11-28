@@ -331,7 +331,10 @@
     <label>Druh<select name="type">${Object.entries(L.ctype).map(([v, t]) => `<option value="${v}" ${k.type === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
     <label>Stav<select name="status">${Object.entries(L.cstatus).map(([v, t]) => `<option value="${v}" ${(k.status || 'poptavka') === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
     <details open><summary>Zákazník</summary>${field('name', 'Jméno', { name: k.customer_name }, 'required')}${field('email', 'E-mail (nepovinné)', { email: k.customer_email }, 'type="email"')}${field('phone', 'Telefon (nepovinné)', { phone: k.customer_email ? k.customer_phone : '' }, 'type="tel"')}${field('contact_info', 'Jiný kontakt (např. Instagram @jmeno)', { contact_info: k.contact_info })}${field('contact_street', 'Ulice (pro fakturu)', { contact_street: k.contact_street })}<div class="grid">${field('contact_city', 'Město', { contact_city: k.contact_city })}${field('contact_zip', 'PSČ', { contact_zip: k.contact_zip })}</div></details>
-    <details open><summary>Zakázka</summary>${field('watch', 'Hodinky (značka, model, stav)', k)}${field('caliber', 'Kalibr (strojek, např. PRIM 66)', k)}${area('description', 'Co se má udělat', k)}
+    <details open><summary>Zakázka</summary>${field('watch', 'Hodinky (značka, model, stav)', k)}${field('caliber', 'Kalibr (strojek, např. PRIM 66)', k)}
+      <fieldset><legend class="small">Originální díly s doživotní garancí pravosti (do pasu)</legend>${[['strojek', 'Strojek'], ['cifernik', 'Ciferník'], ['rucicky', 'Ručičky']].map(([v, t]) => `<label class="check"><input type="checkbox" name="authenticity_parts" value="${v}"${String(k.authenticity_parts || '').split(',').includes(v) ? ' checked' : ''}> ${t}</label>`).join('')}</fieldset>
+      ${field('original_parts', 'Originální díly – popis (do pasu, nepovinné)', k, 'maxlength="1000"')}${field('replaced_parts', 'Vyměněné / neoriginální díly (do pasu, např. pouzdro, řemínek)', k, 'maxlength="1000"')}
+      <p class="small muted" style="margin-top:-4px">Hodinky, kalibr a díly se po uložení samy přepíšou do digitálního pasu. Jméno ani cena se do pasu nedostanou.</p>${area('description', 'Co se má udělat', k)}
       <div class="grid">${field('estimate_czk', 'Orientační cena (Kč)', k, 'inputmode="numeric"')}${field('final_price_czk', 'Konečná cena (Kč)', k, 'inputmode="numeric"')}</div>
       <div class="grid">${field('deposit_czk', 'Záloha přijatá bez zálohové faktury (Kč)', k, 'inputmode="numeric"')}${field('deposit_received_on', 'Záloha přijata dne', k, 'type="date"')}</div>
       <p class="small muted" style="margin-top:-4px">Např. hotově. Zálohu přes zálohovou fakturu sem nepište – započítá se sama.</p>
@@ -351,7 +354,7 @@
     picker.addEventListener('change', () => { pick.textContent = picker.files.length ? `Vybráno fotek: ${picker.files.length} – nahrají se po uložení.` : 'Fotky se nahrají po uložení zakázky.'; });
     app.querySelector('#kf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
       const files = [...picker.files];
-      const { id } = await api('POST', 'commissions', { ...formData(e.target), inquiry_id: pre.inquiry_id });
+      const { id } = await api('POST', 'commissions', { ...formData(e.target), authenticity_parts: [...e.target.querySelectorAll('[name=authenticity_parts]:checked')].map((x) => x.value), inquiry_id: pre.inquiry_id });
       if (files.length) { try { await uploadCommissionPhotos(id, files, pick); } catch (err) { toast(`Zakázka uložena, fotky se nenahrály: ${err.message}`, true); location.hash = `#/zakazky/${id}`; return; } }
       toast('Zakázka vytvořena'); location.hash = `#/zakazky/${id}`;
     }); });
@@ -439,7 +442,7 @@
       if (!confirm(`Opravdu smazat zakázku ${k.number}? Smažou se i její fotky. Tento krok nejde vrátit.`)) return;
       await api('DELETE', `commissions/${id}`); toast('Zakázka smazána'); location.hash = '#/zakazky';
     }));
-    app.querySelector('#kf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `commissions/${id}`, formData(e.target)); toast('Uloženo'); await econ(); }); });
+    app.querySelector('#kf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => { await api('PUT', `commissions/${id}`, { ...formData(e.target), authenticity_parts: [...e.target.querySelectorAll('[name=authenticity_parts]:checked')].map((x) => x.value) }); toast('Uloženo'); await econ(); await pas(); }); });
 
     // --- Fotografie ---
     const box = app.querySelector('#kphotos');
@@ -1105,6 +1108,7 @@
         <label class="row"><input type="checkbox" name="public" checked> Zobrazit na stránce pasu</label>
         <button class="btn primary block">Přidat</button></form></details>
       <details style="margin-top:12px"><summary>Upravit údaje pasu</summary><form class="card" id="pf">
+        ${commission ? `<p class="small warn">Název, strojek a díly se přepisují ze <a href="#/zakazky/${esc(commission.id)}">zakázky ${esc(commission.number)}</a> – opravujte je tam.</p>` : ''}
         ${f('title', 'Název hodinek')}<div class="grid">${f('brand', 'Značka', 80)}${f('model', 'Model', 120)}</div><div class="grid">${f('reference', 'Reference', 80)}${f('year', 'Rok', 20)}</div>
         ${f('movement', 'Strojek', 120)}${f('case_material', 'Pouzdro', 120)}${f('hallmark', 'Punc a ryzost')}${f('serial_ref', 'Identifikace (číslo pouzdra / strojku)', 120)}
         <fieldset><legend class="small">Součásti s doživotní garancí pravosti</legend>${Object.entries(AP).map(([k, v]) => `<label class="row"><input type="checkbox" name="ap" value="${k}"${ap.includes(k) ? ' checked' : ''}> ${v}</label>`).join('')}</fieldset>

@@ -419,6 +419,13 @@ function commissionInput(body) {
   if ('status' in body) d.status = oneOf(body.status, ['poptavka', 'nabidka', 'prijato', 'v_praci', 'ceka_na_dily', 'hotovo', 'predano', 'zruseno'], 'stav');
   for (const [k, max] of [['contact_info', 200], ['contact_street', 120], ['contact_city', 80], ['contact_zip', 12], ['watch', 500], ['caliber', 100], ['description', 4000], ['internal_note', 4000], ['due_date', 20], ['received_at', 20], ['returned_at', 20], ['deposit_received_on', 20]]) if (k in body) d[k] = str(body[k], { max });
   for (const k of ['estimate_czk', 'deposit_czk', 'final_price_czk']) if (k in body) d[k] = int(body[k], { max: 50000000, name: 'částka' });
+  // údaje pro digitální pas (originální díly s garancí pravosti, vyměněné díly)
+  for (const k of ['original_parts', 'replaced_parts']) if (k in body) d[k] = str(body[k], { max: 1000 }) || null;
+  if ('authenticity_parts' in body) {
+    const parts = (Array.isArray(body.authenticity_parts) ? body.authenticity_parts : String(body.authenticity_parts || '').split(',')).map((x) => String(x).trim()).filter(Boolean);
+    for (const x of parts) oneOf(x, ['strojek', 'cifernik', 'rucicky'], 'součást garance');
+    d.authenticity_parts = [...new Set(parts)].join(',');
+  }
   return d;
 }
 route('GET', 'commissions', async ({ env }) => {
@@ -456,6 +463,7 @@ route('PUT', 'commissions/:id', async ({ env, params, body, user }) => {
   await env.DB.prepare(`UPDATE commissions SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`).bind(...keys.map((k) => d[k]), params.id).run();
   await audit(env, user.email, 'zakazka_upravena', 'commission', params.id, { status: d.status });
   if ('status' in d) await PAS.onCommissionStatus(env, params.id, user.email); // pas: založení po přijetí, zápis práce a předání
+  await PAS.syncFromCommission(env, params.id, user.email); // údaje hodinek ze zakázky se přepíšou do pasu
   return json({ ok: true });
 });
 // Fotografie zakázky (z atelieru i od zákazníka) – soukromé, jen po přihlášení

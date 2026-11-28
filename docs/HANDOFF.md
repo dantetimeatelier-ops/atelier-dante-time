@@ -4,6 +4,12 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-28 – Claude – claude/pas-ze-zakazky
+**Hotovo:** zakázka je zdroj údajů pasu. Nová pole zakázky (migrace 0034): originální díly s garancí (strojek/ciferník/ručičky),
+popis originálních dílů, vyměněné díly. Po uložení zakázky `PAS.syncFromCommission` přepíše do pasu název (1. řádek „Hodinky“),
+kalibr a díly. NULL = v zakázce nevyplněno → díly v pasu zůstanou; migrace převzala díly ručně vyplněné v pasech zakázek.
+**Pozor na:** u pasu zakázky se ruční úpravy názvu/strojku/dílů při dalším uložení zakázky přepíšou (v pasu je upozornění).
+
 ## 2026-11-28 – Claude – claude/pas-zakazky
 **Hotovo:** pas i pro hodinky ze zakázek (migrace 0033 `watch_passports.commission_id`). `PAS.onCommissionStatus` se volá při
 založení a změně stavu zakázky: od stavu Přijato pas (jen první řádek „Hodinky“ + kalibr), u Hotovo/Předáno obecný záznam práce
