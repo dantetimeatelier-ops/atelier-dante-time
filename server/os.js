@@ -10,6 +10,7 @@ import { today } from '../src/shop/warranty.mjs';
 import { refreshAll, refreshOrder, CPOST_METHODS, PACKETA_METHODS } from './packeta.js';
 import { markShipped } from './orders.js';
 import { recordMissingCardFees } from './payment-events.js';
+import { ensureCommissionPassports } from './passport.js';
 import { productEconomics, overview } from './finance.js';
 import { overdueInvoices } from './invoicing.js';
 
@@ -325,6 +326,7 @@ export async function tick(env, { force = false } = {}) {
   // Každou hodinu, bez AI a zdarma: předání zásilek dopravci a doplnění poplatků platební brány do nákladů
   try { const h = await handoverCheck(env); if (h.checked) out.handover = h; } catch (e) { out.handover = { error: String(e?.message || e) }; }
   try { const f = await recordMissingCardFees(env); if (f) out.cardFees = f; } catch (e) { out.cardFees = { error: String(e?.message || e) }; }
+  try { const n = await ensureCommissionPassports(env); if (n) out.commissionPassports = n; } catch (e) { out.commissionPassports = { error: String(e?.message || e) }; }
   if (force || (hour >= 8 && olderThan(await lastRun('logistics', 'denní kontrola'), 20))) out.logistics = await runRole(env, 'logistics', 'denní kontrola', () => logistics(env));
   if (force || (hour >= 8 && olderThan(await lastRun('sales', 'denní kontrola'), 20))) out.sales = await runRole(env, 'sales', 'denní kontrola', () => salesCheck(env));
   if (force || (hour >= 8 && olderThan(await lastRun('finance', 'denní kontrola'), 20))) out.finance = await runRole(env, 'finance', 'denní kontrola', () => financeCheck(env));

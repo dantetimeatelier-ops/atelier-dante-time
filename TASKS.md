@@ -40,6 +40,7 @@ Značky: 🔴 platby/bezpečnost · ⚖️ právní texty, ceny · 💰 může s
 
 ## ✅ Dokončeno (výběr, podrobně v CHANGELOG.md)
 
+- 28. 11. Digitální pas automaticky i pro zakázky (po přijetí; práce a předání do historie; bez zákazníka a ceny).
 - 28. 11. Karta digitálního pasu k gravírování (SVG v křivkách, PNG 600 DPI, PDF, inverze, hromadný ZIP, kontrola QR).
 - 28. 11. Platba kartou, Apple Pay a Google Pay v ostrém provozu (Integrace: klíč ostrý, webhook ok, zákazníci vidí: ano) – PR #71 + klíče majitele.
 - 28. 11. Centrální dokumentace R28 – PR #70.
