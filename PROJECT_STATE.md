@@ -17,7 +17,7 @@ rozhodnutí v [`DECISIONS.md`](DECISIONS.md), historie v [`CHANGELOG.md`](CHANGE
 | E-shop s objednávkami | ✅ ostrý (`SHOP_MODE=live`, R19) | 4 skutečné inzeráty PRIM (`katalog/`) |
 | Platba převodem s QR | ✅ výchozí | |
 | Dobírka | ✅ jen ČR, jen u dopravců, kteří ji nabízejí | |
-| Platba kartou, Apple Pay, Google Pay (Stripe) | 🟡 nasazeno 28. 11. s ostrými klíči | test v sandboxu ✅ 28. 11. 7:52 (obj. 2026-0004 se sama zrušila); **čeká ověření majitelem v anonymním okně** (TASKS) |
+| Platba kartou, Apple Pay, Google Pay (Stripe) | 🔴 nezobrazuje se zákazníkům | test v sandboxu ✅ 28. 11. 7:52; po přepnutí na ostré klíče (28. 11.) se v anonymním okně nezobrazuje – pravděpodobně nesedí klíč nebo hodnota PAYMENTS_LIVE; diagnostika v administraci (TASKS #1) |
 | Doprava | ✅ | Zásilkovna do 20 000 Kč (SK/EU Packeta do 700 €), Balíkovna do 50 000 Kč (riziko viz DECISIONS doplnění R25), Cenná zásilka ČP (bez dobírky, 190 Kč + 14 Kč / 10 000 Kč nad 30 000), osobní předání zdarma; PPL a Balíkovna na adresu vypnuté (R25) |
 | Ochrana proti dvojímu prodeji | ✅ | rezervace kusu, atomické označení prodeje i u ruční faktury/zálohy |
 | Právní dokumenty | ✅ verze 1.2 (účinnost 27. 11. 2026) | ⚖️ kontrola majitelem/právníkem dál otevřená (TASKS) |

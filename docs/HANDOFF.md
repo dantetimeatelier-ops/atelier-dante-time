@@ -4,6 +4,13 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-28 – Claude – claude/platby-diagnostika
+**Hotovo:** platba kartou se po ostrém přepnutí v anonymním okně nezobrazuje. `PAYMENTS_LIVE` se nově čte tolerantně
+(mezery, velká písmena – v Cloudflare je to Secret, protože textové proměnné spravuje wrangler.toml);
+`cardDiagnostics()` + Administrace → Nastavení → Integrace ukazuje druh klíče, webhook, PAYMENTS_LIVE a důvod (bez hodnot).
+Opravena chyba: administrace vždy psala „(testovací)“, protože API neposílalo `cardLive`.
+**Další krok:** po sloučení si majitel otevře Integrace a podle důvodu opraví Secret v Cloudflare; pak nové nasazení.
+
 ## 2026-11-28 – Claude – claude/centralni-dokumentace (R28)
 **Hotovo:** centrální dokumentace v kořeni: `CLAUDE.md` (instrukce + postup před/po úkolu), `AGENTS.md` (sekce 5 –
 role a koordinace, odkazy), `PROJECT_STATE.md` (ověřený stav), `TASKS.md` (čeká na majitele, plánováno, hotovo),
