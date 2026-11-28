@@ -31,7 +31,6 @@ Značky: 🔴 platby/bezpečnost · ⚖️ právní texty, ceny · 💰 může s
 | Priorita | Úkol | Poznámka |
 |---|---|---|
 | 1 | Po první ostré platbě ověřit, že se poplatek Stripe (vč. Radar 1,40 Kč) zapsal do nákladů hodinek | PROJECT_STATE rozpor 2 |
-| 2 | E-mail „Nová objednávka“ – u testovací platby nepsat „(ostrá)“ | kosmetika |
 | 3 | Komplexní kontrola R27: objednávky, faktury, pasy, mobil, výpočty, duplicity | pravidelně |
 | 4 | Ověřit, zda workflow GitHub Pages ještě něco dělá; případně navrhnout vypnutí (úroveň 3, `.github/`) | PROJECT_STATE rozpor 5 |
 | 5 | DT Innovation – první týdenní analýza | po prvních týdnech provozu |
@@ -40,6 +39,7 @@ Značky: 🔴 platby/bezpečnost · ⚖️ právní texty, ceny · 💰 může s
 
 ## ✅ Dokončeno (výběr, podrobně v CHANGELOG.md)
 
+- 28. 11. E-mail „Nová objednávka“: objednávka z přihlášené administrace označena jako pravděpodobná zkouška.
 - 28. 11. Podpis a razítko na certifikát pravosti (nahrání v Nastavení).
 - 28. 11. Pas ze zakázky: kalibr → popis strojku a roky výroby, výchozí originalita (přestavba / vše originální).
 - 28. 11. Údaje pasu (kalibr, originální a vyměněné díly) se vyplňují v zakázce a do pasu se přepisují samy.
