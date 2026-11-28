@@ -4,6 +4,7 @@ Nejnovější nahoře. Každá změna jde přes pull request (číslo #). Po ka�
 Podrobnosti k jednotlivým změnám: `docs/HANDOFF.md` a popisy pull requestů na GitHubu.
 
 ## 2026-11-28
+- Pas ze zakázky: popis strojku podle kalibru, výchozí originalita (#76).
 - Údaje pasu se vyplňují v zakázce a přepisují do pasu (#75).
 - Digitální pas automaticky i pro hodinky ze zakázek (#74).
 - Karta digitálního pasu k gravírování: SVG v křivkách, PNG 600 DPI, PDF, inverze, hromadný ZIP, kontrola QR (#73).
