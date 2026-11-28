@@ -14,6 +14,7 @@ import * as W from '../../../server/warranty.js';
 import * as OS from '../../../server/os.js';
 import * as FIN from '../../../server/finance.js';
 import * as PAS from '../../../server/passport.js';
+import * as CARD from '../../../server/passport-card.js';
 import * as DOC from '../../../server/documents.js';
 import * as INV from '../../../server/invoicing.js';
 import { INVOICE_KINDS, SALE_CHANNELS, INVOICE_PAY } from '../../../src/shop/invoice.mjs';
@@ -551,6 +552,35 @@ route('DELETE', 'passports/:id/events/:eid', async ({ env, params, user }) => {
   await env.DB.prepare('DELETE FROM passport_events WHERE id = ? AND passport_id = ?').bind(params.eid, params.id).run();
   await audit(env, user.email, 'pas_zaznam_smazan', 'passport', params.id, { event: params.eid });
   return json({ ok: true });
+});
+// Karta k gravírování (85,6 × 54 mm): SVG s texty v křivkách, PDF ve skutečné velikosti, kontrola QR.
+// Údaje vždy ze stávajícího pasu (kód a adresa pasu) – nic se nepřepisuje ani negeneruje nově.
+const cardOf = (p) => ({ code: p.code, url: PAS.passportUrl(p.code), status: p.status, title: p.title });
+const fileCode = (c) => String(c).replace(/[^A-Z0-9]/gi, '');
+const bin = (data, type, name, download) => new Response(data, { headers: { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Disposition': `${download ? 'attachment' : 'inline'}; filename="${name}"` } });
+route('GET', 'passports/:id/card/:fmt', async ({ env, params, request }) => {
+  const { passport: p } = await PAS.get(env, params.id);
+  const u = new URL(request.url).searchParams; const invert = u.get('invert') === '1'; const dl = u.get('download') === '1';
+  const c = cardOf(p); const suffix = invert ? '-inverze' : '';
+  if (params.fmt === 'svg') return bin(CARD.cardSvg({ ...c, invert, preview: u.get('preview') === '1' }), 'image/svg+xml; charset=utf-8', `karta-pasu-${fileCode(p.code)}${suffix}.svg`, dl);
+  if (params.fmt === 'pdf') return bin(CARD.cardsPdf([c], { invert }), 'application/pdf', `karta-pasu-${fileCode(p.code)}${suffix}.pdf`, dl);
+  if (params.fmt === 'check') return json(CARD.qrCheck({ ...c, expectedUrl: PAS.passportUrl(p.code) }));
+  throw new HttpError('Neznámý formát', 404);
+});
+route('GET', 'passport-cards', async ({ env, request }) => {
+  const u = new URL(request.url).searchParams; const invert = u.get('invert') === '1';
+  const ids = [...new Set(String(u.get('ids') || '').split(',').filter((x) => /^[A-Za-z0-9_-]{1,40}$/.test(x)))].slice(0, 100);
+  if (!ids.length) throw new HttpError('Vyberte alespoň jeden pas', 400);
+  const cards = [];
+  for (const id of ids) { const { passport: p } = await PAS.get(env, id); cards.push(cardOf(p)); }
+  const suffix = invert ? '-inverze' : '';
+  const files = cards.flatMap((c) => [
+    { name: `svg/karta-pasu-${fileCode(c.code)}${suffix}.svg`, data: CARD.cardSvg({ ...c, invert }) },
+    { name: `pdf/karta-pasu-${fileCode(c.code)}${suffix}.pdf`, data: CARD.cardsPdf([c], { invert }) },
+  ]);
+  files.push({ name: `karty-pasu-vsechny${suffix}.pdf`, data: CARD.cardsPdf(cards, { invert }) });
+  files.push({ name: 'PRECTI-ME.txt', data: `Karty digitálních pasů Dante Time (${cards.length})\r\n\r\nRozměr 85,6 × 54 mm. SVG: texty převedené na křivky – v xTool importujte a nastavte velikost 85,6 × 54 mm (měřítko 100 %).\r\nČerná = gravírovat. Inverze: pro tmavé kartičky (QR zůstane po vypálení čitelný).\r\n\r\n${cards.map((c) => `${c.code}  ${c.title}  ${c.url}`).join('\r\n')}\r\n` });
+  return bin(CARD.zip(files), 'application/zip', `karty-pasu-${cards.length}${suffix}.zip`, true);
 });
 route('GET', 'passports/:id/certificate', async ({ env, params }) => html(PAS.certificateHtml(await PAS.get(env, params.id)), 200, { 'Cache-Control': 'no-store' }));
 
