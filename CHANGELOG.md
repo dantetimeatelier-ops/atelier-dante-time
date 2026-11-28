@@ -4,6 +4,7 @@ Nejnovější nahoře. Každá změna jde přes pull request (číslo #). Po ka�
 Podrobnosti k jednotlivým změnám: `docs/HANDOFF.md` a popisy pull requestů na GitHubu.
 
 ## 2026-11-28
+- Podpis a razítko na certifikát pravosti (#77).
 - Pas ze zakázky: popis strojku podle kalibru, výchozí originalita (#76).
 - Údaje pasu se vyplňují v zakázce a přepisují do pasu (#75).
 - Digitální pas automaticky i pro hodinky ze zakázek (#74).

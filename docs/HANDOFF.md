@@ -4,6 +4,11 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-28 – Claude – claude/podpis-razitko
+**Hotovo:** Nastavení → „Podpis a razítko na certifikát“: fotka se v telefonu zmenší (700 px), bílé pozadí → průhledné, uloží
+se jako PNG do MEDIA_KV (`settings:podpis-razitko`, max 400 kB, jen pro správce). Certifikát pravosti ho vloží místo čáry
+(data URL, funguje i tisk do PDF). Bez obrázku zůstává čára k ručnímu podpisu.
+
 ## 2026-11-28 – Claude – claude/pas-kalibr-auto
 **Hotovo:** `src/shop/calibers.mjs` – kalibry PRIM 50/52/64/66/68/96 (zdroj: Skalický, katalog PRIM, physics.muni.cz) →
 z „66 prim“ vznikne v pasu „originální strojek PRIM kalibr 66, ruční nátah, 17 kamenů“ a rok „1965–1993“; neznámý kalibr

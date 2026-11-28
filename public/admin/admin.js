@@ -1559,6 +1559,11 @@
         <h2>Rezervace</h2>
         <div class="grid"><label>Převod – hodin<input name="reservation_hours_bank" inputmode="numeric" value="${esc(s.reservation_hours_bank)}"></label><label>Karta – minut<input name="reservation_minutes_card" inputmode="numeric" value="${esc(s.reservation_minutes_card)}"></label></div>
         <button class="btn primary block">Uložit nastavení</button></form>
+      <div class="card" id="signbox"><h2 style="margin-top:0">Podpis a razítko na certifikát</h2>
+        <p class="small muted">Podepište se a orazítkujte čistý bílý papír, vyfoťte ho zblízka a nahrajte. Bílé pozadí odstraním a podpis s razítkem se pak sám vytiskne na každý certifikát pravosti. Obrázek vidí jen přihlášený správce.</p>
+        <div id="signprev"></div>
+        <label class="check"><input type="checkbox" id="signwhite" checked> Odstranit bílé pozadí</label>
+        <label class="upload" style="margin-top:8px;aspect-ratio:auto;padding:18px">Nahrát fotku podpisu a razítka<input type="file" accept="image/*" id="signfile"></label></div>
       <div class="card"><h2 style="margin-top:0">Stav integrací</h2><table>
         <tr><th>Režim e-shopu</th><td>${esc({ preview: 'náhled', test: 'testovací', live: 'ostrý' }[i.mode])}</td></tr>
         <tr><th>Platba převodem (QR)</th><td>${yes(i.iban)}</td></tr>
@@ -1566,6 +1571,27 @@
         <tr><th>Výběr místa Zásilkovny</th><td>${yes(i.packeta)}</td></tr>
         <tr><th>Odesílání e-mailů</th><td>${yes(i.email)}</td></tr>
       </table><p class="small muted">Integrace se zapínají v Cloudflare podle návodu docs/INTEGRATIONS.md. Ostrý režim a ostré platby jen po vašem rozhodnutí.</p></div>`;
+    // Podpis a razítko: zmenšení v telefonu, bílé pozadí → průhledné, uloží se jako PNG
+    const signPrev = async () => {
+      const { image } = await api('GET', 'signature');
+      const box = app.querySelector('#signprev');
+      box.innerHTML = image ? `<p><img src="${image}" alt="Podpis a razítko" style="max-height:110px;max-width:100%;background:#fff;border-radius:8px;padding:6px"></p><button class="btn ghost" type="button" id="signdel">Odstranit podpis</button>` : '<p class="small muted">Zatím nenahráno – na certifikátu je prázdná čára pro ruční podpis.</p>';
+      box.querySelector('#signdel')?.addEventListener('click', () => run(async () => { if (!confirm('Odstranit podpis a razítko z certifikátů?')) return; await api('DELETE', 'signature'); await signPrev(); }));
+    };
+    app.querySelector('#signfile').addEventListener('change', (e) => run(async () => {
+      const f = e.target.files[0]; if (!f) return;
+      const img = await createImageBitmap(f);
+      const k = Math.min(1, 700 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      const x = c.getContext('2d'); x.drawImage(img, 0, 0, c.width, c.height);
+      if (app.querySelector('#signwhite').checked) {
+        const d = x.getImageData(0, 0, c.width, c.height); const a = d.data;
+        for (let i = 0; i < a.length; i += 4) { const l = (a[i] + a[i + 1] + a[i + 2]) / 3; a[i + 3] = l > 200 ? 0 : l > 150 ? Math.round(255 * (200 - l) / 50) : 255; }
+        x.putImageData(d, 0, 0);
+      }
+      await api('PUT', 'signature', { image: c.toDataURL('image/png') }); toast('Podpis a razítko uloženo'); e.target.value = ''; await signPrev();
+    }));
+    run(signPrev);
     app.querySelector('#setf').addEventListener('submit', (e) => { e.preventDefault(); run(async () => {
       const d = formData(e.target); d.cod_enabled = e.target.cod_enabled.checked; d.auto_label = e.target.auto_label.checked; d.punc_notified = e.target.punc_notified.checked; d.invoice_autosend = e.target.invoice_autosend.checked; d.ship_autonotify = e.target.ship_autonotify.checked;
       await api('PUT', 'settings', d); toast('Uloženo');

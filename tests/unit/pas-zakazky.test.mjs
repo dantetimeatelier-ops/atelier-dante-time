@@ -99,3 +99,11 @@ test('kalibr: z „66 prim“ vznikne popis a roky výroby; neznámý kalibr se 
   addK(db, 's1', 'servis', 'prijato'); await PAS.onCommissionStatus(env, 's1', 't');
   assert.equal(db.prepare("SELECT replaced_parts r FROM watch_passports WHERE commission_id = 's1'").get().r, null);
 });
+
+test('certifikát: s nahraným podpisem a razítkem ukáže obrázek, bez něj čáru k ručnímu podpisu', async () => {
+  const PAS = await import('../../server/passport.js');
+  const p = { title: 'DT – PRIM X', code: 'ABC', issued_on: '2026-11-28' };
+  assert.match(PAS.certificateHtml({ passport: p, events: [], qr: '', url: 'x' }), /Podpis a razítko: _+/);
+  const h = PAS.certificateHtml({ passport: p, events: [], qr: '', url: 'x', sign: 'data:image/png;base64,AAAA' });
+  assert.match(h, /<img src="data:image\/png;base64,AAAA" alt="Podpis a razítko">/); assert.doesNotMatch(h, /_{5}/);
+});
