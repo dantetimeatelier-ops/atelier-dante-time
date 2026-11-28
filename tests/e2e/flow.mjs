@@ -553,6 +553,10 @@ try {
   const kpd = (await api('GET', `passports/${kp.id}`)).j;
   assert.match(kpd.passport.title, /^DT – /);
   assert.ok(!/Ekonomika Test|ekonomika@example/.test(JSON.stringify(kpd.passport)), 'pas bez zákazníka');
+  // údaje hodinek ze zakázky se přepíšou do pasu
+  assert.equal((await api('PUT', `commissions/${kid}`, { caliber: 'PRIM 66', authenticity_parts: ['strojek', 'rucicky'], replaced_parts: 'pouzdro, řemínek' })).s, 200);
+  const kps = (await api('GET', `passports/${kp.id}`)).j.passport;
+  assert.equal(kps.movement, 'PRIM 66'); assert.equal(kps.authenticity_parts, 'strojek,rucicky'); assert.equal(kps.replaced_parts, 'pouzdro, řemínek');
   await page.locator('#addc summary').click();
   await page.locator('#cq button', { hasText: 'Pouzdro' }).click();
   await page.locator('#jcf [name=amount_czk]').fill('1500');
