@@ -420,6 +420,7 @@ function commissionInput(body) {
   for (const [k, max] of [['contact_info', 200], ['contact_street', 120], ['contact_city', 80], ['contact_zip', 12], ['watch', 500], ['caliber', 100], ['description', 4000], ['internal_note', 4000], ['due_date', 20], ['received_at', 20], ['returned_at', 20], ['deposit_received_on', 20]]) if (k in body) d[k] = str(body[k], { max });
   for (const k of ['estimate_czk', 'deposit_czk', 'final_price_czk']) if (k in body) d[k] = int(body[k], { max: 50000000, name: 'částka' });
   // údaje pro digitální pas (originální díly s garancí pravosti, vyměněné díly)
+  if ('parts_preset' in body) d.parts_preset = oneOf(body.parts_preset, ['prestavba', 'original', 'vlastni'], 'originalita hodinek');
   for (const k of ['original_parts', 'replaced_parts']) if (k in body) d[k] = str(body[k], { max: 1000 }) || null;
   if ('authenticity_parts' in body) {
     const parts = (Array.isArray(body.authenticity_parts) ? body.authenticity_parts : String(body.authenticity_parts || '').split(',')).map((x) => String(x).trim()).filter(Boolean);

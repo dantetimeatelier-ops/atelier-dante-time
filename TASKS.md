@@ -40,6 +40,7 @@ Značky: 🔴 platby/bezpečnost · ⚖️ právní texty, ceny · 💰 může s
 
 ## ✅ Dokončeno (výběr, podrobně v CHANGELOG.md)
 
+- 28. 11. Pas ze zakázky: kalibr → popis strojku a roky výroby, výchozí originalita (přestavba / vše originální).
 - 28. 11. Údaje pasu (kalibr, originální a vyměněné díly) se vyplňují v zakázce a do pasu se přepisují samy.
 - 28. 11. Digitální pas automaticky i pro zakázky (po přijetí; práce a předání do historie; bez zákazníka a ceny).
 - 28. 11. Karta digitálního pasu k gravírování (SVG v křivkách, PNG 600 DPI, PDF, inverze, hromadný ZIP, kontrola QR).

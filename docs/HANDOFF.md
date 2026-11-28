@@ -4,6 +4,14 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-28 – Claude – claude/pas-kalibr-auto
+**Hotovo:** `src/shop/calibers.mjs` – kalibry PRIM 50/52/64/66/68/96 (zdroj: Skalický, katalog PRIM, physics.muni.cz) →
+z „66 prim“ vznikne v pasu „originální strojek PRIM kalibr 66, ruční nátah, 17 kamenů“ a rok „1965–1993“; neznámý kalibr
+zůstane, jak byl napsán. Zakázka má volbu „Originalita hodinek“ (migrace 0035 `parts_preset`): přestavba (výchozí u přestavby
+a výroby = originál strojek, ciferník, ručičky; vyměněno nové pouzdro Dante Time, řemínek), vše originální (výchozí u servisu
+a renovace), vlastní nastavení. Hodinová kontrola OS přepisuje údaje ze zakázek do pasů.
+**Další krok:** případně stejný automatický popis i pro hodinky v katalogu; doplnit další kalibry (OMEGA, ROLEX) s ověřeným zdrojem.
+
 ## 2026-11-28 – Claude – claude/pas-ze-zakazky
 **Hotovo:** zakázka je zdroj údajů pasu. Nová pole zakázky (migrace 0034): originální díly s garancí (strojek/ciferník/ručičky),
 popis originálních dílů, vyměněné díly. Po uložení zakázky `PAS.syncFromCommission` přepíše do pasu název (1. řádek „Hodinky“),
