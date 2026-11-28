@@ -276,9 +276,9 @@ ${legal}`;
   const ownerRows = items.map((i) => `<tr><td style="padding:4px 0">${i.title}</td><td style="text-align:right">${formatCzk(i.price_czk)}</td></tr>`).join('');
   await sendEmail(env, {
     to: ownerEmail(env),
-    subject: `Nová objednávka ${order.number} – ${formatCzk(order.total)}`,
+    subject: `${env.ADMIN_TEST && order.mode !== 'test' ? '[ZKOUŠKA?] ' : ''}Nová objednávka ${order.number} – ${formatCzk(order.total)}`,
     related: `order:${order.id}`,
-    body: `<p>Nová objednávka <strong>${order.number}</strong> (${order.mode === 'test' ? 'TEST' : 'ostrá'}).</p><table style="width:100%;border-collapse:collapse">${ownerRows}<tr><td style="padding:4px 0">Doprava: ${ship}${order.pickup_point_name ? ` (${order.pickup_point_name})` : ''}</td><td style="text-align:right">${formatCzk(order.shipping_price)}</td></tr>${order.cod_fee ? `<tr><td>Dobírka</td><td style="text-align:right">${formatCzk(order.cod_fee)}</td></tr>` : ''}<tr><td style="padding:6px 0;border-top:1px solid #2a2a2a"><strong>Celkem</strong> · ${pay}</td><td style="text-align:right;border-top:1px solid #2a2a2a"><strong>${formatCzk(order.total)}</strong></td></tr></table><p>Zákazník: ${order.name}, ${order.email}, ${order.phone || ''}</p><p><a href="${origin}/admin/#/objednavky/${order.id}">Otevřít v administraci</a></p>`,
+    body: `<p>Nová objednávka <strong>${order.number}</strong> (${order.mode === 'test' ? 'TEST' : env.ADMIN_TEST ? 'objednáno z přihlášené administrace – pravděpodobně zkouška' : 'ostrá'}).</p><table style="width:100%;border-collapse:collapse">${ownerRows}<tr><td style="padding:4px 0">Doprava: ${ship}${order.pickup_point_name ? ` (${order.pickup_point_name})` : ''}</td><td style="text-align:right">${formatCzk(order.shipping_price)}</td></tr>${order.cod_fee ? `<tr><td>Dobírka</td><td style="text-align:right">${formatCzk(order.cod_fee)}</td></tr>` : ''}<tr><td style="padding:6px 0;border-top:1px solid #2a2a2a"><strong>Celkem</strong> · ${pay}</td><td style="text-align:right;border-top:1px solid #2a2a2a"><strong>${formatCzk(order.total)}</strong></td></tr></table><p>Zákazník: ${order.name}, ${order.email}, ${order.phone || ''}</p><p><a href="${origin}/admin/#/objednavky/${order.id}">Otevřít v administraci</a></p>`,
   });
 }
 

@@ -4,6 +4,7 @@ Nejnovější nahoře. Každá změna jde přes pull request (číslo #). Po ka�
 Podrobnosti k jednotlivým změnám: `docs/HANDOFF.md` a popisy pull requestů na GitHubu.
 
 ## 2026-11-28
+- E-mail „Nová objednávka“ u objednávky z přihlášené administrace nepíše „ostrá“.
 - Podpis a razítko: automatické oříznutí okrajů, větší na certifikátu.
 - Podpis a razítko na certifikát pravosti (#77).
 - Pas ze zakázky: popis strojku podle kalibru, výchozí originalita (#76).
