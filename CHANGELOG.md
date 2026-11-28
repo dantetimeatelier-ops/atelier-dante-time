@@ -4,6 +4,7 @@ Nejnovější nahoře. Každá změna jde přes pull request (číslo #). Po ka�
 Podrobnosti k jednotlivým změnám: `docs/HANDOFF.md` a popisy pull requestů na GitHubu.
 
 ## 2026-11-28
+- Platba kartou v ostrém provozu: omezený ostrý klíč Stripe (bez výplat a převodů), diagnostika v administraci, tolerantní PAYMENTS_LIVE (#71).
 - Centrální dokumentace: CLAUDE.md, AGENTS.md, PROJECT_STATE.md, TASKS.md, ROADMAP.md, DECISIONS.md (přesun do kořene), CHANGELOG.md (R28).
 - Ostrý provoz Stripe: ověřený účet, ostrý webhook, klíče v Cloudflare, nové nasazení (bez změny kódu).
 - Zkouška plateb kartou v sandboxu na ostrém webu úspěšná (objednávka se sama zrušila, bez faktury).

@@ -4,6 +4,13 @@ Nejnovější záznam je nahoře. Formát je popsán v `AGENTS.md`, sekce 5.
 
 ---
 
+## 2026-11-28 13:30 – Claude – Stripe naostro
+**Hotovo:** příčina skryté platby kartou: v `STRIPE_SECRET_KEY` byl publishable key. Majitel vytvořil omezený klíč
+„Full access – except sensitive operations“ (`rk_live_`, 136 oprávnění) a vložil ho; nasazení (napotřetí – Cloudflare API
+krátce vracelo chybu 8000000). Integrace: klíč ostrý, webhook ok, PAYMENTS_LIVE true, zákazníci vidí: ano.
+**Další krok:** po první ostré platbě zkontrolovat zápis poplatku Stripe (vč. Radar) do nákladů hodinek.
+**Pozor na:** worker `os-cron` se při nasazení nenasazuje (token nemá „Workers Scripts: Edit“) – kontroly běží při otevření administrace.
+
 ## 2026-11-28 – Claude – claude/platby-diagnostika
 **Hotovo:** platba kartou se po ostrém přepnutí v anonymním okně nezobrazuje. `PAYMENTS_LIVE` se nově čte tolerantně
 (mezery, velká písmena – v Cloudflare je to Secret, protože textové proměnné spravuje wrangler.toml);
